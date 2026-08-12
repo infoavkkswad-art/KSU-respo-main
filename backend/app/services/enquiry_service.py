@@ -1,6 +1,10 @@
 from datetime import datetime
 import random
 import string
+import os
+import smtplib
+from email.message import EmailMessage
+
 from fastapi import HTTPException, status
 from pymongo.errors import DuplicateKeyError
 from motor.motor_asyncio import AsyncIOMotorDatabase
