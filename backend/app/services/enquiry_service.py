@@ -17,6 +17,46 @@ def generate_enquiry_id() -> str:
     digits = "".join(random.choices(string.digits, k=6))
     return f"KS-ENQ-{letters}{digits}"
 
+def send_enquiry_email(enquiry_id: str, payload: CreateEnquiryRequest) -> None:
+    message = EmailMessage()
+    message["Subject"] = f"New Kawad Swad Enquiry - {enquiry_id}"
+    message["From"] = os.environ["SMTP_USERNAME"]
+    message["To"] = os.environ["ENQUIRY_RECEIVER_EMAIL"]
+
+    body = f"""
+New enquiry received on the Kawad Swad website.
+
+Enquiry ID: {enquiry_id}
+Type: {payload.type}
+
+Contact Person: {payload.contactPerson}
+Phone: {payload.phone or "Not provided"}
+Email: {payload.email}
+
+Business Name: {payload.businessName or "Not provided"}
+Business Type: {payload.businessType or "Not provided"}
+Location: {payload.location}
+
+Products of Interest: {payload.productsOfInterest or "Not provided"}
+Quantity: {payload.quantity or "Not provided"}
+
+Message:
+{payload.message}
+"""
+
+    message.set_content(body)
+
+    with smtplib.SMTP_SSL(
+        os.environ["SMTP_HOST"],
+        int(os.environ["SMTP_PORT"]),
+        timeout=20,
+    ) as server:
+        server.login(
+            os.environ["SMTP_USERNAME"],
+            os.environ["SMTP_PASSWORD"],
+        )
+        server.send_message(message)
+
 async def create_enquiry_record(
     db: AsyncIOMotorDatabase, payload: CreateEnquiryRequest
 ) -> EnquiryResponse:
@@ -103,6 +143,11 @@ async def create_enquiry_record(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to record enquiry. Please try again later.",
         )
+
+    try:
+        send_enquiry_email(enquiry_id, payload)
+    except Exception:
+        pass
 
     return EnquiryResponse(
         success=True,
