@@ -4,7 +4,7 @@ import string
 from fastapi import HTTPException, status
 from pymongo.errors import DuplicateKeyError
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from backend.app.models.enquiry import CreateEnquiryRequest, EnquiryInDB, EnquiryResponse
+from app.models.enquiry import CreateEnquiryRequest, EnquiryInDB, EnquiryResponse
 
 INVALID_PHONE_PLACEHOLDERS = {"9999999999", "0000000000", "1111111111", "1234567890"}
 
