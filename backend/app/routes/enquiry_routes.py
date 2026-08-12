@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from backend.app.database import get_database
-from backend.app.models.enquiry import CreateEnquiryRequest, EnquiryResponse
-from backend.app.services.enquiry_service import create_enquiry_record
+from app.database import get_database
+from app.models.enquiry import CreateEnquiryRequest, EnquiryResponse
+from app.services.enquiry_service import create_enquiry_record
 
 router = APIRouter(prefix="/api/enquiries", tags=["Enquiries"])
 
