@@ -1,0 +1,33 @@
+services:
+  # FastAPI Backend Web Service
+  - type: web
+    name: kawad-swad-backend
+    env: python
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGODB_DATABASE
+        value: kawad_swad_db
+      - key: CORS_ORIGINS
+        value: https://kawadswad.in,https://www.kawadswad.in,http://localhost:5173
+      - key: MONGODB_URI
+        sync: false
+
+  # React + Vite Frontend Static Site
+  - type: static
+    name: kawad-swad-frontend
+    env: static
+    region: singapore
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://api.kawadswad.in

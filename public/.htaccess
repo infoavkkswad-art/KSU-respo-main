@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Do not rewrite actual files, directories, or symlinks
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Do not rewrite critical static assets, sitemap, robots, or API paths
+  RewriteCond %{REQUEST_URI} ^/(sitemap\.xml|robots\.txt|logo\.png|og-default\.png|favicon\.ico|api/|assets/) [NC]
+  RewriteRule ^ - [L]
+
+  # Fallback all other routes to index.html for React Router SPA
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Enable compression for faster mobile/desktop loading
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json image/svg+xml
+</IfModule>
