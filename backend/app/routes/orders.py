@@ -1,11 +1,76 @@
-@router.post("/verify-payment")
+import time
+import datetime
+from typing import Dict, List
+from fastapi import APIRouter, status, Query, Request, HTTPException, Depends
+from motor.motor_asyncio import AsyncIOMotorDatabase
+import razorpay
+from ..database import get_database
+from ..config import settings
+from ..models.order import CreateOrderRequest, OrderTrackingResponse, VerifyPaymentRequest
+from ..services.order_service import process_and_save_order, get_order_by_id_and_phone
+from ..services.google_sheets_service import post_to_google_apps_script
+
+router = APIRouter(prefix="/api", tags=["Orders"])
+
+razorpay_client = razorpay.Client(auth=(settings.razorpay_key_id, settings.razorpay_key_secret))
+
+_RATE_LIMIT_STORE: Dict[str, List[float]] = {}
+MAX_LOOKUPS_PER_MINUTE = 10
+
+def apply_rate_limit(client_ip: str):
+    now = time.time()
+    history = _RATE_LIMIT_STORE.get(client_ip, [])
+    history = [ts for ts in history if now - ts < 60]
+    if len(history) >= MAX_LOOKUPS_PER_MINUTE:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many tracking lookup requests. Please wait a minute before trying again."
+        )
+    history.append(now)
+    _RATE_LIMIT_STORE[client_ip] = history
+
+@router.post("/orders", status_code=status.HTTP_201_CREATED)
+async def create_order(payload: CreateOrderRequest, db: AsyncIOMotorDatabase = Depends(get_database)):
+    order = await process_and_save_order(payload)
+    
+    existing_order = await db.orders.find_one({"orderId": order.orderId})
+    if not existing_order:
+        raise HTTPException(status_code=500, detail="Failed to retrieve created order record.")
+
+    total_amount = existing_order["total"]
+    amount_in_paise = int(round(total_amount * 100))
+
+    razorpay_order_id = existing_order.get("razorpayOrderId")
+    if not razorpay_order_id:
+        try:
+            rzp_order = razorpay_client.order.create({
+                "amount": amount_in_paise,
+                "currency": "INR",
+                "receipt": order.orderId,
+                "notes": {"orderId": order.orderId}
+            })
+            razorpay_order_id = rzp_order["id"]
+            await db.orders.update_one(
+                {"orderId": order.orderId},
+                {"$set": {"razorpayOrderId": razorpay_order_id, "paymentStatus": "pending"}}
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to initialize Razorpay order: {str(e)}")
+
+    response_data = order.dict()
+    response_data["razorpayOrderId"] = razorpay_order_id
+    response_data["razorpayKeyId"] = settings.razorpay_key_id
+    response_data["amount"] = amount_in_paise
+    response_data["currency"] = "INR"
+    response_data["paymentStatus"] = existing_order.get("paymentStatus", "pending")
+    return response_data
+
+@router.post("/orders/verify-payment")
 async def verify_payment(payload: VerifyPaymentRequest, db: AsyncIOMotorDatabase = Depends(get_database)):
-    # Retrieve authoritative order linked to this razorpay order ID from MongoDB
     existing_order = await db.orders.find_one({"razorpayOrderId": payload.razorpay_order_id})
     if not existing_order:
         raise HTTPException(status_code=404, detail="Order reference not found for this payment session.")
 
-    # Verify signature server-side using RAZORPAY_KEY_SECRET
     try:
         razorpay_client.utility.verify_payment_signature({
             'razorpay_order_id': payload.razorpay_order_id,
@@ -15,7 +80,6 @@ async def verify_payment(payload: VerifyPaymentRequest, db: AsyncIOMotorDatabase
     except razorpay.errors.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid cryptographic payment signature.")
 
-    # Confirm payment status via Razorpay API to ensure 'captured' state
     try:
         payment_details = razorpay_client.payment.fetch(payload.razorpay_payment_id)
         if payment_details.get("status") != "captured":
@@ -25,7 +89,6 @@ async def verify_payment(payload: VerifyPaymentRequest, db: AsyncIOMotorDatabase
             raise e
         raise HTTPException(status_code=500, detail="Unable to verify payment capture status with gateway.")
 
-    # Atomically update the MongoDB order from paymentStatus="pending" to paymentStatus="paid"
     updated_order = await db.orders.find_one_and_update(
         {
             "razorpayOrderId": payload.razorpay_order_id,
@@ -41,7 +104,6 @@ async def verify_payment(payload: VerifyPaymentRequest, db: AsyncIOMotorDatabase
         return_document=True
     )
 
-    # Only perform the Google Sheets/email synchronization if THIS request actually changed the order from pending to paid
     if updated_order:
         try:
             customer_data = updated_order.get("customer", {})
@@ -68,7 +130,6 @@ async def verify_payment(payload: VerifyPaymentRequest, db: AsyncIOMotorDatabase
         except Exception as sync_err:
             print(f"Warning: Google Sheets sync failed during verification: {str(sync_err)}")
     else:
-        # If updated_order is None, it means the order was already paid or not in pending state
         already_paid_order = await db.orders.find_one({"razorpayOrderId": payload.razorpay_order_id})
         if not already_paid_order or already_paid_order.get("paymentStatus") != "paid":
             raise HTTPException(status_code=400, detail="Order state transition error.")
@@ -87,7 +148,6 @@ async def razorpay_webhook(request: Request, db: AsyncIOMotorDatabase = Depends(
     if not webhook_signature:
         raise HTTPException(status_code=400, detail="Missing webhook signature header.")
 
-    # Verify webhook signature using RAW request body before parsing JSON
     raw_body = await request.body()
     try:
         razorpay_client.utility.verify_webhook_signature(
@@ -102,7 +162,6 @@ async def razorpay_webhook(request: Request, db: AsyncIOMotorDatabase = Depends(
     resolved_event_id = event_id or event_data.get("event_id")
     event_type = event_data.get("event")
 
-    # Webhook event deduplication via database check
     if resolved_event_id:
         existing_event = await db.webhook_events.find_one({"eventId": resolved_event_id})
         if existing_event:
@@ -117,7 +176,6 @@ async def razorpay_webhook(request: Request, db: AsyncIOMotorDatabase = Depends(
 
     if razorpay_order_id:
         if event_type in ["payment.captured", "order.paid"]:
-            # Atomically transition from pending to paid
             updated_order = await db.orders.find_one_and_update(
                 {
                     "razorpayOrderId": razorpay_order_id,
@@ -132,7 +190,6 @@ async def razorpay_webhook(request: Request, db: AsyncIOMotorDatabase = Depends(
                 return_document=True
             )
 
-            # Synchronize to Google Sheets only if this webhook execution successfully updated the state
             if updated_order:
                 try:
                     customer_data = updated_order.get("customer", {})
@@ -165,3 +222,14 @@ async def razorpay_webhook(request: Request, db: AsyncIOMotorDatabase = Depends(
             )
 
     return {"status": "ok"}
+
+@router.get("/orders/{order_id}", response_model=OrderTrackingResponse)
+async def track_order(
+    order_id: str,
+    request: Request,
+    phone: str = Query(..., min_length=10, max_length=10, description="Customer 10-digit phone number for verification")
+):
+    client_ip = request.client.host if request.client else "unknown"
+    apply_rate_limit(client_ip)
+    order = await get_order_by_id_and_phone(order_id, phone)
+    return order
