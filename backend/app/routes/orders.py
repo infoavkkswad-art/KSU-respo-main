@@ -30,40 +30,151 @@ def apply_rate_limit(client_ip: str):
     _RATE_LIMIT_STORE[client_ip] = history
 
 @router.post("/orders", status_code=status.HTTP_201_CREATED)
-async def create_order(payload: CreateOrderRequest, db: AsyncIOMotorDatabase = Depends(get_database)):
-    order = await process_and_save_order(payload)
-    
-    existing_order = await db.orders.find_one({"orderId": order["orderId"]})
-    if not existing_order:
-        raise HTTPException(status_code=500, detail="Failed to retrieve created order record.")
+async def create_order(
+    payload: CreateOrderRequest,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """
+    Create the MongoDB order first, then create the corresponding
+    Razorpay order, and return the payment session details.
 
-    total_amount = existing_order["total"]
-    amount_in_paise = int(round(total_amount * 100))
+    This function deliberately normalizes the service result because
+    process_and_save_order() may return either a dict or a Pydantic model.
+    """
 
-    razorpay_order_id = existing_order.get("razorpayOrderId")
-    if not razorpay_order_id:
-        try:
-            rzp_order = razorpay_client.order.create({
-                "amount": amount_in_paise,
-                "currency": "INR",
-                "receipt": order["orderId"],
-                "notes": {"orderId": order["orderId"]}
-            })
-            razorpay_order_id = rzp_order["id"]
-            await db.orders.update_one(
-                {"orderId": order["orderId"]},
-                {"$set": {"razorpayOrderId": razorpay_order_id, "paymentStatus": "pending"}}
+    try:
+        # ---------------------------------------------------------
+        # 1. Create/save the authoritative order in MongoDB
+        # ---------------------------------------------------------
+        order = await process_and_save_order(payload)
+
+        # Normalize service result to a plain dictionary
+        if isinstance(order, dict):
+            order_data = order
+        elif hasattr(order, "model_dump"):
+            order_data = order.model_dump()
+        elif hasattr(order, "dict"):
+            order_data = order.dict()
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid order record returned by order service."
             )
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to initialize Razorpay order: {str(e)}")
 
-    response_data = order.dict()
-    response_data["razorpayOrderId"] = razorpay_order_id
-    response_data["razorpayKeyId"] = settings.razorpay_key_id
-    response_data["amount"] = amount_in_paise
-    response_data["currency"] = "INR"
-    response_data["paymentStatus"] = existing_order.get("paymentStatus", "pending")
-    return response_data
+        order_id = order_data.get("orderId")
+
+        if not order_id:
+            raise HTTPException(
+                status_code=500,
+                detail="Created order is missing orderId."
+            )
+
+        # ---------------------------------------------------------
+        # 2. Retrieve the authoritative MongoDB order
+        # ---------------------------------------------------------
+        existing_order = await db.orders.find_one(
+            {"orderId": order_id}
+        )
+
+        if not existing_order:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to retrieve created order record."
+            )
+
+        # ---------------------------------------------------------
+        # 3. Calculate Razorpay amount
+        # ---------------------------------------------------------
+        total_amount = existing_order.get("total")
+
+        if total_amount is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Order total is missing."
+            )
+
+        amount_in_paise = int(round(float(total_amount) * 100))
+
+        if amount_in_paise <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Order amount must be greater than zero."
+            )
+
+        # ---------------------------------------------------------
+        # 4. Reuse an existing Razorpay order if one exists
+        # ---------------------------------------------------------
+        razorpay_order_id = existing_order.get("razorpayOrderId")
+
+        if not razorpay_order_id:
+
+            try:
+                rzp_order = razorpay_client.order.create({
+                    "amount": amount_in_paise,
+                    "currency": "INR",
+                    "receipt": str(order_id),
+                    "notes": {
+                        "orderId": str(order_id)
+                    }
+                })
+
+                razorpay_order_id = rzp_order.get("id")
+
+                if not razorpay_order_id:
+                    raise Exception(
+                        "Razorpay did not return an order ID."
+                    )
+
+                # Save Razorpay order ID atomically
+                await db.orders.update_one(
+                    {"orderId": order_id},
+                    {
+                        "$set": {
+                            "razorpayOrderId": razorpay_order_id,
+                            "paymentStatus": "pending"
+                        }
+                    }
+                )
+
+            except Exception as razorpay_error:
+                print(
+                    f"ERROR: Razorpay order creation failed: "
+                    f"{str(razorpay_error)}"
+                )
+
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to initialize payment gateway order."
+                )
+
+        # ---------------------------------------------------------
+        # 5. Return clean payment response
+        # ---------------------------------------------------------
+        response_data = dict(order_data)
+
+        response_data["razorpayOrderId"] = razorpay_order_id
+        response_data["razorpayKeyId"] = settings.razorpay_key_id
+        response_data["amount"] = amount_in_paise
+        response_data["currency"] = "INR"
+        response_data["paymentStatus"] = existing_order.get(
+            "paymentStatus",
+            "pending"
+        )
+
+        return response_data
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        print(
+            f"ERROR: Unexpected exception while creating order: {str(e)}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Order could not be processed."
+        )
 
 @router.post("/orders/verify-payment")
 async def verify_payment(payload: VerifyPaymentRequest, db: AsyncIOMotorDatabase = Depends(get_database)):
