@@ -7,13 +7,28 @@
 
   <script>
     (function () {
-      var redirect = location.pathname + location.search + location.hash;
-      sessionStorage.setItem('github-pages-redirect', redirect);
-      location.replace('/');
+      var l = window.location;
+      var redirect =
+        l.pathname +
+        l.search +
+        l.hash;
+
+      sessionStorage.setItem(
+        'github-pages-redirect',
+        redirect
+      );
+
+      l.replace(
+        l.protocol +
+        '//' +
+        l.host +
+        '/'
+      );
     })();
   </script>
 </head>
+
 <body>
-  <p>Loading Kawad Swad...</p>
+  Loading Kawad Swad...
 </body>
 </html>
