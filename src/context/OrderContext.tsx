@@ -6,7 +6,10 @@ import {
   type ReactNode,
 } from 'react';
 import type { CartItem } from './CartContext';
-import { apiClient, OrderStatusType } from '../services/api-client';
+import {
+  apiClient,
+  OrderStatusType,
+} from '../services/api-client';
 
 export interface CustomerInfo {
   fullName: string;
@@ -18,7 +21,8 @@ export interface CustomerInfo {
   pincode: string;
 }
 
-export interface OrderItemSnapshotItem extends CartItem {
+export interface OrderItemSnapshotItem
+  extends CartItem {
   unitPrice?: number;
   productNameSnapshot?: string;
   packSizeSnapshot?: number;
@@ -37,6 +41,11 @@ export interface Order {
 
 interface OrderContextValue {
   lastOrder: Order | null;
+
+  setCompletedOrder: (
+    order: Order
+  ) => void;
+
   placeOrder: (
     customer: CustomerInfo,
     items: CartItem[],
@@ -47,70 +56,115 @@ interface OrderContextValue {
     },
     idempotencyKey?: string
   ) => Promise<Order>;
+
   clearLastOrder: () => void;
 }
 
-const OrderContext = createContext<OrderContextValue | null>(null);
+const OrderContext =
+  createContext<OrderContextValue | null>(null);
 
-const ORDER_STORAGE_KEY = 'kawad-swad-last-order-v1';
+const ORDER_STORAGE_KEY =
+  'kawad-swad-last-order-v1';
 
-export function OrderProvider({ children }: { children: ReactNode }) {
-  const [lastOrder, setLastOrder] = useState<Order | null>(() => {
-    try {
-      const saved = localStorage.getItem(ORDER_STORAGE_KEY);
-      return saved ? (JSON.parse(saved) as Order) : null;
-    } catch {
-      return null;
-    }
-  });
+export function OrderProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const [lastOrder, setLastOrder] =
+    useState<Order | null>(() => {
+      try {
+        const saved =
+          localStorage.getItem(
+            ORDER_STORAGE_KEY
+          );
+
+        return saved
+          ? (JSON.parse(saved) as Order)
+          : null;
+      } catch {
+        return null;
+      }
+    });
 
   useEffect(() => {
     try {
       if (lastOrder) {
-        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(lastOrder));
+        localStorage.setItem(
+          ORDER_STORAGE_KEY,
+          JSON.stringify(lastOrder)
+        );
       } else {
-        localStorage.removeItem(ORDER_STORAGE_KEY);
+        localStorage.removeItem(
+          ORDER_STORAGE_KEY
+        );
       }
     } catch {
-      // ignore storage errors
+      // Ignore localStorage errors.
     }
   }, [lastOrder]);
 
-  const placeOrder: OrderContextValue['placeOrder'] = async (
-    customer,
-    items,
-    _totals,
-    idempotencyKey
+  const setCompletedOrder = (
+    order: Order
   ) => {
-    // Call real backend API
-    const order = await apiClient.createOrder({
+    setLastOrder(order);
+  };
+
+  const placeOrder:
+    OrderContextValue['placeOrder'] =
+    async (
       customer,
       items,
-      idempotencyKey,
-    });
+      _totals,
+      idempotencyKey
+    ) => {
+      const order =
+        await apiClient.createOrder({
+          customer,
+          items,
+          idempotencyKey,
+        });
 
-    setLastOrder(order);
-    return order;
-  };
+      setLastOrder(order);
+
+      return order;
+    };
 
   const clearLastOrder = () => {
     setLastOrder(null);
+
     try {
-      localStorage.removeItem(ORDER_STORAGE_KEY);
+      localStorage.removeItem(
+        ORDER_STORAGE_KEY
+      );
     } catch {
-      // ignore storage errors
+      // Ignore localStorage errors.
     }
   };
 
   return (
-    <OrderContext.Provider value={{ lastOrder, placeOrder, clearLastOrder }}>
+    <OrderContext.Provider
+      value={{
+        lastOrder,
+        setCompletedOrder,
+        placeOrder,
+        clearLastOrder,
+      }}
+    >
       {children}
     </OrderContext.Provider>
   );
 }
 
 export function useOrder(): OrderContextValue {
-  const ctx = useContext(OrderContext);
-  if (!ctx) throw new Error('useOrder must be used within OrderProvider');
+  const ctx =
+    useContext(OrderContext);
+
+  if (!ctx) {
+    throw new Error(
+      'useOrder must be used within OrderProvider'
+    );
+  }
+
   return ctx;
 }
