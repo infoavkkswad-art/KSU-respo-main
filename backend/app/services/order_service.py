@@ -619,67 +619,44 @@ async def get_order_by_id_and_phone(
         masked_phone = "******"
 
     return OrderTrackingResponse(
-
-        "orderId": order_id,
-
-        status:
-            order.get(
-                "status",
-                "pending",
+        orderId=order_id,
+        status=order.get(
+            "status",
+            "pending",
+        ),
+        customer=PublicCustomerSnapshot(
+            fullName=customer_info.get(
+                "fullName",
+                "Valued Customer",
             ),
-
-        customer:
-            PublicCustomerSnapshot(
-
-                fullName:
-                    customer_info.get(
-                        "fullName",
-                        "Valued Customer",
-                    ),
-
-                phoneMasked:
-                    masked_phone,
-
-                city:
-                    customer_info.get(
-                        "city",
-                        "",
-                    ),
-
-                state:
-                    customer_info.get(
-                        "state",
-                        "",
-                    ),
+            phoneMasked=masked_phone,
+            city=customer_info.get(
+                "city",
+                "",
             ),
-
-        items:
-            order.get(
-                "items",
-                [],
+            state=customer_info.get(
+                "state",
+                "",
             ),
-
-        subtotal:
-            order.get(
-                "subtotal",
-                0,
-            ),
-
-        shipping:
-            order.get(
-                "shipping",
-                0,
-            ),
-
-        total:
-            order.get(
-                "total",
-                0,
-            ),
-
-        createdAt:
-            order.get(
-                "createdAt",
-                datetime.utcnow(),
-            ),
+        ),
+        items=order.get(
+            "items",
+            [],
+        ),
+        subtotal=order.get(
+            "subtotal",
+            0,
+        ),
+        shipping=order.get(
+            "shipping",
+            0,
+        ),
+        total=order.get(
+            "total",
+            0,
+        ),
+        createdAt=order.get(
+            "createdAt",
+            datetime.utcnow(),
+        ),
     )
