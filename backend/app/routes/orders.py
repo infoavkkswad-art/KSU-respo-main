@@ -933,6 +933,7 @@ async def razorpay_webhook(
     request: Request,
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
+    print("========== RAZORPAY WEBHOOK START ==========")
 
     event_id = request.headers.get(
         "X-Razorpay-Event-Id"
@@ -942,41 +943,52 @@ async def razorpay_webhook(
         "X-Razorpay-Signature"
     )
 
-    if not webhook_signature:
+    # ---------------------------------------------------------
+    # 1. SIGNATURE HEADER
+    # ---------------------------------------------------------
 
+    if not webhook_signature:
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Missing webhook signature header."
-            ),
+            detail="Missing webhook signature header.",
         )
 
-    # --------------------------------------------------------
-    # 1. RAW BODY
-    # --------------------------------------------------------
+    # ---------------------------------------------------------
+    # 2. RAW BODY
+    # ---------------------------------------------------------
 
     raw_body = await request.body()
 
-    # --------------------------------------------------------
-    # 2. VERIFY WEBHOOK SIGNATURE
-    # --------------------------------------------------------
+    # ---------------------------------------------------------
+    # 3. VERIFY RAZORPAY WEBHOOK SIGNATURE
+    # ---------------------------------------------------------
 
     try:
-
         razorpay_client.utility.verify_webhook_signature(
             raw_body.decode("utf-8"),
             webhook_signature,
             settings.razorpay_webhook_secret,
         )
 
-    except Exception as e:
-
         print(
-            "Webhook signature verification failed:"
+            "Razorpay webhook signature verified."
+        )
+
+    except Exception as e:
+        print(
+            "========== WEBHOOK SIGNATURE ERROR =========="
         )
 
         print(
-            f"{type(e).__name__}: {str(e)}"
+            f"TYPE: {type(e).__name__}"
+        )
+
+        print(
+            f"MESSAGE: {str(e)}"
+        )
+
+        print(
+            "=============================================="
         )
 
         raise HTTPException(
@@ -986,11 +998,17 @@ async def razorpay_webhook(
             ),
         )
 
-    # --------------------------------------------------------
-    # 3. PARSE EVENT
-    # --------------------------------------------------------
+    # ---------------------------------------------------------
+    # 4. PARSE EVENT
+    # ---------------------------------------------------------
 
-    event_data = await request.json()
+    try:
+        event_data = await request.json()
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid webhook JSON payload.",
+        )
 
     resolved_event_id = (
         event_id
@@ -1001,53 +1019,17 @@ async def razorpay_webhook(
         "event"
     )
 
-    # --------------------------------------------------------
-    # 4. WEBHOOK EVENT IDEMPOTENCY
-    # --------------------------------------------------------
+    print(
+        f"Webhook event: {event_type}"
+    )
 
-    if resolved_event_id:
+    print(
+        f"Webhook event ID: {resolved_event_id}"
+    )
 
-        existing_event = (
-            await db.webhook_events.find_one(
-                {
-                    "eventId":
-                        resolved_event_id
-                }
-            )
-        )
-
-        if existing_event:
-
-            return {
-                "status":
-                    "already_processed"
-            }
-
-        try:
-
-            await db.webhook_events.insert_one(
-                {
-                    "eventId":
-                        resolved_event_id,
-
-                    "event":
-                        event_type,
-
-                    "createdAt":
-                        datetime.datetime.utcnow(),
-                }
-            )
-
-        except Exception:
-
-            return {
-                "status":
-                    "already_processed"
-            }
-
-    # --------------------------------------------------------
+    # ---------------------------------------------------------
     # 5. GET RAZORPAY ENTITY
-    # --------------------------------------------------------
+    # ---------------------------------------------------------
 
     payload_entity = (
         event_data
@@ -1070,174 +1052,206 @@ async def razorpay_webhook(
         or payload_entity.get("id")
     )
 
-    # --------------------------------------------------------
-    # 6. PAYMENT CAPTURED
-    # --------------------------------------------------------
+    razorpay_payment_id = (
+        payload_entity.get("id")
+        if payload_entity.get("entity")
+        == "payment"
+        else None
+    )
 
-    if razorpay_order_id:
+    print(
+        f"Razorpay Order ID: "
+        f"{razorpay_order_id}"
+    )
 
-        if event_type in [
-            "payment.captured",
-            "order.paid",
-        ]:
+    print(
+        f"Razorpay Payment ID: "
+        f"{razorpay_payment_id}"
+    )
 
-            updated_order = (
-                await db.orders.find_one_and_update(
-                    {
-                        "razorpayOrderId":
-                            razorpay_order_id,
+    # ---------------------------------------------------------
+    # 6. ONLY PAYMENT EVENTS NEED ORDER PROCESSING
+    # ---------------------------------------------------------
 
-                        "paymentStatus":
-                            "pending",
-                    },
-                    {
-                        "$set": {
-                            "paymentStatus":
-                                "paid",
+    supported_events = {
+        "payment.captured",
+        "order.paid",
+        "payment.failed",
+    }
 
-                            "status":
-                                "confirmed",
-                        }
-                    },
-                    return_document=True,
+    if event_type not in supported_events:
+
+        print(
+            f"Ignoring unsupported webhook event: "
+            f"{event_type}"
+        )
+
+        return {
+            "status": "ignored",
+            "event": event_type,
+        }
+
+    if not razorpay_order_id:
+
+        print(
+            "Webhook does not contain a Razorpay order ID."
+        )
+
+        return {
+            "status": "ignored",
+            "reason": "missing_razorpay_order_id",
+        }
+
+    # ---------------------------------------------------------
+    # 7. WEBHOOK EVENT IDEMPOTENCY
+    #
+    # IMPORTANT:
+    #
+    # We do NOT mark the event as successfully processed
+    # before Google Apps Script succeeds.
+    #
+    # "processing" means another request may currently be
+    # working on it.
+    #
+    # "processed" means the downstream sync completed.
+    # ---------------------------------------------------------
+
+    if resolved_event_id:
+
+        existing_event = (
+            await db.webhook_events.find_one(
+                {
+                    "eventId":
+                        resolved_event_id
+                }
+            )
+        )
+
+        if existing_event:
+
+            existing_status = (
+                existing_event.get(
+                    "status",
+                    "processed",
                 )
             )
 
-            # ------------------------------------------------
-            # GOOGLE SHEETS SYNC
-            # ------------------------------------------------
+            # ---------------------------------------------
+            # Already completely processed
+            # ---------------------------------------------
 
-            if updated_order:
+            if existing_status == "processed":
 
-                try:
+                print(
+                    "Webhook already processed successfully."
+                )
 
-                    customer_data = (
-                        updated_order.get(
-                            "customer",
-                            {}
-                        )
+                return {
+                    "status":
+                        "already_processed"
+                }
+
+            # ---------------------------------------------
+            # Existing event was previously attempted but
+            # downstream processing did not complete.
+            #
+            # Continue processing so Razorpay retries can
+            # recover from a temporary Google failure.
+            # ---------------------------------------------
+
+            print(
+                "Previous webhook processing was not "
+                "completed. Retrying downstream sync."
+            )
+
+        else:
+
+            # ---------------------------------------------
+            # Create processing record.
+            #
+            # We intentionally do NOT set processed=True.
+            # ---------------------------------------------
+
+            try:
+
+                await db.webhook_events.insert_one(
+                    {
+                        "eventId":
+                            resolved_event_id,
+
+                        "event":
+                            event_type,
+
+                        "status":
+                            "processing",
+
+                        "createdAt":
+                            datetime.datetime.utcnow(),
+
+                        "updatedAt":
+                            datetime.datetime.utcnow(),
+                    }
+                )
+
+                print(
+                    "Webhook processing record created."
+                )
+
+            except Exception as event_insert_error:
+
+                # Another webhook request may have inserted
+                # the same event simultaneously.
+                #
+                # Re-read it rather than treating the payment
+                # as failed.
+
+                print(
+                    "Webhook event insert race:"
+                )
+
+                print(
+                    f"{type(event_insert_error).__name__}: "
+                    f"{str(event_insert_error)}"
+                )
+
+                existing_event = (
+                    await db.webhook_events.find_one(
+                        {
+                            "eventId":
+                                resolved_event_id
+                        }
                     )
+                )
 
-                    formatted_items = ", ".join(
-                        [
-                            (
-                                f"{i.get('productNameSnapshot', i.get('sku'))} "
-                                f"(x{i.get('quantity')})"
-                            )
-                            for i in updated_order.get(
-                                "items",
-                                []
-                            )
-                        ]
-                    )
+                if existing_event and (
+                    existing_event.get(
+                        "status"
+                    ) == "processed"
+                ):
 
-                    created_at = (
-                        updated_order.get(
-                            "createdAt"
-                        )
-                    )
-
-                    if hasattr(
-                        created_at,
-                        "isoformat"
-                    ):
-
-                        created_at = (
-                            created_at.isoformat()
-                        )
-
-                    else:
-
-                        created_at = str(
-                            created_at
-                        )
-
-                    sheets_payload = {
-                        "type":
-                            "order",
-
-                        "data": {
-
-                            "orderId":
-                                updated_order[
-                                    "orderId"
-                                ],
-
-                            "createdAt":
-                                created_at,
-
-                            "customerName":
-                                customer_data.get(
-                                    "fullName"
-                                ),
-
-                            "phone":
-                                customer_data.get(
-                                    "phone"
-                                ),
-
-                            "email":
-                                customer_data.get(
-                                    "email"
-                                ),
-
-                            "address":
-                                (
-                                    f"{customer_data.get('address')}, "
-                                    f"{customer_data.get('city')}, "
-                                    f"{customer_data.get('state')} - "
-                                    f"{customer_data.get('pincode')}"
-                                ),
-
-                            "items":
-                                formatted_items,
-
-                            "subtotal":
-                                updated_order[
-                                    "subtotal"
-                                ],
-
-                            "shipping":
-                                updated_order[
-                                    "shipping"
-                                ],
-
-                            "total":
-                                updated_order[
-                                    "total"
-                                ],
-
-                            "paymentStatus":
-                                "paid",
-
-                            "orderStatus":
-                                "confirmed",
-                        },
+                    return {
+                        "status":
+                            "already_processed"
                     }
 
-                    await post_to_google_apps_script(
-                        sheets_payload
-                    )
+    # ---------------------------------------------------------
+    # 8. PAYMENT CAPTURED / ORDER PAID
+    # ---------------------------------------------------------
 
-                except Exception as sheet_err:
+    if event_type in [
+        "payment.captured",
+        "order.paid",
+    ]:
 
-                    print(
-                        "WARNING: Google Sheets sync "
-                        "failed in Razorpay webhook."
-                    )
+        # -----------------------------------------------------
+        # FIRST: atomically transition pending → paid
+        #
+        # If verify-payment already did this, updated_order
+        # will be None. That is okay.
+        # -----------------------------------------------------
 
-                    print(
-                        f"{type(sheet_err).__name__}: "
-                        f"{str(sheet_err)}"
-                    )
-
-        # ----------------------------------------------------
-        # PAYMENT FAILED
-        # ----------------------------------------------------
-
-        elif event_type == "payment.failed":
-
-            await db.orders.update_one(
+        updated_order = (
+            await db.orders.find_one_and_update(
                 {
                     "razorpayOrderId":
                         razorpay_order_id,
@@ -1248,14 +1262,442 @@ async def razorpay_webhook(
                 {
                     "$set": {
                         "paymentStatus":
-                            "failed"
+                            "paid",
+
+                        "status":
+                            "confirmed",
+
+                        **(
+                            {
+                                "razorpayPaymentId":
+                                    razorpay_payment_id
+                            }
+                            if razorpay_payment_id
+                            else {}
+                        ),
+                    }
+                },
+                return_document=True,
+            )
+        )
+
+        # -----------------------------------------------------
+        # If webhook performed the transition, use that order.
+        # -----------------------------------------------------
+
+        if updated_order:
+
+            print(
+                f"MongoDB order confirmed by webhook: "
+                f"{updated_order.get('orderId')}"
+            )
+
+        else:
+
+            # -------------------------------------------------
+            # verify-payment may have already confirmed it.
+            # Retrieve the already-paid order.
+            # -------------------------------------------------
+
+            updated_order = (
+                await db.orders.find_one(
+                    {
+                        "razorpayOrderId":
+                            razorpay_order_id,
+
+                        "paymentStatus":
+                            "paid",
+                    }
+                )
+            )
+
+            if not updated_order:
+
+                print(
+                    "Webhook could not find a confirmed "
+                    "MongoDB order."
+                )
+
+                # Leave webhook event unprocessed so a future
+                # Razorpay retry can try again.
+
+                if resolved_event_id:
+
+                    await db.webhook_events.update_one(
+                        {
+                            "eventId":
+                                resolved_event_id
+                        },
+                        {
+                            "$set": {
+                                "status":
+                                    "failed",
+
+                                "updatedAt":
+                                    datetime.datetime.utcnow(),
+
+                                "error":
+                                    (
+                                        "Confirmed order "
+                                        "not found."
+                                    ),
+                            }
+                        },
+                    )
+
+                return {
+                    "status":
+                        "retry_required"
+                }
+
+            print(
+                "Order was already confirmed by "
+                "verify-payment."
+            )
+
+        # -----------------------------------------------------
+        # 9. PREPARE GOOGLE APPS SCRIPT PAYLOAD
+        # -----------------------------------------------------
+
+        customer_data = (
+            updated_order.get(
+                "customer",
+                {},
+            )
+        )
+
+        formatted_items = ", ".join(
+            [
+                (
+                    f"{item.get('productNameSnapshot', item.get('sku'))}"
+                    f" (x{item.get('quantity', 1)})"
+                )
+                for item in updated_order.get(
+                    "items",
+                    [],
+                )
+            ]
+        )
+
+        created_at = (
+            updated_order.get(
+                "createdAt"
+            )
+        )
+
+        if hasattr(
+            created_at,
+            "isoformat",
+        ):
+
+            created_at = (
+                created_at.isoformat()
+            )
+
+        else:
+
+            created_at = str(
+                created_at
+            )
+
+        address = (
+            f"{customer_data.get('address', '')}, "
+            f"{customer_data.get('city', '')}, "
+            f"{customer_data.get('state', '')} - "
+            f"{customer_data.get('pincode', '')}"
+        )
+
+        sheets_payload = {
+            "type":
+                "order",
+
+            "data": {
+
+                "orderId":
+                    updated_order["orderId"],
+
+                "createdAt":
+                    created_at,
+
+                "customerName":
+                    customer_data.get(
+                        "fullName",
+                        "",
+                    ),
+
+                "phone":
+                    customer_data.get(
+                        "phone",
+                        "",
+                    ),
+
+                "email":
+                    customer_data.get(
+                        "email",
+                        "",
+                    ),
+
+                "address":
+                    address,
+
+                "items":
+                    formatted_items,
+
+                "subtotal":
+                    updated_order.get(
+                        "subtotal",
+                        0,
+                    ),
+
+                "shipping":
+                    updated_order.get(
+                        "shipping",
+                        0,
+                    ),
+
+                "total":
+                    updated_order.get(
+                        "total",
+                        0,
+                    ),
+
+                "paymentStatus":
+                    "paid",
+
+                "orderStatus":
+                    "confirmed",
+            },
+        }
+
+        # -----------------------------------------------------
+        # 10. GOOGLE SHEETS / EMAIL SYNC
+        #
+        # IMPORTANT:
+        #
+        # The webhook event is marked "processed" ONLY after
+        # this succeeds.
+        # -----------------------------------------------------
+
+        try:
+
+            print(
+                "Sending webhook-confirmed order "
+                "to Google Apps Script..."
+            )
+
+            print(
+                f"Order: "
+                f"{updated_order['orderId']}"
+            )
+
+            print(
+                f"Customer: "
+                f"{customer_data.get('fullName', '')}"
+            )
+
+            print(
+                f"Email: "
+                f"{customer_data.get('email', '')}"
+            )
+
+            sheets_result = (
+                await post_to_google_apps_script(
+                    sheets_payload
+                )
+            )
+
+            print(
+                "Google Apps Script SUCCESS:"
+            )
+
+            print(
+                sheets_result
+            )
+
+        except Exception as sync_error:
+
+            print(
+                "========== GOOGLE APPS SCRIPT ERROR =========="
+            )
+
+            print(
+                f"TYPE: "
+                f"{type(sync_error).__name__}"
+            )
+
+            print(
+                f"MESSAGE: "
+                f"{str(sync_error)}"
+            )
+
+            print(
+                "=============================================="
+            )
+
+            # ---------------------------------------------
+            # DO NOT mark webhook processed.
+            #
+            # Razorpay can retry the webhook and the next
+            # attempt will try the Google sync again.
+            # ---------------------------------------------
+
+            if resolved_event_id:
+
+                await db.webhook_events.update_one(
+                    {
+                        "eventId":
+                            resolved_event_id
+                    },
+                    {
+                        "$set": {
+                            "status":
+                                "failed",
+
+                            "updatedAt":
+                                datetime.datetime.utcnow(),
+
+                            "error":
+                                str(sync_error),
+                        }
+                    },
+                )
+
+            # Payment itself is successful.
+            # Return 500 so Razorpay knows downstream
+            # processing did not complete and can retry.
+
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    "Payment captured, but order "
+                    "notification synchronization failed."
+                ),
+            )
+
+        # -----------------------------------------------------
+        # 11. MARK WEBHOOK SUCCESSFULLY PROCESSED
+        # -----------------------------------------------------
+
+        if resolved_event_id:
+
+            await db.webhook_events.update_one(
+                {
+                    "eventId":
+                        resolved_event_id
+                },
+                {
+                    "$set": {
+                        "status":
+                            "processed",
+
+                        "processedAt":
+                            datetime.datetime.utcnow(),
+
+                        "updatedAt":
+                            datetime.datetime.utcnow(),
+
+                        "error":
+                            None,
                     }
                 },
             )
 
+        print(
+            "Webhook processing completed successfully."
+        )
+
+        print(
+            "========== RAZORPAY WEBHOOK END =========="
+        )
+
+        return {
+            "status":
+                "ok",
+
+            "event":
+                event_type,
+
+            "orderId":
+                updated_order["orderId"],
+        }
+
+    # ---------------------------------------------------------
+    # 12. PAYMENT FAILED
+    # ---------------------------------------------------------
+
+    if event_type == "payment.failed":
+
+        await db.orders.update_one(
+            {
+                "razorpayOrderId":
+                    razorpay_order_id,
+
+                "paymentStatus":
+                    "pending",
+            },
+            {
+                "$set": {
+                    "paymentStatus":
+                        "failed",
+                }
+            },
+        )
+
+        # -----------------------------------------------------
+        # A payment.failed event has no Google order-confirmation
+        # sync to perform, so it can safely be marked processed.
+        # -----------------------------------------------------
+
+        if resolved_event_id:
+
+            await db.webhook_events.update_one(
+                {
+                    "eventId":
+                        resolved_event_id
+                },
+                {
+                    "$set": {
+                        "status":
+                            "processed",
+
+                        "processedAt":
+                            datetime.datetime.utcnow(),
+
+                        "updatedAt":
+                            datetime.datetime.utcnow(),
+
+                        "error":
+                            None,
+                    }
+                },
+            )
+
+        print(
+            "Payment failure webhook processed."
+        )
+
+        print(
+            "========== RAZORPAY WEBHOOK END =========="
+        )
+
+        return {
+            "status":
+                "ok",
+
+            "event":
+                event_type,
+        }
+
+    # ---------------------------------------------------------
+    # 13. SAFETY FALLBACK
+    # ---------------------------------------------------------
+
     return {
         "status":
-            "ok"
+            "ignored",
+
+        "event":
+            event_type,
     }
 
 
