@@ -620,8 +620,7 @@ async def get_order_by_id_and_phone(
 
     return OrderTrackingResponse(
 
-        orderId:
-            order["orderId"],
+        "orderId": order_id,
 
         status:
             order.get(
