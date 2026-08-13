@@ -2,11 +2,14 @@ from fastapi import HTTPException
 import random
 import string
 from datetime import datetime
+import logging
 from pymongo.errors import DuplicateKeyError
 from ..database import get_database
 from ..models.product import find_sku_in_backend
 from ..models.order import CreateOrderRequest, OrderDocument, OrderItemSnapshot, OrderTrackingResponse, PublicCustomerSnapshot
 from .google_sheets_service import post_to_google_apps_script
+
+logger = logging.getLogger(__name__)
 
 def generate_backend_order_id() -> str:
     ts = str(int(datetime.utcnow().timestamp()))[-6:]
@@ -73,9 +76,11 @@ async def process_and_save_order(payload: CreateOrderRequest):
 
     doc_dict = order_doc.model_dump()
 
-    # 4. Save to MongoDB first with duplicate key handling (Idempotency preservation)
+    is_new_insert = False
+    # 4. Save to MongoDB first with duplicate key handling
     try:
         await orders_collection.insert_one(doc_dict)
+        is_new_insert = True
     except DuplicateKeyError:
         existing = await orders_collection.find_one({"idempotencyKey": payload.idempotencyKey})
         if existing:
@@ -83,39 +88,39 @@ async def process_and_save_order(payload: CreateOrderRequest):
             return existing
         raise HTTPException(status_code=500, detail="Order could not be processed.")
     
-    # 5. Dispatch to Google Apps Script asynchronously (secondary integration, non-blocking failure)
-    try:
-        customer = payload.customer
-        address_payload = {
-            "name": getattr(customer, "fullName", getattr(customer, "name", "")),
-            "addressLine1": getattr(customer, "address", getattr(customer, "addressLine1", "")),
-            "city": getattr(customer, "city", ""),
-            "state": getattr(customer, "state", ""),
-            "pincode": getattr(customer, "pincode", getattr(customer, "postalCode", "")),
-            "country": getattr(customer, "country", "India")
-        }
-
-        script_payload = {
-            "type": "order",
-            "data": {
-                "orderId": order_id,
-                "createdAt": createdAt_str,
-                "customerName": getattr(customer, "fullName", getattr(customer, "name", "")),
-                "phone": getattr(customer, "phone", ""),
-                "email": getattr(customer, "email", ""),
-                "address": address_payload,
-                "items": item_snapshots,
-                "subtotal": subtotal,
-                "shipping": max_shipping,
-                "total": final_total,
-                "paymentStatus": "pending",
-                "orderStatus": "new"
+    # 5. Dispatch to Google Apps Script asynchronously only on fresh MongoDB insert
+    if is_new_insert:
+        try:
+            customer = payload.customer
+            address_payload = {
+                "name": getattr(customer, "fullName", getattr(customer, "name", "")),
+                "addressLine1": getattr(customer, "address", getattr(customer, "addressLine1", "")),
+                "city": getattr(customer, "city", ""),
+                "state": getattr(customer, "state", ""),
+                "pincode": getattr(customer, "pincode", getattr(customer, "postalCode", "")),
+                "country": getattr(customer, "country", "India")
             }
-        }
-        await post_to_google_apps_script(script_payload)
-    except Exception:
-        # Prevent secondary notification errors from affecting customer order completion
-        pass
+
+            script_payload = {
+                "type": "order",
+                "data": {
+                    "orderId": order_id,
+                    "createdAt": createdAt_str,
+                    "customerName": getattr(customer, "fullName", getattr(customer, "name", "")),
+                    "phone": getattr(customer, "phone", ""),
+                    "email": getattr(customer, "email", ""),
+                    "address": address_payload,
+                    "items": item_snapshots,
+                    "subtotal": subtotal,
+                    "shipping": max_shipping,
+                    "total": final_total,
+                    "paymentStatus": "pending",
+                    "orderStatus": "new"
+                }
+            }
+            await post_to_google_apps_script(script_payload)
+        except Exception as exc:
+            logger.warning(f"Background Google Apps Script sync invocation failed for order: {type(exc).__name__}")
 
     doc_dict.pop("_id", None)
     return doc_dict
