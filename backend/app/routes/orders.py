@@ -95,7 +95,7 @@ async def create_order(
     """
     Create the authoritative MongoDB order first.
 
-    Then create a Razorpay test/live order using the configured
+    Then create a Razorpay order using the configured
     Razorpay credentials.
 
     The response contains everything required by the frontend
@@ -235,6 +235,7 @@ async def create_order(
             print(
                 "ERROR converting order amount:"
             )
+
             print(
                 f"{type(amount_error).__name__}: "
                 f"{str(amount_error)}"
@@ -438,16 +439,8 @@ async def create_order(
 
         return response_data
 
-    # ------------------------------------------------------------
-    # PRESERVE FASTAPI HTTP EXCEPTIONS
-    # ------------------------------------------------------------
-
     except HTTPException:
         raise
-
-    # ------------------------------------------------------------
-    # CATCH EVERYTHING ELSE
-    # ------------------------------------------------------------
 
     except Exception as e:
 
@@ -488,11 +481,15 @@ async def verify_payment(
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
     print("========== VERIFY PAYMENT START ==========")
+
     print(
-        f"Razorpay Order ID: {payload.razorpay_order_id}"
+        f"Razorpay Order ID: "
+        f"{payload.razorpay_order_id}"
     )
+
     print(
-        f"Razorpay Payment ID: {payload.razorpay_payment_id}"
+        f"Razorpay Payment ID: "
+        f"{payload.razorpay_payment_id}"
     )
 
     # ---------------------------------------------------------
@@ -501,14 +498,19 @@ async def verify_payment(
 
     existing_order = await db.orders.find_one(
         {
-            "razorpayOrderId": payload.razorpay_order_id
+            "razorpayOrderId":
+                payload.razorpay_order_id
         }
     )
 
     if not existing_order:
+
         raise HTTPException(
             status_code=404,
-            detail="Order reference not found for this payment session.",
+            detail=(
+                "Order reference not found for "
+                "this payment session."
+            ),
         )
 
     # ---------------------------------------------------------
@@ -516,6 +518,7 @@ async def verify_payment(
     # ---------------------------------------------------------
 
     try:
+
         razorpay_client.utility.verify_payment_signature(
             {
                 "razorpay_order_id":
@@ -529,13 +532,17 @@ async def verify_payment(
             }
         )
 
-        print("Razorpay signature verified.")
+        print(
+            "Razorpay signature verified."
+        )
 
     except razorpay.errors.SignatureVerificationError:
 
         raise HTTPException(
             status_code=400,
-            detail="Invalid cryptographic payment signature.",
+            detail=(
+                "Invalid cryptographic payment signature."
+            ),
         )
 
     # ---------------------------------------------------------
@@ -544,16 +551,19 @@ async def verify_payment(
 
     try:
 
-        payment_details = razorpay_client.payment.fetch(
-            payload.razorpay_payment_id
+        payment_details = (
+            razorpay_client.payment.fetch(
+                payload.razorpay_payment_id
+            )
         )
 
-        payment_status = payment_details.get(
-            "status"
+        payment_status = (
+            payment_details.get("status")
         )
 
         print(
-            f"Razorpay payment status: {payment_status}"
+            f"Razorpay payment status: "
+            f"{payment_status}"
         )
 
         if payment_status != "captured":
@@ -561,7 +571,8 @@ async def verify_payment(
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "Payment has not been fully captured yet."
+                    "Payment has not been fully "
+                    "captured yet."
                 ),
             )
 
@@ -578,50 +589,151 @@ async def verify_payment(
         raise HTTPException(
             status_code=500,
             detail=(
-                "Unable to verify payment capture status "
-                "with gateway."
+                "Unable to verify payment capture "
+                "status with gateway."
             ),
         )
 
     # ---------------------------------------------------------
-    # 4. UPDATE MONGODB
+    # 4. ATOMIC PAYMENT CONFIRMATION
+    #
+    # Only a pending order can transition to paid.
+    # This prevents duplicate confirmation.
     # ---------------------------------------------------------
 
-    updated_order = await db.orders.find_one_and_update(
-        {
-            "razorpayOrderId":
-                payload.razorpay_order_id,
-        },
-        {
-            "$set": {
-                "paymentStatus": "paid",
-                "status": "confirmed",
-                "razorpayPaymentId":
-                    payload.razorpay_payment_id,
-            }
-        },
-        return_document=True,
+    updated_order = (
+        await db.orders.find_one_and_update(
+            {
+                "razorpayOrderId":
+                    payload.razorpay_order_id,
+
+                "paymentStatus":
+                    "pending",
+            },
+            {
+                "$set": {
+                    "paymentStatus":
+                        "paid",
+
+                    "status":
+                        "confirmed",
+
+                    "razorpayPaymentId":
+                        payload.razorpay_payment_id,
+                }
+            },
+            return_document=True,
+        )
     )
+
+    # ---------------------------------------------------------
+    # 5. IDEMPOTENT ALREADY-PAID CASE
+    #
+    # The Razorpay webhook may have confirmed the payment
+    # before the frontend calls this endpoint.
+    # That is a valid condition, not a payment failure.
+    # ---------------------------------------------------------
 
     if not updated_order:
 
-        raise HTTPException(
-            status_code=500,
-            detail="Unable to confirm order.",
+        already_paid_order = (
+            await db.orders.find_one(
+                {
+                    "razorpayOrderId":
+                        payload.razorpay_order_id,
+
+                    "paymentStatus":
+                        "paid",
+                }
+            )
         )
 
-    print(
-        f"MongoDB order confirmed: "
-        f"{updated_order.get('orderId')}"
-    )
+        if not already_paid_order:
+
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    "Unable to confirm order."
+                ),
+            )
+
+        stored_payment_id = (
+            already_paid_order.get(
+                "razorpayPaymentId"
+            )
+        )
+
+        # -----------------------------------------------------
+        # DIFFERENT PAYMENT ID PROTECTION
+        # -----------------------------------------------------
+
+        if (
+            stored_payment_id
+            and stored_payment_id
+            != payload.razorpay_payment_id
+        ):
+
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "This order is already associated "
+                    "with a different payment."
+                ),
+            )
+
+        # -----------------------------------------------------
+        # STORE PAYMENT ID IF WEBHOOK DID NOT STORE IT
+        # -----------------------------------------------------
+
+        if not stored_payment_id:
+
+            await db.orders.update_one(
+                {
+                    "_id":
+                        already_paid_order["_id"],
+
+                    "paymentStatus":
+                        "paid",
+                },
+                {
+                    "$set": {
+                        "razorpayPaymentId":
+                            payload.razorpay_payment_id,
+                    }
+                },
+            )
+
+            already_paid_order[
+                "razorpayPaymentId"
+            ] = payload.razorpay_payment_id
+
+        updated_order = already_paid_order
+
+        print(
+            "Payment was already confirmed by "
+            "another request or webhook."
+        )
+
+        print(
+            "Continuing idempotently."
+        )
+
+    else:
+
+        print(
+            f"MongoDB order confirmed: "
+            f"{updated_order.get('orderId')}"
+        )
 
     # ---------------------------------------------------------
-    # 5. GOOGLE SHEETS + EMAIL
+    # 6. GOOGLE SHEETS + EMAIL
     # ---------------------------------------------------------
 
-    customer_data = updated_order.get(
-        "customer",
-        {},
+    customer_data = (
+        updated_order.get(
+            "customer",
+            {},
+        )
     )
 
     formatted_items = ", ".join(
@@ -637,14 +749,26 @@ async def verify_payment(
         ]
     )
 
-    created_at = updated_order.get(
-        "createdAt"
+    created_at = (
+        updated_order.get(
+            "createdAt"
+        )
     )
 
-    if hasattr(created_at, "isoformat"):
-        created_at = created_at.isoformat()
+    if hasattr(
+        created_at,
+        "isoformat"
+    ):
+
+        created_at = (
+            created_at.isoformat()
+        )
+
     else:
-        created_at = str(created_at)
+
+        created_at = str(
+            created_at
+        )
 
     address = (
         f"{customer_data.get('address', '')}, "
@@ -719,7 +843,8 @@ async def verify_payment(
     )
 
     print(
-        f"Order: {updated_order['orderId']}"
+        f"Order: "
+        f"{updated_order['orderId']}"
     )
 
     print(
@@ -772,7 +897,7 @@ async def verify_payment(
         # Do NOT tell the customer payment failed.
 
     # ---------------------------------------------------------
-    # 6. RESPONSE TO FRONTEND
+    # 7. RESPONSE TO FRONTEND
     # ---------------------------------------------------------
 
     print(
@@ -781,12 +906,16 @@ async def verify_payment(
 
     return {
         "success": True,
+
         "message":
             "Payment verified and order confirmed successfully.",
+
         "orderId":
             updated_order["orderId"],
+
         "paymentStatus":
             "paid",
+
         "status":
             "confirmed",
     }
@@ -1012,11 +1141,13 @@ async def razorpay_webhook(
                         created_at,
                         "isoformat"
                     ):
+
                         created_at = (
                             created_at.isoformat()
                         )
 
                     else:
+
                         created_at = str(
                             created_at
                         )
