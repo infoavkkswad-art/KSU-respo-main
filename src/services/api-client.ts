@@ -45,6 +45,10 @@ interface BackendResponseItem {
 
 interface BackendOrderResponse {
   orderId: string;
+  razorpayOrderId?: string;
+  razorpayKeyId?: string;
+  amount?: number;
+  currency?: string;
   customer: CustomerInfo;
   items: BackendResponseItem[];
   subtotal: number;
@@ -52,6 +56,19 @@ interface BackendOrderResponse {
   total: number;
   createdAt: string;
   status: OrderStatusType;
+}
+
+export interface RazorpayCheckoutOrder extends Order {
+  razorpayOrderId?: string;
+  razorpayKeyId?: string;
+  amount?: number;
+  currency?: string;
+}
+
+export interface VerifyPaymentPayload {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
 }
 
 export type EnquiryType = 'bulk' | 'distributor' | 'food-business' | 'general';
@@ -92,7 +109,7 @@ export const apiClient = {
     }
   },
 
-  async createOrder(payload: CreateOrderPayload): Promise<Order> {
+  async createOrder(payload: CreateOrderPayload): Promise<RazorpayCheckoutOrder> {
     const response = await fetch(`${API_BASE_URL}/api/orders`, {
       method: 'POST',
       headers: {
@@ -120,6 +137,10 @@ export const apiClient = {
     
     return {
       orderId: data.orderId,
+      razorpayOrderId: data.razorpayOrderId,
+      razorpayKeyId: data.razorpayKeyId,
+      amount: data.amount,
+      currency: data.currency || 'INR',
       customer: data.customer,
       items: data.items.map((i) => ({
         sku: i.sku,
@@ -134,6 +155,31 @@ export const apiClient = {
       timestamp: data.createdAt,
       status: data.status,
     };
+  },
+
+  async verifyPayment(payload: VerifyPaymentPayload): Promise<{ success: boolean; message: string; orderId: string }> {
+    const response = await fetch(`${API_BASE_URL}/api/orders/verify-payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      let errorMsg = 'Payment verification failed.';
+      try {
+        const errData = (await response.json()) as { detail?: string | unknown };
+        if (errData.detail) {
+          errorMsg = typeof errData.detail === 'string' ? errData.detail : JSON.stringify(errData.detail);
+        }
+      } catch {
+        // fallback
+      }
+      throw new Error(errorMsg);
+    }
+
+    return (await response.json()) as { success: boolean; message: string; orderId: string };
   },
 
   async trackOrder(orderId: string, phone: string): Promise<TrackedOrder> {
