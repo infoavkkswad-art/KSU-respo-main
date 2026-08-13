@@ -14,9 +14,10 @@ async def connect_to_mongo():
     # Ping to verify connection
     await db.client.admin.command('ping')
     
-    # Ensure indexes for order lookups & idempotency
+    # Ensure indexes for order lookups, idempotency, and Razorpay
     orders_col = db.db["orders"]
     await orders_col.create_index("orderId", unique=True)
+    await orders_col.create_index("razorpayOrderId", unique=True, sparse=True)
     await orders_col.create_index("idempotencyKey", unique=True, sparse=True)
 
     # Ensure indexes for enquiries collection
@@ -24,6 +25,10 @@ async def connect_to_mongo():
     await enquiries_col.create_index("enquiryId", unique=True)
     await enquiries_col.create_index("createdAt")
     await enquiries_col.create_index("idempotencyKey", unique=True, sparse=True)
+
+    # Ensure index for webhook event idempotency
+    webhooks_col = db.db["webhook_events"]
+    await webhooks_col.create_index("eventId", unique=True)
     
     print("Connected to MongoDB & indexes verified successfully!")
 
