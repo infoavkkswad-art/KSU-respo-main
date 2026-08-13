@@ -3,7 +3,32 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-createRoot(document.getElementById('root')!).render(
+const redirectPath = sessionStorage.getItem(
+  'github-pages-redirect'
+);
+
+if (redirectPath) {
+  sessionStorage.removeItem(
+    'github-pages-redirect'
+  );
+
+  const currentPath =
+    window.location.pathname +
+    window.location.search +
+    window.location.hash;
+
+  if (currentPath === '/' && redirectPath !== '/') {
+    window.history.replaceState(
+      null,
+      '',
+      redirectPath
+    );
+  }
+}
+
+createRoot(
+  document.getElementById('root')!
+).render(
   <StrictMode>
     <App />
   </StrictMode>
