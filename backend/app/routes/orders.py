@@ -33,7 +33,7 @@ def apply_rate_limit(client_ip: str):
 async def create_order(payload: CreateOrderRequest, db: AsyncIOMotorDatabase = Depends(get_database)):
     order = await process_and_save_order(payload)
     
-    existing_order = await db.orders.find_one({"orderId": order.orderId})
+    existing_order = await db.orders.find_one({"orderId": order["orderId"]})
     if not existing_order:
         raise HTTPException(status_code=500, detail="Failed to retrieve created order record.")
 
@@ -46,12 +46,12 @@ async def create_order(payload: CreateOrderRequest, db: AsyncIOMotorDatabase = D
             rzp_order = razorpay_client.order.create({
                 "amount": amount_in_paise,
                 "currency": "INR",
-                "receipt": order.orderId,
-                "notes": {"orderId": order.orderId}
+                "receipt": order["orderId"],
+                "notes": {"orderId": order["orderId"]}
             })
             razorpay_order_id = rzp_order["id"]
             await db.orders.update_one(
-                {"orderId": order.orderId},
+                {"orderId": order["orderId"]},
                 {"$set": {"razorpayOrderId": razorpay_order_id, "paymentStatus": "pending"}}
             )
         except Exception as e:
