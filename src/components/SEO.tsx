@@ -11,7 +11,7 @@ interface SEOProps {
   indexable?: boolean;
 }
 
-const SITE_URL = 'https://kawadswad.com';
+const SITE_URL = 'https://kawadswad.in';
 
 export function SEO({
   title,
