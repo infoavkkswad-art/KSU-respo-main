@@ -2,13 +2,12 @@ from datetime import datetime
 import random
 import string
 import os
-import smtplib
-from email.message import EmailMessage
 
 from fastapi import HTTPException, status
 from pymongo.errors import DuplicateKeyError
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.models.enquiry import CreateEnquiryRequest, EnquiryInDB, EnquiryResponse
+from app.services.google_sheets_service import post_to_google_apps_script
 
 INVALID_PHONE_PLACEHOLDERS = {"9999999999", "0000000000", "1111111111", "1234567890"}
 
@@ -16,46 +15,6 @@ def generate_enquiry_id() -> str:
     letters = "".join(random.choices(string.ascii_uppercase, k=2))
     digits = "".join(random.choices(string.digits, k=6))
     return f"KS-ENQ-{letters}{digits}"
-
-def send_enquiry_email(enquiry_id: str, payload: CreateEnquiryRequest) -> None:
-    message = EmailMessage()
-    message["Subject"] = f"New Kawad Swad Enquiry - {enquiry_id}"
-    message["From"] = os.environ["SMTP_USERNAME"]
-    message["To"] = os.environ["ENQUIRY_RECEIVER_EMAIL"]
-
-    body = f"""
-New enquiry received on the Kawad Swad website.
-
-Enquiry ID: {enquiry_id}
-Type: {payload.type}
-
-Contact Person: {payload.contactPerson}
-Phone: {payload.phone or "Not provided"}
-Email: {payload.email}
-
-Business Name: {payload.businessName or "Not provided"}
-Business Type: {payload.businessType or "Not provided"}
-Location: {payload.location}
-
-Products of Interest: {payload.productsOfInterest or "Not provided"}
-Quantity: {payload.quantity or "Not provided"}
-
-Message:
-{payload.message}
-"""
-
-    message.set_content(body)
-
-    with smtplib.SMTP_SSL(
-        os.environ["SMTP_HOST"],
-        int(os.environ["SMTP_PORT"]),
-        timeout=20,
-    ) as server:
-        server.login(
-            os.environ["SMTP_USERNAME"],
-            os.environ["SMTP_PASSWORD"],
-        )
-        server.send_message(message)
 
 async def create_enquiry_record(
     db: AsyncIOMotorDatabase, payload: CreateEnquiryRequest
@@ -144,8 +103,27 @@ async def create_enquiry_record(
             detail="Failed to record enquiry. Please try again later.",
         )
 
+    # Dispatch to Google Apps Script asynchronously (non-blocking failure)
     try:
-        send_enquiry_email(enquiry_id, payload)
+        script_payload = {
+            "type": "enquiry",
+            "data": {
+                "enquiryId": enquiry_id,
+                "type": payload.type,
+                "businessName": payload.businessName or "",
+                "contactPerson": payload.contactPerson,
+                "phone": cleaned_phone or "",
+                "email": payload.email,
+                "businessType": payload.businessType or "",
+                "location": payload.location,
+                "productsOfInterest": payload.productsOfInterest or "",
+                "quantity": payload.quantity or "",
+                "message": payload.message,
+                "createdAt": now.isoformat(),
+                "status": "new"
+            }
+        }
+        await post_to_google_apps_script(script_payload)
     except Exception:
         pass
 
