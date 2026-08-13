@@ -362,26 +362,21 @@ async def process_and_save_order(
             order_doc
         )
 
-    except DuplicateKeyError:
+    except DuplicateKeyError as e:
 
-        # Another request may have created the same
-        # idempotency key at almost exactly the same time.
+        print("========== DUPLICATE KEY ERROR ==========")
+        print(f"ERROR: {str(e)}")
+        print("==========================================")
 
         if payload.idempotencyKey:
-
             existing = await orders_collection.find_one(
                 {
-                    "idempotencyKey":
-                        payload.idempotencyKey
+                    "idempotencyKey": payload.idempotencyKey
                 }
             )
 
             if existing:
-
-                existing.pop(
-                    "_id",
-                    None,
-                )
+                existing.pop("_id", None)
 
                 existing.setdefault(
                     "paymentStatus",
@@ -397,9 +392,7 @@ async def process_and_save_order(
 
         raise HTTPException(
             status_code=409,
-            detail=(
-                "This order reference already exists."
-            ),
+            detail=f"MongoDB duplicate key: {str(e)}",
         )
 
     except Exception as e:
