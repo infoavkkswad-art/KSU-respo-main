@@ -73,21 +73,19 @@ async def process_and_save_order(payload: CreateOrderRequest):
 
     doc_dict = order_doc.model_dump()
 
-    # 4. Save to MongoDB with duplicate key handling
+    # 4. Save to MongoDB first with duplicate key handling (Idempotency preservation)
     try:
         await orders_collection.insert_one(doc_dict)
     except DuplicateKeyError:
-        # If insertion failed due to duplicate idempotencyKey, fetch the existing record
         existing = await orders_collection.find_one({"idempotencyKey": payload.idempotencyKey})
         if existing:
             existing.pop("_id", None)
             return existing
         raise HTTPException(status_code=500, detail="Order could not be processed.")
     
-    # Dispatch to Google Apps Script asynchronously (non-blocking failure)
+    # 5. Dispatch to Google Apps Script asynchronously (secondary integration, non-blocking failure)
     try:
         customer = payload.customer
-        # Extract address fields cleanly depending on model structure
         address_payload = {
             "name": getattr(customer, "fullName", getattr(customer, "name", "")),
             "addressLine1": getattr(customer, "address", getattr(customer, "addressLine1", "")),
@@ -116,6 +114,7 @@ async def process_and_save_order(payload: CreateOrderRequest):
         }
         await post_to_google_apps_script(script_payload)
     except Exception:
+        # Prevent secondary notification errors from affecting customer order completion
         pass
 
     doc_dict.pop("_id", None)
@@ -125,7 +124,6 @@ async def get_order_by_id_and_phone(order_id: str, phone: str):
     db = get_database()
     orders_collection = db["orders"]
 
-    # Normalize inputs
     clean_order_id = order_id.strip().upper()
     clean_phone = phone.strip()
 
@@ -133,7 +131,6 @@ async def get_order_by_id_and_phone(order_id: str, phone: str):
     if not order:
         raise HTTPException(status_code=404, detail="Order not found.")
 
-    # Verify phone number matches customer record securely
     stored_phone = order.get("customer", {}).get("phone", "")
     if stored_phone != clean_phone:
         raise HTTPException(status_code=404, detail="Order not found with provided details.")
