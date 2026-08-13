@@ -1,13 +1,15 @@
 from datetime import datetime
 import random
 import string
-import os
+import logging
 
 from fastapi import HTTPException, status
 from pymongo.errors import DuplicateKeyError
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.models.enquiry import CreateEnquiryRequest, EnquiryInDB, EnquiryResponse
 from app.services.google_sheets_service import post_to_google_apps_script
+
+logger = logging.getLogger(__name__)
 
 INVALID_PHONE_PLACEHOLDERS = {"9999999999", "0000000000", "1111111111", "1234567890"}
 
@@ -103,7 +105,7 @@ async def create_enquiry_record(
             detail="Failed to record enquiry. Please try again later.",
         )
 
-    # Dispatch to Google Apps Script asynchronously (non-blocking failure)
+    # Dispatch to Google Apps Script asynchronously only on fresh MongoDB insert
     try:
         script_payload = {
             "type": "enquiry",
@@ -124,8 +126,8 @@ async def create_enquiry_record(
             }
         }
         await post_to_google_apps_script(script_payload)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning(f"Background Google Apps Script sync invocation failed for enquiry: {type(exc).__name__}")
 
     return EnquiryResponse(
         success=True,
