@@ -4,47 +4,78 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-async def post_to_google_apps_script(payload: dict) -> None:
+
+async def post_to_google_apps_script(payload: dict) -> dict:
     url = os.getenv("GOOGLE_APPS_SCRIPT_URL")
     token = os.getenv("GOOGLE_APPS_SCRIPT_TOKEN")
 
     if not url:
-        logger.error("Configuration error: GOOGLE_APPS_SCRIPT_URL environment variable is missing.")
-        return
+        raise RuntimeError(
+            "GOOGLE_APPS_SCRIPT_URL environment variable is missing."
+        )
 
     if not token:
-        logger.error("Configuration error: GOOGLE_APPS_SCRIPT_TOKEN environment variable is missing.")
-        return
+        raise RuntimeError(
+            "GOOGLE_APPS_SCRIPT_TOKEN environment variable is missing."
+        )
 
     request_type = payload.get("type", "unknown")
 
     body = {
         "type": request_type,
         "token": token,
-        "data": payload.get("data", {})
+        "data": payload.get("data", {}),
     }
 
-    try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-            response = await client.post(url, json=body)
-            
-            if response.status_code != 200:
-                logger.error(f"Google Apps Script sync failed: {request_type}, HTTP status {response.status_code}")
-                return
+    logger.info(
+        "Sending %s to Google Apps Script for order=%s",
+        request_type,
+        body["data"].get("orderId"),
+    )
 
-            try:
-                result = response.json()
-            except Exception:
-                logger.error(f"Google Apps Script returned non-JSON response for: {request_type}")
-                return
+    async with httpx.AsyncClient(
+        timeout=20.0,
+        follow_redirects=True,
+    ) as client:
 
-            if not isinstance(result, dict) or not result.get("success"):
-                logger.error(f"Google Apps Script returned unsuccessful response for {request_type}")
-            else:
-                logger.info(f"Google Apps Script sync succeeded: {request_type}")
+        response = await client.post(
+            url,
+            json=body,
+        )
 
-    except httpx.HTTPStatusError as e:
-        logger.error(f"Google Apps Script sync failed: {request_type}, HTTP status {e.response.status_code}")
-    except Exception:
-        logger.error(f"Google Apps Script sync failed due to network or connection error for: {request_type}")
-    
+        logger.info(
+            "Google Apps Script response: HTTP %s",
+            response.status_code,
+        )
+
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Google Apps Script HTTP {response.status_code}: "
+                f"{response.text[:500]}"
+            )
+
+        try:
+            result = response.json()
+        except Exception as exc:
+            raise RuntimeError(
+                "Google Apps Script returned invalid JSON."
+            ) from exc
+
+        if not isinstance(result, dict):
+            raise RuntimeError(
+                "Google Apps Script returned an invalid response."
+            )
+
+        if not result.get("success"):
+            raise RuntimeError(
+                "Google Apps Script rejected request: "
+                + str(result.get("error", "Unknown error"))
+            )
+
+        logger.info(
+            "Google Apps Script SUCCESS: type=%s order=%s",
+            request_type,
+            body["data"].get("orderId"),
+        )
+
+        return result
