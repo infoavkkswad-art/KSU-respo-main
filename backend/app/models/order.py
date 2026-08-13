@@ -29,6 +29,11 @@ class CreateOrderRequest(BaseModel):
     items: List[CartItemInput]
     idempotencyKey: Optional[str] = None
 
+class VerifyPaymentRequest(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+
 class OrderItemSnapshot(BaseModel):
     sku: str
     quantity: int
@@ -38,6 +43,9 @@ class OrderItemSnapshot(BaseModel):
 
 class OrderDocument(BaseModel):
     orderId: str
+    razorpayOrderId: Optional[str] = None
+    razorpayPaymentId: Optional[str] = None
+    paymentStatus: str = "pending"
     customer: CustomerSchema
     items: List[OrderItemSnapshot]
     subtotal: int
@@ -57,9 +65,11 @@ class PublicCustomerSnapshot(BaseModel):
 class OrderTrackingResponse(BaseModel):
     orderId: str
     status: OrderStatus
+    paymentStatus: str = "pending"
     customer: PublicCustomerSnapshot
     items: List[OrderItemSnapshot]
     subtotal: int
     shipping: int
     total: int
     createdAt: datetime
+    
