@@ -47,3 +47,4 @@ async def post_to_google_apps_script(payload: dict) -> None:
         logger.error(f"Google Apps Script sync failed: {request_type}, HTTP status {e.response.status_code}")
     except Exception:
         logger.error(f"Google Apps Script sync failed due to network or connection error for: {request_type}")
+    
