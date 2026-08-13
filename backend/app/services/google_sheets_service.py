@@ -4,41 +4,46 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# Read Google Apps Script Web App URL from environment variable
-APPS_SCRIPT_URL = os.getenv(
-    "GOOGLE_APPS_SCRIPT_URL",
-    "https://script.google.com/macros/s/AKfycbyjXg2koadtfs7Bew2WSBk0reyfBXywGrPN4TPx2oSHRXakuVg14c2CKo2LdKcI2qjoRA/exec"
-)
-
 async def post_to_google_apps_script(payload: dict) -> None:
-    """
-    Sends data securely to the Google Apps Script Web App.
-    Retrieves the secret token from the backend environment variable.
-    Ensures errors are safely logged without exposing secrets or disrupting the customer flow.
-    """
+    url = os.getenv("GOOGLE_APPS_SCRIPT_URL")
     token = os.getenv("GOOGLE_APPS_SCRIPT_TOKEN")
-    if not token:
-        logger.error("Security configuration error: GOOGLE_APPS_SCRIPT_TOKEN is missing from backend environment variables.")
+
+    if not url:
+        logger.error("Configuration error: GOOGLE_APPS_SCRIPT_URL environment variable is missing.")
         return
 
-    # Structure the payload with the required token and type/data body
+    if not token:
+        logger.error("Configuration error: GOOGLE_APPS_SCRIPT_TOKEN environment variable is missing.")
+        return
+
+    request_type = payload.get("type", "unknown")
+
     body = {
-        "type": payload.get("type"),
+        "type": request_type,
         "token": token,
         "data": payload.get("data", {})
     }
 
     try:
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-            response = await client.post(APPS_SCRIPT_URL, json=body)
-            result = response.json()
+            response = await client.post(url, json=body)
             
-            if not result.get("success"):
-                logger.error(f"Google Apps Script sync failed for type '{payload.get('type')}': {result.get('error', 'Unknown error')}")
+            if response.status_code != 200:
+                logger.error(f"Google Apps Script sync failed: {request_type}, HTTP status {response.status_code}")
+                return
+
+            try:
+                result = response.json()
+            except Exception:
+                logger.error(f"Google Apps Script returned non-JSON response for: {request_type}")
+                return
+
+            if not isinstance(result, dict) or not result.get("success"):
+                logger.error(f"Google Apps Script returned unsuccessful response for {request_type}")
             else:
-                logger.info(f"Successfully synced {payload.get('type')} to Google Sheets via Apps Script.")
-                
+                logger.info(f"Google Apps Script sync succeeded: {request_type}")
+
     except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP error communicating with Google Apps Script Web App: Status {e.response.status_code}")
-    except Exception as e:
-        logger.error(f"Failed to communicate with Google Apps Script Web App due to an unexpected error: {type(e).__name__}")
+        logger.error(f"Google Apps Script sync failed: {request_type}, HTTP status {e.response.status_code}")
+    except Exception:
+        logger.error(f"Google Apps Script sync failed due to network or connection error for: {request_type}")
