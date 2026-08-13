@@ -487,10 +487,17 @@ async def verify_payment(
     payload: VerifyPaymentRequest,
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
+    print("========== VERIFY PAYMENT START ==========")
+    print(
+        f"Razorpay Order ID: {payload.razorpay_order_id}"
+    )
+    print(
+        f"Razorpay Payment ID: {payload.razorpay_payment_id}"
+    )
 
-    # --------------------------------------------------------
-    # 1. FIND AUTHORITATIVE ORDER
-    # --------------------------------------------------------
+    # ---------------------------------------------------------
+    # 1. FIND MONGODB ORDER
+    # ---------------------------------------------------------
 
     existing_order = await db.orders.find_one(
         {
@@ -499,21 +506,16 @@ async def verify_payment(
     )
 
     if not existing_order:
-
         raise HTTPException(
             status_code=404,
-            detail=(
-                "Order reference not found for "
-                "this payment session."
-            ),
+            detail="Order reference not found for this payment session.",
         )
 
-    # --------------------------------------------------------
+    # ---------------------------------------------------------
     # 2. VERIFY RAZORPAY SIGNATURE
-    # --------------------------------------------------------
+    # ---------------------------------------------------------
 
     try:
-
         razorpay_client.utility.verify_payment_signature(
             {
                 "razorpay_order_id":
@@ -527,28 +529,34 @@ async def verify_payment(
             }
         )
 
+        print("Razorpay signature verified.")
+
     except razorpay.errors.SignatureVerificationError:
 
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Invalid cryptographic payment signature."
-            ),
+            detail="Invalid cryptographic payment signature.",
         )
 
-    # --------------------------------------------------------
-    # 3. CONFIRM PAYMENT IS CAPTURED
-    # --------------------------------------------------------
+    # ---------------------------------------------------------
+    # 3. VERIFY PAYMENT IS CAPTURED
+    # ---------------------------------------------------------
 
     try:
 
-        payment_details = (
-            razorpay_client.payment.fetch(
-                payload.razorpay_payment_id
-            )
+        payment_details = razorpay_client.payment.fetch(
+            payload.razorpay_payment_id
         )
 
-        if payment_details.get("status") != "captured":
+        payment_status = payment_details.get(
+            "status"
+        )
+
+        print(
+            f"Razorpay payment status: {payment_status}"
+        )
+
+        if payment_status != "captured":
 
             raise HTTPException(
                 status_code=400,
@@ -563,32 +571,26 @@ async def verify_payment(
     except Exception as e:
 
         print(
-            "Payment capture verification error:"
-        )
-
-        print(
-            f"{type(e).__name__}: {str(e)}"
+            "Razorpay payment fetch error:",
+            str(e),
         )
 
         raise HTTPException(
             status_code=500,
             detail=(
-                "Unable to verify payment capture "
-                "status with gateway."
+                "Unable to verify payment capture status "
+                "with gateway."
             ),
         )
 
-    # --------------------------------------------------------
-    # 4. ATOMIC PAYMENT STATE TRANSITION
-    # --------------------------------------------------------
+    # ---------------------------------------------------------
+    # 4. UPDATE MONGODB
+    # ---------------------------------------------------------
 
     updated_order = await db.orders.find_one_and_update(
         {
             "razorpayOrderId":
                 payload.razorpay_order_id,
-
-            "paymentStatus":
-                "pending",
         },
         {
             "$set": {
@@ -601,156 +603,192 @@ async def verify_payment(
         return_document=True,
     )
 
-    # --------------------------------------------------------
-    # 5. GOOGLE SHEETS SYNC
-    # --------------------------------------------------------
+    if not updated_order:
 
-    if updated_order:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to confirm order.",
+        )
 
-        try:
+    print(
+        f"MongoDB order confirmed: "
+        f"{updated_order.get('orderId')}"
+    )
 
-            customer_data = (
-                updated_order.get(
-                    "customer",
-                    {}
-                )
+    # ---------------------------------------------------------
+    # 5. GOOGLE SHEETS + EMAIL
+    # ---------------------------------------------------------
+
+    customer_data = updated_order.get(
+        "customer",
+        {},
+    )
+
+    formatted_items = ", ".join(
+        [
+            (
+                f"{item.get('productNameSnapshot', item.get('sku'))}"
+                f" (x{item.get('quantity', 1)})"
             )
-
-            formatted_items = ", ".join(
-                [
-                    (
-                        f"{i.get('productNameSnapshot', i.get('sku'))} "
-                        f"(x{i.get('quantity')})"
-                    )
-                    for i in updated_order.get(
-                        "items",
-                        []
-                    )
-                ]
+            for item in updated_order.get(
+                "items",
+                [],
             )
+        ]
+    )
 
-            created_at = updated_order.get(
-                "createdAt"
-            )
+    created_at = updated_order.get(
+        "createdAt"
+    )
 
-            if hasattr(
+    if hasattr(created_at, "isoformat"):
+        created_at = created_at.isoformat()
+    else:
+        created_at = str(created_at)
+
+    address = (
+        f"{customer_data.get('address', '')}, "
+        f"{customer_data.get('city', '')}, "
+        f"{customer_data.get('state', '')} - "
+        f"{customer_data.get('pincode', '')}"
+    )
+
+    sheets_payload = {
+        "type": "order",
+
+        "data": {
+
+            "orderId":
+                updated_order["orderId"],
+
+            "createdAt":
                 created_at,
-                "isoformat"
-            ):
-                created_at = created_at.isoformat()
 
-            else:
-                created_at = str(
-                    created_at
-                )
+            "customerName":
+                customer_data.get(
+                    "fullName",
+                    "",
+                ),
 
-            sheets_payload = {
-                "type": "order",
+            "phone":
+                customer_data.get(
+                    "phone",
+                    "",
+                ),
 
-                "data": {
+            "email":
+                customer_data.get(
+                    "email",
+                    "",
+                ),
 
-                    "orderId":
-                        updated_order["orderId"],
+            "address":
+                address,
 
-                    "createdAt":
-                        created_at,
+            "items":
+                formatted_items,
 
-                    "customerName":
-                        customer_data.get(
-                            "fullName"
-                        ),
+            "subtotal":
+                updated_order.get(
+                    "subtotal",
+                    0,
+                ),
 
-                    "phone":
-                        customer_data.get(
-                            "phone"
-                        ),
+            "shipping":
+                updated_order.get(
+                    "shipping",
+                    0,
+                ),
 
-                    "email":
-                        customer_data.get(
-                            "email"
-                        ),
+            "total":
+                updated_order.get(
+                    "total",
+                    0,
+                ),
 
-                    "address":
-                        (
-                            f"{customer_data.get('address')}, "
-                            f"{customer_data.get('city')}, "
-                            f"{customer_data.get('state')} - "
-                            f"{customer_data.get('pincode')}"
-                        ),
+            "paymentStatus":
+                "paid",
 
-                    "items":
-                        formatted_items,
+            "orderStatus":
+                "confirmed",
+        },
+    }
 
-                    "subtotal":
-                        updated_order["subtotal"],
+    print(
+        "Sending confirmed order to Google Apps Script..."
+    )
 
-                    "shipping":
-                        updated_order["shipping"],
+    print(
+        f"Order: {updated_order['orderId']}"
+    )
 
-                    "total":
-                        updated_order["total"],
+    print(
+        f"Customer: "
+        f"{customer_data.get('fullName', '')}"
+    )
 
-                    "paymentStatus":
-                        "paid",
+    print(
+        f"Email: "
+        f"{customer_data.get('email', '')}"
+    )
 
-                    "orderStatus":
-                        "confirmed",
-                },
-            }
+    try:
 
+        sheets_result = (
             await post_to_google_apps_script(
                 sheets_payload
             )
-
-        except Exception as sync_err:
-
-            print(
-                "WARNING: Google Sheets sync "
-                "failed during payment verification."
-            )
-
-            print(
-                f"{type(sync_err).__name__}: "
-                f"{str(sync_err)}"
-            )
-
-    else:
-
-        # ----------------------------------------------------
-        # PAYMENT WAS ALREADY PROCESSED
-        # ----------------------------------------------------
-
-        already_paid_order = (
-            await db.orders.find_one(
-                {
-                    "razorpayOrderId":
-                        payload.razorpay_order_id
-                }
-            )
         )
 
-        if (
-            not already_paid_order
-            or already_paid_order.get(
-                "paymentStatus"
-            ) != "paid"
-        ):
+        print(
+            "Google Apps Script SUCCESS:"
+        )
 
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Order state transition error."
-                ),
-            )
+        print(
+            sheets_result
+        )
+
+    except Exception as sync_error:
+
+        print(
+            "========== GOOGLE APPS SCRIPT ERROR =========="
+        )
+
+        print(
+            f"TYPE: "
+            f"{type(sync_error).__name__}"
+        )
+
+        print(
+            f"MESSAGE: "
+            f"{str(sync_error)}"
+        )
+
+        print(
+            "=============================================="
+        )
+
+        # Payment is already confirmed.
+        # Do NOT tell the customer payment failed.
+
+    # ---------------------------------------------------------
+    # 6. RESPONSE TO FRONTEND
+    # ---------------------------------------------------------
+
+    print(
+        "========== VERIFY PAYMENT COMPLETE =========="
+    )
 
     return {
         "success": True,
-
         "message":
             "Payment verified and order confirmed successfully.",
-
         "orderId":
-            existing_order["orderId"],
+            updated_order["orderId"],
+        "paymentStatus":
+            "paid",
+        "status":
+            "confirmed",
     }
 
 
