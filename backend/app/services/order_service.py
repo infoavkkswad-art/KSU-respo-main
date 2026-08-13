@@ -2,10 +2,11 @@ from fastapi import HTTPException
 import random
 import string
 from datetime import datetime
-from pymongo.errors import DuplicateKeyError # Import specific error
+from pymongo.errors import DuplicateKeyError
 from ..database import get_database
 from ..models.product import find_sku_in_backend
 from ..models.order import CreateOrderRequest, OrderDocument, OrderItemSnapshot, OrderTrackingResponse, PublicCustomerSnapshot
+from .google_sheets_service import post_to_google_apps_script
 
 def generate_backend_order_id() -> str:
     ts = str(int(datetime.utcnow().timestamp()))[-6:]
@@ -56,6 +57,7 @@ async def process_and_save_order(payload: CreateOrderRequest):
 
     final_total = subtotal + max_shipping
     order_id = generate_backend_order_id()
+    createdAt_str = datetime.utcnow().isoformat()
 
     # 3. Construct Order Document
     order_doc = OrderDocument(
@@ -82,6 +84,40 @@ async def process_and_save_order(payload: CreateOrderRequest):
             return existing
         raise HTTPException(status_code=500, detail="Order could not be processed.")
     
+    # Dispatch to Google Apps Script asynchronously (non-blocking failure)
+    try:
+        customer = payload.customer
+        # Extract address fields cleanly depending on model structure
+        address_payload = {
+            "name": getattr(customer, "fullName", getattr(customer, "name", "")),
+            "addressLine1": getattr(customer, "address", getattr(customer, "addressLine1", "")),
+            "city": getattr(customer, "city", ""),
+            "state": getattr(customer, "state", ""),
+            "pincode": getattr(customer, "pincode", getattr(customer, "postalCode", "")),
+            "country": getattr(customer, "country", "India")
+        }
+
+        script_payload = {
+            "type": "order",
+            "data": {
+                "orderId": order_id,
+                "createdAt": createdAt_str,
+                "customerName": getattr(customer, "fullName", getattr(customer, "name", "")),
+                "phone": getattr(customer, "phone", ""),
+                "email": getattr(customer, "email", ""),
+                "address": address_payload,
+                "items": item_snapshots,
+                "subtotal": subtotal,
+                "shipping": max_shipping,
+                "total": final_total,
+                "paymentStatus": "pending",
+                "orderStatus": "new"
+            }
+        }
+        await post_to_google_apps_script(script_payload)
+    except Exception:
+        pass
+
     doc_dict.pop("_id", None)
     return doc_dict
 
