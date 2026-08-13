@@ -324,12 +324,6 @@ async def process_and_save_order(
         "orderId":
             order_id,
 
-        "razorpayOrderId":
-            None,
-
-        "razorpayPaymentId":
-            None,
-
         "paymentStatus":
             "pending",
 
