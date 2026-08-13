@@ -195,20 +195,9 @@ export default function Checkout() {
              * The previous implementation could crash here
              * with a minified "N is not a function".
              */
-            if (
-              orderContext &&
-              typeof orderContext.setCompletedOrder === 'function'
-            ) {
-              orderContext.setCompletedOrder(completedOrder);
-            } else {
-              /*
-               * Fallback storage so the successful order is not lost.
-               */
-              localStorage.setItem(
-                'ks_completed_order',
-                JSON.stringify(completedOrder)
-              );
-            }
+          orderContext.setCompletedOrder(
+  completedOrder
+);
 
             /*
              * 7. CLEAR CART
