@@ -10,17 +10,24 @@ router = APIRouter(
 )
 
 
+@router.get("/indiapost")
+async def indiapost_webhook_health():
+    """
+    Simple health check for the India Post webhook endpoint.
+    Used only to verify that the public URL is reachable.
+    """
+    return {
+        "success": True,
+        "service": "Kawad Swad India Post Webhook",
+        "status": "ready",
+    }
+
+
 @router.post("/indiapost")
 async def indiapost_webhook(request: Request):
     """
-    India Post webhook endpoint.
-
-    Receives booking, tracking, delivery and other
-    shipment-event notifications from India Post.
-
-    This initial version safely accepts and logs the
-    webhook payload. Order/database mapping will be
-    added after the Sandbox webhook connection is verified.
+    Receives India Post booking, tracking, delivery,
+    and other shipment-event notifications.
     """
 
     logger.info("========== INDIA POST WEBHOOK START ==========")
