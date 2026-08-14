@@ -10,6 +10,7 @@ from .database import (
 )
 from .routes.orders import router as orders_router
 from .routes.enquiry_routes import router as enquiries_router
+from .routes.indiapost_routes import router as indiapost_router
 
 
 @asynccontextmanager
@@ -42,7 +43,7 @@ app.add_middleware(
 # Include modular routes
 app.include_router(orders_router)
 app.include_router(enquiries_router)
-
+app.include_router(indiapost_router)
 
 @app.get("/api/health")
 async def health_check():
