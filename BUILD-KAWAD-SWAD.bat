@@ -73,7 +73,7 @@ echo.
 echo [5/5] Creating production website...
 if exist "dist" rmdir /s /q "dist"
 
-set "VITE_API_BASE_URL=https://api.kawadswad.com"
+set "VITE_API_BASE_URL=https://api.kawadswad.in"
 call npm run build
 if errorlevel 1 (
   echo.
