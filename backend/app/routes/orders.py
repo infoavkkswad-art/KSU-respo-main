@@ -1,7 +1,7 @@
 import time
 import datetime
 import traceback
-from typing import Dict, List
+from typing import Dict, List, Any
 
 from fastapi import (
     APIRouter,
@@ -11,7 +11,6 @@ from fastapi import (
     HTTPException,
     Depends,
 )
-from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
 
@@ -30,10 +29,15 @@ from ..services.order_service import (
 )
 from ..services.google_sheets_service import (
     post_to_google_apps_script,
+    sync_payment_to_google_sheets,
+    sync_webhook_to_google_sheets,
 )
 
 
-router = APIRouter(prefix="/api", tags=["Orders"])
+router = APIRouter(
+    prefix="/api",
+    tags=["Orders"],
+)
 
 
 # ============================================================
@@ -58,9 +62,13 @@ MAX_LOOKUPS_PER_MINUTE = 10
 
 
 def apply_rate_limit(client_ip: str):
+
     now = time.time()
 
-    history = _RATE_LIMIT_STORE.get(client_ip, [])
+    history = _RATE_LIMIT_STORE.get(
+        client_ip,
+        [],
+    )
 
     history = [
         ts
@@ -69,6 +77,7 @@ def apply_rate_limit(client_ip: str):
     ]
 
     if len(history) >= MAX_LOOKUPS_PER_MINUTE:
+
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=(
@@ -83,6 +92,295 @@ def apply_rate_limit(client_ip: str):
 
 
 # ============================================================
+# DATETIME HELPER
+# ============================================================
+
+def serialize_datetime(value):
+
+    if value is None:
+        return ""
+
+    if hasattr(value, "isoformat"):
+
+        return value.isoformat()
+
+    return str(value)
+
+
+# ============================================================
+# PAYMENT DETAILS HELPER
+# ============================================================
+
+def extract_payment_sheet_data(
+    updated_order: dict,
+    payment_details: dict,
+    *,
+    signature_verified: bool,
+    event_id: str = "",
+    event_type: str = "",
+    webhook_received_at: str = "",
+) -> dict:
+    """
+    Build the complete payment record sent to the
+    Google Sheets Payments tab.
+    """
+
+    order_id = updated_order.get(
+        "orderId",
+        "",
+    )
+
+    customer = updated_order.get(
+        "customer",
+        {},
+    )
+
+    razorpay_payment_id = (
+        payment_details.get("id")
+        or updated_order.get(
+            "razorpayPaymentId",
+            "",
+        )
+    )
+
+    razorpay_order_id = (
+        payment_details.get("order_id")
+        or updated_order.get(
+            "razorpayOrderId",
+            "",
+        )
+    )
+
+    amount_paise = payment_details.get(
+        "amount"
+    )
+
+    amount_rupees = None
+
+    if amount_paise is not None:
+
+        try:
+
+            amount_rupees = (
+                float(amount_paise) / 100
+            )
+
+        except Exception:
+
+            amount_rupees = None
+
+    fee_paise = payment_details.get(
+        "fee"
+    )
+
+    fee_rupees = None
+
+    if fee_paise is not None:
+
+        try:
+
+            fee_rupees = (
+                float(fee_paise) / 100
+            )
+
+        except Exception:
+
+            fee_rupees = None
+
+    tax_paise = payment_details.get(
+        "tax"
+    )
+
+    tax_rupees = None
+
+    if tax_paise is not None:
+
+        try:
+
+            tax_rupees = (
+                float(tax_paise) / 100
+            )
+
+        except Exception:
+
+            tax_rupees = None
+
+    net_amount_rupees = None
+
+    if (
+        fee_rupees is not None
+        and amount_rupees is not None
+    ):
+
+        net_amount_rupees = (
+            amount_rupees -
+            fee_rupees
+        )
+
+    method = payment_details.get(
+        "method",
+        "",
+    )
+
+    card = payment_details.get(
+        "card"
+    ) or {}
+
+    bank = payment_details.get(
+        "bank",
+        "",
+    )
+
+    wallet = payment_details.get(
+        "wallet",
+        "",
+    )
+
+    vpa = payment_details.get(
+        "vpa",
+        "",
+    )
+
+    created_at = payment_details.get(
+        "created_at"
+    )
+
+    payment_created_at = ""
+
+    if created_at:
+
+        try:
+
+            payment_created_at = (
+                datetime.datetime.fromtimestamp(
+                    int(created_at),
+                    tz=datetime.timezone.utc,
+                ).isoformat()
+            )
+
+        except Exception:
+
+            payment_created_at = str(
+                created_at
+            )
+
+    payment_captured_at = (
+        datetime.datetime.now(
+            datetime.timezone.utc
+        ).isoformat()
+    )
+
+    return {
+
+        "paymentRecordId":
+            razorpay_payment_id
+            or (
+                order_id +
+                "-payment"
+            ),
+
+        "orderId":
+            order_id,
+
+        "razorpayOrderId":
+            razorpay_order_id,
+
+        "razorpayPaymentId":
+            razorpay_payment_id,
+
+        "paymentStatus":
+            payment_details.get(
+                "status",
+                "paid",
+            ),
+
+        "paymentMethod":
+            method,
+
+        "amount":
+            amount_paise,
+
+        "amountRupees":
+            amount_rupees,
+
+        "currency":
+            payment_details.get(
+                "currency",
+                "INR",
+            ),
+
+        "razorpayFee":
+            fee_rupees,
+
+        "razorpayTax":
+            tax_rupees,
+
+        "netAmount":
+            net_amount_rupees,
+
+        "paymentCreatedAt":
+            payment_created_at,
+
+        "paymentCapturedAt":
+            payment_captured_at,
+
+        "signatureVerified":
+            signature_verified,
+
+        "eventId":
+            event_id,
+
+        "eventType":
+            event_type,
+
+        "webhookReceivedAt":
+            webhook_received_at,
+
+        "upiId":
+            vpa,
+
+        "bank":
+            bank,
+
+        "wallet":
+            wallet,
+
+        "cardLast4":
+            card.get(
+                "last4",
+                "",
+            ),
+
+        "cardNetwork":
+            card.get(
+                "network",
+                "",
+            ),
+
+        "customerName":
+            customer.get(
+                "fullName",
+                "",
+            ),
+
+        "customerPhone":
+            customer.get(
+                "phone",
+                "",
+            ),
+
+        "customerEmail":
+            customer.get(
+                "email",
+                "",
+            ),
+
+        "rawPaymentData":
+            payment_details,
+    }
+
+
+# ============================================================
 # CREATE ORDER
 # ============================================================
 
@@ -92,88 +390,69 @@ def apply_rate_limit(client_ip: str):
 )
 async def create_order(
     payload: CreateOrderRequest,
-    db: AsyncIOMotorDatabase = Depends(get_database),
+    db: AsyncIOMotorDatabase = Depends(
+        get_database
+    ),
 ):
-    """
-    Create the authoritative MongoDB order first.
-
-    Then create a Razorpay order using the configured
-    Razorpay credentials.
-
-    The response contains everything required by the frontend
-    Razorpay Checkout integration.
-    """
 
     try:
 
-        # --------------------------------------------------------
-        # 1. CREATE ORDER USING EXISTING ORDER SERVICE
-        # --------------------------------------------------------
-
-        print("========== CREATE ORDER START ==========")
+        print(
+            "========== CREATE ORDER START =========="
+        )
 
         print(
             f"Creating order for customer: "
             f"{getattr(payload.customer, 'fullName', 'unknown')}"
         )
 
-        order = await process_and_save_order(payload)
+        # --------------------------------------------------------
+        # 1. CREATE ORDER
+        # --------------------------------------------------------
 
-        print(
-            f"process_and_save_order returned type: "
-            f"{type(order).__name__}"
+        order = await process_and_save_order(
+            payload
         )
-
-        # --------------------------------------------------------
-        # 2. NORMALIZE SERVICE RESULT
-        # --------------------------------------------------------
 
         if isinstance(order, dict):
 
             order_data = order
 
-        elif hasattr(order, "model_dump"):
+        elif hasattr(
+            order,
+            "model_dump",
+        ):
 
             order_data = order.model_dump()
 
-        elif hasattr(order, "dict"):
+        elif hasattr(
+            order,
+            "dict",
+        ):
 
             order_data = order.dict()
 
         else:
 
-            print(
-                "ERROR: Invalid order object returned from "
-                "process_and_save_order()"
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    "Invalid order record returned "
+                    "by order service."
+                ),
             )
+
+        order_id = order_data.get(
+            "orderId"
+        )
+
+        if not order_id:
 
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    "Invalid order record returned by order service."
+                    "Created order is missing orderId."
                 ),
-            )
-
-        print(
-            f"Order data keys: "
-            f"{list(order_data.keys())}"
-        )
-
-        # --------------------------------------------------------
-        # 3. GET ORDER ID
-        # --------------------------------------------------------
-
-        order_id = order_data.get("orderId")
-
-        if not order_id:
-
-            print(
-                "ERROR: Created order does not contain orderId."
-            )
-
-            raise HTTPException(
-                status_code=500,
-                detail="Created order is missing orderId.",
             )
 
         print(
@@ -181,43 +460,39 @@ async def create_order(
         )
 
         # --------------------------------------------------------
-        # 4. RETRIEVE AUTHORITATIVE MONGODB ORDER
+        # 2. RETRIEVE AUTHORITATIVE ORDER
         # --------------------------------------------------------
 
-        existing_order = await db.orders.find_one(
-            {
-                "orderId": order_id
-            }
+        existing_order = (
+            await db.orders.find_one(
+                {
+                    "orderId":
+                        order_id
+                }
+            )
         )
 
         if not existing_order:
 
-            print(
-                f"ERROR: MongoDB order not found: {order_id}"
-            )
-
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    "Failed to retrieve created order record."
+                    "Failed to retrieve created "
+                    "order record."
                 ),
             )
 
-        print(
-            "MongoDB order successfully retrieved."
+        # --------------------------------------------------------
+        # 3. AMOUNT
+        # --------------------------------------------------------
+
+        total_amount = (
+            existing_order.get(
+                "total"
+            )
         )
 
-        # --------------------------------------------------------
-        # 5. GET TOTAL
-        # --------------------------------------------------------
-
-        total_amount = existing_order.get("total")
-
         if total_amount is None:
-
-            print(
-                "ERROR: Order total is missing."
-            )
 
             raise HTTPException(
                 status_code=500,
@@ -228,20 +503,13 @@ async def create_order(
 
             amount_in_paise = int(
                 round(
-                    float(total_amount) * 100
+                    float(
+                        total_amount
+                    ) * 100
                 )
             )
 
-        except Exception as amount_error:
-
-            print(
-                "ERROR converting order amount:"
-            )
-
-            print(
-                f"{type(amount_error).__name__}: "
-                f"{str(amount_error)}"
-            )
+        except Exception:
 
             raise HTTPException(
                 status_code=500,
@@ -250,198 +518,152 @@ async def create_order(
 
         if amount_in_paise <= 0:
 
-            print(
-                f"ERROR: Invalid Razorpay amount: "
-                f"{amount_in_paise}"
-            )
-
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "Order amount must be greater than zero."
+                    "Order amount must be "
+                    "greater than zero."
                 ),
             )
 
-        print(
-            f"Order total: ₹{total_amount}"
-        )
-
-        print(
-            f"Razorpay amount: {amount_in_paise} paise"
-        )
-
         # --------------------------------------------------------
-        # 6. CHECK FOR EXISTING RAZORPAY ORDER
+        # 4. RAZORPAY ORDER
         # --------------------------------------------------------
 
-        razorpay_order_id = existing_order.get(
-            "razorpayOrderId"
-        )
-
-        if razorpay_order_id:
-
-            print(
-                f"Existing Razorpay order found: "
-                f"{razorpay_order_id}"
+        razorpay_order_id = (
+            existing_order.get(
+                "razorpayOrderId"
             )
-
-        # --------------------------------------------------------
-        # 7. CREATE RAZORPAY ORDER
-        # --------------------------------------------------------
+        )
 
         if not razorpay_order_id:
 
             print(
-                "Creating new Razorpay order..."
+                "Creating Razorpay order..."
             )
 
             try:
 
-                rzp_order = razorpay_client.order.create(
-                    {
-                        "amount": amount_in_paise,
-                        "currency": "INR",
-                        "receipt": str(order_id),
-                        "notes": {
-                            "orderId": str(order_id)
-                        },
-                    }
+                rzp_order = (
+                    razorpay_client.order.create(
+                        {
+                            "amount":
+                                amount_in_paise,
+
+                            "currency":
+                                "INR",
+
+                            "receipt":
+                                str(
+                                    order_id
+                                ),
+
+                            "notes": {
+                                "orderId":
+                                    str(
+                                        order_id
+                                    )
+                            },
+                        }
+                    )
                 )
 
-                print(
-                    "Razorpay response received."
-                )
-
-                razorpay_order_id = rzp_order.get(
-                    "id"
+                razorpay_order_id = (
+                    rzp_order.get(
+                        "id"
+                    )
                 )
 
                 if not razorpay_order_id:
 
-                    print(
-                        "ERROR: Razorpay response did not "
-                        "contain an order ID."
-                    )
-
-                    print(
-                        f"Razorpay response: {rzp_order}"
-                    )
-
                     raise Exception(
                         "Razorpay did not return an order ID."
                     )
+
+                await db.orders.update_one(
+                    {
+                        "orderId":
+                            order_id
+                    },
+                    {
+                        "$set": {
+                            "razorpayOrderId":
+                                razorpay_order_id,
+
+                            "paymentStatus":
+                                "pending",
+                        }
+                    },
+                )
 
                 print(
                     f"Razorpay order created: "
                     f"{razorpay_order_id}"
                 )
 
-                # ------------------------------------------------
-                # SAVE RAZORPAY ORDER ID TO MONGODB
-                # ------------------------------------------------
-
-                update_result = await db.orders.update_one(
-                    {
-                        "orderId": order_id
-                    },
-                    {
-                        "$set": {
-                            "razorpayOrderId": razorpay_order_id,
-                            "paymentStatus": "pending",
-                        }
-                    },
-                )
-
-                print(
-                    "MongoDB Razorpay fields updated."
-                )
-
-                print(
-                    f"MongoDB modified count: "
-                    f"{update_result.modified_count}"
-                )
-
             except HTTPException:
+
                 raise
 
-            except Exception as razorpay_error:
+            except Exception as e:
 
                 print(
                     "========== RAZORPAY CREATE ERROR =========="
                 )
 
                 print(
-                    f"ERROR TYPE: "
-                    f"{type(razorpay_error).__name__}"
-                )
-
-                print(
-                    f"ERROR MESSAGE: "
-                    f"{str(razorpay_error)}"
+                    f"{type(e).__name__}: {str(e)}"
                 )
 
                 traceback.print_exc()
 
-                print(
-                    "============================================"
-                )
-
                 raise HTTPException(
                     status_code=500,
                     detail=(
-                        "Failed to initialize payment gateway order: "
-                        f"{type(razorpay_error).__name__}: "
-                        f"{str(razorpay_error)}"
+                        "Failed to initialize payment "
+                        "gateway order."
                     ),
                 )
 
         # --------------------------------------------------------
-        # 8. BUILD RESPONSE
+        # 5. RESPONSE
         # --------------------------------------------------------
 
-        response_data = dict(order_data)
-
-        response_data["razorpayOrderId"] = (
-            razorpay_order_id
+        response_data = dict(
+            order_data
         )
 
-        response_data["razorpayKeyId"] = (
-            settings.razorpay_key_id
-        )
+        response_data[
+            "razorpayOrderId"
+        ] = razorpay_order_id
 
-        response_data["amount"] = (
-            amount_in_paise
-        )
+        response_data[
+            "razorpayKeyId"
+        ] = settings.razorpay_key_id
 
-        response_data["currency"] = "INR"
+        response_data[
+            "amount"
+        ] = amount_in_paise
 
-        response_data["paymentStatus"] = (
-            existing_order.get(
-                "paymentStatus",
-                "pending",
-            )
+        response_data[
+            "currency"
+        ] = "INR"
+
+        response_data[
+            "paymentStatus"
+        ] = existing_order.get(
+            "paymentStatus",
+            "pending",
         )
 
         print(
             "========== CREATE ORDER SUCCESS =========="
         )
 
-        print(
-            f"Order ID: {order_id}"
-        )
-
-        print(
-            f"Razorpay Order ID: "
-            f"{razorpay_order_id}"
-        )
-
-        print(
-            "==========================================="
-        )
-
         return response_data
 
     except HTTPException:
+
         raise
 
     except Exception as e:
@@ -451,24 +673,15 @@ async def create_order(
         )
 
         print(
-            f"ERROR TYPE: {type(e).__name__}"
-        )
-
-        print(
-            f"ERROR MESSAGE: {str(e)}"
+            f"{type(e).__name__}: {str(e)}"
         )
 
         traceback.print_exc()
 
-        print(
-            "========================================"
-        )
-
         raise HTTPException(
             status_code=500,
             detail=(
-                "Order could not be processed: "
-                f"{type(e).__name__}: {str(e)}"
+                "Order could not be processed."
             ),
         )
 
@@ -477,12 +690,19 @@ async def create_order(
 # VERIFY PAYMENT
 # ============================================================
 
-@router.post("/orders/verify-payment")
+@router.post(
+    "/orders/verify-payment"
+)
 async def verify_payment(
     payload: VerifyPaymentRequest,
-    db: AsyncIOMotorDatabase = Depends(get_database),
+    db: AsyncIOMotorDatabase = Depends(
+        get_database
+    ),
 ):
-    print("========== VERIFY PAYMENT START ==========")
+
+    print(
+        "========== VERIFY PAYMENT START =========="
+    )
 
     print(
         f"Razorpay Order ID: "
@@ -495,14 +715,16 @@ async def verify_payment(
     )
 
     # ---------------------------------------------------------
-    # 1. FIND MONGODB ORDER
+    # 1. FIND ORDER
     # ---------------------------------------------------------
 
-    existing_order = await db.orders.find_one(
-        {
-            "razorpayOrderId":
-                payload.razorpay_order_id
-        }
+    existing_order = (
+        await db.orders.find_one(
+            {
+                "razorpayOrderId":
+                    payload.razorpay_order_id
+            }
+        )
     )
 
     if not existing_order:
@@ -510,13 +732,13 @@ async def verify_payment(
         raise HTTPException(
             status_code=404,
             detail=(
-                "Order reference not found for "
-                "this payment session."
+                "Order reference not found "
+                "for this payment session."
             ),
         )
 
     # ---------------------------------------------------------
-    # 2. VERIFY RAZORPAY SIGNATURE
+    # 2. SIGNATURE VERIFICATION
     # ---------------------------------------------------------
 
     try:
@@ -543,12 +765,13 @@ async def verify_payment(
         raise HTTPException(
             status_code=400,
             detail=(
-                "Invalid cryptographic payment signature."
+                "Invalid cryptographic "
+                "payment signature."
             ),
         )
 
     # ---------------------------------------------------------
-    # 3. VERIFY PAYMENT IS CAPTURED
+    # 3. FETCH RAZORPAY PAYMENT
     # ---------------------------------------------------------
 
     try:
@@ -560,7 +783,9 @@ async def verify_payment(
         )
 
         payment_status = (
-            payment_details.get("status")
+            payment_details.get(
+                "status"
+            )
         )
 
         print(
@@ -579,6 +804,7 @@ async def verify_payment(
             )
 
     except HTTPException:
+
         raise
 
     except Exception as e:
@@ -591,16 +817,13 @@ async def verify_payment(
         raise HTTPException(
             status_code=500,
             detail=(
-                "Unable to verify payment capture "
-                "status with gateway."
+                "Unable to verify payment "
+                "capture status with gateway."
             ),
         )
 
     # ---------------------------------------------------------
-    # 4. ATOMIC PAYMENT CONFIRMATION
-    #
-    # Only a pending order can transition to paid.
-    # This prevents duplicate confirmation.
+    # 4. ATOMIC MONGODB CONFIRMATION
     # ---------------------------------------------------------
 
     updated_order = (
@@ -622,6 +845,9 @@ async def verify_payment(
 
                     "razorpayPaymentId":
                         payload.razorpay_payment_id,
+
+                    "paymentVerifiedAt":
+                        datetime.datetime.utcnow(),
                 }
             },
             return_document=ReturnDocument.AFTER,
@@ -629,11 +855,7 @@ async def verify_payment(
     )
 
     # ---------------------------------------------------------
-    # 5. IDEMPOTENT ALREADY-PAID CASE
-    #
-    # The Razorpay webhook may have confirmed the payment
-    # before the frontend calls this endpoint.
-    # That is a valid condition, not a payment failure.
+    # 5. ALREADY PAID
     # ---------------------------------------------------------
 
     if not updated_order:
@@ -665,10 +887,6 @@ async def verify_payment(
             )
         )
 
-        # -----------------------------------------------------
-        # DIFFERENT PAYMENT ID PROTECTION
-        # -----------------------------------------------------
-
         if (
             stored_payment_id
             and stored_payment_id
@@ -683,24 +901,17 @@ async def verify_payment(
                 ),
             )
 
-        # -----------------------------------------------------
-        # STORE PAYMENT ID IF WEBHOOK DID NOT STORE IT
-        # -----------------------------------------------------
-
         if not stored_payment_id:
 
             await db.orders.update_one(
                 {
                     "_id":
-                        already_paid_order["_id"],
-
-                    "paymentStatus":
-                        "paid",
+                        already_paid_order["_id"]
                 },
                 {
                     "$set": {
                         "razorpayPaymentId":
-                            payload.razorpay_payment_id,
+                            payload.razorpay_payment_id
                     }
                 },
             )
@@ -709,15 +920,12 @@ async def verify_payment(
                 "razorpayPaymentId"
             ] = payload.razorpay_payment_id
 
-        updated_order = already_paid_order
-
-        print(
-            "Payment was already confirmed by "
-            "another request or webhook."
+        updated_order = (
+            already_paid_order
         )
 
         print(
-            "Continuing idempotently."
+            "Order was already confirmed."
         )
 
     else:
@@ -728,10 +936,60 @@ async def verify_payment(
         )
 
     # ---------------------------------------------------------
-    # 6. GOOGLE SHEETS + EMAIL
+    # 6. SAVE FULL PAYMENT DETAILS TO MONGODB
     # ---------------------------------------------------------
 
-    customer_data = (
+    payment_record = (
+        extract_payment_sheet_data(
+            updated_order,
+            payment_details,
+            signature_verified=True,
+        )
+    )
+
+    await db.orders.update_one(
+        {
+            "_id":
+                updated_order["_id"]
+        },
+        {
+            "$set": {
+                "paymentDetails":
+                    payment_record,
+
+                "paymentMethod":
+                    payment_details.get(
+                        "method"
+                    ),
+
+                "razorpayFee":
+                    payment_record.get(
+                        "razorpayFee"
+                    ),
+
+                "razorpayTax":
+                    payment_record.get(
+                        "razorpayTax"
+                    ),
+
+                "paymentCapturedAt":
+                    payment_record.get(
+                        "paymentCapturedAt"
+                    ),
+            }
+        },
+    )
+
+    # Keep local copy synchronized
+    updated_order[
+        "paymentDetails"
+    ] = payment_record
+
+    # ---------------------------------------------------------
+    # 7. GOOGLE SHEETS: UPDATE ORDERS
+    # ---------------------------------------------------------
+
+    customer = (
         updated_order.get(
             "customer",
             {},
@@ -751,59 +1009,49 @@ async def verify_payment(
         ]
     )
 
-    created_at = (
+    created_at = serialize_datetime(
         updated_order.get(
             "createdAt"
         )
     )
 
-    if hasattr(
-        created_at,
-        "isoformat"
-    ):
-
-        created_at = (
-            created_at.isoformat()
-        )
-
-    else:
-
-        created_at = str(
-            created_at
-        )
-
     address = (
-        f"{customer_data.get('address', '')}, "
-        f"{customer_data.get('city', '')}, "
-        f"{customer_data.get('state', '')} - "
-        f"{customer_data.get('pincode', '')}"
+        f"{customer.get('address', '')}, "
+        f"{customer.get('city', '')}, "
+        f"{customer.get('state', '')} - "
+        f"{customer.get('pincode', '')}"
     )
 
-    sheets_payload = {
-        "type": "order",
+    order_sheet_payload = {
+
+        "type":
+            "order",
 
         "data": {
 
             "orderId":
-                updated_order["orderId"],
+                updated_order.get(
+                    "orderId",
+                    "",
+                ),
 
             "createdAt":
                 created_at,
 
             "customerName":
-                customer_data.get(
+                customer.get(
                     "fullName",
                     "",
                 ),
 
             "phone":
-                customer_data.get(
+                customer.get(
                     "phone",
                     "",
                 ),
 
             "email":
-                customer_data.get(
+                customer.get(
                     "email",
                     "",
                 ),
@@ -811,8 +1059,29 @@ async def verify_payment(
             "address":
                 address,
 
+            "city":
+                customer.get(
+                    "city",
+                    "",
+                ),
+
+            "state":
+                customer.get(
+                    "state",
+                    "",
+                ),
+
+            "pincode":
+                customer.get(
+                    "pincode",
+                    "",
+                ),
+
             "items":
-                formatted_items,
+                updated_order.get(
+                    "items",
+                    [],
+                ),
 
             "subtotal":
                 updated_order.get(
@@ -832,74 +1101,89 @@ async def verify_payment(
                     0,
                 ),
 
+            "currency":
+                "INR",
+
             "paymentStatus":
                 "paid",
 
             "orderStatus":
                 "confirmed",
+
+            "paymentMethod":
+                payment_details.get(
+                    "method",
+                    "",
+                ),
+
+            "razorpayOrderId":
+                payload.razorpay_order_id,
+
+            "razorpayPaymentId":
+                payload.razorpay_payment_id,
+
+            "razorpaySignatureVerified":
+                True,
+
+            "paymentCapturedAt":
+                payment_record.get(
+                    "paymentCapturedAt",
+                    "",
+                ),
+
+            "createdSource":
+                "website",
         },
     }
 
-    print(
-        "Sending confirmed order to Google Apps Script..."
-    )
+    try:
 
-    print(
-        f"Order: "
-        f"{updated_order['orderId']}"
-    )
+        await post_to_google_apps_script(
+            order_sheet_payload
+        )
 
-    print(
-        f"Customer: "
-        f"{customer_data.get('fullName', '')}"
-    )
+        print(
+            "Google Sheets Orders synchronized."
+        )
 
-    print(
-        f"Email: "
-        f"{customer_data.get('email', '')}"
-    )
+    except Exception as sheet_error:
+
+        print(
+            "Google Sheets Orders sync failed:"
+        )
+
+        print(
+            f"{type(sheet_error).__name__}: "
+            f"{str(sheet_error)}"
+        )
+
+    # ---------------------------------------------------------
+    # 8. GOOGLE SHEETS: PAYMENT RECORD
+    # ---------------------------------------------------------
 
     try:
 
-        sheets_result = (
-            await post_to_google_apps_script(
-                sheets_payload
-            )
+        await sync_payment_to_google_sheets(
+            payment_record
         )
 
         print(
-            "Google Apps Script SUCCESS:"
+            "Google Sheets Payments synchronized."
+        )
+
+    except Exception as sheet_payment_error:
+
+        print(
+            "Google Sheets Payments sync failed:"
         )
 
         print(
-            sheets_result
+            f"{type(sheet_payment_error).__name__}: "
+            f"{str(sheet_payment_error)}"
         )
-
-    except Exception as sync_error:
-
-        print(
-            "========== GOOGLE APPS SCRIPT ERROR =========="
-        )
-
-        print(
-            f"TYPE: "
-            f"{type(sync_error).__name__}"
-        )
-
-        print(
-            f"MESSAGE: "
-            f"{str(sync_error)}"
-        )
-
-        print(
-            "=============================================="
-        )
-
-        # Payment is already confirmed.
-        # Do NOT tell the customer payment failed.
 
     # ---------------------------------------------------------
-    # 7. RESPONSE TO FRONTEND
+    # 9. FINAL RESPONSE
     # ---------------------------------------------------------
 
     print(
@@ -907,19 +1191,49 @@ async def verify_payment(
     )
 
     return {
-        "success": True,
+
+        "success":
+            True,
 
         "message":
-            "Payment verified and order confirmed successfully.",
+            (
+                "Payment verified and order "
+                "confirmed successfully."
+            ),
 
         "orderId":
-            updated_order["orderId"],
+            updated_order.get(
+                "orderId"
+            ),
 
         "paymentStatus":
             "paid",
 
         "status":
             "confirmed",
+
+        "razorpayOrderId":
+            payload.razorpay_order_id,
+
+        "razorpayPaymentId":
+            payload.razorpay_payment_id,
+
+        "paymentMethod":
+            payment_details.get(
+                "method",
+                "",
+            ),
+
+        "amount":
+            payment_details.get(
+                "amount"
+            ),
+
+        "currency":
+            payment_details.get(
+                "currency",
+                "INR",
+            ),
     }
 
 
@@ -933,9 +1247,14 @@ async def verify_payment(
 )
 async def razorpay_webhook(
     request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_database),
+    db: AsyncIOMotorDatabase = Depends(
+        get_database
+    ),
 ):
-    print("========== RAZORPAY WEBHOOK START ==========")
+
+    print(
+        "========== RAZORPAY WEBHOOK START =========="
+    )
 
     event_id = request.headers.get(
         "X-Razorpay-Event-Id"
@@ -946,13 +1265,16 @@ async def razorpay_webhook(
     )
 
     # ---------------------------------------------------------
-    # 1. SIGNATURE HEADER
+    # 1. SIGNATURE
     # ---------------------------------------------------------
 
     if not webhook_signature:
+
         raise HTTPException(
             status_code=400,
-            detail="Missing webhook signature header.",
+            detail=(
+                "Missing webhook signature header."
+            ),
         )
 
     # ---------------------------------------------------------
@@ -962,12 +1284,15 @@ async def razorpay_webhook(
     raw_body = await request.body()
 
     # ---------------------------------------------------------
-    # 3. VERIFY RAZORPAY WEBHOOK SIGNATURE
+    # 3. VERIFY WEBHOOK SIGNATURE
     # ---------------------------------------------------------
 
     try:
+
         razorpay_client.utility.verify_webhook_signature(
-            raw_body.decode("utf-8"),
+            raw_body.decode(
+                "utf-8"
+            ),
             webhook_signature,
             settings.razorpay_webhook_secret,
         )
@@ -977,20 +1302,14 @@ async def razorpay_webhook(
         )
 
     except Exception as e:
+
         print(
-            "========== WEBHOOK SIGNATURE ERROR =========="
+            "Webhook signature verification failed:"
         )
 
         print(
-            f"TYPE: {type(e).__name__}"
-        )
-
-        print(
-            f"MESSAGE: {str(e)}"
-        )
-
-        print(
-            "=============================================="
+            f"{type(e).__name__}: "
+            f"{str(e)}"
         )
 
         raise HTTPException(
@@ -1001,64 +1320,69 @@ async def razorpay_webhook(
         )
 
     # ---------------------------------------------------------
-    # 4. PARSE EVENT
+    # 4. PARSE JSON
     # ---------------------------------------------------------
 
     try:
+
         event_data = await request.json()
+
     except Exception:
+
         raise HTTPException(
             status_code=400,
-            detail="Invalid webhook JSON payload.",
+            detail=(
+                "Invalid webhook JSON payload."
+            ),
         )
 
-    resolved_event_id = (
-        event_id
-        or event_data.get("event_id")
+    event_type = (
+        event_data.get(
+            "event"
+        )
     )
 
-    event_type = event_data.get(
-        "event"
-    )
-
-    print(
-        f"Webhook event: {event_type}"
-    )
-
-    print(
-        f"Webhook event ID: {resolved_event_id}"
+    received_at = (
+        datetime.datetime.now(
+            datetime.timezone.utc
+        ).isoformat()
     )
 
     # ---------------------------------------------------------
-    # 5. GET RAZORPAY ENTITY
+    # 5. RAZORPAY PAYMENT ENTITY
     # ---------------------------------------------------------
 
-    payload_entity = (
+    payment_entity = (
         event_data
         .get("payload", {})
         .get("payment", {})
         .get("entity", {})
     )
 
-    if not payload_entity:
-
-        payload_entity = (
-            event_data
-            .get("payload", {})
-            .get("order", {})
-            .get("entity", {})
-        )
+    order_entity = (
+        event_data
+        .get("payload", {})
+        .get("order", {})
+        .get("entity", {})
+    )
 
     razorpay_order_id = (
-        payload_entity.get("order_id")
-        or payload_entity.get("id")
+        payment_entity.get(
+            "order_id"
+        )
+        or order_entity.get(
+            "id"
+        )
     )
 
     razorpay_payment_id = (
-        payload_entity.get("id")
-        if payload_entity.get("entity")
-        == "payment"
-        else None
+        payment_entity.get(
+            "id"
+        )
+    )
+
+    print(
+        f"Webhook event: {event_type}"
     )
 
     print(
@@ -1072,7 +1396,78 @@ async def razorpay_webhook(
     )
 
     # ---------------------------------------------------------
-    # 6. ONLY PAYMENT EVENTS NEED ORDER PROCESSING
+    # 6. LOG WEBHOOK TO GOOGLE SHEETS
+    # ---------------------------------------------------------
+
+    webhook_sheet_data = {
+
+        "webhookId":
+            event_id
+            or (
+                "rzp-"
+                + str(
+                    int(
+                        time.time() *
+                        1000
+                    )
+                )
+            ),
+
+        "source":
+            "razorpay",
+
+        "eventType":
+            event_type
+            or "",
+
+        "eventId":
+            event_id
+            or "",
+
+        "orderId":
+            "",
+
+        "razorpayOrderId":
+            razorpay_order_id
+            or "",
+
+        "razorpayPaymentId":
+            razorpay_payment_id
+            or "",
+
+        "receivedAt":
+            received_at,
+
+        "processingStatus":
+            "received",
+
+        "payload":
+            event_data,
+    }
+
+    try:
+
+        await sync_webhook_to_google_sheets(
+            webhook_sheet_data
+        )
+
+        print(
+            "Webhook recorded in Google Sheets."
+        )
+
+    except Exception as webhook_sheet_error:
+
+        print(
+            "Webhook Sheets logging failed:"
+        )
+
+        print(
+            f"{type(webhook_sheet_error).__name__}: "
+            f"{str(webhook_sheet_error)}"
+        )
+
+    # ---------------------------------------------------------
+    # 7. IGNORE UNSUPPORTED EVENTS
     # ---------------------------------------------------------
 
     supported_events = {
@@ -1084,132 +1479,40 @@ async def razorpay_webhook(
     if event_type not in supported_events:
 
         print(
-            f"Ignoring unsupported webhook event: "
+            f"Ignoring unsupported webhook: "
             f"{event_type}"
         )
 
         return {
-            "status": "ignored",
-            "event": event_type,
+            "status":
+                "ignored",
+
+            "event":
+                event_type,
         }
 
     if not razorpay_order_id:
 
         print(
-            "Webhook does not contain a Razorpay order ID."
+            "Webhook missing Razorpay order ID."
         )
 
         return {
-            "status": "ignored",
-            "reason": "missing_razorpay_order_id",
+            "status":
+                "ignored",
+
+            "reason":
+                "missing_razorpay_order_id",
         }
-
-    # ---------------------------------------------------------
-    # 7. WEBHOOK EVENT IDEMPOTENCY
-    # ---------------------------------------------------------
-
-    if resolved_event_id:
-
-        existing_event = (
-            await db.webhook_events.find_one(
-                {
-                    "eventId":
-                        resolved_event_id
-                }
-            )
-        )
-
-        if existing_event:
-
-            existing_status = (
-                existing_event.get(
-                    "status",
-                    "processed",
-                )
-            )
-
-            if existing_status == "processed":
-
-                print(
-                    "Webhook already processed successfully."
-                )
-
-                return {
-                    "status":
-                        "already_processed"
-                }
-
-            print(
-                "Previous webhook processing was not "
-                "completed. Retrying downstream sync."
-            )
-
-        else:
-
-            try:
-
-                await db.webhook_events.insert_one(
-                    {
-                        "eventId":
-                            resolved_event_id,
-
-                        "event":
-                            event_type,
-
-                        "status":
-                            "processing",
-
-                        "createdAt":
-                            datetime.datetime.utcnow(),
-
-                        "updatedAt":
-                            datetime.datetime.utcnow(),
-                    }
-                )
-
-                print(
-                    "Webhook processing record created."
-                )
-
-            except Exception as event_insert_error:
-
-                print(
-                    "Webhook event insert race:"
-                )
-
-                print(
-                    f"{type(event_insert_error).__name__}: "
-                    f"{str(event_insert_error)}"
-                )
-
-                existing_event = (
-                    await db.webhook_events.find_one(
-                        {
-                            "eventId":
-                                resolved_event_id
-                        }
-                    )
-                )
-
-                if existing_event and (
-                    existing_event.get(
-                        "status"
-                    ) == "processed"
-                ):
-
-                    return {
-                        "status":
-                            "already_processed"
-                    }
 
     # ---------------------------------------------------------
     # 8. PAYMENT CAPTURED / ORDER PAID
     # ---------------------------------------------------------
 
-    if event_type in [
+    if event_type in {
         "payment.captured",
         "order.paid",
-    ]:
+    }:
 
         updated_order = (
             await db.orders.find_one_and_update(
@@ -1222,34 +1525,26 @@ async def razorpay_webhook(
                 },
                 {
                     "$set": {
+
                         "paymentStatus":
                             "paid",
 
                         "status":
                             "confirmed",
 
-                        **(
-                            {
-                                "razorpayPaymentId":
-                                    razorpay_payment_id
-                            }
-                            if razorpay_payment_id
-                            else {}
-                        ),
+                        "razorpayPaymentId":
+                            razorpay_payment_id,
+
+                        "paymentVerifiedAt":
+                            datetime.datetime.utcnow(),
                     }
                 },
-                return_document=ReturnDocument.AFTER,
+                return_document=
+                    ReturnDocument.AFTER,
             )
         )
 
-        if updated_order:
-
-            print(
-                f"MongoDB order confirmed by webhook: "
-                f"{updated_order.get('orderId')}"
-            )
-
-        else:
+        if not updated_order:
 
             updated_order = (
                 await db.orders.find_one(
@@ -1263,125 +1558,118 @@ async def razorpay_webhook(
                 )
             )
 
-            if not updated_order:
-
-                print(
-                    "Webhook could not find a confirmed "
-                    "MongoDB order."
-                )
-
-                if resolved_event_id:
-
-                    await db.webhook_events.update_one(
-                        {
-                            "eventId":
-                                resolved_event_id
-                        },
-                        {
-                            "$set": {
-                                "status":
-                                    "failed",
-
-                                "updatedAt":
-                                    datetime.datetime.utcnow(),
-
-                                "error":
-                                    (
-                                        "Confirmed order "
-                                        "not found."
-                                    ),
-                            }
-                        },
-                    )
-
-                return {
-                    "status":
-                        "retry_required"
-                }
+        if not updated_order:
 
             print(
-                "Order was already confirmed by "
-                "verify-payment."
+                "Webhook received before the order "
+                "was available in MongoDB."
             )
 
+            return {
+                "status":
+                    "retry_required"
+            }
+
         # -----------------------------------------------------
-        # 9. PREPARE GOOGLE APPS SCRIPT PAYLOAD
+        # 9. STORE COMPLETE PAYMENT DETAILS
         # -----------------------------------------------------
 
-        customer_data = (
+        payment_record = (
+            extract_payment_sheet_data(
+                updated_order,
+                payment_entity,
+                signature_verified=True,
+                event_id=event_id or "",
+                event_type=event_type or "",
+                webhook_received_at=received_at,
+            )
+        )
+
+        await db.orders.update_one(
+            {
+                "_id":
+                    updated_order["_id"]
+            },
+            {
+                "$set": {
+                    "paymentDetails":
+                        payment_record,
+
+                    "paymentMethod":
+                        payment_entity.get(
+                            "method"
+                        ),
+
+                    "razorpayFee":
+                        payment_record.get(
+                            "razorpayFee"
+                        ),
+
+                    "razorpayTax":
+                        payment_record.get(
+                            "razorpayTax"
+                        ),
+
+                    "paymentCapturedAt":
+                        payment_record.get(
+                            "paymentCapturedAt"
+                        ),
+                }
+            },
+        )
+
+        # -----------------------------------------------------
+        # 10. GOOGLE SHEETS ORDERS
+        # -----------------------------------------------------
+
+        customer = (
             updated_order.get(
                 "customer",
                 {},
             )
         )
 
-        formatted_items = ", ".join(
-            [
-                (
-                    f"{item.get('productNameSnapshot', item.get('sku'))}"
-                    f" (x{item.get('quantity', 1)})"
-                )
-                for item in updated_order.get(
-                    "items",
-                    [],
-                )
-            ]
-        )
-
-        created_at = (
-            updated_order.get(
-                "createdAt"
-            )
-        )
-
-        if hasattr(
-            created_at,
-            "isoformat",
-        ):
-
-            created_at = (
-                created_at.isoformat()
-            )
-
-        else:
-
-            created_at = str(
-                created_at
-            )
-
         address = (
-            f"{customer_data.get('address', '')}, "
-            f"{customer_data.get('city', '')}, "
-            f"{customer_data.get('state', '')} - "
-            f"{customer_data.get('pincode', '')}"
+            f"{customer.get('address', '')}, "
+            f"{customer.get('city', '')}, "
+            f"{customer.get('state', '')} - "
+            f"{customer.get('pincode', '')}"
         )
 
-        sheets_payload = {
+        order_sheet_payload = {
+
             "type":
                 "order",
 
             "data": {
 
                 "orderId":
-                    updated_order["orderId"],
+                    updated_order.get(
+                        "orderId",
+                        "",
+                    ),
 
                 "createdAt":
-                    created_at,
+                    serialize_datetime(
+                        updated_order.get(
+                            "createdAt"
+                        )
+                    ),
 
                 "customerName":
-                    customer_data.get(
+                    customer.get(
                         "fullName",
                         "",
                     ),
 
                 "phone":
-                    customer_data.get(
+                    customer.get(
                         "phone",
                         "",
                     ),
 
                 "email":
-                    customer_data.get(
+                    customer.get(
                         "email",
                         "",
                     ),
@@ -1389,8 +1677,29 @@ async def razorpay_webhook(
                 "address":
                     address,
 
+                "city":
+                    customer.get(
+                        "city",
+                        "",
+                    ),
+
+                "state":
+                    customer.get(
+                        "state",
+                        "",
+                    ),
+
+                "pincode":
+                    customer.get(
+                        "pincode",
+                        "",
+                    ),
+
                 "items":
-                    formatted_items,
+                    updated_order.get(
+                        "items",
+                        [],
+                    ),
 
                 "subtotal":
                     updated_order.get(
@@ -1410,140 +1719,101 @@ async def razorpay_webhook(
                         0,
                     ),
 
+                "currency":
+                    "INR",
+
                 "paymentStatus":
                     "paid",
 
                 "orderStatus":
                     "confirmed",
+
+                "paymentMethod":
+                    payment_entity.get(
+                        "method",
+                        "",
+                    ),
+
+                "razorpayOrderId":
+                    razorpay_order_id,
+
+                "razorpayPaymentId":
+                    razorpay_payment_id,
+
+                "razorpaySignatureVerified":
+                    True,
+
+                "paymentCapturedAt":
+                    payment_record.get(
+                        "paymentCapturedAt",
+                        "",
+                    ),
+
+                "lastWebhookEvent":
+                    event_type,
+
+                "lastWebhookAt":
+                    received_at,
+
+                "createdSource":
+                    "razorpay_webhook",
             },
         }
 
+        try:
+
+            await post_to_google_apps_script(
+                order_sheet_payload
+            )
+
+            print(
+                "Google Sheets Orders webhook sync successful."
+            )
+
+        except Exception as e:
+
+            print(
+                "Google Sheets Orders webhook sync failed:"
+            )
+
+            print(
+                f"{type(e).__name__}: {str(e)}"
+            )
+
         # -----------------------------------------------------
-        # 10. GOOGLE SHEETS / EMAIL SYNC
+        # 11. GOOGLE SHEETS PAYMENT RECORD
         # -----------------------------------------------------
 
         try:
 
-            print(
-                "Sending webhook-confirmed order "
-                "to Google Apps Script..."
+            await sync_payment_to_google_sheets(
+                payment_record
             )
 
             print(
-                f"Order: "
-                f"{updated_order['orderId']}"
+                "Google Sheets Payments webhook sync successful."
+            )
+
+        except Exception as e:
+
+            print(
+                "Google Sheets Payments webhook sync failed:"
             )
 
             print(
-                f"Customer: "
-                f"{customer_data.get('fullName', '')}"
-            )
-
-            print(
-                f"Email: "
-                f"{customer_data.get('email', '')}"
-            )
-
-            sheets_result = (
-                await post_to_google_apps_script(
-                    sheets_payload
-                )
-            )
-
-            print(
-                "Google Apps Script SUCCESS:"
-            )
-
-            print(
-                sheets_result
-            )
-
-        except Exception as sync_error:
-
-            print(
-                "========== GOOGLE APPS SCRIPT ERROR =========="
-            )
-
-            print(
-                f"TYPE: "
-                f"{type(sync_error).__name__}"
-            )
-
-            print(
-                f"MESSAGE: "
-                f"{str(sync_error)}"
-            )
-
-            print(
-                "=============================================="
-            )
-
-            if resolved_event_id:
-
-                await db.webhook_events.update_one(
-                    {
-                        "eventId":
-                            resolved_event_id
-                    },
-                    {
-                        "$set": {
-                            "status":
-                                "failed",
-
-                            "updatedAt":
-                                datetime.datetime.utcnow(),
-
-                            "error":
-                                str(sync_error),
-                        }
-                    },
-                )
-
-            raise HTTPException(
-                status_code=500,
-                detail=(
-                    "Payment captured, but order "
-                    "notification synchronization failed."
-                ),
+                f"{type(e).__name__}: {str(e)}"
             )
 
         # -----------------------------------------------------
-        # 11. MARK WEBHOOK SUCCESSFULLY PROCESSED
+        # 12. RETURN
         # -----------------------------------------------------
 
-        if resolved_event_id:
-
-            await db.webhook_events.update_one(
-                {
-                    "eventId":
-                        resolved_event_id
-                },
-                {
-                    "$set": {
-                        "status":
-                            "processed",
-
-                        "processedAt":
-                            datetime.datetime.utcnow(),
-
-                        "updatedAt":
-                            datetime.datetime.utcnow(),
-
-                        "error":
-                            None,
-                    }
-                },
-            )
-
         print(
-            "Webhook processing completed successfully."
-        )
-
-        print(
-            "========== RAZORPAY WEBHOOK END =========="
+            "========== RAZORPAY WEBHOOK COMPLETE =========="
         )
 
         return {
+
             "status":
                 "ok",
 
@@ -1551,11 +1821,19 @@ async def razorpay_webhook(
                 event_type,
 
             "orderId":
-                updated_order["orderId"],
+                updated_order.get(
+                    "orderId"
+                ),
+
+            "paymentStatus":
+                "paid",
+
+            "orderStatus":
+                "confirmed",
         }
 
     # ---------------------------------------------------------
-    # 12. PAYMENT FAILED
+    # 13. PAYMENT FAILED
     # ---------------------------------------------------------
 
     if event_type == "payment.failed":
@@ -1576,36 +1854,8 @@ async def razorpay_webhook(
             },
         )
 
-        if resolved_event_id:
-
-            await db.webhook_events.update_one(
-                {
-                    "eventId":
-                        resolved_event_id
-                },
-                {
-                    "$set": {
-                        "status":
-                            "processed",
-
-                        "processedAt":
-                            datetime.datetime.utcnow(),
-
-                        "updatedAt":
-                            datetime.datetime.utcnow(),
-
-                        "error":
-                            None,
-                    }
-                },
-            )
-
         print(
-            "Payment failure webhook processed."
-        )
-
-        print(
-            "========== RAZORPAY WEBHOOK END =========="
+            "Payment failure recorded."
         )
 
         return {
@@ -1614,11 +1864,10 @@ async def razorpay_webhook(
 
             "event":
                 event_type,
-        }
 
-    # ---------------------------------------------------------
-    # 13. SAFETY FALLBACK
-    # ---------------------------------------------------------
+            "paymentStatus":
+                "failed",
+        }
 
     return {
         "status":
