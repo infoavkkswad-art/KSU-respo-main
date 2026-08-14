@@ -80,8 +80,6 @@ async def process_and_save_order(
 
             existing.pop("_id", None)
 
-            # If an older order exists without a payment status,
-            # make the response predictable.
             existing.setdefault(
                 "paymentStatus",
                 "pending",
@@ -128,9 +126,11 @@ async def process_and_save_order(
         # ------------------------------------------------------
 
         try:
+
             quantity = int(
                 item.quantity
             )
+
         except Exception:
 
             raise HTTPException(
@@ -212,6 +212,7 @@ async def process_and_save_order(
 
         # Keep the existing business rule:
         # use the largest applicable shipping charge.
+
         shipping = max(
             shipping,
             item_shipping * quantity,
@@ -264,7 +265,9 @@ async def process_and_save_order(
 
         raise HTTPException(
             status_code=400,
-            detail="Order total must be greater than zero.",
+            detail=(
+                "Order total must be greater than zero."
+            ),
         )
 
     # ==========================================================
@@ -284,13 +287,6 @@ async def process_and_save_order(
     # ==========================================================
     # 6. CREATE SIMPLE MONGODB DOCUMENT
     # ==========================================================
-    #
-    # IMPORTANT:
-    # We intentionally do NOT construct OrderDocument here.
-    #
-    # This removes model/schema incompatibilities from the
-    # checkout creation path.
-    #
 
     now = datetime.utcnow()
 
@@ -302,9 +298,11 @@ async def process_and_save_order(
             payload.customer.phone,
 
         "email":
-            str(payload.customer.email)
-            if payload.customer.email
-            else "",
+            (
+                str(payload.customer.email)
+                if payload.customer.email
+                else ""
+            ),
 
         "address":
             payload.customer.address,
@@ -324,6 +322,8 @@ async def process_and_save_order(
         "orderId":
             order_id,
 
+        # IMPORTANT:
+        # Every newly created order starts as pending.
         "paymentStatus":
             "pending",
 
@@ -364,19 +364,33 @@ async def process_and_save_order(
 
     except DuplicateKeyError as e:
 
-        print("========== DUPLICATE KEY ERROR ==========")
-        print(f"ERROR: {str(e)}")
-        print("==========================================")
+        print(
+            "========== DUPLICATE KEY ERROR =========="
+        )
+
+        print(
+            f"ERROR: {str(e)}"
+        )
+
+        print(
+            "=========================================="
+        )
 
         if payload.idempotencyKey:
+
             existing = await orders_collection.find_one(
                 {
-                    "idempotencyKey": payload.idempotencyKey
+                    "idempotencyKey":
+                        payload.idempotencyKey
                 }
             )
 
             if existing:
-                existing.pop("_id", None)
+
+                existing.pop(
+                    "_id",
+                    None,
+                )
 
                 existing.setdefault(
                     "paymentStatus",
@@ -392,7 +406,10 @@ async def process_and_save_order(
 
         raise HTTPException(
             status_code=409,
-            detail=f"MongoDB duplicate key: {str(e)}",
+            detail=(
+                f"MongoDB duplicate key: "
+                f"{str(e)}"
+            ),
         )
 
     except Exception as e:
@@ -423,11 +440,6 @@ async def process_and_save_order(
     # ==========================================================
     # 8. GOOGLE SHEETS
     # ==========================================================
-    #
-    # This is deliberately non-blocking from the checkout
-    # perspective. If Google Sheets fails, payment must still
-    # continue.
-    #
 
     try:
 
@@ -542,6 +554,10 @@ async def get_order_by_id_and_phone(
 
     orders_collection = db["orders"]
 
+    # ==========================================================
+    # 1. CLEAN INPUT
+    # ==========================================================
+
     clean_order_id = (
         order_id
         .strip()
@@ -552,6 +568,10 @@ async def get_order_by_id_and_phone(
         phone
         .strip()
     )
+
+    # ==========================================================
+    # 2. FIND ORDER
+    # ==========================================================
 
     order = await orders_collection.find_one(
         {
@@ -567,6 +587,10 @@ async def get_order_by_id_and_phone(
             detail="Order not found.",
         )
 
+    # ==========================================================
+    # 3. VERIFY PHONE
+    # ==========================================================
+
     stored_phone = (
         order
         .get("customer", {})
@@ -581,6 +605,10 @@ async def get_order_by_id_and_phone(
                 "Order not found with provided details."
             ),
         )
+
+    # ==========================================================
+    # 4. CUSTOMER DISPLAY DATA
+    # ==========================================================
 
     customer_info = (
         order.get(
@@ -605,45 +633,102 @@ async def get_order_by_id_and_phone(
 
         masked_phone = "******"
 
+    # ==========================================================
+    # 5. PAYMENT STATUS
+    # ==========================================================
+    #
+    # THIS IS THE IMPORTANT FIX.
+    #
+    # MongoDB already contains:
+    #
+    # paymentStatus = "pending" / "paid" / "failed"
+    #
+    # We now explicitly return it through the tracking API.
+    #
+
+    payment_status = order.get(
+        "paymentStatus",
+        "pending",
+    )
+
+    # ==========================================================
+    # 6. ORDER STATUS
+    # ==========================================================
+
+    order_status = order.get(
+        "status",
+        "pending",
+    )
+
+    # ==========================================================
+    # 7. RETURN TRACKING RESPONSE
+    # ==========================================================
+
     return OrderTrackingResponse(
-        orderId=order_id,
-        status=order.get(
-            "status",
-            "pending",
-        ),
-        customer=PublicCustomerSnapshot(
-            fullName=customer_info.get(
-                "fullName",
-                "Valued Customer",
+
+        orderId:
+            clean_order_id,
+
+        status:
+            order_status,
+
+        # IMPORTANT:
+        # This must exist in OrderTrackingResponse model too.
+        paymentStatus:
+            payment_status,
+
+        customer:
+            PublicCustomerSnapshot(
+
+                fullName:
+                    customer_info.get(
+                        "fullName",
+                        "Valued Customer",
+                    ),
+
+                phoneMasked:
+                    masked_phone,
+
+                city:
+                    customer_info.get(
+                        "city",
+                        "",
+                    ),
+
+                state:
+                    customer_info.get(
+                        "state",
+                        "",
+                    ),
             ),
-            phoneMasked=masked_phone,
-            city=customer_info.get(
-                "city",
-                "",
+
+        items:
+            order.get(
+                "items",
+                [],
             ),
-            state=customer_info.get(
-                "state",
-                "",
+
+        subtotal:
+            order.get(
+                "subtotal",
+                0,
             ),
-        ),
-        items=order.get(
-            "items",
-            [],
-        ),
-        subtotal=order.get(
-            "subtotal",
-            0,
-        ),
-        shipping=order.get(
-            "shipping",
-            0,
-        ),
-        total=order.get(
-            "total",
-            0,
-        ),
-        createdAt=order.get(
-            "createdAt",
-            datetime.utcnow(),
-        ),
+
+        shipping:
+            order.get(
+                "shipping",
+                0,
+            ),
+
+        total:
+            order.get(
+                "total",
+                0,
+            ),
+
+        createdAt:
+            order.get(
+                "createdAt",
+                datetime.utcnow(),
+            ),
     )
