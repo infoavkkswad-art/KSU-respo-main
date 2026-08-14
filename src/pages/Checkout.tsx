@@ -1,17 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
   Lock,
   ShoppingBag,
+  Loader2,
 } from 'lucide-react';
 
 import { SEO } from '../components/SEO';
 import {
   FormField,
   FormStatusMessage,
-  SubmitButton,
   useFormState,
   validators,
   FormContainer,
@@ -102,12 +102,35 @@ const loadRazorpayScript = (): Promise<boolean> => {
     );
 
     if (existingScript) {
-      existingScript.addEventListener('load', () =>
-        resolve(true),
+      const handleLoad = () => {
+        cleanup();
+        resolve(true);
+      };
+
+      const handleError = () => {
+        cleanup();
+        resolve(false);
+      };
+
+      const cleanup = () => {
+        existingScript.removeEventListener(
+          'load',
+          handleLoad,
+        );
+        existingScript.removeEventListener(
+          'error',
+          handleError,
+        );
+      };
+
+      existingScript.addEventListener(
+        'load',
+        handleLoad,
       );
 
-      existingScript.addEventListener('error', () =>
-        resolve(false),
+      existingScript.addEventListener(
+        'error',
+        handleError,
       );
 
       return;
@@ -154,7 +177,9 @@ function validateCheckoutCustomer(
       'Full name must contain at least 4 characters.',
     );
   } else if (
-    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(fullName)
+    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(
+      fullName,
+    )
   ) {
     errors.push(
       'Please enter a valid name using letters only.',
@@ -186,7 +211,9 @@ function validateCheckoutCustomer(
   /* Address */
 
   if (!address) {
-    errors.push('Please enter your delivery address.');
+    errors.push(
+      'Please enter your delivery address.',
+    );
   } else if (address.length < 10) {
     errors.push(
       'Delivery address must contain at least 10 characters.',
@@ -235,6 +262,15 @@ function validateCheckoutCustomer(
 }
 
 /* ============================================================================
+ * PAYMENT STAGE
+ * ========================================================================== */
+
+type PaymentStage =
+  | 'idle'
+  | 'creating-order'
+  | 'opening-payment';
+
+/* ============================================================================
  * CHECKOUT PAGE
  * ========================================================================== */
 
@@ -254,6 +290,21 @@ export default function Checkout() {
   const form = useFormState(initial);
 
   const [error, setError] = useState('');
+
+  const [paymentStage, setPaymentStage] =
+    useState<PaymentStage>('idle');
+
+  /* ==========================================================================
+   * PRELOAD RAZORPAY
+   *
+   * This starts loading Razorpay as soon as the Checkout page opens.
+   * The customer therefore does not have to wait for the script after
+   * clicking "Proceed to Pay".
+   * ======================================================================== */
+
+  useEffect(() => {
+    void loadRazorpayScript();
+  }, []);
 
   /* ==========================================================================
    * RESOLVE PRODUCTS
@@ -315,13 +366,25 @@ export default function Checkout() {
 
       form.setStatus('error');
 
+      setPaymentStage('idle');
+
       return;
     }
 
+    /*
+     * IMMEDIATE UI FEEDBACK
+     *
+     * The button changes as soon as the customer clicks.
+     */
+
     form.setStatus('submitting');
 
+    setPaymentStage('creating-order');
+
     try {
-      /* 1. CREATE BACKEND ORDER */
+      /* ======================================================================
+       * 1. CREATE BACKEND ORDER
+       * ==================================================================== */
 
       const idempotencyKey =
         `idemp-${Date.now()}-${Math.random()
@@ -335,7 +398,11 @@ export default function Checkout() {
           idempotencyKey,
         });
 
-      /* 2. LOAD RAZORPAY */
+      /* ======================================================================
+       * 2. MAKE SURE RAZORPAY IS READY
+       * ==================================================================== */
+
+      setPaymentStage('opening-payment');
 
       const scriptLoaded =
         await loadRazorpayScript();
@@ -349,7 +416,9 @@ export default function Checkout() {
         );
       }
 
-      /* 3. OPEN RAZORPAY */
+      /* ======================================================================
+       * 3. OPEN RAZORPAY
+       * ==================================================================== */
 
       const options = {
         key: orderResponse.razorpayKeyId,
@@ -381,7 +450,9 @@ export default function Checkout() {
           color: '#D97706',
         },
 
-        /* PAYMENT SUCCESS */
+        /* ====================================================================
+         * PAYMENT SUCCESS
+         * ================================================================== */
 
         handler: async (
           response: any,
@@ -392,7 +463,16 @@ export default function Checkout() {
               response,
             );
 
-            /* 4. VERIFY PAYMENT */
+            /*
+             * Payment window has successfully returned a payment response.
+             * Keep the submitting state while verification happens.
+             */
+
+            setPaymentStage('opening-payment');
+
+            /* ================================================================
+             * 4. VERIFY PAYMENT
+             * ============================================================== */
 
             const verifyRes =
               await apiClient.verifyPayment({
@@ -411,7 +491,9 @@ export default function Checkout() {
               verifyRes,
             );
 
-            /* 5. BUILD COMPLETED ORDER */
+            /* ================================================================
+             * 5. BUILD COMPLETED ORDER
+             * ============================================================== */
 
             const completedOrder = {
               orderId:
@@ -441,13 +523,17 @@ export default function Checkout() {
                 'confirmed' as const,
             };
 
-            /* 6. SAVE COMPLETED ORDER */
+            /* ================================================================
+             * 6. SAVE COMPLETED ORDER
+             * ============================================================== */
 
             orderContext.setCompletedOrder(
               completedOrder,
             );
 
-            /* 7. CLEAR CART */
+            /* ================================================================
+             * 7. CLEAR CART
+             * ============================================================== */
 
             if (
               typeof clearCart === 'function'
@@ -455,9 +541,13 @@ export default function Checkout() {
               clearCart();
             }
 
-            /* 8. SUCCESS */
+            /* ================================================================
+             * 8. SUCCESS
+             * ============================================================== */
 
             form.setStatus('success');
+
+            setPaymentStage('idle');
 
             navigate(
               '/order-success',
@@ -484,14 +574,20 @@ export default function Checkout() {
             setError(msg);
 
             form.setStatus('error');
+
+            setPaymentStage('idle');
           }
         },
 
-        /* PAYMENT WINDOW CLOSED */
+        /* ====================================================================
+         * PAYMENT WINDOW CLOSED
+         * ================================================================== */
 
         modal: {
           ondismiss: () => {
             form.setStatus('idle');
+
+            setPaymentStage('idle');
 
             setError(
               'Payment was cancelled or dismissed. You can retry anytime.',
@@ -523,7 +619,29 @@ export default function Checkout() {
       setError(msg);
 
       form.setStatus('error');
+
+      setPaymentStage('idle');
     }
+  };
+
+  /* ==========================================================================
+   * PAYMENT BUTTON LABEL
+   * ======================================================================== */
+
+  const getPaymentButtonLabel = () => {
+    if (
+      paymentStage === 'creating-order'
+    ) {
+      return 'Creating Secure Order...';
+    }
+
+    if (
+      paymentStage === 'opening-payment'
+    ) {
+      return 'Opening Secure Payment...';
+    }
+
+    return 'Proceed to Pay';
   };
 
   /* ==========================================================================
@@ -828,8 +946,6 @@ export default function Checkout() {
                       form.errors.pincode
                     }
                     required
-                    inputMode="numeric"
-                    maxLength={6}
                     placeholder="6 digits"
                   />
 
@@ -862,10 +978,56 @@ export default function Checkout() {
                   Back to cart
                 </Link>
 
-                <SubmitButton
-                  status={form.status}
-                  label="Proceed to Pay"
-                />
+                {/* ==========================================================
+                    CHECKOUT-SPECIFIC PAYMENT BUTTON
+                    ======================================================== */}
+
+                <button
+                  type="submit"
+                  disabled={
+                    form.status === 'submitting'
+                  }
+                  aria-busy={
+                    form.status === 'submitting'
+                  }
+                  className="
+                    btn-primary
+                    w-full
+                    sm:w-auto
+                    min-w-[210px]
+                    inline-flex
+                    items-center
+                    justify-center
+                    gap-2
+                    transition-all
+                    duration-200
+                    disabled:opacity-70
+                    disabled:cursor-not-allowed
+                  "
+                >
+
+                  {form.status ===
+                  'submitting' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+
+                      <span>
+                        {getPaymentButtonLabel()}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4" />
+
+                      <span>
+                        Proceed to Pay
+                      </span>
+
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+
+                </button>
 
               </div>
 
