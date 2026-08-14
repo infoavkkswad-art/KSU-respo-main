@@ -11,7 +11,9 @@ from fastapi import (
     HTTPException,
     Depends,
 )
+from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo import ReturnDocument
 
 import razorpay
 
@@ -622,7 +624,7 @@ async def verify_payment(
                         payload.razorpay_payment_id,
                 }
             },
-            return_document=True,
+            return_document=ReturnDocument.AFTER,
         )
     )
 
@@ -1104,16 +1106,6 @@ async def razorpay_webhook(
 
     # ---------------------------------------------------------
     # 7. WEBHOOK EVENT IDEMPOTENCY
-    #
-    # IMPORTANT:
-    #
-    # We do NOT mark the event as successfully processed
-    # before Google Apps Script succeeds.
-    #
-    # "processing" means another request may currently be
-    # working on it.
-    #
-    # "processed" means the downstream sync completed.
     # ---------------------------------------------------------
 
     if resolved_event_id:
@@ -1136,10 +1128,6 @@ async def razorpay_webhook(
                 )
             )
 
-            # ---------------------------------------------
-            # Already completely processed
-            # ---------------------------------------------
-
             if existing_status == "processed":
 
                 print(
@@ -1151,26 +1139,12 @@ async def razorpay_webhook(
                         "already_processed"
                 }
 
-            # ---------------------------------------------
-            # Existing event was previously attempted but
-            # downstream processing did not complete.
-            #
-            # Continue processing so Razorpay retries can
-            # recover from a temporary Google failure.
-            # ---------------------------------------------
-
             print(
                 "Previous webhook processing was not "
                 "completed. Retrying downstream sync."
             )
 
         else:
-
-            # ---------------------------------------------
-            # Create processing record.
-            #
-            # We intentionally do NOT set processed=True.
-            # ---------------------------------------------
 
             try:
 
@@ -1198,12 +1172,6 @@ async def razorpay_webhook(
                 )
 
             except Exception as event_insert_error:
-
-                # Another webhook request may have inserted
-                # the same event simultaneously.
-                #
-                # Re-read it rather than treating the payment
-                # as failed.
 
                 print(
                     "Webhook event insert race:"
@@ -1243,13 +1211,6 @@ async def razorpay_webhook(
         "order.paid",
     ]:
 
-        # -----------------------------------------------------
-        # FIRST: atomically transition pending → paid
-        #
-        # If verify-payment already did this, updated_order
-        # will be None. That is okay.
-        # -----------------------------------------------------
-
         updated_order = (
             await db.orders.find_one_and_update(
                 {
@@ -1277,13 +1238,9 @@ async def razorpay_webhook(
                         ),
                     }
                 },
-                return_document=True,
+                return_document=ReturnDocument.AFTER,
             )
         )
-
-        # -----------------------------------------------------
-        # If webhook performed the transition, use that order.
-        # -----------------------------------------------------
 
         if updated_order:
 
@@ -1293,11 +1250,6 @@ async def razorpay_webhook(
             )
 
         else:
-
-            # -------------------------------------------------
-            # verify-payment may have already confirmed it.
-            # Retrieve the already-paid order.
-            # -------------------------------------------------
 
             updated_order = (
                 await db.orders.find_one(
@@ -1317,9 +1269,6 @@ async def razorpay_webhook(
                     "Webhook could not find a confirmed "
                     "MongoDB order."
                 )
-
-                # Leave webhook event unprocessed so a future
-                # Razorpay retry can try again.
 
                 if resolved_event_id:
 
@@ -1471,11 +1420,6 @@ async def razorpay_webhook(
 
         # -----------------------------------------------------
         # 10. GOOGLE SHEETS / EMAIL SYNC
-        #
-        # IMPORTANT:
-        #
-        # The webhook event is marked "processed" ONLY after
-        # this succeeds.
         # -----------------------------------------------------
 
         try:
@@ -1534,13 +1478,6 @@ async def razorpay_webhook(
                 "=============================================="
             )
 
-            # ---------------------------------------------
-            # DO NOT mark webhook processed.
-            #
-            # Razorpay can retry the webhook and the next
-            # attempt will try the Google sync again.
-            # ---------------------------------------------
-
             if resolved_event_id:
 
                 await db.webhook_events.update_one(
@@ -1561,10 +1498,6 @@ async def razorpay_webhook(
                         }
                     },
                 )
-
-            # Payment itself is successful.
-            # Return 500 so Razorpay knows downstream
-            # processing did not complete and can retry.
 
             raise HTTPException(
                 status_code=500,
@@ -1642,11 +1575,6 @@ async def razorpay_webhook(
                 }
             },
         )
-
-        # -----------------------------------------------------
-        # A payment.failed event has no Google order-confirmation
-        # sync to perform, so it can safely be marked processed.
-        # -----------------------------------------------------
 
         if resolved_event_id:
 
