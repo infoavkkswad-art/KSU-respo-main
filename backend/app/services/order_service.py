@@ -677,66 +677,53 @@ async def get_order_by_id_and_phone(
 
     return OrderTrackingResponse(
 
-        orderId:
-            clean_order_id,
+        orderId=clean_order_id,
 
-        status:
-            order_status,
+        status=order_status,
 
-        paymentStatus:
-            payment_status,
+        paymentStatus=payment_status,
 
-        customer:
-            PublicCustomerSnapshot(
+        customer=PublicCustomerSnapshot(
 
-                fullName:
-                    customer_info.get(
+                fullName=customer_info.get(
                         "fullName",
                         "Valued Customer",
                     ),
 
-                phoneMasked:
-                    masked_phone,
+                phoneMasked=masked_phone,
 
-                city:
-                    customer_info.get(
+                city=customer_info.get(
                         "city",
                         "",
                     ),
 
-                state:
-                    customer_info.get(
+                state=customer_info.get(
                         "state",
                         "",
                     ),
             ),
 
-        items:
-            order.get(
+        items=order.get(
                 "items",
                 [],
             ),
 
-        subtotal:
-            order.get(
+        subtotal=order.get(
                 "subtotal",
                 0,
             ),
 
-        shipping:
-            order.get(
+        shipping=order.get(
                 "shipping",
                 0,
             ),
 
-        total:
-            order.get(
+        total=order.get(
                 "total",
                 0,
             ),
 
-        createdAt:
-            order.get(
+        createdAt=order.get(
                 "createdAt",
                 datetime.utcnow(),
             ),
