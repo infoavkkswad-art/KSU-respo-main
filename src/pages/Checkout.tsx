@@ -41,6 +41,45 @@ const initial: CustomerInfo = {
   pincode: '',
 };
 
+const INDIAN_STATES_AND_UTS = [
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+  'Andaman and Nicobar Islands',
+  'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry',
+];
+
 declare global {
   interface Window {
     Razorpay?: any;
@@ -107,19 +146,23 @@ function validateCheckoutCustomer(
   const pincode = customer.pincode.trim();
 
   /* Full name */
+
   if (!fullName) {
     errors.push('Please enter your full name.');
-  } else if (fullName.length < 2) {
+  } else if (fullName.length < 4) {
     errors.push(
-      'Full name must contain at least 2 characters.',
+      'Full name must contain at least 4 characters.',
     );
-  } else if (!/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(fullName)) {
+  } else if (
+    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(fullName)
+  ) {
     errors.push(
       'Please enter a valid name using letters only.',
     );
   }
 
   /* Phone */
+
   if (!phone) {
     errors.push('Please enter your mobile number.');
   } else if (!/^[6-9]\d{9}$/.test(phone)) {
@@ -129,6 +172,7 @@ function validateCheckoutCustomer(
   }
 
   /* Email */
+
   if (!email) {
     errors.push('Please enter your email address.');
   } else if (
@@ -140,6 +184,7 @@ function validateCheckoutCustomer(
   }
 
   /* Address */
+
   if (!address) {
     errors.push('Please enter your delivery address.');
   } else if (address.length < 10) {
@@ -149,32 +194,35 @@ function validateCheckoutCustomer(
   }
 
   /* City */
+
   if (!city) {
     errors.push('Please enter your city.');
-  } else if (city.length < 2) {
+  } else if (city.length < 4) {
     errors.push(
-      'City name must contain at least 2 characters.',
+      'City name must contain at least 4 characters.',
     );
-  } else if (!/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(city)) {
+  } else if (
+    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(city)
+  ) {
     errors.push(
       'Please enter a valid city name.',
     );
   }
 
   /* State */
+
   if (!state) {
-    errors.push('Please enter your state.');
-  } else if (state.length < 2) {
+    errors.push('Please select your state.');
+  } else if (
+    !INDIAN_STATES_AND_UTS.includes(state)
+  ) {
     errors.push(
-      'State name must contain at least 2 characters.',
-    );
-  } else if (!/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(state)) {
-    errors.push(
-      'Please enter a valid state name.',
+      'Please select a valid Indian state or union territory.',
     );
   }
 
   /* PIN */
+
   if (!pincode) {
     errors.push('Please enter your PIN code.');
   } else if (!/^[1-9][0-9]{5}$/.test(pincode)) {
@@ -232,14 +280,6 @@ export default function Checkout() {
   ) => {
     e.preventDefault();
 
-    /*
-     * IMPORTANT:
-     *
-     * The form uses noValidate so the browser cannot
-     * stop the React submit handler before our own
-     * validation runs.
-     */
-
     if (
       items.length === 0 ||
       form.status === 'submitting'
@@ -249,9 +289,6 @@ export default function Checkout() {
 
     setError('');
 
-    /*
-     * Run existing shared validators first.
-     */
     const sharedValid = form.validate({
       fullName: validators.required(),
       phone: validators.phone(),
@@ -262,9 +299,6 @@ export default function Checkout() {
       pincode: validators.pincode(),
     });
 
-    /*
-     * Run strict checkout validation.
-     */
     const validationErrors =
       validateCheckoutCustomer(form.values);
 
@@ -287,9 +321,7 @@ export default function Checkout() {
     form.setStatus('submitting');
 
     try {
-      /*
-       * 1. CREATE BACKEND ORDER
-       */
+      /* 1. CREATE BACKEND ORDER */
 
       const idempotencyKey =
         `idemp-${Date.now()}-${Math.random()
@@ -303,9 +335,7 @@ export default function Checkout() {
           idempotencyKey,
         });
 
-      /*
-       * 2. LOAD RAZORPAY
-       */
+      /* 2. LOAD RAZORPAY */
 
       const scriptLoaded =
         await loadRazorpayScript();
@@ -319,9 +349,7 @@ export default function Checkout() {
         );
       }
 
-      /*
-       * 3. OPEN RAZORPAY
-       */
+      /* 3. OPEN RAZORPAY */
 
       const options = {
         key: orderResponse.razorpayKeyId,
@@ -353,9 +381,7 @@ export default function Checkout() {
           color: '#D97706',
         },
 
-        /*
-         * PAYMENT SUCCESS
-         */
+        /* PAYMENT SUCCESS */
 
         handler: async (
           response: any,
@@ -366,9 +392,7 @@ export default function Checkout() {
               response,
             );
 
-            /*
-             * 4. VERIFY PAYMENT
-             */
+            /* 4. VERIFY PAYMENT */
 
             const verifyRes =
               await apiClient.verifyPayment({
@@ -387,9 +411,7 @@ export default function Checkout() {
               verifyRes,
             );
 
-            /*
-             * 5. BUILD COMPLETED ORDER
-             */
+            /* 5. BUILD COMPLETED ORDER */
 
             const completedOrder = {
               orderId:
@@ -419,17 +441,13 @@ export default function Checkout() {
                 'confirmed' as const,
             };
 
-            /*
-             * 6. SAVE COMPLETED ORDER
-             */
+            /* 6. SAVE COMPLETED ORDER */
 
             orderContext.setCompletedOrder(
               completedOrder,
             );
 
-            /*
-             * 7. CLEAR CART
-             */
+            /* 7. CLEAR CART */
 
             if (
               typeof clearCart === 'function'
@@ -437,9 +455,7 @@ export default function Checkout() {
               clearCart();
             }
 
-            /*
-             * 8. SUCCESS
-             */
+            /* 8. SUCCESS */
 
             form.setStatus('success');
 
@@ -471,9 +487,7 @@ export default function Checkout() {
           }
         },
 
-        /*
-         * PAYMENT WINDOW CLOSED
-         */
+        /* PAYMENT WINDOW CLOSED */
 
         modal: {
           ondismiss: () => {
@@ -583,16 +597,7 @@ export default function Checkout() {
 
             <form
               onSubmit={submit}
-
-              /*
-               * CRITICAL:
-               *
-               * Disable browser-native validation.
-               * React now controls all validation.
-               */
-
               noValidate
-
               className="card p-8 bg-white border border-brand-brown/5 shadow-soft"
             >
 
@@ -715,6 +720,8 @@ export default function Checkout() {
 
                 <div className="grid sm:grid-cols-3 gap-4">
 
+                  {/* City */}
+
                   <FormField
                     label="City"
                     name="city"
@@ -734,24 +741,75 @@ export default function Checkout() {
                     placeholder="City"
                   />
 
-                  <FormField
-                    label="State"
-                    name="state"
-                    value={
-                      form.values.state
-                    }
-                    onChange={(v) =>
-                      form.setValue(
-                        'state',
-                        v,
-                      )
-                    }
-                    error={
-                      form.errors.state
-                    }
-                    required
-                    placeholder="State"
-                  />
+                  {/* State Dropdown */}
+
+                  <div className="space-y-2">
+
+                    <label
+                      htmlFor="state"
+                      className="block text-sm font-medium text-brand-brown"
+                    >
+                      State
+                      <span className="text-brand-red ml-1">
+                        *
+                      </span>
+                    </label>
+
+                    <select
+                      id="state"
+                      name="state"
+                      value={
+                        form.values.state
+                      }
+                      onChange={(e) => {
+                        form.setValue(
+                          'state',
+                          e.target.value,
+                        );
+
+                        setError('');
+                      }}
+                      className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-brand-brown outline-none transition focus:ring-2 focus:ring-brand-red/20 ${
+                        form.errors.state
+                          ? 'border-brand-red'
+                          : 'border-brand-brown/15'
+                      }`}
+                      aria-invalid={
+                        Boolean(
+                          form.errors.state,
+                        )
+                      }
+                    >
+
+                      <option
+                        value=""
+                        disabled
+                      >
+                        Select State
+                      </option>
+
+                      {INDIAN_STATES_AND_UTS.map(
+                        (state) => (
+                          <option
+                            key={state}
+                            value={state}
+                          >
+                            {state}
+                          </option>
+                        ),
+                      )}
+
+                    </select>
+
+                    {form.errors.state && (
+                      <p className="text-xs text-brand-red">
+                        {form.errors.state}
+                      </p>
+                    )}
+
+                  </div>
+
+                  {/* PIN */}
 
                   <FormField
                     label="PIN Code"
