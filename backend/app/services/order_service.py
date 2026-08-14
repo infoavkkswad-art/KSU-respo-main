@@ -15,6 +15,10 @@ from ..models.order import (
 from .google_sheets_service import post_to_google_apps_script
 
 
+# ==============================================================
+# ORDER ID GENERATOR
+# ==============================================================
+
 def generate_backend_order_id() -> str:
     """
     Generate a unique Kawad Swad order ID.
@@ -36,6 +40,10 @@ def generate_backend_order_id() -> str:
 
     return f"KS-{timestamp}{random_part}"
 
+
+# ==============================================================
+# CREATE + SAVE ORDER
+# ==============================================================
 
 async def process_and_save_order(
     payload: CreateOrderRequest,
@@ -71,8 +79,7 @@ async def process_and_save_order(
 
         existing = await orders_collection.find_one(
             {
-                "idempotencyKey":
-                    payload.idempotencyKey
+                "idempotencyKey": payload.idempotencyKey
             }
         )
 
@@ -210,7 +217,7 @@ async def process_and_save_order(
 
         subtotal += item_total
 
-        # Keep the existing business rule:
+        # Keep existing business rule:
         # use the largest applicable shipping charge.
 
         shipping = max(
@@ -224,31 +231,26 @@ async def process_and_save_order(
 
         item_snapshots.append(
             {
-                "sku":
+                "sku": sku_obj.get(
+                    "sku",
+                    item.sku,
+                ),
+
+                "quantity": quantity,
+
+                "unitPrice": unit_price,
+
+                "productNameSnapshot": family.get(
+                    "name",
+                    "Kawad Swad Product",
+                ),
+
+                "packSizeSnapshot": int(
                     sku_obj.get(
-                        "sku",
-                        item.sku,
-                    ),
-
-                "quantity":
-                    quantity,
-
-                "unitPrice":
-                    unit_price,
-
-                "productNameSnapshot":
-                    family.get(
-                        "name",
-                        "Kawad Swad Product",
-                    ),
-
-                "packSizeSnapshot":
-                    int(
-                        sku_obj.get(
-                            "packSize",
-                            0,
-                        )
-                    ),
+                        "packSize",
+                        0,
+                    )
+                ),
             }
         )
 
@@ -285,71 +287,53 @@ async def process_and_save_order(
         order_id = generate_backend_order_id()
 
     # ==========================================================
-    # 6. CREATE SIMPLE MONGODB DOCUMENT
+    # 6. CREATE MONGODB DOCUMENT
     # ==========================================================
 
     now = datetime.utcnow()
 
     customer_data = {
-        "fullName":
-            payload.customer.fullName,
+        "fullName": payload.customer.fullName,
 
-        "phone":
-            payload.customer.phone,
+        "phone": payload.customer.phone,
 
-        "email":
-            (
-                str(payload.customer.email)
-                if payload.customer.email
-                else ""
-            ),
+        "email": (
+            str(payload.customer.email)
+            if payload.customer.email
+            else ""
+        ),
 
-        "address":
-            payload.customer.address,
+        "address": payload.customer.address,
 
-        "city":
-            payload.customer.city,
+        "city": payload.customer.city,
 
-        "state":
-            payload.customer.state,
+        "state": payload.customer.state,
 
-        "pincode":
-            payload.customer.pincode,
+        "pincode": payload.customer.pincode,
     }
 
     order_doc = {
+        "orderId": order_id,
 
-        "orderId":
-            order_id,
+        # Newly created orders always begin as pending.
+        # Razorpay verification changes this later.
+        "paymentStatus": "pending",
 
-        # IMPORTANT:
-        # Every newly created order starts as pending.
-        "paymentStatus":
-            "pending",
+        "status": "pending",
 
-        "status":
-            "pending",
+        "customer": customer_data,
 
-        "customer":
-            customer_data,
+        "items": item_snapshots,
 
-        "items":
-            item_snapshots,
+        "subtotal": subtotal,
 
-        "subtotal":
-            subtotal,
+        "shipping": shipping,
 
-        "shipping":
-            shipping,
+        "total": final_total,
 
-        "total":
-            final_total,
+        "createdAt": now,
 
-        "createdAt":
-            now,
-
-        "idempotencyKey":
-            payload.idempotencyKey,
+        "idempotencyKey": payload.idempotencyKey,
     }
 
     # ==========================================================
@@ -438,13 +422,12 @@ async def process_and_save_order(
         )
 
     # ==========================================================
-    # 8. GOOGLE SHEETS
+    # 8. GOOGLE SHEETS SYNC
     # ==========================================================
 
     try:
 
         address_payload = {
-
             "name":
                 payload.customer.fullName,
 
@@ -465,12 +448,10 @@ async def process_and_save_order(
         }
 
         script_payload = {
-
             "type":
                 "order",
 
             "data": {
-
                 "orderId":
                     order_id,
 
@@ -527,7 +508,7 @@ async def process_and_save_order(
             f"{type(e).__name__}: {str(e)}"
         )
 
-        # NEVER stop checkout because Sheets failed.
+        # Sheets failure must NEVER stop checkout.
 
     # ==========================================================
     # 9. RETURN CLEAN ORDER DATA
@@ -549,6 +530,11 @@ async def get_order_by_id_and_phone(
     order_id: str,
     phone: str,
 ):
+    """
+    Retrieve an order using order ID + customer phone.
+
+    Payment status is read directly from MongoDB.
+    """
 
     db = get_database()
 
@@ -575,10 +561,44 @@ async def get_order_by_id_and_phone(
 
     order = await orders_collection.find_one(
         {
-            "orderId":
-                clean_order_id
+            "orderId": clean_order_id
         }
     )
+
+    # ==========================================================
+    # 2A. TRACKING DATABASE DIAGNOSTICS
+    # ==========================================================
+
+    print(
+        "========== TRACKING DATABASE CHECK =========="
+    )
+
+    print(
+        f"Tracking Order ID: {clean_order_id}"
+    )
+
+    print(
+        f"MongoDB paymentStatus: "
+        f"{order.get('paymentStatus') if order else 'ORDER NOT FOUND'}"
+    )
+
+    print(
+        f"MongoDB status: "
+        f"{order.get('status') if order else 'ORDER NOT FOUND'}"
+    )
+
+    print(
+        f"MongoDB razorpayPaymentId: "
+        f"{order.get('razorpayPaymentId') if order else 'ORDER NOT FOUND'}"
+    )
+
+    print(
+        "============================================="
+    )
+
+    # ==========================================================
+    # 3. ORDER NOT FOUND
+    # ==========================================================
 
     if not order:
 
@@ -588,7 +608,7 @@ async def get_order_by_id_and_phone(
         )
 
     # ==========================================================
-    # 3. VERIFY PHONE
+    # 4. VERIFY PHONE
     # ==========================================================
 
     stored_phone = (
@@ -607,7 +627,7 @@ async def get_order_by_id_and_phone(
         )
 
     # ==========================================================
-    # 4. CUSTOMER DISPLAY DATA
+    # 5. CUSTOMER DISPLAY DATA
     # ==========================================================
 
     customer_info = (
@@ -634,17 +654,8 @@ async def get_order_by_id_and_phone(
         masked_phone = "******"
 
     # ==========================================================
-    # 5. PAYMENT STATUS
+    # 6. PAYMENT STATUS
     # ==========================================================
-    #
-    # THIS IS THE IMPORTANT FIX.
-    #
-    # MongoDB already contains:
-    #
-    # paymentStatus = "pending" / "paid" / "failed"
-    #
-    # We now explicitly return it through the tracking API.
-    #
 
     payment_status = order.get(
         "paymentStatus",
@@ -652,7 +663,7 @@ async def get_order_by_id_and_phone(
     )
 
     # ==========================================================
-    # 6. ORDER STATUS
+    # 7. ORDER STATUS
     # ==========================================================
 
     order_status = order.get(
@@ -661,7 +672,7 @@ async def get_order_by_id_and_phone(
     )
 
     # ==========================================================
-    # 7. RETURN TRACKING RESPONSE
+    # 8. TRACKING RESPONSE
     # ==========================================================
 
     return OrderTrackingResponse(
@@ -672,8 +683,6 @@ async def get_order_by_id_and_phone(
         status:
             order_status,
 
-        # IMPORTANT:
-        # This must exist in OrderTrackingResponse model too.
         paymentStatus:
             payment_status,
 
