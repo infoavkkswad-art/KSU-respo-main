@@ -1,7 +1,7 @@
 import { CustomerInfo, Order } from '../context/OrderContext';
 import { CartItem } from '../context/CartContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://ksu-backend.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://https://api.kawadswad.in';
 
 export interface CreateOrderPayload {
   customer: CustomerInfo;
