@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   Minus,
@@ -9,12 +9,18 @@ import {
   Shield,
   Leaf,
   Zap,
+  Star,
 } from 'lucide-react';
 
 import { SEO, breadcrumbSchema } from '../components/SEO';
 import { ProductCard } from '../components/ProductCard';
 import { ProductImage } from '../components/ProductImage';
 import { ProductService } from '../services/product-service';
+import { ReviewService } from '../services/review-service';
+import type {
+  ReviewResponse,
+  ReviewSummary,
+} from '../types/reviews';
 import { PACK_LABELS } from '../data/products';
 import { useCart } from '../context/CartContext';
 
@@ -32,12 +38,63 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
+  const [reviewSummary, setReviewSummary] =
+    useState<ReviewSummary | null>(null);
+
+  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState(false);
+
   const relatedProducts = useMemo(() => {
     if (!product) return [];
 
     return ProductService.getProductsByCategory(product.category)
       .filter((p) => p.id !== product.id)
       .slice(0, 4);
+  }, [product]);
+
+  useEffect(() => {
+    if (!product) return;
+
+    let cancelled = false;
+
+    const loadReviews = async () => {
+      setReviewsLoading(true);
+      setReviewsError(false);
+
+      try {
+        const [summary, reviewList] = await Promise.all([
+          ReviewService.getSummary(product.id),
+          ReviewService.getReviews(product.id, 20, 0),
+        ]);
+
+        if (cancelled) return;
+
+        setReviewSummary(summary);
+
+        setReviews(
+          reviewList.filter(
+            (review) => review.status === 'approved',
+          ),
+        );
+      } catch {
+        if (cancelled) return;
+
+        setReviewSummary(null);
+        setReviews([]);
+        setReviewsError(true);
+      } finally {
+        if (!cancelled) {
+          setReviewsLoading(false);
+        }
+      }
+    };
+
+    loadReviews();
+
+    return () => {
+      cancelled = true;
+    };
   }, [product]);
 
   if (!product) {
@@ -69,6 +126,14 @@ export default function ProductDetail() {
       100,
   );
 
+  const averageRating =
+    reviewSummary && reviewSummary.reviewCount > 0
+      ? reviewSummary.averageRating
+      : 0;
+
+  const reviewCount =
+    reviewSummary?.reviewCount ?? reviews.length;
+
   const handleAddToCart = () => {
     addItem(selectedSku.sku, quantity);
 
@@ -82,6 +147,29 @@ export default function ProductDetail() {
   const handleBuyNow = () => {
     addItem(selectedSku.sku, quantity);
     navigate('/checkout');
+  };
+
+  const renderStars = (
+    rating: number,
+    size = 'w-4 h-4',
+  ) => {
+    return (
+      <div
+        className="flex items-center gap-0.5"
+        aria-label={`${rating.toFixed(1)} out of 5 stars`}
+      >
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`${size} ${
+              star <= Math.round(rating)
+                ? 'fill-brand-red text-brand-red'
+                : 'text-brand-brown/20'
+            }`}
+          />
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -162,6 +250,41 @@ export default function ProductDetail() {
               >
                 {product.description}
               </p>
+
+              {/* Live Rating Summary */}
+              <div className="mt-5 flex items-center gap-3 flex-wrap">
+                {reviewsLoading ? (
+                  <span className="text-sm text-brand-brown/50">
+                    Loading reviews...
+                  </span>
+                ) : reviewCount > 0 ? (
+                  <>
+                    {renderStars(averageRating)}
+
+                    <span className="text-sm font-semibold text-brand-brown">
+                      {averageRating.toFixed(1)}
+                    </span>
+
+                    <span className="text-sm text-brand-brown/50">
+                      ({reviewCount}{' '}
+                      {reviewCount === 1 ? 'review' : 'reviews'})
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span
+                      className="text-lg tracking-wide text-brand-brown/30"
+                      aria-label="No reviews yet"
+                    >
+                      ☆☆☆☆☆
+                    </span>
+
+                    <span className="text-sm text-brand-brown/50">
+                      No reviews yet
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Pack Size + Price */}
@@ -412,6 +535,119 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* Reviews */}
+      <section className="container-max container-px py-16">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-brand-red mb-2">
+                Customer Reviews
+              </p>
+
+              <h2 className="text-3xl font-serif font-bold text-brand-brown">
+                What customers say
+              </h2>
+            </div>
+
+            {!reviewsLoading && reviewCount > 0 && (
+              <div className="flex items-center gap-3">
+                {renderStars(averageRating, 'w-5 h-5')}
+
+                <span className="text-lg font-bold text-brand-brown">
+                  {averageRating.toFixed(1)}
+                </span>
+
+                <span className="text-sm text-brand-brown/50">
+                  {reviewCount}{' '}
+                  {reviewCount === 1 ? 'review' : 'reviews'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {reviewsLoading ? (
+            <div className="card p-8 text-center bg-white border border-brand-brown/5">
+              <p className="text-sm text-brand-brown/50">
+                Loading customer reviews...
+              </p>
+            </div>
+          ) : reviewsError ? (
+            <div className="card p-8 text-center bg-white border border-brand-brown/5">
+              <p className="text-sm text-brand-brown/60">
+                Reviews are temporarily unavailable.
+              </p>
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className="card p-10 text-center bg-white border border-brand-brown/5">
+              <div className="text-2xl tracking-widest text-brand-brown/25 mb-3">
+                ☆☆☆☆☆
+              </div>
+
+              <p className="font-medium text-brand-brown">
+                No reviews yet
+              </p>
+
+              <p className="text-sm text-brand-brown/50 mt-1">
+                Be the first customer to share your experience.
+              </p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-5">
+              {reviews.map((review) => (
+                <article
+                  key={review.reviewId}
+                  className="
+                    card
+                    p-6
+                    bg-white
+                    border
+                    border-brand-brown/5
+                    shadow-soft
+                  "
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    {renderStars(review.rating)}
+
+                    {review.verifiedPurchase && (
+                      <span className="text-2xs font-semibold text-emerald-600 whitespace-nowrap">
+                        Verified purchase
+                      </span>
+                    )}
+                  </div>
+
+                  {review.title && (
+                    <h3 className="font-serif font-semibold text-brand-brown mt-4">
+                      {review.title}
+                    </h3>
+                  )}
+
+                  <p className="text-sm leading-relaxed text-brand-brown/70 mt-2">
+                    {review.comment}
+                  </p>
+
+                  <div className="mt-5 pt-4 border-t border-brand-brown/10">
+                    <p className="text-xs font-semibold text-brand-brown">
+                      {review.customerName}
+                    </p>
+
+                    <p className="text-2xs text-brand-brown/40 mt-1">
+                      {new Date(review.createdAt).toLocaleDateString(
+                        'en-IN',
+                        {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        },
+                      )}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Related Products */}
       <section className="bg-brand-cream-dark py-20">
