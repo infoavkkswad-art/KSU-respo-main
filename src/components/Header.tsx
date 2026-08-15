@@ -92,7 +92,7 @@ export function Header() {
 
   return (
     <>
-      {/* Quiet brand announcement */}
+      {/* Brand announcement */}
       <div className="w-full bg-brand-green text-brand-ivory">
         <div className="container-max container-px flex min-h-[32px] items-center justify-center text-center">
           <span className="text-[9px] font-medium uppercase tracking-[0.12em] leading-relaxed sm:text-2xs sm:tracking-widest">
@@ -104,7 +104,8 @@ export function Header() {
       {/* Main Header */}
       <header
         className={`
-          sticky top-0 z-50 w-full border-b transition-all duration-300
+          sticky top-0 z-50 w-full border-b
+          transition-all duration-300
           ${
             scrolled
               ? 'border-brand-green/10 bg-brand-ivory/95 shadow-soft backdrop-blur-md'
@@ -113,15 +114,49 @@ export function Header() {
         `}
       >
         <div className="container-max container-px">
-          <div className="flex min-h-[64px] w-full items-center justify-between gap-2 sm:min-h-[72px] lg:h-[78px]">
-            {/* Logo */}
-            <div className="min-w-0 shrink-0">
-              <Logo />
+          <div
+            className="
+              flex min-h-[68px] w-full items-center
+              justify-between gap-2
+              sm:min-h-[76px] lg:h-[84px]
+            "
+          >
+            {/* ==========================================================
+                3D BRAND LOGO
+            ========================================================== */}
+            <div
+              className="
+                min-w-0 shrink-0
+                transition-transform duration-300
+                hover:-translate-y-0.5
+              "
+            >
+              <div
+                className="
+                  relative
+                  drop-shadow-[0_5px_4px_rgba(62,39,35,0.12)]
+                  transition-all duration-300
+                  hover:drop-shadow-[0_8px_8px_rgba(62,39,35,0.18)]
+                "
+              >
+                <Logo
+                  imgClassName="
+                    h-12 w-auto object-contain
+                    sm:h-14
+                    lg:h-[68px]
+                    transition-transform duration-300
+                    hover:scale-[1.025]
+                  "
+                />
+              </div>
             </div>
 
             {/* Desktop Navigation */}
             <nav
-              className="hidden flex-1 items-center justify-center gap-1 lg:flex"
+              className="
+                hidden flex-1 items-center
+                justify-center gap-1 lg:flex
+              "
               aria-label="Main navigation"
             >
               {navLinks.map((link) => (
@@ -130,12 +165,14 @@ export function Header() {
                   to={link.path}
                   className={({ isActive }) =>
                     `
-                      relative whitespace-nowrap rounded-full px-3 py-2
-                      text-sm font-medium transition-colors xl:px-4
+                      relative whitespace-nowrap rounded-full
+                      px-3 py-2 text-sm font-medium
+                      transition-all duration-200
+                      xl:px-4
                       ${
                         isActive
                           ? 'text-brand-green'
-                          : 'text-brand-brown/75 hover:text-brand-green'
+                          : 'text-brand-brown/75 hover:-translate-y-0.5 hover:text-brand-green'
                       }
                     `
                   }
@@ -147,7 +184,12 @@ export function Header() {
                       {isActive && (
                         <span
                           aria-hidden="true"
-                          className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-brand-saffron"
+                          className="
+                            absolute bottom-0 left-1/2
+                            h-1 w-1 -translate-x-1/2
+                            rounded-full bg-brand-saffron
+                            shadow-[0_1px_3px_rgba(230,126,34,0.45)]
+                          "
                         />
                       )}
                     </>
@@ -157,7 +199,8 @@ export function Header() {
             </nav>
 
             {/* Header Actions */}
-            <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-1">
+            <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-1.5">
+
               {/* Search */}
               <button
                 type="button"
@@ -166,11 +209,21 @@ export function Header() {
                   setMobileOpen(false);
                 }}
                 className="
-                  flex min-h-[42px] min-w-[42px] items-center justify-center
-                  rounded-full p-2.5 text-brand-green transition-colors
-                  hover:bg-brand-green/5 active:bg-brand-green/10
+                  flex min-h-[44px] min-w-[44px]
+                  items-center justify-center
+                  rounded-full p-2.5
+                  text-brand-green
+                  transition-all duration-200
+                  hover:-translate-y-0.5
+                  hover:bg-brand-green/5
+                  hover:shadow-[0_4px_10px_rgba(62,39,35,0.08)]
+                  active:translate-y-0
                 "
-                aria-label={searchOpen ? 'Close search' : 'Search products'}
+                aria-label={
+                  searchOpen
+                    ? 'Close search'
+                    : 'Search products'
+                }
                 aria-expanded={searchOpen}
               >
                 {searchOpen ? (
@@ -180,24 +233,48 @@ export function Header() {
                 )}
               </button>
 
-              {/* Cart */}
+              {/* ========================================================
+                  3D CART
+              ======================================================== */}
               <Link
                 to="/cart"
                 className="
-                  relative flex min-h-[42px] min-w-[42px] items-center
-                  justify-center rounded-full p-2.5 text-brand-green
-                  transition-colors hover:bg-brand-green/5 active:bg-brand-green/10
+                  group relative flex min-h-[46px] min-w-[46px]
+                  items-center justify-center
+                  rounded-full
+                  border border-brand-green/10
+                  bg-white
+                  p-2.5 text-brand-green
+                  shadow-[0_3px_0_rgba(62,39,35,0.10),0_5px_12px_rgba(62,39,35,0.08)]
+                  transition-all duration-200
+                  hover:-translate-y-1
+                  hover:border-brand-saffron/25
+                  hover:text-brand-saffron
+                  hover:shadow-[0_5px_0_rgba(62,39,35,0.10),0_9px_18px_rgba(62,39,35,0.12)]
+                  active:translate-y-[1px]
+                  active:shadow-[0_2px_0_rgba(62,39,35,0.10),0_3px_7px_rgba(62,39,35,0.08)]
                 "
                 aria-label={`Cart with ${itemCount} items`}
               >
-                <ShoppingBag className="h-5 w-5" />
+                <ShoppingBag
+                  className="
+                    h-5 w-5
+                    transition-transform duration-200
+                    group-hover:scale-105
+                  "
+                />
 
                 {itemCount > 0 && (
                   <span
                     className="
-                      absolute right-0.5 top-0.5 flex h-[17px] min-w-[17px]
-                      items-center justify-center rounded-full bg-brand-saffron
-                      px-0.5 text-[9px] font-bold text-white
+                      absolute -right-1 -top-1
+                      flex h-[19px] min-w-[19px]
+                      items-center justify-center
+                      rounded-full
+                      bg-brand-saffron
+                      px-1
+                      text-[9px] font-bold text-white
+                      shadow-[0_2px_5px_rgba(230,126,34,0.35)]
                     "
                   >
                     {itemCount > 9 ? '9+' : itemCount}
@@ -205,13 +282,23 @@ export function Header() {
                 )}
               </Link>
 
-              {/* Desktop CTA */}
+              {/* ========================================================
+                  3D SHOP CTA
+              ======================================================== */}
               <Link
                 to="/shop"
                 className="
-                  btn-primary ml-1 hidden min-h-[42px] px-4 py-2 text-sm
-                  shadow-none md:inline-flex lg:ml-2 lg:px-5
-                  hover:shadow-glow
+                  btn-primary
+                  ml-1 hidden min-h-[44px]
+                  px-4 py-2 text-sm
+                  shadow-[0_4px_0_rgba(190,75,25,0.65),0_7px_14px_rgba(62,39,35,0.12)]
+                  transition-all duration-200
+                  hover:-translate-y-0.5
+                  hover:shadow-[0_5px_0_rgba(190,75,25,0.65),0_10px_20px_rgba(62,39,35,0.15)]
+                  active:translate-y-[2px]
+                  active:shadow-[0_2px_0_rgba(190,75,25,0.65),0_4px_8px_rgba(62,39,35,0.10)]
+                  md:inline-flex
+                  lg:ml-2 lg:px-5
                 "
               >
                 Shop Papads
@@ -225,11 +312,20 @@ export function Header() {
                   setSearchOpen(false);
                 }}
                 className="
-                  flex min-h-[42px] min-w-[42px] items-center justify-center
-                  rounded-full p-2.5 text-brand-green transition-colors
-                  hover:bg-brand-green/5 active:bg-brand-green/10 lg:hidden
+                  flex min-h-[44px] min-w-[44px]
+                  items-center justify-center
+                  rounded-full p-2.5
+                  text-brand-green
+                  transition-all duration-200
+                  hover:bg-brand-green/5
+                  active:scale-95
+                  lg:hidden
                 "
-                aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+                aria-label={
+                  mobileOpen
+                    ? 'Close menu'
+                    : 'Open menu'
+                }
                 aria-expanded={mobileOpen}
                 aria-controls="mobile-navigation"
               >
@@ -259,8 +355,8 @@ export function Header() {
                   }
                   placeholder="Search papads..."
                   className="
-                    input-field min-h-[44px] min-w-0 flex-1
-                    bg-white/70
+                    input-field min-h-[44px]
+                    min-w-0 flex-1 bg-white/70
                   "
                   autoFocus
                   aria-label="Search products"
@@ -268,7 +364,12 @@ export function Header() {
 
                 <button
                   type="submit"
-                  className="btn-primary min-h-[44px] shrink-0 px-4 sm:px-6"
+                  className="
+                    btn-primary min-h-[44px] shrink-0
+                    px-4 sm:px-6
+                    shadow-[0_3px_0_rgba(190,75,25,0.55)]
+                    active:translate-y-[1px]
+                  "
                 >
                   Search
                 </button>
@@ -286,8 +387,9 @@ export function Header() {
             type="button"
             onClick={closeMobileMenu}
             className="
-              absolute inset-0 h-full w-full cursor-default
-              bg-brand-green/25 backdrop-blur-sm
+              absolute inset-0 h-full w-full
+              cursor-default bg-brand-green/25
+              backdrop-blur-sm
             "
             aria-label="Close mobile menu"
           />
@@ -297,24 +399,43 @@ export function Header() {
             id="mobile-navigation"
             aria-label="Mobile navigation"
             className="
-              absolute right-0 top-0 flex h-full w-[min(88vw,380px)]
-              max-w-full flex-col overflow-y-auto overscroll-contain
-              bg-brand-ivory p-4 shadow-lift animate-fade-in sm:p-6
+              absolute right-0 top-0
+              flex h-full w-[min(88vw,380px)]
+              max-w-full flex-col
+              overflow-y-auto overscroll-contain
+              bg-brand-ivory p-4
+              shadow-lift animate-fade-in
+              sm:p-6
             "
           >
             {/* Drawer Header */}
-            <div className="mb-5 flex items-center justify-between gap-3 border-b border-brand-green/10 pb-4 sm:mb-7">
+            <div
+              className="
+                mb-5 flex items-center justify-between
+                gap-3 border-b border-brand-green/10
+                pb-4 sm:mb-7
+              "
+            >
               <div className="min-w-0">
-                <Logo />
+                <Logo
+                  imgClassName="
+                    h-12 w-auto object-contain
+                    sm:h-14
+                    drop-shadow-[0_5px_4px_rgba(62,39,35,0.12)]
+                  "
+                />
               </div>
 
               <button
                 type="button"
                 onClick={closeMobileMenu}
                 className="
-                  flex min-h-[42px] min-w-[42px] shrink-0 items-center
-                  justify-center rounded-full p-2 text-brand-green
-                  hover:bg-brand-green/5 active:bg-brand-green/10
+                  flex min-h-[42px] min-w-[42px]
+                  shrink-0 items-center justify-center
+                  rounded-full p-2 text-brand-green
+                  transition-all
+                  hover:bg-brand-green/5
+                  active:scale-95
                 "
                 aria-label="Close menu"
               >
@@ -331,11 +452,13 @@ export function Header() {
                   onClick={closeMobileMenu}
                   className={({ isActive }) =>
                     `
-                      flex min-h-[48px] w-full items-center rounded-xl
-                      px-4 py-3 text-base font-medium transition-colors sm:text-lg
+                      flex min-h-[48px] w-full items-center
+                      rounded-xl px-4 py-3
+                      text-base font-medium
+                      transition-all sm:text-lg
                       ${
                         isActive
-                          ? 'bg-brand-green/10 text-brand-green'
+                          ? 'bg-brand-green/10 text-brand-green shadow-[inset_3px_0_0_#E67E22]'
                           : 'text-brand-brown hover:bg-brand-green/5'
                       }
                     `
@@ -351,7 +474,12 @@ export function Header() {
               <Link
                 to="/shop"
                 onClick={closeMobileMenu}
-                className="btn-primary inline-flex min-h-[48px] w-full items-center justify-center"
+                className="
+                  btn-primary inline-flex min-h-[50px] w-full
+                  items-center justify-center
+                  shadow-[0_4px_0_rgba(190,75,25,0.65),0_8px_16px_rgba(62,39,35,0.12)]
+                  active:translate-y-[2px]
+                "
               >
                 Shop Papads
               </Link>
@@ -360,10 +488,16 @@ export function Header() {
                 to="/cart"
                 onClick={closeMobileMenu}
                 className="
-                  mt-2 inline-flex min-h-[46px] w-full items-center
-                  justify-center gap-2 rounded-xl border border-brand-green/15
-                  text-sm font-medium text-brand-green transition-colors
+                  mt-3 inline-flex min-h-[48px] w-full
+                  items-center justify-center gap-2
+                  rounded-xl border border-brand-green/15
+                  bg-white
+                  text-sm font-medium text-brand-green
+                  shadow-[0_3px_0_rgba(62,39,35,0.08)]
+                  transition-all
+                  hover:-translate-y-0.5
                   hover:bg-brand-green/5
+                  active:translate-y-[1px]
                 "
               >
                 <ShoppingBag className="h-4 w-4" />
