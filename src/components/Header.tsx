@@ -17,59 +17,39 @@ import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
 
 export function Header() {
-  const [mobileOpen, setMobileOpen] =
-    useState(false);
-
-  const [searchOpen, setSearchOpen] =
-    useState(false);
-
-  const [searchQuery, setSearchQuery] =
-    useState('');
-
-  const [scrolled, setScrolled] =
-    useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [scrolled, setScrolled] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
-
   const { itemCount } = useCart();
 
-  /* ==========================================================================
-   * CLOSE MOBILE UI WHEN ROUTE CHANGES
-   * ======================================================================== */
-
+  /* Close overlays when route changes */
   useEffect(() => {
     setMobileOpen(false);
     setSearchOpen(false);
   }, [location.pathname]);
 
-  /* ==========================================================================
-   * HEADER SCROLL STATE
-   * ======================================================================== */
-
+  /* Header scroll state */
   useEffect(() => {
-    const onScroll = () =>
-      setScrolled(window.scrollY > 8);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 12);
+    };
 
-    onScroll();
+    handleScroll();
 
-    window.addEventListener(
-      'scroll',
-      onScroll,
-      { passive: true },
-    );
+    window.addEventListener('scroll', handleScroll, {
+      passive: true,
+    });
 
-    return () =>
-      window.removeEventListener(
-        'scroll',
-        onScroll,
-      );
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
-  /* ==========================================================================
-   * LOCK PAGE SCROLL WHEN MOBILE MENU IS OPEN
-   * ======================================================================== */
-
+  /* Prevent background scrolling while mobile drawer is open */
   useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = 'hidden';
@@ -82,44 +62,31 @@ export function Header() {
     };
   }, [mobileOpen]);
 
-  /* ==========================================================================
-   * ESCAPE KEY
-   * ======================================================================== */
-
+  /* Escape closes open UI */
   useEffect(() => {
     if (!mobileOpen && !searchOpen) {
       return;
     }
 
-    const handleKeyDown = (
-      event: KeyboardEvent,
-    ) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setMobileOpen(false);
         setSearchOpen(false);
       }
     };
 
-    window.addEventListener(
-      'keydown',
-      handleKeyDown,
-    );
+    window.addEventListener('keydown', handleKeyDown);
 
-    return () =>
+    return () => {
       window.removeEventListener(
         'keydown',
         handleKeyDown,
       );
+    };
   }, [mobileOpen, searchOpen]);
 
-  /* ==========================================================================
-   * SEARCH
-   * ======================================================================== */
-
-  const handleSearch = (
-    e: React.FormEvent,
-  ) => {
-    e.preventDefault();
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
 
     const query = searchQuery.trim();
 
@@ -131,12 +98,9 @@ export function Header() {
       `/shop?q=${encodeURIComponent(query)}`,
     );
 
-    setSearchOpen(false);
     setSearchQuery('');
-  };
-
-  const toggleMobileMenu = () => {
-    setMobileOpen((open) => !open);
+    setSearchOpen(false);
+    setMobileOpen(false);
   };
 
   const closeMobileMenu = () => {
@@ -145,49 +109,65 @@ export function Header() {
 
   return (
     <>
-      {/* ======================================================================
-          ANNOUNCEMENT BAR
-      ======================================================================= */}
-
+      {/* Announcement Bar */}
       <div
         className="
+          w-full
           bg-brand-brown
           text-brand-cream
-          text-center
-          text-[9px]
-          sm:text-2xs
-          uppercase
-          tracking-[0.12em]
-          sm:tracking-widest
-          py-2
-          px-3
-          sm:px-4
           border-b
           border-brand-brown/10
         "
       >
-        <span className="font-medium">
-          Premium Nimar Papads · FSSAI {brand.fssai} ·
-          Authentic Quality
-        </span>
+        <div
+          className="
+            container-max
+            container-px
+            flex
+            min-h-[32px]
+            items-center
+            justify-center
+            text-center
+          "
+        >
+          <span
+            className="
+              font-medium
+              text-[9px]
+              sm:text-2xs
+              uppercase
+              tracking-[0.12em]
+              sm:tracking-widest
+              leading-relaxed
+            "
+          >
+            Premium Nimar Papads · FSSAI {brand.fssai} · Authentic Quality
+          </span>
+        </div>
       </div>
 
-      {/* ======================================================================
-          HEADER
-      ======================================================================= */}
-
+      {/* Main Header */}
       <header
         className={`
           sticky
           top-0
           z-50
+          w-full
+          border-b
           transition-all
           duration-300
-          border-b
           ${
             scrolled
-              ? 'bg-brand-cream/95 backdrop-blur-md border-brand-brown/5 shadow-soft'
-              : 'bg-brand-cream border-brand-brown/5'
+              ? `
+                bg-brand-cream/95
+                backdrop-blur-md
+                border-brand-brown/5
+                shadow-soft
+              `
+              : `
+                bg-brand-cream
+                border-brand-brown/5
+              `
           }
         `}
       >
@@ -195,32 +175,31 @@ export function Header() {
           <div
             className="
               flex
+              w-full
               items-center
               justify-between
+              gap-2
+              sm:gap-4
               min-h-[64px]
               sm:min-h-[72px]
-              lg:h-20
-              gap-2
+              lg:h-[78px]
             "
           >
-            {/* ==================================================================
-                LOGO
-            =================================================================== */}
-
-            <div className="min-w-0 flex-shrink">
+            {/* Logo */}
+            <div className="min-w-0 flex-1 lg:flex-none">
               <Logo />
             </div>
 
-            {/* ==================================================================
-                DESKTOP NAV
-            =================================================================== */}
-
+            {/* Desktop Navigation */}
             <nav
               className="
                 hidden
                 lg:flex
+                flex-1
                 items-center
-                gap-1
+                justify-center
+                gap-0.5
+                xl:gap-1
               "
               aria-label="Main navigation"
             >
@@ -230,16 +209,18 @@ export function Header() {
                   to={link.path}
                   className={({ isActive }) =>
                     `
-                      px-4
+                      whitespace-nowrap
+                      px-3
+                      xl:px-4
                       py-2
                       rounded-full
                       text-sm
                       font-medium
-                      transition-all
+                      transition-colors
                       ${
                         isActive
-                          ? 'text-brand-red'
-                          : 'text-brand-brown/80 hover:text-brand-red'
+                          ? 'text-brand-red bg-brand-red/5'
+                          : 'text-brand-brown/80 hover:text-brand-red hover:bg-brand-brown/5'
                       }
                     `
                   }
@@ -249,40 +230,35 @@ export function Header() {
               ))}
             </nav>
 
-            {/* ==================================================================
-                ACTIONS
-            =================================================================== */}
-
+            {/* Header Actions */}
             <div
               className="
                 flex
                 items-center
+                justify-end
                 gap-0.5
                 sm:gap-1
-                flex-shrink-0
+                shrink-0
               "
             >
               {/* Search */}
-
               <button
                 type="button"
                 onClick={() =>
-                  setSearchOpen(
-                    (open) => !open,
-                  )
+                  setSearchOpen((open) => !open)
                 }
                 className="
-                  min-w-[42px]
-                  min-h-[42px]
-                  p-2.5
-                  rounded-full
                   flex
+                  min-h-[42px]
+                  min-w-[42px]
                   items-center
                   justify-center
+                  rounded-full
+                  p-2.5
                   text-brand-brown
+                  transition-colors
                   hover:bg-brand-brown/5
                   active:bg-brand-brown/10
-                  transition-colors
                 "
                 aria-label={
                   searchOpen
@@ -292,74 +268,73 @@ export function Header() {
                 aria-expanded={searchOpen}
               >
                 {searchOpen ? (
-                  <X className="w-5 h-5" />
+                  <X className="h-5 w-5" />
                 ) : (
-                  <Search className="w-5 h-5" />
+                  <Search className="h-5 w-5" />
                 )}
               </button>
 
               {/* Cart */}
-
               <Link
                 to="/cart"
                 className="
                   relative
-                  min-w-[42px]
-                  min-h-[42px]
-                  p-2.5
-                  rounded-full
                   flex
+                  min-h-[42px]
+                  min-w-[42px]
                   items-center
                   justify-center
+                  rounded-full
+                  p-2.5
                   text-brand-brown
+                  transition-colors
                   hover:bg-brand-brown/5
                   active:bg-brand-brown/10
-                  transition-colors
                 "
                 aria-label={`Cart with ${itemCount} items`}
               >
-                <ShoppingBag className="w-5 h-5" />
+                <ShoppingBag className="h-5 w-5" />
 
                 {itemCount > 0 && (
                   <span
                     className="
                       absolute
-                      top-0.5
                       right-0.5
-                      min-w-[17px]
-                      h-[17px]
-                      px-0.5
-                      rounded-full
-                      bg-brand-red
-                      text-white
-                      text-[9px]
-                      font-bold
+                      top-0.5
                       flex
+                      h-[17px]
+                      min-w-[17px]
                       items-center
                       justify-center
+                      rounded-full
+                      bg-brand-red
+                      px-0.5
+                      text-[9px]
+                      font-bold
+                      text-white
                     "
                   >
-                    {itemCount > 9
-                      ? '9+'
-                      : itemCount}
+                    {itemCount > 9 ? '9+' : itemCount}
                   </span>
                 )}
               </Link>
 
               {/* Desktop Shop Button */}
-
               <Link
                 to="/shop"
                 className="
                   hidden
-                  sm:inline-flex
+                  md:inline-flex
+                  lg:inline-flex
                   btn-primary
-                  text-sm
-                  px-5
-                  lg:px-6
-                  py-2.5
                   ml-1
                   lg:ml-2
+                  min-h-[42px]
+                  px-4
+                  lg:px-5
+                  py-2
+                  text-sm
+                  whitespace-nowrap
                   shadow-none
                   hover:shadow-glow
                 "
@@ -368,23 +343,24 @@ export function Header() {
               </Link>
 
               {/* Mobile Menu */}
-
               <button
                 type="button"
-                onClick={toggleMobileMenu}
+                onClick={() =>
+                  setMobileOpen((open) => !open)
+                }
                 className="
-                  lg:hidden
-                  min-w-[42px]
-                  min-h-[42px]
-                  p-2.5
-                  rounded-full
                   flex
+                  lg:hidden
+                  min-h-[42px]
+                  min-w-[42px]
                   items-center
                   justify-center
+                  rounded-full
+                  p-2.5
                   text-brand-brown
+                  transition-colors
                   hover:bg-brand-brown/5
                   active:bg-brand-brown/10
-                  transition-colors
                 "
                 aria-label={
                   mobileOpen
@@ -395,22 +371,20 @@ export function Header() {
                 aria-controls="mobile-navigation"
               >
                 {mobileOpen ? (
-                  <X className="w-6 h-6" />
+                  <X className="h-6 w-6" />
                 ) : (
-                  <Menu className="w-6 h-6" />
+                  <Menu className="h-6 w-6" />
                 )}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ======================================================================
-            SEARCH BAR
-        ======================================================================= */}
-
+        {/* Search Panel */}
         {searchOpen && (
           <div
             className="
+              w-full
               border-t
               border-brand-brown/5
               bg-white
@@ -428,25 +402,26 @@ export function Header() {
               <form
                 onSubmit={handleSearch}
                 className="
+                  mx-auto
                   flex
+                  w-full
+                  max-w-3xl
                   gap-2
                 "
               >
                 <input
                   type="search"
                   value={searchQuery}
-                  onChange={(e) =>
-                    setSearchQuery(
-                      e.target.value,
-                    )
+                  onChange={(event) =>
+                    setSearchQuery(event.target.value)
                   }
                   placeholder="Search our papads..."
                   className="
                     input-field
-                    bg-brand-cream/30
                     min-h-[44px]
-                    flex-1
                     min-w-0
+                    flex-1
+                    bg-brand-cream/30
                   "
                   autoFocus
                   aria-label="Search products"
@@ -456,10 +431,10 @@ export function Header() {
                   type="submit"
                   className="
                     btn-primary
+                    min-h-[44px]
+                    shrink-0
                     px-4
                     sm:px-6
-                    min-h-[44px]
-                    flex-shrink-0
                   "
                 >
                   Search
@@ -470,10 +445,7 @@ export function Header() {
         )}
       </header>
 
-      {/* ========================================================================
-          MOBILE MENU
-      ======================================================================== */}
-
+      {/* Mobile Navigation */}
       {mobileOpen && (
         <div
           className="
@@ -484,58 +456,55 @@ export function Header() {
           "
         >
           {/* Backdrop */}
-
           <button
             type="button"
+            onClick={closeMobileMenu}
             className="
               absolute
               inset-0
-              w-full
               h-full
+              w-full
+              cursor-default
               bg-brand-brown/25
               backdrop-blur-sm
-              cursor-default
             "
-            onClick={closeMobileMenu}
             aria-label="Close mobile menu"
           />
 
           {/* Drawer */}
-
           <nav
             id="mobile-navigation"
+            aria-label="Mobile navigation"
             className="
               absolute
               right-0
               top-0
-              bottom-0
-              w-[min(88vw,360px)]
-              max-w-full
-              bg-brand-cream
-              shadow-lift
-              p-4
-              sm:p-6
-              animate-fade-in
               flex
+              h-full
+              w-[min(88vw,380px)]
+              max-w-full
               flex-col
               overflow-y-auto
               overscroll-contain
+              bg-brand-cream
+              p-4
+              shadow-lift
+              animate-fade-in
+              sm:p-6
             "
-            aria-label="Mobile navigation"
           >
             {/* Drawer Header */}
-
             <div
               className="
                 flex
                 items-center
                 justify-between
                 gap-3
-                mb-5
-                sm:mb-8
-                pb-4
                 border-b
                 border-brand-brown/10
+                pb-4
+                mb-5
+                sm:mb-7
               "
             >
               <div className="min-w-0">
@@ -546,27 +515,26 @@ export function Header() {
                 type="button"
                 onClick={closeMobileMenu}
                 className="
-                  min-w-[42px]
-                  min-h-[42px]
-                  p-2
-                  rounded-full
                   flex
+                  min-h-[42px]
+                  min-w-[42px]
+                  shrink-0
                   items-center
                   justify-center
+                  rounded-full
+                  p-2
                   text-brand-brown
                   hover:bg-brand-brown/5
                   active:bg-brand-brown/10
-                  flex-shrink-0
                 "
                 aria-label="Close menu"
               >
-                <X className="w-6 h-6" />
+                <X className="h-6 w-6" />
               </button>
             </div>
 
-            {/* Navigation Links */}
-
-            <div className="space-y-1.5 flex-1">
+            {/* Mobile Links */}
+            <div className="flex-1 space-y-1.5">
               {navLinks.map((link) => (
                 <NavLink
                   key={link.path}
@@ -575,15 +543,16 @@ export function Header() {
                   className={({ isActive }) =>
                     `
                       flex
-                      items-center
                       min-h-[48px]
+                      w-full
+                      items-center
+                      rounded-xl
                       px-4
                       py-3
-                      rounded-xl
                       text-base
-                      sm:text-lg
                       font-medium
                       transition-colors
+                      sm:text-lg
                       ${
                         isActive
                           ? 'bg-brand-red/10 text-brand-red'
@@ -597,15 +566,15 @@ export function Header() {
               ))}
             </div>
 
-            {/* Drawer Bottom */}
-
+            {/* Mobile Actions */}
             <div
               className="
-                pt-5
-                sm:pt-6
                 mt-5
                 border-t
                 border-brand-brown/10
+                pt-5
+                sm:mt-6
+                sm:pt-6
               "
             >
               <Link
@@ -613,11 +582,11 @@ export function Header() {
                 onClick={closeMobileMenu}
                 className="
                   btn-primary
-                  w-full
-                  min-h-[48px]
-                  justify-center
-                  items-center
                   inline-flex
+                  min-h-[48px]
+                  w-full
+                  items-center
+                  justify-center
                 "
               >
                 Shop Papads
@@ -628,25 +597,25 @@ export function Header() {
                 onClick={closeMobileMenu}
                 className="
                   mt-2
-                  w-full
-                  min-h-[46px]
-                  justify-center
-                  items-center
                   inline-flex
+                  min-h-[46px]
+                  w-full
+                  items-center
+                  justify-center
                   gap-2
                   rounded-xl
                   border
                   border-brand-brown/15
-                  text-brand-brown
-                  font-medium
                   text-sm
-                  hover:bg-brand-brown/5
+                  font-medium
+                  text-brand-brown
                   transition-colors
+                  hover:bg-brand-brown/5
                 "
               >
-                <ShoppingBag className="w-4 h-4" />
-
+                <ShoppingBag className="h-4 w-4" />
                 Cart
+
                 {itemCount > 0 && (
                   <span className="text-brand-red">
                     ({itemCount})
