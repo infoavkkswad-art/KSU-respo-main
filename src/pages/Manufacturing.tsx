@@ -1,35 +1,47 @@
 import { SEO, breadcrumbSchema } from '@/components/SEO';
-import { PageHero, PlaceholderImage } from '@/components/Section';
+import { PlaceholderImage } from '@/components/Section';
 import { Reveal, CTABanner } from '@/components/Reveal';
 import { brand } from '@/data/brand';
-import { Leaf, Shield, Factory, Check, ArrowRight } from 'lucide-react';
+import {
+  Leaf,
+  Shield,
+  Factory,
+  Check,
+  ArrowRight,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const FACTORY_HERO_IMAGE =
+  '/images/pages/manufacturing-hero.png';
+
+const FACTORY_PRODUCTION_IMAGE =
+  '/images/pages/manufacturing-production.png';
+
 const steps = [
-  { 
-    num: '01', 
-    title: 'Raw Material Selection', 
-    desc: 'Premium quality moong, chana, and urad dal flours are sourced alongside authentic regional spices, ensuring the foundational purity and flavor profile of every batch.' 
+  {
+    num: '01',
+    title: 'Raw Material Selection',
+    desc: 'Premium quality moong, chana, and urad dal flours are sourced alongside authentic regional spices, ensuring the foundational purity and flavor profile of every batch.',
   },
-  { 
-    num: '02', 
-    title: 'Dough Mixing & Shaping', 
-    desc: 'Flours and spice blends are combined with water, kneaded to consistent texture, and shaped into traditional papads following established regional recipes.' 
+  {
+    num: '02',
+    title: 'Dough Mixing & Shaping',
+    desc: 'Flours and spice blends are combined with water, kneaded to consistent texture, and shaped into traditional papads following established regional recipes.',
   },
-  { 
-    num: '03', 
-    title: 'Traditional Drying', 
-    desc: 'Shaped papads are dried under standard facility conditions to achieve appropriate moisture levels, structural integrity, and shelf stability.' 
+  {
+    num: '03',
+    title: 'Traditional Drying',
+    desc: 'Shaped papads are dried under standard facility conditions to achieve appropriate moisture levels, structural integrity, and shelf stability.',
   },
-  { 
-    num: '04', 
-    title: 'Quality Inspection', 
-    desc: 'Every production lot is reviewed for uniform thickness, texture consistency, and general appearance before final approval.' 
+  {
+    num: '04',
+    title: 'Quality Inspection',
+    desc: 'Every production lot is reviewed for uniform thickness, texture consistency, and general appearance before final approval.',
   },
-  { 
-    num: '05', 
-    title: 'Sealed Packaging', 
-    desc: 'Finished papads are packed securely in food-grade packaging to preserve authentic flavor and crunch from our Nimar facility to your kitchen.' 
+  {
+    num: '05',
+    title: 'Sealed Packaging',
+    desc: 'Finished papads are packed securely in food-grade packaging to preserve authentic flavor and crunch from our Nimar facility to your kitchen.',
   },
 ];
 
@@ -38,7 +50,7 @@ export default function Manufacturing() {
     <>
       <SEO
         title="Manufacturing Process"
-        description="Explore the Kawad Swad manufacturing process at Kawad Swad Udhyog in Nimar — from raw material sourcing and shaping to quality checks and sealed packaging."
+        description="Explore the Kawad Swad manufacturing approach at Kawad Swad Udhyog in Nimar, from ingredient selection and papad preparation to quality checking and sealed packaging."
         path="/manufacturing"
         structuredData={breadcrumbSchema([
           { name: 'Home', path: '/' },
@@ -46,27 +58,213 @@ export default function Manufacturing() {
         ])}
       />
 
-      <PageHero
-        eyebrow="Our Process"
-        title="Crafted with precision, grounded in tradition."
-        description="A structured manufacturing workflow designed to preserve authentic Nimar papad recipes while maintaining rigorous quality and hygiene standards."
-      />
+      {/* ================================================================
+          MANUFACTURING HERO
+      ================================================================= */}
 
-      {/* Editorial Process Steps */}
-      <section className="container-max container-px py-20 lg:py-28">
+      <section className="relative overflow-hidden">
+        <div
+          className="
+            relative
+            min-h-[360px]
+            w-full
+            bg-brand-brown
+            sm:min-h-[440px]
+            lg:min-h-[560px]
+          "
+        >
+          <img
+            src={FACTORY_HERO_IMAGE}
+            alt="Kawad Swad factory and manufacturing environment"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            className="
+              absolute
+              inset-0
+              h-full
+              w-full
+              object-cover
+            "
+          />
+
+          <div
+            className="
+              absolute
+              inset-0
+              bg-gradient-to-r
+              from-brand-brown/85
+              via-brand-brown/55
+              to-brand-brown/15
+            "
+          />
+
+          <div
+            className="
+              container-max
+              container-px
+              relative
+              flex
+              min-h-[360px]
+              items-center
+              sm:min-h-[440px]
+              lg:min-h-[560px]
+            "
+          >
+            <div className="max-w-3xl py-14 sm:py-16 lg:py-20">
+              <span
+                className="
+                  mb-4
+                  block
+                  text-xs
+                  font-semibold
+                  uppercase
+                  tracking-[0.2em]
+                  text-brand-yellow
+                  sm:text-sm
+                "
+              >
+                Our Process
+              </span>
+
+              <h1
+                className="
+                  font-serif
+                  text-4xl
+                  font-bold
+                  leading-[1.05]
+                  tracking-tight
+                  text-white
+                  sm:text-5xl
+                  lg:text-7xl
+                "
+              >
+                Crafted with precision,
+                <br />
+                <span className="text-brand-yellow">
+                  grounded in tradition.
+                </span>
+              </h1>
+
+              <p
+                className="
+                  mt-5
+                  max-w-2xl
+                  text-sm
+                  leading-relaxed
+                  text-white/80
+                  sm:text-base
+                  lg:text-lg
+                "
+              >
+                A structured manufacturing workflow
+                designed to preserve authentic Nimar papad
+                recipes while maintaining careful quality
+                and hygiene practices.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          EDITORIAL PROCESS STEPS
+      ================================================================= */}
+
+      <section className="container-max container-px py-16 sm:py-20 lg:py-28">
         <div className="space-y-16 lg:space-y-24">
-          {steps.map((step, i) => (
-            <Reveal key={i}>
-              <div className={`grid lg:grid-cols-12 gap-8 lg:gap-16 items-center ${i % 2 === 1 ? 'lg:grid-flow-dense' : ''}`}>
-                <div className={`lg:col-span-6 ${i % 2 === 1 ? 'lg:col-start-7' : ''}`}>
-                  <div className="rounded-3xl overflow-hidden shadow-lift border border-brand-brown/10">
-                    <PlaceholderImage label={`${step.title} — process view`} aspect="aspect-[4/3]" />
+          {steps.map((step, index) => (
+            <Reveal key={step.num}>
+              <div
+                className={`
+                  grid
+                  items-center
+                  gap-8
+                  lg:grid-cols-12
+                  lg:gap-16
+                  ${
+                    index % 2 === 1
+                      ? 'lg:grid-flow-dense'
+                      : ''
+                  }
+                `}
+              >
+                <div
+                  className={`
+                    lg:col-span-6
+                    ${
+                      index % 2 === 1
+                        ? 'lg:col-start-7'
+                        : ''
+                    }
+                  `}
+                >
+                  <div
+                    className="
+                      overflow-hidden
+                      rounded-2xl
+                      border
+                      border-brand-brown/10
+                      bg-brand-cream-dark
+                      shadow-lift
+                      sm:rounded-3xl
+                    "
+                  >
+                    <PlaceholderImage
+                      label={`${step.title} — real process photography pending`}
+                      aspect="aspect-[4/3]"
+                    />
                   </div>
                 </div>
-                <div className={`lg:col-span-6 ${i % 2 === 1 ? 'lg:col-start-1 lg:row-start-1' : ''}`}>
-                  <span className="text-6xl font-serif font-bold text-brand-red/20 block mb-3">{step.num}</span>
-                  <h2 className="text-2xl lg:text-4xl font-serif font-bold text-brand-brown mb-4">{step.title}</h2>
-                  <p className="text-base lg:text-lg text-brand-brown/70 leading-relaxed font-normal text-pretty">
+
+                <div
+                  className={`
+                    lg:col-span-6
+                    ${
+                      index % 2 === 1
+                        ? 'lg:col-start-1 lg:row-start-1'
+                        : ''
+                    }
+                  `}
+                >
+                  <span
+                    className="
+                      mb-3
+                      block
+                      font-serif
+                      text-5xl
+                      font-bold
+                      leading-none
+                      text-brand-red/20
+                      sm:text-6xl
+                    "
+                  >
+                    {step.num}
+                  </span>
+
+                  <h2
+                    className="
+                      mb-4
+                      font-serif
+                      text-2xl
+                      font-bold
+                      text-brand-brown
+                      sm:text-3xl
+                      lg:text-4xl
+                    "
+                  >
+                    {step.title}
+                  </h2>
+
+                  <p
+                    className="
+                      text-sm
+                      leading-relaxed
+                      text-brand-brown/70
+                      sm:text-base
+                      lg:text-lg
+                    "
+                  >
                     {step.desc}
                   </p>
                 </div>
@@ -76,49 +274,186 @@ export default function Manufacturing() {
         </div>
       </section>
 
-      {/* Manufacturing Philosophy */}
-      <section className="bg-brand-brown text-brand-cream py-20">
+      {/* ================================================================
+          MANUFACTURING PHILOSOPHY + REAL FACTORY IMAGE
+      ================================================================= */}
+
+      <section className="bg-brand-brown py-16 text-brand-cream sm:py-20 lg:py-24">
         <div className="container-max container-px">
-          <Reveal>
-            <div className="max-w-3xl">
-              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-yellow mb-3 block">Manufacturing Philosophy</span>
-              <h2 className="text-3xl lg:text-4xl font-serif font-bold text-white mb-6 text-balance">
-                Honoring tradition through structured execution.
-              </h2>
-              <p className="text-base lg:text-lg text-brand-cream/80 leading-relaxed text-pretty mb-10">
-                At Kawad Swad Udhyog, we believe that exceptional papad requires respect for traditional culinary methods combined with structured operational hygiene and careful ingredient sourcing.
-              </p>
-              
-              <div className="grid sm:grid-cols-3 gap-6 pt-6 border-t border-brand-cream/15">
-                {[
-                  { icon: Leaf, title: 'Authentic Recipes', desc: 'Rooted in Nimar traditions' },
-                  { icon: Shield, title: 'FSSAI Licence', desc: `Licence No. ${brand.fssai}` },
-                  { icon: Factory, title: 'Commercial Supply', desc: 'Consistent production capacity' },
-                ].map((item, idx) => (
-                  <div key={idx} className="p-5 rounded-2xl bg-white/5 border border-white/10">
-                    <item.icon className="w-6 h-6 text-brand-yellow mb-3" />
-                    <h3 className="text-sm font-serif font-semibold text-white mb-1">{item.title}</h3>
-                    <p className="text-xs text-brand-cream/60">{item.desc}</p>
+          <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-6">
+              <Reveal>
+                <div>
+                  <span
+                    className="
+                      mb-3
+                      block
+                      text-sm
+                      font-semibold
+                      uppercase
+                      tracking-[0.2em]
+                      text-brand-yellow
+                    "
+                  >
+                    Manufacturing Philosophy
+                  </span>
+
+                  <h2
+                    className="
+                      mb-6
+                      font-serif
+                      text-3xl
+                      font-bold
+                      text-white
+                      sm:text-4xl
+                    "
+                  >
+                    Honoring tradition through
+                    structured execution.
+                  </h2>
+
+                  <p
+                    className="
+                      mb-10
+                      text-sm
+                      leading-relaxed
+                      text-brand-cream/80
+                      sm:text-base
+                      lg:text-lg
+                    "
+                  >
+                    At Kawad Swad Udhyog, we believe that
+                    exceptional papad requires respect for
+                    traditional culinary methods combined
+                    with structured operational hygiene and
+                    careful ingredient sourcing.
+                  </p>
+
+                  <div
+                    className="
+                      grid
+                      gap-4
+                      border-t
+                      border-brand-cream/15
+                      pt-6
+                      sm:grid-cols-3
+                      sm:gap-6
+                    "
+                  >
+                    {[
+                      {
+                        icon: Leaf,
+                        title: 'Authentic Recipes',
+                        desc: 'Rooted in Nimar traditions',
+                      },
+                      {
+                        icon: Shield,
+                        title: 'FSSAI Licence',
+                        desc: `Licence No. ${brand.fssai}`,
+                      },
+                      {
+                        icon: Factory,
+                        title: 'Commercial Supply',
+                        desc: 'Consistent production capacity',
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.title}
+                        className="
+                          rounded-2xl
+                          border
+                          border-white/10
+                          bg-white/5
+                          p-4
+                          sm:p-5
+                        "
+                      >
+                        <item.icon
+                          className="mb-3 h-6 w-6 text-brand-yellow"
+                          aria-hidden="true"
+                        />
+
+                        <h3
+                          className="
+                            mb-1
+                            font-serif
+                            text-sm
+                            font-semibold
+                            text-white
+                          "
+                        >
+                          {item.title}
+                        </h3>
+
+                        <p className="text-xs text-brand-cream/60">
+                          {item.desc}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              </Reveal>
             </div>
-          </Reveal>
+
+            <div className="lg:col-span-6">
+              <Reveal delay={150}>
+                <div
+                  className="
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-white/10
+                    bg-brand-brown-dark
+                    shadow-lift
+                    sm:rounded-3xl
+                  "
+                >
+                  <img
+                    src={FACTORY_PRODUCTION_IMAGE}
+                    alt="Kawad Swad papad production line and factory environment"
+                    loading="lazy"
+                    decoding="async"
+                    className="
+                      block
+                      aspect-[4/3]
+                      h-full
+                      w-full
+                      object-cover
+                    "
+                  />
+                </div>
+              </Reveal>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Operational Standards */}
-      <section className="container-max container-px py-20">
+      {/* ================================================================
+          OPERATIONAL STANDARDS
+      ================================================================= */}
+
+      <section className="container-max container-px py-16 sm:py-20 lg:py-24">
         <Reveal>
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="section-eyebrow mb-3 block">Quality Assurance</span>
-            <h2 className="text-3xl lg:text-4xl font-serif font-bold text-brand-brown text-balance">
+          <div className="mx-auto mb-10 max-w-2xl text-center sm:mb-12">
+            <span className="section-eyebrow mb-3 block">
+              Quality Assurance
+            </span>
+
+            <h2
+              className="
+                font-serif
+                text-3xl
+                font-bold
+                text-brand-brown
+                sm:text-4xl
+              "
+            >
               Standards built into every batch
             </h2>
           </div>
         </Reveal>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           {[
             'FSSAI Licence No. 21425890001224',
             '100% vegetarian production line',
@@ -128,33 +463,94 @@ export default function Manufacturing() {
             'Authentic regional spice blends',
             'Careful lentil flour sourcing',
             'Standardized quality control steps',
-          ].map((point, i) => (
-            <Reveal key={i} delay={i * 40}>
-              <div className="card p-6 bg-white border border-brand-brown/5 shadow-soft flex items-start gap-3 h-full">
-                <Check className="w-5 h-5 text-brand-red shrink-0 mt-0.5" />
-                <span className="text-sm font-medium text-brand-brown/80">{point}</span>
+          ].map((point, index) => (
+            <Reveal
+              key={point}
+              delay={index * 40}
+            >
+              <div
+                className="
+                  card
+                  flex
+                  h-full
+                  items-start
+                  gap-3
+                  border
+                  border-brand-brown/5
+                  bg-white
+                  p-5
+                  shadow-soft
+                  sm:p-6
+                "
+              >
+                <Check
+                  className="
+                    mt-0.5
+                    h-5
+                    w-5
+                    shrink-0
+                    text-brand-red
+                  "
+                  aria-hidden="true"
+                />
+
+                <span
+                  className="
+                    text-sm
+                    font-medium
+                    leading-relaxed
+                    text-brand-brown/80
+                  "
+                >
+                  {point}
+                </span>
               </div>
             </Reveal>
           ))}
         </div>
       </section>
 
-      {/* B2B Commercial Call to Action */}
-      <section className="bg-brand-cream-dark py-16 border-t border-brand-brown/5">
+      {/* ================================================================
+          B2B CTA
+      ================================================================= */}
+
+      <section className="border-t border-brand-brown/5 bg-brand-cream-dark py-16 sm:py-20">
         <div className="container-max container-px text-center">
           <Reveal>
-            <div className="max-w-2xl mx-auto">
-              <h2 className="text-2xl lg:text-3xl font-serif font-bold text-brand-brown mb-4">
+            <div className="mx-auto max-w-2xl">
+              <h2
+                className="
+                  mb-4
+                  font-serif
+                  text-2xl
+                  font-bold
+                  text-brand-brown
+                  sm:text-3xl
+                "
+              >
                 Ready to partner with Kawad Swad?
               </h2>
-              <p className="text-base text-brand-brown/70 mb-8">
-                Whether you are looking for bulk supply for your business or regional distribution partnerships, our team is ready to assist you.
+
+              <p className="mb-8 text-sm leading-relaxed text-brand-brown/70 sm:text-base">
+                Whether you are looking for bulk supply
+                for your business or regional distribution
+                partnerships, our team is ready to assist
+                you.
               </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Link to="/bulk-orders" className="btn-primary px-8 py-3">
-                  Request Bulk Supply <ArrowRight className="w-4 h-4 ml-1" />
+
+              <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+                <Link
+                  to="/bulk-orders"
+                  className="btn-primary justify-center px-8 py-3"
+                >
+                  Request Bulk Supply
+                  <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
-                <Link to="/distributor" className="btn-outline px-8 py-3">
+
+                <Link
+                  to="/distributor"
+                  className="btn-outline justify-center px-8 py-3"
+                >
                   Become a Distributor
                 </Link>
               </div>
