@@ -14,45 +14,59 @@ export const brand = {
   instagramUrl: 'https://www.instagram.com/kawadswad',
   youtube: 'kawadswadudhyog',
   youtubeUrl: 'https://www.youtube.com/@kawadswadudhyog',
-  whatsappUrl: `https://wa.me/919630976867`,
+  whatsappUrl: 'https://wa.me/919630976867',
 } as const;
 
+/**
+ * Primary navigation
+ *
+ * Keep the public navigation intentionally small.
+ * Secondary destinations remain available through the footer
+ * and contextual page links.
+ */
 export const navLinks = [
   { label: 'Home', path: '/' },
-  { label: 'About', path: '/about' },
-  { label: 'Products', path: '/products' },
   { label: 'Shop', path: '/shop' },
-  { label: 'Business', path: '/business' },
-  { label: 'Manufacturing', path: '/manufacturing' },
-  { label: 'Gallery', path: '/gallery' },
-  { label: 'Blog', path: '/blog' },
+  { label: 'Our Story', path: '/about' },
+  { label: 'Making', path: '/manufacturing' },
+  { label: 'Journal', path: '/blog' },
   { label: 'Contact', path: '/contact' },
 ] as const;
 
+/**
+ * Footer navigation
+ *
+ * Primary destinations plus supporting/business routes.
+ * These are deliberately kept out of the main navigation
+ * to maintain a cleaner premium experience.
+ */
 export const footerLinks = {
   brand: [
-    { label: 'About', path: '/about' },
-    { label: 'Manufacturing', path: '/manufacturing' },
+    { label: 'Our Story', path: '/about' },
+    { label: 'Making', path: '/manufacturing' },
     { label: 'Gallery', path: '/gallery' },
-    { label: 'Blog', path: '/blog' },
+    { label: 'Journal', path: '/blog' },
     { label: 'Media', path: '/media' },
   ],
+
   shop: [
-    { label: 'Products', path: '/products' },
-    { label: 'Shop', path: '/shop' },
+    { label: 'Shop Papads', path: '/shop' },
+    { label: 'All Products', path: '/products' },
     { label: 'Cart', path: '/cart' },
-    { label: 'Checkout', path: '/checkout' },
+    { label: 'Track Order', path: '/track-order' },
   ],
+
   business: [
     { label: 'Business Hub', path: '/business' },
     { label: 'Bulk Orders', path: '/bulk-orders' },
     { label: 'Distributor', path: '/distributor' },
     { label: 'Work With Us', path: '/work-with-us' },
   ],
+
   support: [
     { label: 'Contact', path: '/contact' },
     { label: 'FAQ', path: '/faq' },
-    { label: 'Policies', path: '/policies' },
     { label: 'Reviews', path: '/reviews' },
+    { label: 'Policies', path: '/policies' },
   ],
 } as const;
