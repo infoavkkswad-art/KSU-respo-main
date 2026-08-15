@@ -30,6 +30,7 @@ import {
 import { ProductService } from '../services/product-service';
 import { PACK_LABELS } from '../data/products';
 import { apiClient } from '../services/api-client';
+import { ProductImage } from '../components/ProductImage';
 
 const initial: CustomerInfo = {
   fullName: '',
@@ -168,8 +169,6 @@ function validateCheckoutCustomer(
   const state = customer.state.trim();
   const pincode = customer.pincode.trim();
 
-  /* Full name */
-
   if (!fullName) {
     errors.push('Please enter your full name.');
   } else if (fullName.length < 4) {
@@ -186,8 +185,6 @@ function validateCheckoutCustomer(
     );
   }
 
-  /* Phone */
-
   if (!phone) {
     errors.push('Please enter your mobile number.');
   } else if (!/^[6-9]\d{9}$/.test(phone)) {
@@ -195,8 +192,6 @@ function validateCheckoutCustomer(
       'Please enter a valid 10-digit Indian mobile number.',
     );
   }
-
-  /* Email */
 
   if (!email) {
     errors.push('Please enter your email address.');
@@ -208,8 +203,6 @@ function validateCheckoutCustomer(
     );
   }
 
-  /* Address */
-
   if (!address) {
     errors.push(
       'Please enter your delivery address.',
@@ -219,8 +212,6 @@ function validateCheckoutCustomer(
       'Delivery address must contain at least 10 characters.',
     );
   }
-
-  /* City */
 
   if (!city) {
     errors.push('Please enter your city.');
@@ -236,8 +227,6 @@ function validateCheckoutCustomer(
     );
   }
 
-  /* State */
-
   if (!state) {
     errors.push('Please select your state.');
   } else if (
@@ -247,8 +236,6 @@ function validateCheckoutCustomer(
       'Please select a valid Indian state or union territory.',
     );
   }
-
-  /* PIN */
 
   if (!pincode) {
     errors.push('Please enter your PIN code.');
@@ -293,14 +280,6 @@ export default function Checkout() {
 
   const [paymentStage, setPaymentStage] =
     useState<PaymentStage>('idle');
-
-  /* ==========================================================================
-   * PRELOAD RAZORPAY
-   *
-   * This starts loading Razorpay as soon as the Checkout page opens.
-   * The customer therefore does not have to wait for the script after
-   * clicking "Proceed to Pay".
-   * ======================================================================== */
 
   useEffect(() => {
     void loadRazorpayScript();
@@ -371,21 +350,11 @@ export default function Checkout() {
       return;
     }
 
-    /*
-     * IMMEDIATE UI FEEDBACK
-     *
-     * The button changes as soon as the customer clicks.
-     */
-
     form.setStatus('submitting');
 
     setPaymentStage('creating-order');
 
     try {
-      /* ======================================================================
-       * 1. CREATE BACKEND ORDER
-       * ==================================================================== */
-
       const idempotencyKey =
         `idemp-${Date.now()}-${Math.random()
           .toString(36)
@@ -397,10 +366,6 @@ export default function Checkout() {
           items,
           idempotencyKey,
         });
-
-      /* ======================================================================
-       * 2. MAKE SURE RAZORPAY IS READY
-       * ==================================================================== */
 
       setPaymentStage('opening-payment');
 
@@ -415,10 +380,6 @@ export default function Checkout() {
           'Razorpay payment gateway could not be loaded. Please try again.',
         );
       }
-
-      /* ======================================================================
-       * 3. OPEN RAZORPAY
-       * ==================================================================== */
 
       const options = {
         key: orderResponse.razorpayKeyId,
@@ -450,10 +411,6 @@ export default function Checkout() {
           color: '#D97706',
         },
 
-        /* ====================================================================
-         * PAYMENT SUCCESS
-         * ================================================================== */
-
         handler: async (
           response: any,
         ) => {
@@ -463,16 +420,7 @@ export default function Checkout() {
               response,
             );
 
-            /*
-             * Payment window has successfully returned a payment response.
-             * Keep the submitting state while verification happens.
-             */
-
             setPaymentStage('opening-payment');
-
-            /* ================================================================
-             * 4. VERIFY PAYMENT
-             * ============================================================== */
 
             const verifyRes =
               await apiClient.verifyPayment({
@@ -490,10 +438,6 @@ export default function Checkout() {
               'Razorpay payment verified:',
               verifyRes,
             );
-
-            /* ================================================================
-             * 5. BUILD COMPLETED ORDER
-             * ============================================================== */
 
             const completedOrder = {
               orderId:
@@ -523,27 +467,15 @@ export default function Checkout() {
                 'confirmed' as const,
             };
 
-            /* ================================================================
-             * 6. SAVE COMPLETED ORDER
-             * ============================================================== */
-
             orderContext.setCompletedOrder(
               completedOrder,
             );
-
-            /* ================================================================
-             * 7. CLEAR CART
-             * ============================================================== */
 
             if (
               typeof clearCart === 'function'
             ) {
               clearCart();
             }
-
-            /* ================================================================
-             * 8. SUCCESS
-             * ============================================================== */
 
             form.setStatus('success');
 
@@ -578,10 +510,6 @@ export default function Checkout() {
             setPaymentStage('idle');
           }
         },
-
-        /* ====================================================================
-         * PAYMENT WINDOW CLOSED
-         * ================================================================== */
 
         modal: {
           ondismiss: () => {
@@ -658,16 +586,16 @@ export default function Checkout() {
           indexable={false}
         />
 
-        <div className="container-max container-px py-20 text-center">
+        <div className="container-max container-px py-16 sm:py-20 text-center">
           <ShoppingBag className="w-12 h-12 mx-auto text-brand-brown/20" />
 
-          <h1 className="text-3xl font-serif font-bold mt-4">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold mt-4">
             Your cart is empty
           </h1>
 
           <Link
             to="/shop"
-            className="btn-primary mt-6"
+            className="btn-primary mt-6 inline-flex"
           >
             Shop Papads
           </Link>
@@ -689,12 +617,12 @@ export default function Checkout() {
         indexable={false}
       />
 
-      <div className="bg-brand-cream py-12">
+      <div className="bg-brand-cream py-6 sm:py-8 lg:py-12">
         <div className="container-max container-px">
 
           {/* Breadcrumb */}
 
-          <div className="flex items-center gap-2 text-xs text-brand-brown/50 mb-6">
+          <div className="flex items-center gap-2 text-[11px] sm:text-xs text-brand-brown/50 mb-4 sm:mb-6">
             <Link
               to="/cart"
               className="hover:text-brand-red"
@@ -707,7 +635,7 @@ export default function Checkout() {
             <span>Checkout</span>
           </div>
 
-          <div className="grid lg:grid-cols-[1fr_400px] gap-12 items-start">
+          <div className="grid lg:grid-cols-[1fr_400px] gap-5 sm:gap-8 lg:gap-12 items-start">
 
             {/* =================================================================
                 CHECKOUT FORM
@@ -716,23 +644,32 @@ export default function Checkout() {
             <form
               onSubmit={submit}
               noValidate
-              className="card p-8 bg-white border border-brand-brown/5 shadow-soft"
+              className="
+                card
+                p-4
+                sm:p-6
+                lg:p-8
+                bg-white
+                border
+                border-brand-brown/5
+                shadow-soft
+              "
             >
 
               {/* Header */}
 
-              <div className="flex items-center gap-4 mb-8 pb-6 border-b border-brand-brown/10">
+              <div className="flex items-start gap-3 sm:gap-4 mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-brand-brown/10">
 
-                <div className="w-12 h-12 rounded-2xl bg-brand-red/10 flex items-center justify-center">
-                  <Lock className="w-6 h-6 text-brand-red" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-brand-red/10 flex-shrink-0 flex items-center justify-center">
+                  <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-brand-red" />
                 </div>
 
-                <div>
-                  <h1 className="text-2xl font-serif font-bold text-brand-brown">
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-serif font-bold text-brand-brown">
                     Delivery Details & Payment
                   </h1>
 
-                  <p className="text-sm text-brand-brown/60">
+                  <p className="text-xs sm:text-sm text-brand-brown/60 mt-1">
                     Provide your shipping information and complete secure payment.
                   </p>
                 </div>
@@ -765,7 +702,7 @@ export default function Checkout() {
 
                 {/* Phone + Email */}
 
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                   <FormField
                     label="Phone"
@@ -836,7 +773,7 @@ export default function Checkout() {
 
                 {/* City / State / PIN */}
 
-                <div className="grid sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                   {/* City */}
 
@@ -859,10 +796,9 @@ export default function Checkout() {
                     placeholder="City"
                   />
 
-                  {/* State Dropdown */}
+                  {/* State */}
 
                   <div className="space-y-2">
-
                     <label
                       htmlFor="state"
                       className="block text-sm font-medium text-brand-brown"
@@ -887,7 +823,7 @@ export default function Checkout() {
 
                         setError('');
                       }}
-                      className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-brand-brown outline-none transition focus:ring-2 focus:ring-brand-red/20 ${
+                      className={`w-full min-h-[44px] rounded-xl border bg-white px-4 py-3 text-sm text-brand-brown outline-none transition focus:ring-2 focus:ring-brand-red/20 ${
                         form.errors.state
                           ? 'border-brand-red'
                           : 'border-brand-brown/15'
@@ -898,7 +834,6 @@ export default function Checkout() {
                         )
                       }
                     >
-
                       <option
                         value=""
                         disabled
@@ -916,7 +851,6 @@ export default function Checkout() {
                           </option>
                         ),
                       )}
-
                     </select>
 
                     {form.errors.state && (
@@ -924,7 +858,6 @@ export default function Checkout() {
                         {form.errors.state}
                       </p>
                     )}
-
                   </div>
 
                   {/* PIN */}
@@ -956,7 +889,7 @@ export default function Checkout() {
               {/* Error */}
 
               {error && (
-                <div className="mt-6">
+                <div className="mt-5 sm:mt-6">
                   <FormStatusMessage
                     status="error"
                     successMsg=""
@@ -965,22 +898,42 @@ export default function Checkout() {
                 </div>
               )}
 
-              {/* Bottom controls */}
+              {/* Bottom Controls */}
 
-              <div className="mt-8 pt-6 border-t border-brand-brown/10 flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="
+                mt-6
+                sm:mt-8
+                pt-5
+                sm:pt-6
+                border-t
+                border-brand-brown/10
+                flex
+                flex-col
+                sm:flex-row
+                gap-4
+                items-stretch
+                sm:items-center
+                justify-between
+              ">
 
                 <Link
                   to="/cart"
-                  className="inline-flex items-center gap-2 text-sm text-brand-brown/70 hover:text-brand-red font-medium"
+                  className="
+                    inline-flex
+                    items-center
+                    justify-center
+                    sm:justify-start
+                    gap-2
+                    text-sm
+                    text-brand-brown/70
+                    hover:text-brand-red
+                    font-medium
+                    min-h-[44px]
+                  "
                 >
                   <ArrowLeft className="w-4 h-4" />
-
                   Back to cart
                 </Link>
-
-                {/* ==========================================================
-                    CHECKOUT-SPECIFIC PAYMENT BUTTON
-                    ======================================================== */}
 
                 <button
                   type="submit"
@@ -994,7 +947,9 @@ export default function Checkout() {
                     btn-primary
                     w-full
                     sm:w-auto
-                    min-w-[210px]
+                    min-w-0
+                    sm:min-w-[210px]
+                    min-h-[48px]
                     inline-flex
                     items-center
                     justify-center
@@ -1005,13 +960,12 @@ export default function Checkout() {
                     disabled:cursor-not-allowed
                   "
                 >
-
                   {form.status ===
                   'submitting' ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
 
-                      <span>
+                      <span className="text-sm">
                         {getPaymentButtonLabel()}
                       </span>
                     </>
@@ -1026,12 +980,11 @@ export default function Checkout() {
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
-
                 </button>
 
               </div>
 
-              <p className="mt-6 text-2xs text-brand-brown/50 text-center">
+              <p className="mt-5 sm:mt-6 text-2xs text-brand-brown/50 text-center">
                 Secure Razorpay payment gateway integration.
               </p>
 
@@ -1041,13 +994,28 @@ export default function Checkout() {
                 ORDER SUMMARY
             ================================================================== */}
 
-            <aside className="card p-8 bg-white border border-brand-brown/5 lg:sticky lg:top-28 shadow-soft">
+            <aside
+              className="
+                card
+                p-4
+                sm:p-6
+                lg:p-8
+                bg-white
+                border
+                border-brand-brown/5
+                lg:sticky
+                lg:top-28
+                shadow-soft
+              "
+            >
 
-              <h2 className="text-xl font-serif font-bold text-brand-brown mb-6">
+              <h2 className="text-lg sm:text-xl font-serif font-bold text-brand-brown mb-5 sm:mb-6">
                 Order Summary
               </h2>
 
-              <div className="space-y-4 mb-6">
+              {/* Product Items */}
+
+              <div className="space-y-3 sm:space-y-4 mb-5 sm:mb-6">
 
                 {resolvedItems.map(
                   ({
@@ -1073,21 +1041,78 @@ export default function Checkout() {
                     return (
                       <div
                         key={sku}
-                        className="flex justify-between gap-4 text-sm pb-3 border-b border-brand-brown/5"
+                        className="
+                          flex
+                          items-center
+                          gap-3
+                          sm:gap-4
+                          pb-3
+                          sm:pb-4
+                          border-b
+                          border-brand-brown/5
+                        "
                       >
 
-                        <span className="text-brand-brown/70">
-                          {product.name} (
-                          {packLabel}
-                          ) × {quantity}
-                        </span>
+                        {/* Product Image */}
 
-                        <span className="font-semibold text-brand-brown whitespace-nowrap">
-                          {formatPrice(
-                            skuObj.websitePrice *
-                              quantity,
-                          )}
-                        </span>
+                        <Link
+                          to={`/product/${product.slug}`}
+                          aria-label={`View ${product.name}`}
+                          className="
+                            w-16
+                            h-16
+                            sm:w-20
+                            sm:h-20
+                            flex-shrink-0
+                            rounded-xl
+                            overflow-hidden
+                            bg-brand-cream-dark
+                            border
+                            border-brand-brown/5
+                            block
+                          "
+                        >
+                          <ProductImage
+                            productId={product.id}
+                            product={product}
+                            variant="card"
+                            className="
+                              w-full
+                              h-full
+                              object-contain
+                            "
+                          />
+                        </Link>
+
+                        {/* Product Details */}
+
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            to={`/product/${product.slug}`}
+                            className="
+                              block
+                              text-sm
+                              font-semibold
+                              text-brand-brown
+                              leading-snug
+                              hover:text-brand-red
+                              transition-colors
+                            "
+                          >
+                            {product.name}
+                          </Link>
+
+                          <p className="mt-0.5 text-[11px] sm:text-xs text-brand-brown/55">
+                            {packLabel} × {quantity}
+                          </p>
+
+                          <p className="mt-1 text-sm font-bold text-brand-red">
+                            {formatPrice(
+                              skuObj.websitePrice *
+                                quantity,
+                            )}
+                          </p>
+                        </div>
 
                       </div>
                     );
@@ -1096,26 +1121,28 @@ export default function Checkout() {
 
               </div>
 
-              <div className="space-y-3 text-sm pt-2">
+              {/* Price Summary */}
 
-                <div className="flex justify-between text-brand-brown/70">
+              <div className="space-y-3 text-sm pt-1">
+
+                <div className="flex justify-between gap-4 text-brand-brown/70">
                   <span>
                     Subtotal
                   </span>
 
-                  <span>
+                  <span className="font-medium text-right">
                     {formatPrice(
                       subtotal,
                     )}
                   </span>
                 </div>
 
-                <div className="flex justify-between text-brand-brown/70">
+                <div className="flex justify-between gap-4 text-brand-brown/70">
                   <span>
                     Shipping
                   </span>
 
-                  <span>
+                  <span className="font-medium text-right">
                     {shippingTotal
                       ? formatPrice(
                           shippingTotal,
@@ -1124,18 +1151,48 @@ export default function Checkout() {
                   </span>
                 </div>
 
-                <div className="border-t border-brand-brown/10 pt-4 flex justify-between text-lg font-bold text-brand-brown">
-
+                <div className="
+                  border-t
+                  border-brand-brown/10
+                  pt-4
+                  flex
+                  justify-between
+                  gap-4
+                  text-lg
+                  font-bold
+                  text-brand-brown
+                ">
                   <span>
                     Total
                   </span>
 
-                  <span className="text-brand-red">
+                  <span className="text-brand-red whitespace-nowrap">
                     {formatPrice(total)}
                   </span>
-
                 </div>
 
+              </div>
+
+              {/* Secure Payment Note */}
+
+              <div className="
+                mt-5
+                pt-4
+                border-t
+                border-brand-brown/5
+                flex
+                items-center
+                justify-center
+                gap-2
+                text-[10px]
+                sm:text-xs
+                text-brand-brown/50
+              ">
+                <Lock className="w-3.5 h-3.5" />
+
+                <span>
+                  Secure payment powered by Razorpay
+                </span>
               </div>
 
             </aside>
