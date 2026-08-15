@@ -2,8 +2,8 @@ import {
   useEffect,
   useMemo,
   useState,
+  type FormEvent,
 } from 'react';
-
 import {
   CheckCircle2,
   Loader2,
@@ -11,15 +11,13 @@ import {
   Star,
 } from 'lucide-react';
 
-import {
-  ReviewService,
-} from '../services/review-service';
-
+import { ReviewService } from '../services/review-service';
 import type {
   CreateReviewPayload,
   ReviewResponse,
   ReviewSummary,
 } from '../types/reviews';
+import { StarRating } from './StarRating';
 
 interface ReviewSectionProps {
   productId: string;
@@ -42,52 +40,25 @@ export function ReviewSection({
   orderId,
   className = '',
 }: ReviewSectionProps) {
-  const [summary, setSummary] =
-    useState<ReviewSummary>({
-      ...EMPTY_SUMMARY,
-      productId,
-    });
+  const [summary, setSummary] = useState<ReviewSummary>({
+    ...EMPTY_SUMMARY,
+    productId,
+  });
 
-  const [reviews, setReviews] =
-    useState<ReviewResponse[]>([]);
+  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
-  const [loading, setLoading] =
-    useState(true);
+  const [customerName, setCustomerName] = useState('');
+  const [rating, setRating] = useState(0);
+  const [title, setTitle] = useState('');
+  const [comment, setComment] = useState('');
+  const [hoverRating, setHoverRating] = useState(0);
 
-  const [loadError, setLoadError] =
-    useState(false);
-
-  const [showForm, setShowForm] =
-    useState(false);
-
-  const [submitting, setSubmitting] =
-    useState(false);
-
-  const [submitted, setSubmitted] =
-    useState(false);
-
-  const [submitError, setSubmitError] =
-    useState('');
-
-  const [customerName, setCustomerName] =
-    useState('');
-
-  const [rating, setRating] =
-    useState(0);
-
-  const [title, setTitle] =
-    useState('');
-
-  const [comment, setComment] =
-    useState('');
-
-  const [hoverRating, setHoverRating] =
-    useState(0);
-
-  /*
-   * Load approved reviews and the real
-   * aggregate rating from the API.
-   */
   useEffect(() => {
     let cancelled = false;
 
@@ -96,17 +67,11 @@ export function ReviewSection({
       setLoadError(false);
 
       try {
-        const [
-          summaryResponse,
-          reviewsResponse,
-        ] = await Promise.all([
-          ReviewService.getSummary(productId),
-          ReviewService.getReviews(
-            productId,
-            20,
-            0,
-          ),
-        ]);
+        const [summaryResponse, reviewsResponse] =
+          await Promise.all([
+            ReviewService.getSummary(productId),
+            ReviewService.getReviews(productId, 20, 0),
+          ]);
 
         if (cancelled) {
           return;
@@ -130,15 +95,14 @@ export function ReviewSection({
       }
     };
 
-    loadReviews();
+    void loadReviews();
 
     return () => {
       cancelled = true;
     };
   }, [productId]);
 
-  const displayedRating =
-    hoverRating || rating;
+  const displayedRating = hoverRating || rating;
 
   const ratingLabel = useMemo(() => {
     if (rating === 0) {
@@ -157,31 +121,39 @@ export function ReviewSection({
     setSubmitError('');
   };
 
+  const refreshReviews = async () => {
+    try {
+      const [freshSummary, freshReviews] =
+        await Promise.all([
+          ReviewService.getSummary(productId),
+          ReviewService.getReviews(productId, 20, 0),
+        ]);
+
+      setSummary(freshSummary);
+      setReviews(freshReviews);
+    } catch {
+      // A newly submitted review may still be pending approval.
+    }
+  };
+
   const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
-
     setSubmitError('');
 
     if (!customerName.trim()) {
-      setSubmitError(
-        'Please enter your name.',
-      );
+      setSubmitError('Please enter your name.');
       return;
     }
 
     if (rating < 1 || rating > 5) {
-      setSubmitError(
-        'Please select a rating.',
-      );
+      setSubmitError('Please select a rating.');
       return;
     }
 
     if (!comment.trim()) {
-      setSubmitError(
-        'Please write a review.',
-      );
+      setSubmitError('Please write a review.');
       return;
     }
 
@@ -191,47 +163,20 @@ export function ReviewSection({
       rating,
       title: title.trim() || undefined,
       comment: comment.trim(),
-      customerName:
-        customerName.trim(),
+      customerName: customerName.trim(),
       orderId: orderId?.trim() || undefined,
     };
 
     setSubmitting(true);
 
     try {
-      await ReviewService.createReview(
-        payload,
-      );
+      await ReviewService.createReview(payload);
 
       setSubmitted(true);
       setShowForm(false);
       resetForm();
 
-      /*
-       * Do not immediately manufacture a new
-       * rating. The API remains the source of truth.
-       *
-       * Refresh after submission so the card
-       * reflects the backend's approved state.
-       */
-      try {
-        const [
-          freshSummary,
-          freshReviews,
-        ] = await Promise.all([
-          ReviewService.getSummary(productId),
-          ReviewService.getReviews(
-            productId,
-            20,
-            0,
-          ),
-        ]);
-
-        setSummary(freshSummary);
-        setReviews(freshReviews);
-      } catch {
-        // The submitted review may still be pending approval.
-      }
+      await refreshReviews();
 
       window.setTimeout(() => {
         setSubmitted(false);
@@ -250,16 +195,10 @@ export function ReviewSection({
   return (
     <section
       id="reviews"
-      className={`
-        scroll-mt-24
-        ${className}
-      `}
+      className={`scroll-mt-24 ${className}`}
       aria-labelledby="reviews-heading"
     >
-      {/* ================================================================
-          HEADER
-      ================================================================= */}
-
+      {/* Header */}
       <div
         className="
           mb-7
@@ -294,9 +233,7 @@ export function ReviewSection({
         <button
           type="button"
           onClick={() => {
-            setShowForm(
-              (current) => !current,
-            );
+            setShowForm((current) => !current);
             setSubmitError('');
           }}
           className="
@@ -316,10 +253,7 @@ export function ReviewSection({
         </button>
       </div>
 
-      {/* ================================================================
-          SUMMARY
-      ================================================================= */}
-
+      {/* Summary */}
       <div
         className="
           mb-8
@@ -350,14 +284,7 @@ export function ReviewSection({
           "
         >
           {loading ? (
-            <Loader2
-              className="
-                h-6
-                w-6
-                animate-spin
-                text-brand-red
-              "
-            />
+            <Loader2 className="h-6 w-6 animate-spin text-brand-red" />
           ) : summary.reviewCount > 0 ? (
             <>
               <span
@@ -368,9 +295,7 @@ export function ReviewSection({
                   text-brand-brown
                 "
               >
-                {summary.averageRating.toFixed(
-                  1,
-                )}
+                {summary.averageRating.toFixed(1)}
               </span>
 
               <div className="mt-2 flex gap-0.5">
@@ -383,8 +308,7 @@ export function ReviewSection({
                         h-4
                         w-4
                         ${
-                          summary.averageRating >=
-                          index + 1
+                          summary.averageRating >= index + 1
                             ? 'fill-brand-red text-brand-red'
                             : 'text-brand-brown/15'
                         }
@@ -395,13 +319,7 @@ export function ReviewSection({
                 )}
               </div>
 
-              <span
-                className="
-                  mt-2
-                  text-xs
-                  text-brand-brown/50
-                "
-              >
+              <span className="mt-2 text-xs text-brand-brown/50">
                 {summary.reviewCount}{' '}
                 {summary.reviewCount === 1
                   ? 'review'
@@ -416,48 +334,22 @@ export function ReviewSection({
                   (_, index) => (
                     <Star
                       key={index}
-                      className="
-                        h-4
-                        w-4
-                        text-brand-brown/20
-                      "
+                      className="h-4 w-4 text-brand-brown/20"
                       aria-hidden="true"
                     />
                   ),
                 )}
               </div>
 
-              <span
-                className="
-                  mt-3
-                  text-sm
-                  font-medium
-                  text-brand-brown/60
-                "
-              >
+              <span className="mt-3 text-sm font-medium text-brand-brown/60">
                 No reviews yet
               </span>
             </>
           )}
         </div>
 
-        <div
-          className="
-            flex
-            items-center
-            px-5
-            py-6
-            sm:px-8
-          "
-        >
-          <p
-            className="
-              max-w-2xl
-              text-sm
-              leading-relaxed
-              text-brand-brown/60
-            "
-          >
+        <div className="flex items-center px-5 py-6 sm:px-8">
+          <p className="max-w-2xl text-sm leading-relaxed text-brand-brown/60">
             {summary.reviewCount > 0
               ? `Real customer feedback for ${productName}.`
               : `Be the first to share your experience with ${productName}.`}
@@ -465,10 +357,7 @@ export function ReviewSection({
         </div>
       </div>
 
-      {/* ================================================================
-          SUCCESS MESSAGE
-      ================================================================= */}
-
+      {/* Success */}
       {submitted && (
         <div
           className="
@@ -486,15 +375,7 @@ export function ReviewSection({
           "
           role="status"
         >
-          <CheckCircle2
-            className="
-              mt-0.5
-              h-5
-              w-5
-              shrink-0
-              text-green-600
-            "
-          />
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
 
           <div>
             <p className="font-semibold">
@@ -502,17 +383,13 @@ export function ReviewSection({
             </p>
 
             <p className="mt-0.5 text-green-700/80">
-              Thank you. Your review has been
-              submitted for approval.
+              Thank you. Your review has been submitted for approval.
             </p>
           </div>
         </div>
       )}
 
-      {/* ================================================================
-          REVIEW FORM
-      ================================================================= */}
-
+      {/* Review Form */}
       {showForm && (
         <div
           className="
@@ -526,27 +403,12 @@ export function ReviewSection({
           "
         >
           <div className="mb-5">
-            <h3
-              className="
-                font-serif
-                text-xl
-                font-bold
-                text-brand-brown
-              "
-            >
+            <h3 className="font-serif text-xl font-bold text-brand-brown">
               Write your review
             </h3>
 
-            <p
-              className="
-                mt-1
-                text-xs
-                leading-relaxed
-                text-brand-brown/50
-              "
-            >
-              Share your honest experience with
-              this product.
+            <p className="mt-1 text-xs leading-relaxed text-brand-brown/50">
+              Share your honest experience with this product.
             </p>
           </div>
 
@@ -568,9 +430,7 @@ export function ReviewSection({
                 type="text"
                 value={customerName}
                 onChange={(event) =>
-                  setCustomerName(
-                    event.target.value,
-                  )
+                  setCustomerName(event.target.value)
                 }
                 maxLength={100}
                 autoComplete="name"
@@ -581,43 +441,23 @@ export function ReviewSection({
 
             {/* Rating */}
             <div>
-              <span
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-medium
-                  text-brand-brown
-                "
-              >
+              <span className="mb-2 block text-sm font-medium text-brand-brown">
                 Your Rating
               </span>
 
-              <div
-                className="
-                  flex
-                  flex-wrap
-                  items-center
-                  gap-2
-                "
-              >
+              <div className="flex flex-wrap items-center gap-2">
                 <div
                   className="flex gap-1"
                   role="radiogroup"
                   aria-label="Select your rating"
-                  onMouseLeave={() =>
-                    setHoverRating(0)
-                  }
+                  onMouseLeave={() => setHoverRating(0)}
                 >
                   {Array.from(
                     { length: 5 },
                     (_, index) => {
-                      const value =
-                        index + 1;
-
+                      const value = index + 1;
                       const active =
-                        displayedRating >=
-                        value;
+                        displayedRating >= value;
 
                       return (
                         <button
@@ -628,19 +468,13 @@ export function ReviewSection({
                             rating === value
                           }
                           aria-label={`${value} star${
-                            value === 1
-                              ? ''
-                              : 's'
+                            value === 1 ? '' : 's'
                           }`}
                           onMouseEnter={() =>
-                            setHoverRating(
-                              value,
-                            )
+                            setHoverRating(value)
                           }
                           onFocus={() =>
-                            setHoverRating(
-                              value,
-                            )
+                            setHoverRating(value)
                           }
                           onBlur={() =>
                             setHoverRating(0)
@@ -676,13 +510,7 @@ export function ReviewSection({
                   )}
                 </div>
 
-                <span
-                  className="
-                    text-xs
-                    font-medium
-                    text-brand-brown/50
-                  "
-                >
+                <span className="text-xs font-medium text-brand-brown/50">
                   {ratingLabel}
                 </span>
               </div>
@@ -731,21 +559,10 @@ export function ReviewSection({
                 maxLength={2000}
                 rows={5}
                 placeholder="Tell us about your experience..."
-                className="
-                  input-field
-                  min-h-[120px]
-                  resize-y
-                "
+                className="input-field min-h-[120px] resize-y"
               />
 
-              <p
-                className="
-                  mt-1
-                  text-right
-                  text-[10px]
-                  text-brand-brown/40
-                "
-              >
+              <p className="mt-1 text-right text-[10px] text-brand-brown/40">
                 {comment.length}/2000
               </p>
             </div>
@@ -769,7 +586,7 @@ export function ReviewSection({
               </div>
             )}
 
-            {/* Submit */}
+            {/* Actions */}
             <div
               className="
                 flex
@@ -805,11 +622,7 @@ export function ReviewSection({
               <button
                 type="submit"
                 disabled={submitting}
-                className="
-                  btn-primary
-                  min-h-[46px]
-                  px-6
-                "
+                className="btn-primary min-h-[46px] px-6"
               >
                 {submitting ? (
                   <>
@@ -825,10 +638,7 @@ export function ReviewSection({
         </div>
       )}
 
-      {/* ================================================================
-          LOAD ERROR
-      ================================================================= */}
-
+      {/* Load Error */}
       {loadError && (
         <div
           className="
@@ -844,137 +654,123 @@ export function ReviewSection({
           "
           role="status"
         >
-          Reviews are temporarily unavailable.
-          Please try again later.
+          Reviews are temporarily unavailable. Please try again later.
         </div>
       )}
 
-      {/* ================================================================
-          REVIEW LIST
-      ================================================================= */}
-
-      {!loading &&
-        reviews.length > 0 && (
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <article
-                key={review.reviewId}
+      {/* Reviews */}
+      {!loading && reviews.length > 0 && (
+        <div className="space-y-4">
+          {reviews.map((review) => (
+            <article
+              key={review.reviewId}
+              className="
+                rounded-2xl
+                border
+                border-brand-brown/10
+                bg-white
+                p-4
+                sm:p-6
+              "
+            >
+              <div
                 className="
-                  rounded-2xl
-                  border
-                  border-brand-brown/10
-                  bg-white
-                  p-4
-                  sm:p-6
+                  flex
+                  flex-col
+                  gap-3
+                  sm:flex-row
+                  sm:items-start
+                  sm:justify-between
                 "
               >
-                <div
-                  className="
-                    flex
-                    flex-col
-                    gap-3
-                    sm:flex-row
-                    sm:items-start
-                    sm:justify-between
-                  "
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-brand-brown">
+                      {review.customerName}
+                    </span>
+
+                    {review.verifiedPurchase && (
                       <span
                         className="
-                          text-sm
+                          inline-flex
+                          items-center
+                          gap-1
+                          rounded-full
+                          bg-green-50
+                          px-2
+                          py-0.5
+                          text-[9px]
                           font-semibold
-                          text-brand-brown
+                          text-green-700
                         "
                       >
-                        {review.customerName}
+                        <CheckCircle2 className="h-3 w-3" />
+                        Verified Purchase
                       </span>
-
-                      {review.verifiedPurchase && (
-                        <span
-                          className="
-                            inline-flex
-                            items-center
-                            gap-1
-                            rounded-full
-                            bg-green-50
-                            px-2
-                            py-0.5
-                            text-[9px]
-                            font-semibold
-                            text-green-700
-                          "
-                        >
-                          <CheckCircle2 className="h-3 w-3" />
-                          Verified Purchase
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-1">
-                      <StarRating
-                        rating={review.rating}
-                        size="sm"
-                        showValue={false}
-                      />
-                    </div>
+                    )}
                   </div>
 
-                  <time
-                    dateTime={review.createdAt}
-                    className="
-                      shrink-0
-                      text-[10px]
-                      text-brand-brown/40
-                    "
-                  >
-                    {new Date(
-                      review.createdAt,
-                    ).toLocaleDateString(
-                      'en-IN',
-                      {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      },
-                    )}
-                  </time>
+                  <div className="mt-1">
+                    <StarRating
+                      rating={review.rating}
+                      size="sm"
+                      showValue={false}
+                    />
+                  </div>
                 </div>
 
-                {review.title && (
-                  <h3
-                    className="
-                      mt-4
-                      font-serif
-                      text-base
-                      font-semibold
-                      text-brand-brown
-                    "
-                  >
-                    {review.title}
-                  </h3>
-                )}
-
-                <p
+                <time
+                  dateTime={review.createdAt}
                   className="
-                    mt-2
-                    whitespace-pre-wrap
-                    text-sm
-                    leading-relaxed
-                    text-brand-brown/65
+                    shrink-0
+                    text-[10px]
+                    text-brand-brown/40
                   "
                 >
-                  {review.comment}
-                </p>
-              </article>
-            ))}
-          </div>
-        )}
+                  {new Date(
+                    review.createdAt,
+                  ).toLocaleDateString(
+                    'en-IN',
+                    {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    },
+                  )}
+                </time>
+              </div>
 
-      {/* ================================================================
-          EMPTY REVIEW STATE
-      ================================================================= */}
+              {review.title && (
+                <h3
+                  className="
+                    mt-4
+                    font-serif
+                    text-base
+                    font-semibold
+                    text-brand-brown
+                  "
+                >
+                  {review.title}
+                </h3>
+              )}
 
+              <p
+                className="
+                  mt-2
+                  whitespace-pre-wrap
+                  text-sm
+                  leading-relaxed
+                  text-brand-brown/65
+                "
+              >
+                {review.comment}
+              </p>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
       {!loading &&
         !loadError &&
         reviews.length === 0 && (
@@ -1003,13 +799,7 @@ export function ReviewSection({
                 bg-brand-cream
               "
             >
-              <MessageSquareText
-                className="
-                  h-5
-                  w-5
-                  text-brand-brown/35
-                "
-              />
+              <MessageSquareText className="h-5 w-5 text-brand-brown/35" />
             </div>
 
             <p
@@ -1034,22 +824,14 @@ export function ReviewSection({
                 text-brand-brown/50
               "
             >
-              Be the first customer to share
-              your experience with this product.
+              Be the first customer to share your experience with this product.
             </p>
 
             {!showForm && (
               <button
                 type="button"
-                onClick={() =>
-                  setShowForm(true)
-                }
-                className="
-                  btn-outline
-                  mt-5
-                  min-h-[44px]
-                  px-5
-                "
+                onClick={() => setShowForm(true)}
+                className="btn-outline mt-5 min-h-[44px] px-5"
               >
                 Write the First Review
               </button>
