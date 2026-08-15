@@ -289,9 +289,7 @@ export function Header() {
                     ? 'Close search'
                     : 'Search products'
                 }
-                aria-expanded={
-                  searchOpen
-                }
+                aria-expanded={searchOpen}
               >
                 {searchOpen ? (
                   <X className="w-5 h-5" />
@@ -393,9 +391,7 @@ export function Header() {
                     ? 'Close menu'
                     : 'Open menu'
                 }
-                aria-expanded={
-                  mobileOpen
-                }
+                aria-expanded={mobileOpen}
                 aria-controls="mobile-navigation"
               >
                 {mobileOpen ? (
@@ -598,7 +594,7 @@ export function Header() {
                 >
                   {link.label}
                 </NavLink>
-              )}
+              ))}
             </div>
 
             {/* Drawer Bottom */}
