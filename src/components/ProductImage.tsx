@@ -9,79 +9,254 @@ interface ProductImageProps {
   className?: string;
 }
 
-/**
- * Shared ProductImage component supporting deterministic product-family image resolution
- * and fallback to a controlled placeholder state when real assets are pending.
- */
-export function ProductImage({ productId, product, variant = 'card', className = '' }: ProductImageProps) {
-  const resolvedId = productId || (product ? product.id : '');
-  const imageConfig = getProductFamilyImage(resolvedId);
+export function ProductImage({
+  productId,
+  product,
+  variant = 'card',
+  className = '',
+}: ProductImageProps) {
+  const resolvedId =
+    productId || product?.id || '';
+
+  const imageConfig =
+    getProductFamilyImage(resolvedId);
+
   const targetProduct = product;
-  const categoryLabel = targetProduct ? CATEGORY_LABELS[targetProduct.category] : 'Papad';
 
-  const sizeClass =
-    variant === 'detail'
-      ? 'text-7xl'
-      : variant === 'hero'
-        ? 'text-8xl'
-        : 'text-5xl';
+  const categoryLabel =
+    targetProduct
+      ? CATEGORY_LABELS[
+          targetProduct.category
+        ]
+      : 'Papad';
 
-  const isAvailable = imageConfig.status === 'available' && Boolean(imageConfig.primary);
+  const isAvailable =
+    imageConfig.status === 'available' &&
+    Boolean(imageConfig.primary);
 
-  // Performance attributes per variant
-  const isEager = variant === 'hero' || variant === 'detail';
+  /*
+   * Hero and detail images are immediately
+   * visible above the fold on their respective
+   * pages. Card images remain lazy-loaded.
+   */
+  const isEager =
+    variant === 'hero' ||
+    variant === 'detail';
+
+  const placeholderIconSize =
+    variant === 'hero'
+      ? 'text-7xl sm:text-8xl lg:text-9xl'
+      : variant === 'detail'
+        ? 'text-6xl sm:text-7xl lg:text-8xl'
+        : 'text-5xl sm:text-6xl';
+
+  const placeholderPadding =
+    variant === 'hero'
+      ? 'p-6 sm:p-8 lg:p-10'
+      : 'p-4 sm:p-6';
 
   return (
     <div
-      className={`relative flex items-center justify-center overflow-hidden ${className}`}
-      aria-label={imageConfig.alt}
+      className={`
+        relative
+        flex
+        h-full
+        w-full
+        min-h-0
+        items-center
+        justify-center
+        overflow-hidden
+        ${className}
+      `}
       role="img"
+      aria-label={imageConfig.alt}
     >
       {isAvailable ? (
-        <img
-          src={imageConfig.primary}
-          alt={imageConfig.alt}
-          loading={isEager ? 'eager' : 'lazy'}
-          decoding={isEager ? 'sync' : 'async'}
-          {...(isEager ? { fetchPriority: 'high' } : {})}
-          className="w-full h-full object-contain p-2"
-        />
+        <>
+          {/* Product image */}
+          <img
+            src={imageConfig.primary}
+            alt={imageConfig.alt}
+            loading={
+              isEager
+                ? 'eager'
+                : 'lazy'
+            }
+            decoding={
+              isEager
+                ? 'sync'
+                : 'async'
+            }
+            {...(isEager
+              ? {
+                  fetchPriority:
+                    'high' as const,
+                }
+              : {})}
+            className="
+              block
+              h-full
+              w-full
+              object-contain
+              p-2
+              transition-transform
+              duration-500
+              sm:p-3
+            "
+          />
+
+          {/* Soft image overlay */}
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              bg-gradient-to-t
+              from-brand-brown/[0.03]
+              via-transparent
+              to-white/[0.04]
+            "
+            aria-hidden="true"
+          />
+        </>
       ) : (
         <>
-          {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-cream-dark via-brand-cream to-brand-yellow/10" />
+          {/* ==============================================================
+              CONTROLLED IMAGE PLACEHOLDER
+          ============================================================== */}
 
-          {/* Decorative dot pattern */}
-          <div className="absolute inset-0 bg-dots opacity-40" />
+          <div
+            className="
+              absolute
+              inset-0
+              bg-gradient-to-br
+              from-brand-cream-dark
+              via-brand-cream
+              to-brand-yellow/10
+            "
+            aria-hidden="true"
+          />
 
-          {/* Papad silhouette & Placeholder text */}
-          <div className="relative z-10 flex flex-col items-center gap-3 p-4 text-center">
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              bg-dots
+              opacity-40
+            "
+            aria-hidden="true"
+          />
+
+          {/* Center content */}
+          <div
+            className={`
+              relative
+              z-10
+              flex
+              max-w-full
+              flex-col
+              items-center
+              justify-center
+              gap-2
+              text-center
+              ${placeholderPadding}
+              sm:gap-3
+            `}
+          >
             <div
-              className={`${sizeClass} font-serif font-bold text-brand-red/20 leading-none`}
+              className={`
+                font-serif
+                font-bold
+                leading-none
+                text-brand-red/20
+                ${placeholderIconSize}
+              `}
               aria-hidden="true"
             >
               ◯
             </div>
-            <div>
-              <p className="font-serif font-semibold text-brand-brown text-sm sm:text-base">
+
+            <div className="min-w-0 max-w-[90%]">
+              <p
+                className="
+                  truncate
+                  font-serif
+                  text-sm
+                  font-semibold
+                  text-brand-brown
+                  sm:text-base
+                "
+              >
                 {imageConfig.alt}
               </p>
-              <p className="font-sans text-2xs text-brand-brown/50 mt-1 uppercase tracking-wider">
+
+              <p
+                className="
+                  mt-1
+                  text-[8px]
+                  font-sans
+                  font-medium
+                  uppercase
+                  tracking-[0.12em]
+                  text-brand-brown/45
+                  sm:text-2xs
+                  sm:tracking-wider
+                "
+              >
                 Product image coming soon
               </p>
             </div>
           </div>
 
-          {/* Category badge if product data available */}
+          {/* Category */}
           {targetProduct && (
-            <div className="absolute top-3 left-3 z-10">
-              <span className="badge-brown">{categoryLabel}</span>
+            <div
+              className="
+                absolute
+                left-2
+                top-2
+                z-10
+                sm:left-3
+                sm:top-3
+              "
+            >
+              <span
+                className="
+                  badge-brown
+                  px-2
+                  py-1
+                  text-[8px]
+                  sm:text-2xs
+                "
+              >
+                {categoryLabel}
+              </span>
             </div>
           )}
 
-          {/* Status mark */}
-          <div className="absolute bottom-3 right-3 z-10">
-            <span className="text-2xs font-bold uppercase tracking-wider text-brand-brown/40">
+          {/* Asset status */}
+          <div
+            className="
+              absolute
+              bottom-2
+              right-2
+              z-10
+              sm:bottom-3
+              sm:right-3
+            "
+          >
+            <span
+              className="
+                text-[7px]
+                font-bold
+                uppercase
+                tracking-[0.12em]
+                text-brand-brown/30
+                sm:text-2xs
+                sm:tracking-wider
+              "
+            >
               Pending Asset
             </span>
           </div>
