@@ -439,6 +439,11 @@ export default function Checkout() {
               verifyRes,
             );
 
+            /*
+             * IMPORTANT:
+             * RazorpayCheckoutOrder uses totalShipping
+             * and timestamp on the frontend Order model.
+             */
             const completedOrder = {
               orderId:
                 verifyRes?.orderId ||
@@ -454,14 +459,13 @@ export default function Checkout() {
                 orderResponse.subtotal,
 
               totalShipping:
-                orderResponse.shipping,
+                orderResponse.totalShipping,
 
               total:
                 orderResponse.total,
 
               timestamp:
-                orderResponse.createdAt ||
-                new Date().toISOString(),
+                orderResponse.timestamp,
 
               status:
                 'confirmed' as const,
@@ -471,11 +475,7 @@ export default function Checkout() {
               completedOrder,
             );
 
-            if (
-              typeof clearCart === 'function'
-            ) {
-              clearCart();
-            }
+            clearCart();
 
             form.setStatus('success');
 
@@ -637,9 +637,7 @@ export default function Checkout() {
 
           <div className="grid lg:grid-cols-[1fr_400px] gap-5 sm:gap-8 lg:gap-12 items-start">
 
-            {/* =================================================================
-                CHECKOUT FORM
-            ================================================================== */}
+            {/* CHECKOUT FORM */}
 
             <form
               onSubmit={submit}
@@ -990,9 +988,7 @@ export default function Checkout() {
 
             </form>
 
-            {/* =================================================================
-                ORDER SUMMARY
-            ================================================================== */}
+            {/* ORDER SUMMARY */}
 
             <aside
               className="
