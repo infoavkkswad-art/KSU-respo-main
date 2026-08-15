@@ -24,15 +24,7 @@ export function SectionHeading({
       `}
     >
       {eyebrow && (
-        <p
-          className="
-            section-eyebrow
-            mb-2.5
-            text-xs
-            sm:mb-3
-            sm:text-sm
-          "
-        >
+        <p className="section-eyebrow mb-2.5 text-xs sm:mb-3 sm:text-sm">
           {eyebrow}
         </p>
       )}
@@ -40,13 +32,9 @@ export function SectionHeading({
       <h2
         className="
           text-balance
-          font-serif
-          text-3xl
-          font-bold
-          leading-tight
-          text-brand-brown
-          sm:text-4xl
-          lg:text-5xl
+          font-serif font-bold leading-tight
+          text-brand-green
+          text-3xl sm:text-4xl lg:text-5xl
         "
       >
         {title}
@@ -55,16 +43,9 @@ export function SectionHeading({
       {description && (
         <p
           className="
-            text-pretty
-            mx-auto
-            mt-3
-            max-w-2xl
-            text-sm
-            leading-relaxed
-            text-brand-brown/70
-            sm:mt-4
-            sm:text-base
-            lg:text-lg
+            text-pretty mx-auto mt-3 max-w-2xl
+            text-sm leading-relaxed text-brand-brown/65
+            sm:mt-4 sm:text-base lg:text-lg
           "
         >
           {description}
@@ -90,30 +71,26 @@ export function PageHero({
   return (
     <section
       className="
-        relative
-        overflow-hidden
-        bg-gradient-to-b
-        from-brand-cream-dark
-        to-brand-cream
-        py-10
-        sm:py-12
-        lg:py-16
+        relative overflow-hidden
+        bg-brand-ivory
+        py-10 sm:py-12 lg:py-16
       "
     >
-      {/* Decorative background */}
       <div
         className="
-          pointer-events-none
-          absolute
-          -right-24
-          -top-24
-          h-56
-          w-56
-          rounded-full
-          bg-brand-yellow/10
-          blur-3xl
-          sm:h-72
-          sm:w-72
+          pointer-events-none absolute
+          -right-24 -top-24
+          h-56 w-56 rounded-full
+          border border-brand-saffron/15
+          sm:h-72 sm:w-72
+        "
+        aria-hidden="true"
+      />
+
+      <div
+        className="
+          pointer-events-none absolute inset-0
+          bg-grid opacity-25
         "
         aria-hidden="true"
       />
@@ -121,30 +98,17 @@ export function PageHero({
       <div className="container-max container-px relative">
         <div className="max-w-4xl">
           {eyebrow && (
-            <p
-              className="
-                section-eyebrow
-                mb-2.5
-                text-xs
-                sm:mb-3
-                sm:text-sm
-              "
-            >
+            <p className="section-eyebrow mb-2.5 text-xs sm:mb-3 sm:text-sm">
               {eyebrow}
             </p>
           )}
 
           <h1
             className="
-              text-balance
-              max-w-4xl
-              font-serif
-              text-4xl
-              font-bold
-              leading-[1.05]
-              text-brand-brown
-              sm:text-5xl
-              lg:text-6xl
+              text-balance max-w-4xl
+              font-serif font-bold leading-[1.05]
+              text-brand-green
+              text-4xl sm:text-5xl lg:text-6xl
             "
           >
             {title}
@@ -153,15 +117,9 @@ export function PageHero({
           {description && (
             <p
               className="
-                text-pretty
-                mt-3
-                max-w-2xl
-                text-sm
-                leading-relaxed
-                text-brand-brown/70
-                sm:mt-4
-                sm:text-base
-                lg:text-lg
+                text-pretty mt-3 max-w-2xl
+                text-sm leading-relaxed text-brand-brown/65
+                sm:mt-4 sm:text-base lg:text-lg
               "
             >
               {description}
@@ -193,78 +151,47 @@ export function PlaceholderImage({
   return (
     <div
       className={`
-        relative
-        ${aspect}
-        w-full
-        overflow-hidden
-        rounded-2xl
+        relative ${aspect} w-full overflow-hidden rounded-2xl
         bg-gradient-to-br
-        from-brand-cream-dark
-        via-brand-cream
-        to-brand-brown/5
+        from-brand-ivory-dark
+        via-brand-ivory
+        to-brand-saffron/10
         ${className}
       `}
       role="img"
       aria-label={`${label} placeholder image`}
     >
-      {/* Pattern */}
       <div
         className="
-          pointer-events-none
-          absolute
-          inset-0
-          bg-dots
-          opacity-30
+          pointer-events-none absolute inset-0
+          bg-dots opacity-30
         "
         aria-hidden="true"
       />
 
-      {/* Center content */}
       <div
         className="
-          absolute
-          inset-0
-          flex
-          items-center
-          justify-center
-          p-5
-          sm:p-8
+          absolute inset-0 flex items-center
+          justify-center p-5 sm:p-8
         "
       >
         <span
           className="
-            max-w-[85%]
-            text-center
-            text-xs
-            font-medium
-            leading-relaxed
-            text-brand-brown/40
-            sm:text-sm
+            max-w-[85%] text-center
+            text-xs font-medium leading-relaxed
+            text-brand-brown/40 sm:text-sm
           "
         >
           {label}
         </span>
       </div>
 
-      {/* Placeholder status */}
-      <div
-        className="
-          absolute
-          bottom-2
-          right-3
-          sm:bottom-3
-          sm:right-4
-        "
-      >
+      <div className="absolute bottom-2 right-3 sm:bottom-3 sm:right-4">
         <span
           className="
-            text-[9px]
-            font-medium
-            uppercase
-            tracking-[0.12em]
-            text-brand-brown/25
-            sm:text-2xs
-            sm:tracking-wider
+            text-[9px] font-medium uppercase
+            tracking-[0.12em] text-brand-brown/25
+            sm:text-2xs sm:tracking-wider
           "
         >
           Placeholder
