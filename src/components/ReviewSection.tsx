@@ -22,7 +22,6 @@ import { useCart } from '../context/CartContext';
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-
   const { addItem } = useCart();
 
   const product = slug
@@ -37,13 +36,13 @@ export default function ProductDetail() {
     if (!product) return [];
 
     return ProductService.getProductsByCategory(product.category)
-      .filter((p) => p.id !== product.id)
+      .filter((item) => item.id !== product.id)
       .slice(0, 4);
   }, [product]);
 
   if (!product) {
     return (
-      <div className="container-max container-px py-20 text-center">
+      <div className="container-max container-px py-16 text-center sm:py-20">
         <SEO
           title="Product Not Found"
           description="Product not found"
@@ -66,16 +65,18 @@ export default function ProductDetail() {
 
   const discount =
     selectedSku.mrp > 0
-      ? Math.round(
-          ((selectedSku.mrp - selectedSku.websitePrice) /
-            selectedSku.mrp) *
-            100,
+      ? Math.max(
+          0,
+          Math.round(
+            ((selectedSku.mrp - selectedSku.websitePrice) /
+              selectedSku.mrp) *
+              100,
+          ),
         )
       : 0;
 
   const handleAddToCart = () => {
     addItem(selectedSku.sku, quantity);
-
     setAdded(true);
 
     window.setTimeout(() => {
@@ -105,10 +106,28 @@ export default function ProductDetail() {
       />
 
       <main>
-        {/* Product Overview */}
-        <div className="container-max container-px py-8 sm:py-10 lg:py-12">
-          <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-16">
+        {/* ================================================================
+            PRODUCT OVERVIEW
+        ================================================================= */}
 
+        <div
+          className="
+            container-max
+            container-px
+            py-6
+            sm:py-10
+            lg:py-12
+          "
+        >
+          <div
+            className="
+              grid
+              items-start
+              gap-8
+              lg:grid-cols-2
+              lg:gap-16
+            "
+          >
             {/* Product Image */}
             <div className="lg:sticky lg:top-28">
               <div
@@ -133,15 +152,16 @@ export default function ProductDetail() {
             </div>
 
             {/* Product Information */}
-            <div>
+            <div className="min-w-0">
               <div className="mb-6">
                 <span
                   className="
-                    text-xs
+                    text-[10px]
                     font-semibold
                     uppercase
                     tracking-[0.18em]
                     text-brand-red
+                    sm:text-xs
                   "
                 >
                   {product.category}
@@ -153,7 +173,7 @@ export default function ProductDetail() {
                     font-serif
                     text-3xl
                     font-bold
-                    leading-tight
+                    leading-[1.05]
                     text-brand-brown
                     sm:text-4xl
                     lg:text-5xl
@@ -166,36 +186,40 @@ export default function ProductDetail() {
                   className="
                     mt-4
                     max-w-2xl
-                    text-base
+                    text-sm
                     leading-relaxed
                     text-brand-brown/70
-                    sm:text-lg
+                    sm:text-base
+                    lg:text-lg
                   "
                 >
                   {product.description}
                 </p>
               </div>
 
-              {/* Pack Size + Price */}
+              {/* ==========================================================
+                  PACK SIZE + PRICE
+              =========================================================== */}
+
               <div
                 className="
                   border-y
                   border-brand-brown/10
-                  py-6
+                  py-5
                   sm:py-8
                 "
               >
-                <div className="mb-6">
+                <div className="mb-5 sm:mb-6">
                   <label
                     className="
                       mb-3
                       block
-                      text-xs
+                      text-[10px]
                       font-bold
                       uppercase
                       tracking-[0.16em]
                       text-brand-brown
-                      sm:text-sm
+                      sm:text-xs
                     "
                   >
                     Pack Size
@@ -216,12 +240,13 @@ export default function ProductDetail() {
                           min-h-[44px]
                           rounded-full
                           border
-                          px-5
+                          px-4
                           py-2.5
-                          text-sm
+                          text-xs
                           font-medium
                           transition-all
                           sm:px-6
+                          sm:text-sm
                           ${
                             selectedSkuIndex === index
                               ? 'border-brand-brown bg-brand-brown text-white'
@@ -236,10 +261,19 @@ export default function ProductDetail() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-end gap-3 sm:gap-4">
+                <div
+                  className="
+                    flex
+                    flex-wrap
+                    items-end
+                    gap-x-3
+                    gap-y-1
+                    sm:gap-x-4
+                  "
+                >
                   <span
                     className="
-                      text-3xl
+                      text-2xl
                       font-bold
                       text-brand-brown
                       sm:text-4xl
@@ -250,7 +284,7 @@ export default function ProductDetail() {
 
                   <span
                     className="
-                      text-base
+                      text-sm
                       text-brand-brown/40
                       line-through
                       sm:text-lg
@@ -260,13 +294,13 @@ export default function ProductDetail() {
                   </span>
 
                   {discount > 0 && (
-                    <span className="badge-red mb-1">
+                    <span className="badge-red mb-0.5">
                       {discount}% OFF
                     </span>
                   )}
                 </div>
 
-                <p className="mt-2 text-xs text-brand-brown/60">
+                <p className="mt-2 text-[10px] text-brand-brown/60 sm:text-xs">
                   {selectedSku.freeShipping ? (
                     <span className="font-medium text-green-600">
                       Free shipping
@@ -277,22 +311,25 @@ export default function ProductDetail() {
                 </p>
               </div>
 
-              {/* Quantity + Buy Buttons */}
+              {/* ==========================================================
+                  QUANTITY + ACTIONS
+              =========================================================== */}
+
               <div
                 className="
                   flex
                   flex-col
                   gap-3
-                  py-6
+                  py-5
                   sm:py-8
-                  lg:flex-row
                 "
               >
                 {/* Quantity */}
                 <div
                   className="
                     flex
-                    min-h-[52px]
+                    min-h-[50px]
+                    w-full
                     items-center
                     justify-center
                     rounded-full
@@ -300,14 +337,14 @@ export default function ProductDetail() {
                     border-brand-brown/10
                     bg-white
                     p-1
-                    lg:shrink-0
+                    sm:w-fit
                   "
                 >
                   <button
                     type="button"
                     onClick={() =>
-                      setQuantity((q) =>
-                        Math.max(1, q - 1),
+                      setQuantity((current) =>
+                        Math.max(1, current - 1),
                       )
                     }
                     className="
@@ -321,14 +358,23 @@ export default function ProductDetail() {
                     <Minus className="h-4 w-4" />
                   </button>
 
-                  <span className="w-12 text-center font-bold text-brand-brown">
+                  <span
+                    className="
+                      w-12
+                      text-center
+                      font-bold
+                      text-brand-brown
+                    "
+                  >
                     {quantity}
                   </span>
 
                   <button
                     type="button"
                     onClick={() =>
-                      setQuantity((q) => q + 1)
+                      setQuantity(
+                        (current) => current + 1,
+                      )
                     }
                     className="
                       rounded-full
@@ -342,28 +388,41 @@ export default function ProductDetail() {
                   </button>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+                {/* Actions */}
+                <div
+                  className="
+                    grid
+                    grid-cols-2
+                    gap-2
+                    sm:gap-3
+                  "
+                >
                   <button
                     type="button"
                     onClick={handleAddToCart}
                     className="
                       btn-outline
-                      min-h-[52px]
+                      min-h-[50px]
                       w-full
                       justify-center
-                      py-3.5
+                      px-3
+                      py-3
+                      text-xs
+                      sm:min-h-[52px]
+                      sm:px-5
+                      sm:py-3.5
+                      sm:text-sm
                     "
                   >
                     {added ? (
                       <>
-                        <Check className="h-5 w-5" />
-                        Added to Cart
+                        <Check className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span>Added</span>
                       </>
                     ) : (
                       <>
-                        <ShoppingBag className="h-5 w-5" />
-                        Add to Cart
+                        <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span>Add to Cart</span>
                       </>
                     )}
                   </button>
@@ -373,28 +432,38 @@ export default function ProductDetail() {
                     onClick={handleBuyNow}
                     className="
                       btn-primary
-                      min-h-[52px]
+                      min-h-[50px]
                       w-full
                       justify-center
-                      py-3.5
+                      px-3
+                      py-3
+                      text-xs
+                      sm:min-h-[52px]
+                      sm:px-5
+                      sm:py-3.5
+                      sm:text-sm
                     "
                   >
-                    <Zap className="h-5 w-5" />
-                    Buy Now
+                    <Zap className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span>Buy Now</span>
                   </button>
                 </div>
               </div>
 
-              {/* Trust Features */}
+              {/* ==========================================================
+                  TRUST FEATURES
+              =========================================================== */}
+
               <div
                 className="
                   grid
                   grid-cols-3
-                  gap-2
+                  gap-1
                   border-t
                   border-brand-brown/10
-                  py-6
+                  py-5
                   sm:gap-4
+                  sm:py-6
                 "
               >
                 {[
@@ -420,8 +489,9 @@ export default function ProductDetail() {
                         flex
                         flex-col
                         items-center
-                        gap-2
+                        gap-1.5
                         text-center
+                        sm:gap-2
                       "
                     >
                       <Icon
@@ -432,11 +502,12 @@ export default function ProductDetail() {
                           sm:h-6
                           sm:w-6
                         "
+                        aria-hidden="true"
                       />
 
                       <span
                         className="
-                          text-[10px]
+                          text-[9px]
                           font-medium
                           leading-tight
                           text-brand-brown/70
@@ -453,8 +524,20 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Reviews */}
-        <div className="container-max container-px pb-12 pt-4 sm:pb-16">
+        {/* ================================================================
+            REVIEWS
+        ================================================================= */}
+
+        <div
+          className="
+            container-max
+            container-px
+            pb-12
+            pt-4
+            sm:pb-16
+            sm:pt-6
+          "
+        >
           <ReviewSection
             productId={product.id}
             productName={product.name}
@@ -462,9 +545,19 @@ export default function ProductDetail() {
           />
         </div>
 
-        {/* Related Products */}
+        {/* ================================================================
+            RELATED PRODUCTS
+        ================================================================= */}
+
         {relatedProducts.length > 0 && (
-          <section className="bg-brand-cream-dark py-14 sm:py-20">
+          <section
+            className="
+              bg-brand-cream-dark
+              py-12
+              sm:py-16
+              lg:py-20
+            "
+          >
             <div className="container-max container-px">
               <h2
                 className="
@@ -481,13 +574,23 @@ export default function ProductDetail() {
                 More from {product.category}
               </h2>
 
-              <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-                {relatedProducts.map((relatedProduct) => (
-                  <ProductCard
-                    key={relatedProduct.id}
-                    product={relatedProduct}
-                  />
-                ))}
+              <div
+                className="
+                  grid
+                  grid-cols-2
+                  gap-3
+                  sm:gap-6
+                  lg:grid-cols-4
+                "
+              >
+                {relatedProducts.map(
+                  (relatedProduct) => (
+                    <ProductCard
+                      key={relatedProduct.id}
+                      product={relatedProduct}
+                    />
+                  ),
+                )}
               </div>
             </div>
           </section>
