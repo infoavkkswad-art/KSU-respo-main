@@ -1,7 +1,9 @@
 import { CustomerInfo, Order } from '../context/OrderContext';
 import { CartItem } from '../context/CartContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.kawadswad.in';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://api.kawadswad.in';
 
 export interface CreateOrderPayload {
   customer: CustomerInfo;
@@ -9,7 +11,13 @@ export interface CreateOrderPayload {
   idempotencyKey?: string;
 }
 
-export type OrderStatusType = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatusType =
+  | 'pending'
+  | 'confirmed'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled';
 
 export interface TrackedOrderItem {
   sku: string;
@@ -63,6 +71,10 @@ export interface RazorpayCheckoutOrder extends Order {
   razorpayKeyId?: string;
   amount?: number;
   currency?: string;
+
+  // Backend order fields used by Checkout.tsx
+  shipping: number;
+  createdAt: string;
 }
 
 export interface VerifyPaymentPayload {
@@ -71,7 +83,11 @@ export interface VerifyPaymentPayload {
   razorpay_signature: string;
 }
 
-export type EnquiryType = 'bulk' | 'distributor' | 'food-business' | 'general';
+export type EnquiryType =
+  | 'bulk'
+  | 'distributor'
+  | 'food-business'
+  | 'general';
 
 export interface CreateEnquiryPayload {
   type: EnquiryType;
@@ -97,143 +113,260 @@ export interface EnquiryResponse {
 export const apiClient = {
   async checkHealth(): Promise<boolean> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/health`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/api/health`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
       if (!res.ok) return false;
-      const data = (await res.json()) as { status: string };
+
+      const data =
+        (await res.json()) as {
+          status: string;
+        };
+
       return data.status === 'ok';
     } catch {
       return false;
     }
   },
 
-  async createOrder(payload: CreateOrderPayload): Promise<RazorpayCheckoutOrder> {
-    const response = await fetch(`${API_BASE_URL}/api/orders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  async createOrder(
+    payload: CreateOrderPayload,
+  ): Promise<RazorpayCheckoutOrder> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/orders`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
 
     if (!response.ok) {
-      let errorMsg = 'Failed to submit order request.';
+      let errorMsg =
+        'Failed to submit order request.';
+
       try {
-        const errorData = (await response.json()) as { detail?: string | unknown };
+        const errorData =
+          (await response.json()) as {
+            detail?: string | unknown;
+          };
+
         if (errorData.detail) {
-          errorMsg = typeof errorData.detail === 'string' 
-            ? errorData.detail 
-            : JSON.stringify(errorData.detail);
+          errorMsg =
+            typeof errorData.detail ===
+            'string'
+              ? errorData.detail
+              : JSON.stringify(
+                  errorData.detail,
+                );
         }
       } catch {
         // fallback to default message
       }
+
       throw new Error(errorMsg);
     }
 
-    const data = (await response.json()) as BackendOrderResponse;
-    
+    const data =
+      (await response.json()) as BackendOrderResponse;
+
     return {
       orderId: data.orderId,
-      razorpayOrderId: data.razorpayOrderId,
-      razorpayKeyId: data.razorpayKeyId,
+
+      razorpayOrderId:
+        data.razorpayOrderId,
+
+      razorpayKeyId:
+        data.razorpayKeyId,
+
       amount: data.amount,
-      currency: data.currency || 'INR',
+
+      currency:
+        data.currency || 'INR',
+
       customer: data.customer,
+
       items: data.items.map((i) => ({
         sku: i.sku,
         quantity: i.quantity,
-        unitPrice: i.unitPrice ?? 0,
-        productNameSnapshot: i.productNameSnapshot ?? '',
-        packSizeSnapshot: i.packSizeSnapshot ?? 0,
+        unitPrice:
+          i.unitPrice ?? 0,
+        productNameSnapshot:
+          i.productNameSnapshot ?? '',
+        packSizeSnapshot:
+          i.packSizeSnapshot ?? 0,
       })),
+
       subtotal: data.subtotal,
+
+      // Existing OrderContext field
       totalShipping: data.shipping,
+
+      // Backend field required by Checkout
+      shipping: data.shipping,
+
       total: data.total,
+
+      // Existing OrderContext field
       timestamp: data.createdAt,
+
+      // Backend field required by Checkout
+      createdAt: data.createdAt,
+
       status: data.status,
     };
   },
 
-  async verifyPayment(payload: VerifyPaymentPayload): Promise<{ success: boolean; message: string; orderId: string }> {
-    const response = await fetch(`${API_BASE_URL}/api/orders/verify-payment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  async verifyPayment(
+    payload: VerifyPaymentPayload,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    orderId: string;
+  }> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/orders/verify-payment`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
 
     if (!response.ok) {
-      let errorMsg = 'Payment verification failed.';
+      let errorMsg =
+        'Payment verification failed.';
+
       try {
-        const errData = (await response.json()) as { detail?: string | unknown };
+        const errData =
+          (await response.json()) as {
+            detail?: string | unknown;
+          };
+
         if (errData.detail) {
-          errorMsg = typeof errData.detail === 'string' ? errData.detail : JSON.stringify(errData.detail);
+          errorMsg =
+            typeof errData.detail ===
+            'string'
+              ? errData.detail
+              : JSON.stringify(
+                  errData.detail,
+                );
         }
       } catch {
         // fallback
       }
+
       throw new Error(errorMsg);
     }
 
-    return (await response.json()) as { success: boolean; message: string; orderId: string };
+    return (await response.json()) as {
+      success: boolean;
+      message: string;
+      orderId: string;
+    };
   },
 
-  async trackOrder(orderId: string, phone: string): Promise<TrackedOrder> {
+  async trackOrder(
+    orderId: string,
+    phone: string,
+  ): Promise<TrackedOrder> {
     const response = await fetch(
-      `${API_BASE_URL}/api/orders/${encodeURIComponent(orderId.trim())}?phone=${encodeURIComponent(phone.trim())}`,
+      `${API_BASE_URL}/api/orders/${encodeURIComponent(
+        orderId.trim(),
+      )}?phone=${encodeURIComponent(
+        phone.trim(),
+      )}`,
       {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      }
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
     );
 
     if (!response.ok) {
-      let errorMsg = 'Order not found or verification failed.';
+      let errorMsg =
+        'Order not found or verification failed.';
+
       if (response.status === 404) {
-        errorMsg = 'No order found matching this Order ID and Phone number.';
+        errorMsg =
+          'No order found matching this Order ID and Phone number.';
       } else if (response.status === 429) {
-        errorMsg = 'Too many tracking attempts. Please wait a minute before trying again.';
+        errorMsg =
+          'Too many tracking attempts. Please wait a minute before trying again.';
       } else {
         try {
-          const errData = (await response.json()) as { detail?: string };
+          const errData =
+            (await response.json()) as {
+              detail?: string;
+            };
+
           if (errData.detail) {
-            errorMsg = typeof errData.detail === 'string' ? errData.detail : errorMsg;
+            errorMsg =
+              typeof errData.detail ===
+              'string'
+                ? errData.detail
+                : errorMsg;
           }
         } catch {
           // fallback
         }
       }
+
       throw new Error(errorMsg);
     }
 
     return (await response.json()) as TrackedOrder;
   },
 
-  async createEnquiry(payload: CreateEnquiryPayload): Promise<EnquiryResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/enquiries`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  async createEnquiry(
+    payload: CreateEnquiryPayload,
+  ): Promise<EnquiryResponse> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/enquiries`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
 
     if (!response.ok) {
-      let errorMsg = 'Failed to submit enquiry.';
+      let errorMsg =
+        'Failed to submit enquiry.';
+
       try {
-        const errorData = (await response.json()) as { detail?: string | unknown };
+        const errorData =
+          (await response.json()) as {
+            detail?: string | unknown;
+          };
+
         if (errorData.detail) {
-          errorMsg = typeof errorData.detail === 'string' 
-            ? errorData.detail 
-            : JSON.stringify(errorData.detail);
+          errorMsg =
+            typeof errorData.detail ===
+            'string'
+              ? errorData.detail
+              : JSON.stringify(
+                  errorData.detail,
+                );
         }
       } catch {
         // fallback
       }
+
       throw new Error(errorMsg);
     }
 
