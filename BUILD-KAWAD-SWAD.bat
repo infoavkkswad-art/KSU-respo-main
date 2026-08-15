@@ -132,7 +132,7 @@ echo Upload/extract the contents of this ZIP into GoDaddy /public_html.
 echo.
 echo NOTE:
 echo The frontend is configured to use:
-echo https://api.kawadswad.com
+echo https://api.kawadswad.in
 echo The FastAPI backend must be deployed separately before
 echo orders/forms can work on the live website.
 echo.
