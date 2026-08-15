@@ -37,19 +37,16 @@ import type {
   ReviewSummary,
 } from '../types/reviews';
 
-
 interface ProductCardProps {
   product: ProductFamily;
   className?: string;
 }
-
 
 export function ProductCard({
   product,
   className = '',
 }: ProductCardProps) {
   const { addItem } = useCart();
-
   const navigate = useNavigate();
 
   const [selectedSkuIndex, setSelectedSkuIndex] =
@@ -58,81 +55,77 @@ export function ProductCard({
   const [added, setAdded] =
     useState(false);
 
-  const [
-    reviewSummary,
-    setReviewSummary,
-  ] = useState<ReviewSummary | null>(null);
+  const [reviewSummary, setReviewSummary] =
+    useState<ReviewSummary | null>(null);
 
-  const [
-    reviewsLoading,
-    setReviewsLoading,
-  ] = useState(true);
+  const [reviewsLoading, setReviewsLoading] =
+    useState(true);
 
   const selectId = useId();
-
 
   const selectedSku =
     product.skus[selectedSkuIndex] ||
     product.skus[0];
 
+  /*
+   * Product data should always contain at least one SKU.
+   * Keep the card defensive if malformed data reaches
+   * the UI.
+   */
+  if (!selectedSku) {
+    return null;
+  }
 
   const discount =
     selectedSku.mrp > 0
-      ? Math.round(
-          ((selectedSku.mrp -
-            selectedSku.websitePrice) /
-            selectedSku.mrp) *
-            100,
+      ? Math.max(
+          0,
+          Math.round(
+            ((selectedSku.mrp -
+              selectedSku.websitePrice) /
+              selectedSku.mrp) *
+              100,
+          ),
         )
       : 0;
-
 
   const packLabel =
     PACK_LABELS[selectedSku.packSize] ||
     `${selectedSku.packSize}g`;
 
-
-  /* ==========================================================================
-     LOAD REAL PRODUCT RATING
-  ========================================================================== */
-
+  /*
+   * Load the real approved-review summary.
+   * No fake rating is ever displayed.
+   */
   useEffect(() => {
     let cancelled = false;
 
-    const loadReviewSummary =
-      async () => {
-        setReviewsLoading(true);
+    const loadReviewSummary = async () => {
+      setReviewsLoading(true);
 
-        try {
-          const summary =
-            await ReviewService.getSummary(
-              product.id,
-            );
+      try {
+        const summary =
+          await ReviewService.getSummary(
+            product.id,
+          );
 
-          if (!cancelled) {
-            setReviewSummary(summary);
-          }
-        } catch {
-          /*
-           * Reviews are supplementary content.
-           *
-           * If the review API is temporarily
-           * unavailable, the product card must
-           * still work normally.
-           */
-          if (!cancelled) {
-            setReviewSummary({
-              productId: product.id,
-              averageRating: 0,
-              reviewCount: 0,
-            });
-          }
-        } finally {
-          if (!cancelled) {
-            setReviewsLoading(false);
-          }
+        if (!cancelled) {
+          setReviewSummary(summary);
         }
-      };
+      } catch {
+        if (!cancelled) {
+          setReviewSummary({
+            productId: product.id,
+            averageRating: 0,
+            reviewCount: 0,
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          setReviewsLoading(false);
+        }
+      }
+    };
 
     loadReviewSummary();
 
@@ -141,11 +134,9 @@ export function ProductCard({
     };
   }, [product.id]);
 
-
-  /* ==========================================================================
-     CART ACTIONS
-  ========================================================================== */
-
+  /*
+   * Cart actions
+   */
   const handleAdd = () => {
     addItem(selectedSku.sku, 1);
 
@@ -156,66 +147,64 @@ export function ProductCard({
     }, 2000);
   };
 
-
   const handleBuyNow = () => {
     addItem(selectedSku.sku, 1);
-
     navigate('/checkout');
   };
 
-
   const handleSelectChange = (
-    e: React.ChangeEvent<HTMLSelectElement>,
+    event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     setSelectedSkuIndex(
-      Number(e.target.value),
+      Number(event.target.value),
     );
   };
 
-
+  /*
+   * Only the actual combo category gets the
+   * combo presentation.
+   */
   const isCombo =
-    product.category === 'combo' ||
-    product.skus.length === 1;
-
+    product.category === 'combo';
 
   const hasReviews =
     !!reviewSummary &&
     reviewSummary.reviewCount > 0 &&
     reviewSummary.averageRating > 0;
 
-
   return (
-    <div
+    <article
       className={`
         card
+        flex
+        h-full
+        min-w-0
+        flex-col
         overflow-hidden
-        bg-white
         border
         border-brand-brown/5
-        flex
-        flex-col
-        h-full
-        hover:shadow-lift
+        bg-white
         transition-all
         duration-300
+        hover:shadow-lift
         ${className}
       `}
     >
-
-      {/* ======================================================================
+      {/* ================================================================
           PRODUCT IMAGE
-      ======================================================================= */}
+      ================================================================= */}
 
       <Link
         to={`/product/${product.slug}`}
         aria-label={`View details for ${product.name}`}
         className="
+          group
           relative
+          block
           aspect-square
+          min-h-0
           overflow-hidden
           bg-brand-cream-dark
-          block
-          group
         "
       >
         <ProductImage
@@ -223,8 +212,8 @@ export function ProductCard({
           product={product}
           variant="card"
           className="
-            w-full
             h-full
+            w-full
             transition-transform
             duration-500
             group-hover:scale-105
@@ -235,18 +224,21 @@ export function ProductCard({
           <div
             className="
               absolute
-              top-2.5
-              right-2.5
-              sm:top-3
-              sm:right-3
+              right-2
+              top-2
               z-10
+              sm:right-3
+              sm:top-3
             "
           >
             <span
               className="
                 badge-red
-                text-[10px]
-                sm:text-xs
+                px-2
+                py-1
+                text-[9px]
+                sm:text-[10px]
+                md:text-xs
               "
             >
               {discount}% OFF
@@ -255,76 +247,77 @@ export function ProductCard({
         )}
       </Link>
 
-
-      {/* ======================================================================
-          INFORMATION
-      ======================================================================= */}
+      {/* ================================================================
+          PRODUCT INFORMATION
+      ================================================================= */}
 
       <div
         className="
-          p-3
+          flex
+          flex-1
+          flex-col
+          justify-between
+          p-2.5
           sm:p-4
           md:p-5
-          flex
-          flex-col
-          flex-1
-          justify-between
         "
       >
-
-        <div>
-
-          {/* Product Name */}
+        <div className="min-w-0">
+          {/* Product name */}
 
           <Link
             to={`/product/${product.slug}`}
             className="
-              font-serif
-              font-semibold
-              text-brand-brown
-              text-sm
-              sm:text-base
-              leading-tight
-              mb-1
-              hover:text-brand-red
-              transition-colors
               block
+              truncate
+              font-serif
+              text-sm
+              font-semibold
+              leading-tight
+              text-brand-brown
+              transition-colors
+              hover:text-brand-red
+              sm:text-base
             "
+            title={product.name}
           >
             {product.name}
           </Link>
-
 
           {/* Variant */}
 
           <p
             className="
-              text-[11px]
-              sm:text-xs
+              mt-1
+              mb-2
+              truncate
+              text-[10px]
               text-brand-brown/60
-              mb-2.5
               sm:mb-3
+              sm:text-xs
             "
+            title={product.variant}
           >
             {product.variant}
           </p>
 
-
-          {/* ==================================================================
+          {/* ============================================================
               RATING
-          =================================================================== */}
+          ============================================================= */}
 
           <Link
             to={`/product/${product.slug}#reviews`}
             className="
+              mb-2.5
               inline-flex
+              min-h-[30px]
+              max-w-full
               items-center
-              min-h-[28px]
-              mb-3
               rounded-md
               focus:outline-none
               focus-visible:ring-2
               focus-visible:ring-brand-red/40
+              sm:mb-3
             "
             aria-label={
               reviewsLoading
@@ -334,32 +327,35 @@ export function ProductCard({
                   : `No reviews yet for ${product.name}`
             }
           >
-
             {reviewsLoading ? (
               <span
                 className="
                   inline-flex
                   items-center
                   gap-1.5
-                  text-[10px]
-                  sm:text-xs
+                  text-[9px]
                   text-brand-brown/40
+                  sm:text-xs
                 "
               >
                 <span
                   className="
                     inline-block
-                    w-3
-                    h-3
+                    h-2.5
+                    w-2.5
                     rounded-full
                     border-2
                     border-brand-brown/20
                     border-t-brand-red
                     animate-spin
+                    sm:h-3
+                    sm:w-3
                   "
                 />
 
-                Loading reviews...
+                <span className="truncate">
+                  Loading reviews...
+                </span>
               </span>
             ) : hasReviews ? (
               <StarRating
@@ -377,84 +373,82 @@ export function ProductCard({
               <span
                 className="
                   inline-flex
+                  min-w-0
                   items-center
-                  gap-1.5
-                  text-[10px]
-                  sm:text-xs
+                  gap-1
+                  text-[9px]
                   text-brand-brown/50
-                  hover:text-brand-red
                   transition-colors
+                  hover:text-brand-red
+                  sm:gap-1.5
+                  sm:text-xs
                 "
               >
                 <span
                   className="
+                    shrink-0
+                    leading-none
                     tracking-[1px]
                     text-brand-brown/35
-                    leading-none
                   "
                   aria-hidden="true"
                 >
                   ☆☆☆☆☆
                 </span>
 
-                <span>
+                <span className="truncate">
                   No reviews yet
                 </span>
               </span>
             )}
-
           </Link>
 
-
-          {/* ==================================================================
+          {/* ============================================================
               PACK SIZE
-          =================================================================== */}
+          ============================================================= */}
 
-          <div
-            className="
-              mb-3
-              sm:mb-4
-            "
-          >
-
+          <div className="mb-3 sm:mb-4">
             {isCombo ? (
               <div
                 className="
-                  inline-block
-                  px-2.5
-                  sm:px-3
-                  py-1
-                  bg-brand-cream
-                  text-brand-brown
+                  inline-flex
+                  max-w-full
+                  items-center
                   rounded-lg
-                  text-[10px]
-                  sm:text-xs
-                  font-semibold
                   border
                   border-brand-brown/10
+                  bg-brand-cream
+                  px-2.5
+                  py-1
+                  text-[9px]
+                  font-semibold
+                  text-brand-brown
+                  sm:px-3
+                  sm:text-xs
                 "
               >
-                {packLabel} Combo
+                <span className="truncate">
+                  {packLabel} Combo
+                </span>
               </div>
             ) : (
               <div className="space-y-1.5">
-
                 <label
                   htmlFor={`pack-size-${selectId}`}
                   className="
                     block
-                    text-2xs
+                    text-[9px]
                     font-bold
                     uppercase
                     tracking-wider
                     text-brand-brown/70
+                    sm:text-2xs
                   "
                 >
                   Pack Size
                 </label>
 
                 <div className="relative w-full">
-
                   <select
                     id={`pack-size-${selectId}`}
                     value={selectedSkuIndex}
@@ -462,43 +456,40 @@ export function ProductCard({
                       handleSelectChange
                     }
                     className="
+                      min-h-[38px]
                       w-full
+                      cursor-pointer
                       appearance-none
-                      bg-brand-cream/50
+                      rounded-xl
                       border
                       border-brand-brown/15
-                      rounded-xl
+                      bg-brand-cream/50
                       px-2.5
-                      sm:px-3
                       py-2
                       pr-8
-                      text-[11px]
-                      sm:text-xs
+                      text-[10px]
                       font-semibold
                       text-brand-brown
-                      focus:outline-none
-                      focus:border-brand-red
-                      cursor-pointer
+                      outline-none
                       transition-colors
+                      focus:border-brand-red
+                      focus:ring-2
+                      focus:ring-brand-red/10
+                      sm:min-h-[40px]
+                      sm:px-3
+                      sm:text-xs
                     "
+                    aria-label={`Select pack size for ${product.name}`}
                   >
                     {product.skus.map(
-                      (
-                        skuObj,
-                        idx,
-                      ) => (
+                      (skuObj, index) => (
                         <option
-                          key={
-                            skuObj.sku
-                          }
-                          value={idx}
+                          key={skuObj.sku}
+                          value={index}
                         >
-                          {
-                            PACK_LABELS[
-                              skuObj
-                                .packSize
-                            ]
-                          ||
+                          {PACK_LABELS[
+                            skuObj.packSize
+                          ] ||
                             `${skuObj.packSize}g`}
                         </option>
                       ),
@@ -507,45 +498,43 @@ export function ProductCard({
 
                   <ChevronDown
                     className="
+                      pointer-events-none
                       absolute
                       right-2.5
                       top-1/2
-                      -translate-y-1/2
-                      w-3.5
                       h-3.5
+                      w-3.5
+                      -translate-y-1/2
                       text-brand-brown/50
-                      pointer-events-none
                     "
+                    aria-hidden="true"
                   />
-
                 </div>
               </div>
             )}
-
           </div>
 
-
-          {/* ==================================================================
+          {/* ============================================================
               PRICE
-          =================================================================== */}
+          ============================================================= */}
 
           <div
             className="
-              flex
-              items-baseline
-              gap-1.5
-              sm:gap-2.5
               mb-1
+              flex
               flex-wrap
+              items-baseline
+              gap-x-1.5
+              gap-y-0.5
+              sm:gap-x-2.5
             "
           >
-
             <span
               className="
                 text-base
-                sm:text-lg
                 font-bold
                 text-brand-red
+                sm:text-lg
               "
             >
               {formatPrice(
@@ -555,89 +544,84 @@ export function ProductCard({
 
             <span
               className="
-                text-xs
-                sm:text-sm
+                text-[10px]
                 text-brand-brown/40
                 line-through
+                sm:text-sm
               "
             >
               {formatPrice(
                 selectedSku.mrp,
               )}
             </span>
-
           </div>
 
-
-          {/* ==================================================================
+          {/* ============================================================
               SHIPPING
-          =================================================================== */}
+          ============================================================= */}
 
           <p
             className="
-              text-[10px]
-              sm:text-2xs
-              text-brand-brown/60
               mb-3
+              text-[9px]
+              leading-relaxed
+              text-brand-brown/60
               sm:mb-4
+              sm:text-2xs
             "
           >
             {selectedSku.freeShipping ? (
-              <span
-                className="
-                  text-green-600
-                  font-medium
-                "
-              >
+              <span className="font-medium text-green-600">
                 Free shipping
               </span>
             ) : (
-              `+ ${formatPrice(
-                selectedSku.shipping,
-              )} shipping`
+              <>
+                +{' '}
+                {formatPrice(
+                  selectedSku.shipping,
+                )}{' '}
+                shipping
+              </>
             )}
           </p>
-
         </div>
 
-
-        {/* ======================================================================
-            BUY BUTTONS
-        ======================================================================= */}
+        {/* ================================================================
+            ACTION BUTTONS
+        ================================================================= */}
 
         <div
           className="
+            mt-1
             grid
             grid-cols-2
             gap-1.5
             sm:gap-2
-            mt-2
           "
         >
-
-          {/* Add to Cart */}
+          {/* Add to cart */}
 
           <button
             type="button"
             onClick={handleAdd}
             className={`
-              min-h-[42px]
-              sm:min-h-0
-              py-2
-              sm:py-2.5
-              px-2
-              sm:px-3
-              rounded-xl
-              font-semibold
-              text-xs
-              sm:text-sm
               flex
+              min-h-[40px]
               items-center
               justify-center
               gap-1
-              sm:gap-1.5
+              rounded-xl
+              px-1.5
+              py-2
+              text-[10px]
+              font-semibold
               transition-all
               active:scale-[0.98]
+              sm:min-h-[42px]
+              sm:gap-1.5
+              sm:px-3
+              sm:text-xs
+              md:text-sm
               ${
                 added
                   ? 'bg-emerald-600 text-white'
@@ -646,91 +630,83 @@ export function ProductCard({
             `}
             aria-label={`Add ${product.name} (${packLabel}) to cart`}
           >
-
             {added ? (
               <>
                 <Check
                   className="
-                    w-3.5
                     h-3.5
-                    sm:w-4
+                    w-3.5
+                    shrink-0
                     sm:h-4
+                    sm:w-4
                   "
+                  aria-hidden="true"
                 />
 
-                <span>
-                  Added
-                </span>
+                <span>Added</span>
               </>
             ) : (
               <>
                 <Plus
                   className="
-                    w-3.5
                     h-3.5
-                    sm:w-4
+                    w-3.5
+                    shrink-0
                     sm:h-4
+                    sm:w-4
                   "
+                  aria-hidden="true"
                 />
 
-                <span>
-                  Cart
-                </span>
+                <span>Cart</span>
               </>
             )}
-
           </button>
 
-
-          {/* Buy Now */}
+          {/* Buy now */}
 
           <button
             type="button"
             onClick={handleBuyNow}
             className="
-              min-h-[42px]
-              sm:min-h-0
-              py-2
-              sm:py-2.5
-              px-2
-              sm:px-3
-              rounded-xl
-              font-semibold
-              text-xs
-              sm:text-sm
               flex
+              min-h-[40px]
               items-center
               justify-center
               gap-1
-              sm:gap-1.5
+              rounded-xl
               bg-brand-red
+              px-1.5
+              py-2
+              text-[10px]
+              font-semibold
               text-white
-              hover:opacity-90
-              transition-opacity
+              transition-all
+              hover:bg-brand-red-dark
               active:scale-[0.98]
+              sm:min-h-[42px]
+              sm:gap-1.5
+              sm:px-3
+              sm:text-xs
+              md:text-sm
             "
             aria-label={`Buy ${product.name} (${packLabel}) now`}
           >
-
             <Zap
               className="
-                w-3.5
                 h-3.5
-                sm:w-4
+                w-3.5
+                shrink-0
                 sm:h-4
+                sm:w-4
               "
+              aria-hidden="true"
             />
 
-            <span>
-              Buy Now
-            </span>
-
+            <span>Buy Now</span>
           </button>
-
         </div>
-
       </div>
-
-    </div>
+    </article>
   );
 }
