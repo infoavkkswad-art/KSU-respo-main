@@ -86,18 +86,6 @@ export function ProductCard({
     return null;
   }
 
-  const discount =
-    selectedSku.mrp > 0
-      ? Math.max(
-          0,
-          Math.round(
-            ((selectedSku.mrp - selectedSku.websitePrice) /
-              selectedSku.mrp) *
-              100,
-          ),
-        )
-      : 0;
-
   const packLabel =
     PACK_LABELS[selectedSku.packSize] ||
     `${selectedSku.packSize}g`;
@@ -127,10 +115,12 @@ export function ProductCard({
     <article
       className={`
         group flex h-full min-w-0 flex-col overflow-hidden
-        rounded-2xl border border-brand-green/10
-        bg-white shadow-soft
-        transition-all duration-300
-        hover:-translate-y-1 hover:shadow-lift
+        rounded-3xl border border-brand-brown/10
+        bg-white
+        shadow-card
+        transition-all duration-500 ease-out
+        hover:-translate-y-2
+        hover:shadow-lift
         ${className}
       `}
     >
@@ -140,44 +130,49 @@ export function ProductCard({
         aria-label={`View details for ${product.name}`}
         className="
           relative block aspect-square overflow-hidden
-          bg-brand-ivory-dark
+          bg-brand-cream-dark
+          [perspective:1000px]
         "
       >
-        <ProductImage
-          productId={product.id}
-          product={product}
-          variant="card"
+        <div
           className="
-            h-full w-full
-            transition-transform duration-700 ease-out
-            group-hover:scale-[1.025]
+            absolute inset-2 z-0
+            rounded-2xl
+            bg-gradient-to-br
+            from-white
+            via-brand-cream
+            to-brand-brown/5
+            shadow-inner
           "
+          aria-hidden="true"
         />
 
-        {discount > 0 && (
-          <span
-            className="
-              absolute right-2 top-2 z-10
-              rounded-full bg-brand-saffron px-2 py-1
-              text-[9px] font-bold uppercase tracking-wide text-white
-              sm:right-3 sm:top-3 sm:text-[10px]
-            "
-          >
-            {discount}% OFF
-          </span>
-        )}
+        <div
+          className="
+            relative z-10 h-full w-full
+            transition-transform duration-500 ease-out
+            group-hover:[transform:translateY(-3px)_rotateX(2deg)]
+          "
+        >
+          <ProductImage
+            productId={product.id}
+            product={product}
+            variant="card"
+            className="h-full w-full"
+          />
+        </div>
       </Link>
 
       {/* Information */}
-      <div className="flex flex-1 flex-col justify-between p-3 sm:p-4 md:p-5">
+      <div className="flex flex-1 flex-col justify-between p-4 sm:p-5">
         <div className="min-w-0">
           <Link
             to={`/product/${product.slug}`}
             className="
               block truncate font-serif
               text-sm font-semibold leading-tight
-              text-brand-green transition-colors
-              hover:text-brand-saffron
+              text-brand-brown transition-colors
+              hover:text-brand-red
               sm:text-base
             "
             title={product.name}
@@ -199,11 +194,12 @@ export function ProductCard({
           <Link
             to={`/product/${product.slug}#reviews`}
             className="
-              mb-2.5 inline-flex min-h-[30px] max-w-full
+              mb-3 inline-flex min-h-[30px] max-w-full
               items-center rounded-md
-              focus:outline-none focus-visible:ring-2
-              focus-visible:ring-brand-saffron/40
-              sm:mb-3
+              focus:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-brand-red/40
+              sm:mb-4
             "
             aria-label={
               reviewsLoading
@@ -215,7 +211,7 @@ export function ProductCard({
           >
             {reviewsLoading ? (
               <span className="inline-flex items-center gap-1.5 text-[9px] text-brand-brown/40 sm:text-xs">
-                <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-brand-green/15 border-t-brand-saffron sm:h-3 sm:w-3" />
+                <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-brand-brown/15 border-t-brand-red sm:h-3 sm:w-3" />
                 Loading reviews...
               </span>
             ) : hasReviews ? (
@@ -242,9 +238,19 @@ export function ProductCard({
           {/* Pack */}
           <div className="mb-3 sm:mb-4">
             {isCombo ? (
-              <div className="inline-flex max-w-full items-center rounded-lg border border-brand-green/10 bg-brand-ivory px-2.5 py-1 text-[9px] font-semibold text-brand-green sm:px-3 sm:text-xs">
+              <div className="
+                inline-flex max-w-full items-center
+                rounded-xl
+                border border-brand-brown/10
+                bg-brand-cream
+                px-3 py-1.5
+                text-[9px] font-semibold
+                text-brand-brown
+                shadow-soft
+                sm:text-xs
+              ">
                 <span className="truncate">
-                  {packLabel} Combo
+                  {packLabel}
                 </span>
               </div>
             ) : (
@@ -264,18 +270,24 @@ export function ProductCard({
                     id={`pack-size-${selectId}`}
                     value={selectedSkuIndex}
                     onChange={(event) =>
-                      setSelectedSkuIndex(Number(event.target.value))
+                      setSelectedSkuIndex(
+                        Number(event.target.value),
+                      )
                     }
                     className="
-                      min-h-[38px] w-full appearance-none
+                      min-h-[40px] w-full appearance-none
                       cursor-pointer rounded-xl
-                      border border-brand-green/15
-                      bg-brand-ivory-light px-2.5 py-2 pr-8
-                      text-[10px] font-semibold text-brand-green
-                      outline-none transition-colors
-                      focus:border-brand-green
-                      focus:ring-2 focus:ring-brand-saffron/15
-                      sm:min-h-[40px] sm:px-3 sm:text-xs
+                      border border-brand-brown/15
+                      bg-brand-cream px-3 py-2 pr-8
+                      text-[10px] font-semibold
+                      text-brand-brown
+                      outline-none
+                      transition-all
+                      focus:border-brand-red
+                      focus:ring-2
+                      focus:ring-brand-red/10
+                      hover:border-brand-brown/25
+                      sm:text-xs
                     "
                     aria-label={`Select pack size for ${product.name}`}
                   >
@@ -289,8 +301,11 @@ export function ProductCard({
 
                   <ChevronDown
                     className="
-                      pointer-events-none absolute right-2.5 top-1/2
-                      h-3.5 w-3.5 -translate-y-1/2 text-brand-green/45
+                      pointer-events-none absolute
+                      right-2.5 top-1/2
+                      h-3.5 w-3.5
+                      -translate-y-1/2
+                      text-brand-brown/45
                     "
                     aria-hidden="true"
                   />
@@ -300,22 +315,20 @@ export function ProductCard({
           </div>
 
           {/* Price */}
-          <div className="mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="text-base font-bold text-brand-green sm:text-lg">
+          <div className="mb-1 flex flex-wrap items-baseline">
+            <span className="
+              text-lg font-bold
+              text-brand-brown
+              sm:text-xl
+            ">
               {formatPrice(selectedSku.websitePrice)}
             </span>
-
-            {selectedSku.mrp > selectedSku.websitePrice && (
-              <span className="text-[10px] text-brand-brown/35 line-through sm:text-sm">
-                {formatPrice(selectedSku.mrp)}
-              </span>
-            )}
           </div>
 
           {/* Shipping */}
-          <p className="mb-3 text-[9px] leading-relaxed text-brand-brown/55 sm:mb-4 sm:text-2xs">
+          <p className="mb-4 text-[9px] leading-relaxed text-brand-brown/55 sm:text-2xs">
             {selectedSku.freeShipping ? (
-              <span className="font-semibold text-brand-green">
+              <span className="font-semibold text-green-700">
                 Free shipping
               </span>
             ) : (
@@ -327,19 +340,38 @@ export function ProductCard({
         </div>
 
         {/* Actions */}
-        <div className="mt-1 grid grid-cols-2 gap-1.5 sm:gap-2">
+        <div className="mt-1 grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={handleAdd}
             className={`
-              flex min-h-[40px] items-center justify-center gap-1
-              rounded-xl px-1.5 py-2 text-[10px] font-semibold
-              transition-all active:scale-[0.98]
-              sm:min-h-[42px] sm:gap-1.5 sm:px-3 sm:text-xs md:text-sm
+              group/cart
+              relative flex min-h-[44px]
+              items-center justify-center gap-1.5
+              overflow-hidden rounded-xl
+              px-2 py-2
+              text-[10px] font-semibold
+              transition-all duration-200
+              active:translate-y-[2px]
+              active:shadow-none
+              sm:text-xs md:text-sm
               ${
                 added
-                  ? 'bg-brand-green text-white'
-                  : 'border border-brand-green/20 text-brand-green hover:bg-brand-green/5'
+                  ? `
+                    bg-green-700
+                    text-white
+                    shadow-[0_4px_0_#14532d]
+                  `
+                  : `
+                    border border-brand-brown/15
+                    bg-white
+                    text-brand-brown
+                    shadow-[0_4px_0_rgba(78,52,46,0.10)]
+                    hover:-translate-y-0.5
+                    hover:border-brand-brown/25
+                    hover:bg-brand-cream
+                    hover:shadow-[0_6px_0_rgba(78,52,46,0.12)]
+                  `
               }
             `}
             aria-label={`Add ${product.name} (${packLabel}) to cart`}
@@ -361,12 +393,20 @@ export function ProductCard({
             type="button"
             onClick={handleBuyNow}
             className="
-              flex min-h-[40px] items-center justify-center gap-1
-              rounded-xl bg-brand-saffron px-1.5 py-2
-              text-[10px] font-semibold text-white
-              transition-all hover:bg-brand-saffron-dark
-              active:scale-[0.98]
-              sm:min-h-[42px] sm:gap-1.5 sm:px-3 sm:text-xs md:text-sm
+              relative flex min-h-[44px]
+              items-center justify-center gap-1.5
+              overflow-hidden rounded-xl
+              bg-brand-red
+              px-2 py-2
+              text-[10px] font-bold text-white
+              shadow-[0_4px_0_#b9230a]
+              transition-all duration-200
+              hover:-translate-y-0.5
+              hover:bg-brand-red-dark
+              hover:shadow-[0_6px_0_#a51f08]
+              active:translate-y-[2px]
+              active:shadow-none
+              sm:text-xs md:text-sm
             "
             aria-label={`Buy ${product.name} (${packLabel}) now`}
           >
