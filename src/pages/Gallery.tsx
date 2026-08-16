@@ -1,65 +1,59 @@
+import { useEffect } from 'react';
+import { Instagram, ExternalLink } from 'lucide-react';
 import { SEO, breadcrumbSchema } from '@/components/SEO';
-import { PageHero, PlaceholderImage } from '@/components/Section';
+import { PageHero } from '@/components/Section';
 import { Reveal } from '@/components/Reveal';
 
-const galleryItems = [
-  {
-    label: 'PRODUCTS — Kawad Swad product collection',
-    aspect: 'aspect-[16/9]',
-    span: 'col-span-2 lg:col-span-2 row-span-2',
-    category: 'Brand & Products',
-    image: '/images/pages/gallery-hero.png',
-  },
-  {
-    label: 'INGREDIENTS — Ingredient photography',
-    aspect: 'aspect-[4/3]',
-    span: 'col-span-1 lg:col-span-1',
-    category: 'Making & Craft',
-  },
-  {
-    label: 'MANUFACTURING — Manufacturing photography',
-    aspect: 'aspect-[4/3]',
-    span: 'col-span-1 lg:col-span-1',
-    category: 'Making & Craft',
-  },
-  {
-    label: 'PROCESS — Papad making process',
-    aspect: 'aspect-square',
-    span: 'col-span-1 lg:col-span-1',
-    category: 'Making & Craft',
-  },
-  {
-    label: 'PROCESS — Traditional preparation',
-    aspect: 'aspect-[16/9]',
-    span: 'col-span-2 lg:col-span-2',
-    category: 'Making & Craft',
-  },
-  {
-    label: 'QUALITY — Quality and hygiene',
-    aspect: 'aspect-square',
-    span: 'col-span-1 lg:col-span-1',
-    category: 'Quality',
-  },
-  {
-    label: 'PACKAGING — Kawad Swad packaging',
-    aspect: 'aspect-[4/3]',
-    span: 'col-span-2 lg:col-span-2',
-    category: 'Packaging',
-  },
-  {
-    label: 'NIMAR — Nimar heritage and food culture',
-    aspect: 'aspect-[16/9]',
-    span: 'col-span-2 lg:col-span-2',
-    category: 'Food Culture',
-  },
+const instagramPosts = [
+  'https://www.instagram.com/p/DY6L2CWIGUA/',
+  'https://www.instagram.com/p/DY1qUpyIJA6/',
+  'https://www.instagram.com/p/DYzIxAZIeBF/',
+  'https://www.instagram.com/p/DYR2S3IIlJR/',
+  'https://www.instagram.com/p/DYMz7OdImRo/',
+  'https://www.instagram.com/p/DYCqkF5IAB2/',
+  'https://www.instagram.com/p/DX9klsyoX2a/',
+  'https://www.instagram.com/p/DX7IW-1zbOF/',
+  'https://www.instagram.com/p/DXrYF7GCAxQ/',
+  'https://www.instagram.com/p/DXkFaZ_k94a/',
+  'https://www.instagram.com/p/DXbeh_5k8UA/',
+  'https://www.instagram.com/p/DXTcMeViGj7/',
+  'https://www.instagram.com/p/DXRd8fGiJRV/',
+  'https://www.instagram.com/p/DXPTEDukzB-/',
+  'https://www.instagram.com/p/DXJskkgk7oO/',
+  'https://www.instagram.com/p/DWrAtuSCBFe/',
+  'https://www.instagram.com/p/DWorut8iDtM/',
+  'https://www.instagram.com/p/DWHGbsTiNMV/',
+  'https://www.instagram.com/p/DV2cIzYCMbI/',
+  'https://www.instagram.com/p/DU5Y7ziCEWY/',
+  'https://www.instagram.com/p/DUuVdj5CLpl/',
+  'https://www.instagram.com/p/DTnag6ciDYj/',
 ];
 
 export default function Gallery() {
+  useEffect(() => {
+    const existingScript = document.querySelector(
+      'script[src="https://www.instagram.com/embed.js"]',
+    );
+
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = 'https://www.instagram.com/embed.js';
+      script.async = true;
+      document.body.appendChild(script);
+    } else {
+      window.instgrm?.Embeds?.process();
+    }
+
+    return () => {
+      // Keep Instagram's script loaded for other pages/components.
+    };
+  }, []);
+
   return (
     <>
       <SEO
         title="Gallery"
-        description="Explore the Kawad Swad visual story through products, ingredients, manufacturing, packaging and Nimar heritage."
+        description="Explore the Kawad Swad visual story through real Instagram posts, Reels, products, craftsmanship and the journey of our brand."
         path="/gallery"
         structuredData={breadcrumbSchema([
           { name: 'Home', path: '/' },
@@ -70,139 +64,150 @@ export default function Gallery() {
       <PageHero
         eyebrow="Visual Story"
         title="The Kawad Swad Gallery"
-        description="A visual journey through our products, craft, packaging and the Nimar roots behind Kawad Swad."
+        description="Real moments from the Kawad Swad journey, shared through our Instagram posts and Reels."
       />
 
       <section className="container-max container-px py-12 sm:py-16 lg:py-24">
-        <div
-          className="
-            grid
-            grid-cols-2
-            gap-3
-            auto-rows-[180px]
-            sm:gap-4
-            sm:auto-rows-[220px]
-            lg:gap-6
-            lg:auto-rows-[260px]
-          "
-        >
-          {galleryItems.map((item, index) => (
+        {/* Gallery introduction */}
+        <Reveal>
+          <div className="mx-auto mb-10 max-w-2xl text-center sm:mb-14">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-saffron/10 text-brand-saffron shadow-soft">
+              <Instagram className="h-6 w-6" />
+            </div>
+
+            <h2 className="font-serif text-2xl font-bold text-brand-green sm:text-3xl">
+              From our real Instagram journey
+            </h2>
+
+            <p className="mt-3 text-sm leading-relaxed text-brand-brown/65 sm:text-base">
+              Products, people, moments and stories directly from
+              Kawad Swad's Instagram.
+            </p>
+          </div>
+        </Reveal>
+
+        {/* Real Instagram posts */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {instagramPosts.map((url, index) => (
             <Reveal
-              key={item.label}
-              delay={Math.min(index * 60, 300)}
-              className={item.span}
+              key={url}
+              delay={Math.min(index * 40, 300)}
             >
-              <div className="group h-full">
+              <article
+                className="
+                  group relative overflow-hidden
+                  rounded-3xl
+                  border border-brand-brown/10
+                  bg-white
+                  p-3
+                  shadow-card
+                  transition-all duration-300
+                  hover:-translate-y-1
+                  hover:shadow-lift
+                "
+              >
                 <div
                   className="
-                    relative
-                    h-full
                     overflow-hidden
                     rounded-2xl
-                    border
-                    border-brand-brown/10
-                    bg-brand-cream-dark
-                    shadow-soft
-                    transition-all
-                    duration-300
-                    hover:shadow-lift
-                    sm:rounded-3xl
+                    bg-brand-ivory
                   "
                 >
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.label}
-                      loading={index === 0 ? 'eager' : 'lazy'}
-                      decoding="async"
-                      className="
-                        block
-                        h-full
-                        w-full
-                        object-cover
-                        transition-transform
-                        duration-500
-                        group-hover:scale-105
-                      "
-                    />
-                  ) : (
-                    <PlaceholderImage
-                      label={item.label}
-                      aspect={item.aspect}
-                      className="
-                        h-full
-                        transition-transform
-                        duration-500
-                        group-hover:scale-105
-                      "
-                    />
-                  )}
+                  <blockquote
+                    className="instagram-media"
+                    data-instgrm-permalink={url}
+                    data-instgrm-version="14"
+                    style={{
+                      background: '#FFFDF7',
+                      border: 0,
+                      borderRadius: '16px',
+                      boxShadow: 'none',
+                      margin: 0,
+                      maxWidth: '100%',
+                      minWidth: '100%',
+                      padding: 0,
+                      width: '100%',
+                    }}
+                  >
+                    <div className="flex min-h-[280px] items-center justify-center p-6 text-center">
+                      <div>
+                        <Instagram className="mx-auto mb-3 h-8 w-8 text-brand-saffron" />
+                        <p className="text-xs font-medium text-brand-brown/50">
+                          Loading Instagram post…
+                        </p>
+                      </div>
+                    </div>
+                  </blockquote>
+                </div>
 
-                  <div
-                    className="
-                      pointer-events-none
-                      absolute
-                      inset-x-0
-                      bottom-0
-                      bg-gradient-to-t
-                      from-black/30
-                      to-transparent
-                      opacity-0
-                      transition-opacity
-                      duration-300
-                      group-hover:opacity-100
-                    "
-                  />
+                <div className="flex items-center justify-between gap-3 px-2 pb-1 pt-3">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-brand-brown/45">
+                    <Instagram className="h-3.5 w-3.5" />
+                    Kawad Swad
+                  </span>
 
-                  <span
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Open Instagram post ${index + 1}`}
                     className="
-                      absolute
-                      left-3
-                      top-3
+                      inline-flex items-center gap-1
                       rounded-full
-                      bg-white/90
-                      px-2.5
-                      py-1
-                      text-[9px]
-                      font-semibold
-                      uppercase
-                      tracking-wider
-                      text-brand-brown
-                      shadow-sm
-                      backdrop-blur-sm
-                      sm:left-4
-                      sm:top-4
-                      sm:px-3
+                      px-2.5 py-1
+                      text-[10px] font-semibold
+                      text-brand-saffron
+                      transition-all
+                      hover:bg-brand-saffron/10
                     "
                   >
-                    {item.category}
-                  </span>
+                    Open
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
                 </div>
-              </div>
+              </article>
             </Reveal>
           ))}
         </div>
 
+        {/* Instagram CTA */}
         <Reveal>
           <div
             className="
-              mx-auto
-              mt-12
-              max-w-2xl
-              rounded-2xl
-              border
-              border-brand-brown/10
-              bg-brand-cream-dark
-              p-6
-              text-center
-              sm:mt-16
-              sm:p-8
+              mx-auto mt-14 max-w-2xl
+              rounded-3xl
+              border border-brand-brown/10
+              bg-brand-ivory-dark
+              p-7 text-center
+              shadow-soft
+              sm:mt-20 sm:p-9
             "
           >
-            <p className="text-sm font-medium leading-relaxed text-brand-brown/70">
-              More real Kawad Swad photography will be added
-              to the gallery as our visual library grows.
+            <Instagram className="mx-auto mb-4 h-7 w-7 text-brand-saffron" />
+
+            <h2 className="font-serif text-2xl font-bold text-brand-green">
+              Follow the journey
+            </h2>
+
+            <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-brand-brown/65">
+              Follow Kawad Swad on Instagram for new products,
+              Reels, behind-the-scenes moments and updates.
             </p>
+
+            <a
+              href="https://www.instagram.com/kawadswad"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+                btn-primary mt-6
+                min-h-[46px]
+                px-6
+              "
+            >
+              <Instagram className="h-4 w-4" />
+              Follow @kawadswad
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           </div>
         </Reveal>
       </section>
