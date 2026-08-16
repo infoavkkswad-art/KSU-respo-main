@@ -98,6 +98,7 @@ export function ProductCard({
     reviewSummary.averageRating > 0;
 
   const handleAdd = () => {
+    if (!selectedSku.available) return;
     addItem(selectedSku.sku, 1);
     setAdded(true);
 
@@ -107,6 +108,7 @@ export function ProductCard({
   };
 
   const handleBuyNow = () => {
+    if (!selectedSku.available) return;
     addItem(selectedSku.sku, 1);
     navigate('/checkout');
   };
@@ -321,7 +323,7 @@ export function ProductCard({
               text-brand-brown
               sm:text-xl
             ">
-              {formatPrice(selectedSku.websitePrice)}
+              {selectedSku.available ? formatPrice(selectedSku.websitePrice) : 'Price Coming Soon'}
             </span>
           </div>
 
@@ -344,6 +346,7 @@ export function ProductCard({
           <button
             type="button"
             onClick={handleAdd}
+            disabled={!selectedSku.available}
             className={`
               group/cart
               relative flex min-h-[44px]
@@ -354,6 +357,7 @@ export function ProductCard({
               transition-all duration-200
               active:translate-y-[2px]
               active:shadow-none
+              disabled:cursor-not-allowed disabled:opacity-50
               sm:text-xs md:text-sm
               ${
                 added
@@ -392,6 +396,7 @@ export function ProductCard({
           <button
             type="button"
             onClick={handleBuyNow}
+            disabled={!selectedSku.available}
             className="
               relative flex min-h-[44px]
               items-center justify-center gap-1.5
@@ -406,6 +411,7 @@ export function ProductCard({
               hover:shadow-[0_6px_0_#a51f08]
               active:translate-y-[2px]
               active:shadow-none
+              disabled:cursor-not-allowed disabled:opacity-50
               sm:text-xs md:text-sm
             "
             aria-label={`Buy ${product.name} (${packLabel}) now`}
