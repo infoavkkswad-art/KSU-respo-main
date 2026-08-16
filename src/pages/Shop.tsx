@@ -4,14 +4,13 @@ import {
   SlidersHorizontal,
   X,
   Search,
-  SlidersHorizontal as FilterIcon,
 } from 'lucide-react';
 
 import { SEO, breadcrumbSchema } from '@/components/SEO';
 import { ProductCard } from '@/components/ProductCard';
 import { Reveal } from '@/components/Reveal';
 import { ProductService } from '@/services/product-service';
-import { ProductCategory } from '@/data/products';
+import type { ProductCategory } from '@/data/products';
 
 const categories: (ProductCategory | 'all')[] = [
   'all',
@@ -29,7 +28,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const MAX_PRICE = 700;
-const MIN_PRICE = 79;
+const MIN_PRICE = 47;
 
 export default function Shop() {
   const [searchParams] = useSearchParams();
@@ -77,14 +76,11 @@ export default function Shop() {
       });
     }
 
-    list = list.filter((product) => {
-      const firstSku = product.skus[0];
-
-      return (
-        firstSku &&
-        firstSku.websitePrice <= maxPrice
-      );
-    });
+    list = list.filter((product) =>
+      product.skus.some(
+        (sku) => sku.websitePrice <= maxPrice,
+      ),
+    );
 
     switch (sortBy) {
       case 'price-low':
@@ -147,7 +143,14 @@ export default function Shop() {
       ================================================================= */}
       <section className="relative overflow-hidden bg-brand-ivory py-10 sm:py-14 lg:py-20">
         <div
-          className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full border border-brand-saffron/15 sm:h-80 sm:w-80"
+          className="
+            pointer-events-none absolute
+            -right-24 -top-24
+            h-64 w-64 rounded-full
+            border border-brand-saffron/15
+            shadow-[inset_0_0_50px_rgba(230,126,34,0.04)]
+            sm:h-80 sm:w-80
+          "
           aria-hidden="true"
         />
 
@@ -161,7 +164,13 @@ export default function Shop() {
             Kawad Swad
           </span>
 
-          <h1 className="font-serif text-3xl font-bold leading-tight text-brand-green sm:text-4xl lg:text-6xl">
+          <h1
+            className="
+              font-serif font-bold leading-tight
+              text-brand-green
+              text-3xl sm:text-4xl lg:text-6xl
+            "
+          >
             Find Your Papad
           </h1>
 
@@ -187,8 +196,14 @@ export default function Shop() {
               ${showMobileFilters ? 'block' : 'hidden lg:block'}
             `}
           >
-            <div className="card border border-brand-green/10 bg-white p-4 sm:p-5 lg:sticky lg:top-24">
-
+            <div
+              className="
+                card border border-brand-green/10
+                bg-white p-4 sm:p-5
+                shadow-[0_5px_0_rgba(62,39,35,0.05),0_12px_28px_rgba(62,39,35,0.08)]
+                lg:sticky lg:top-24
+              "
+            >
               <div className="mb-5 flex items-center justify-between lg:hidden">
                 <div>
                   <h2 className="font-serif text-lg font-bold text-brand-green">
@@ -202,14 +217,19 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={() => setShowMobileFilters(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-brand-brown/60 hover:bg-brand-green/5"
+                  className="
+                    flex h-10 w-10 items-center justify-center
+                    rounded-full text-brand-brown/60
+                    transition-all
+                    hover:bg-brand-green/5
+                    active:scale-95
+                  "
                   aria-label="Close filters"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              {/* Category */}
               <div>
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-brand-green sm:text-sm">
                   Category
@@ -225,12 +245,23 @@ export default function Shop() {
                         key={cat}
                         onClick={() => setCategory(cat)}
                         className={`
-                          flex min-h-[44px] w-full items-center rounded-xl
-                          px-3 py-2.5 text-left text-sm transition-all
+                          flex min-h-[44px] w-full items-center
+                          rounded-xl px-3 py-2.5 text-left text-sm
+                          transition-all duration-200
                           ${
                             active
-                              ? 'bg-brand-green/10 font-semibold text-brand-green'
-                              : 'text-brand-brown/70 hover:bg-brand-green/5 hover:text-brand-green'
+                              ? `
+                                bg-brand-green
+                                font-semibold text-white
+                                shadow-[0_3px_0_#315238,0_6px_12px_rgba(62,39,35,0.10)]
+                                -translate-y-0.5
+                              `
+                              : `
+                                text-brand-brown/70
+                                hover:-translate-y-0.5
+                                hover:bg-brand-green/5
+                                hover:text-brand-green
+                              `
                           }
                         `}
                       >
@@ -245,7 +276,6 @@ export default function Shop() {
 
               <div className="my-6 h-px bg-brand-green/10" />
 
-              {/* Price */}
               <div>
                 <label
                   htmlFor="shop-price-limit"
@@ -280,7 +310,15 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="min-h-[46px] flex-1 rounded-xl border border-brand-green/15 px-4 text-sm font-semibold text-brand-green hover:bg-brand-green/5"
+                  className="
+                    min-h-[46px] flex-1 rounded-xl
+                    border border-brand-green/15
+                    px-4 text-sm font-semibold
+                    text-brand-green
+                    transition-all
+                    hover:bg-brand-green/5
+                    active:translate-y-[1px]
+                  "
                 >
                   Clear
                 </button>
@@ -288,7 +326,17 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={() => setShowMobileFilters(false)}
-                  className="min-h-[46px] flex-1 rounded-xl bg-brand-green px-4 text-sm font-semibold text-white hover:bg-brand-green-dark"
+                  className="
+                    min-h-[46px] flex-1 rounded-xl
+                    bg-brand-green px-4
+                    text-sm font-semibold text-white
+                    shadow-[0_4px_0_#315238]
+                    transition-all
+                    hover:-translate-y-0.5
+                    hover:bg-brand-green-dark
+                    active:translate-y-[2px]
+                    active:shadow-none
+                  "
                 >
                   Apply
                 </button>
@@ -298,15 +346,24 @@ export default function Shop() {
 
           {/* ============================================================
               PRODUCT AREA
-          ============================================================= */}
+          ============================================================ */}
           <main className="min-w-0 flex-1">
 
             {/* Toolbar */}
             <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
-
-              {/* Search */}
               <div className="min-w-0 flex-1">
-                <div className="flex min-h-[44px] items-center gap-2 rounded-xl border border-brand-green/10 bg-white px-3 shadow-soft">
+                <div
+                  className="
+                    flex min-h-[46px] items-center gap-2
+                    rounded-xl border border-brand-green/10
+                    bg-white px-3
+                    shadow-[0_3px_0_rgba(62,39,35,0.05),0_6px_14px_rgba(62,39,35,0.05)]
+                    transition-all
+                    focus-within:-translate-y-0.5
+                    focus-within:border-brand-saffron/30
+                    focus-within:shadow-soft
+                  "
+                >
                   <Search
                     className="h-4 w-4 shrink-0 text-brand-green/45"
                     aria-hidden="true"
@@ -325,7 +382,14 @@ export default function Shop() {
                     <button
                       type="button"
                       onClick={() => setSearch('')}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-brand-brown/40 hover:bg-brand-green/5"
+                      className="
+                        flex h-8 w-8 shrink-0
+                        items-center justify-center
+                        rounded-full text-brand-brown/40
+                        transition-all
+                        hover:bg-brand-green/5
+                        active:scale-90
+                      "
                       aria-label="Clear search"
                     >
                       <X className="h-4 w-4" />
@@ -334,7 +398,6 @@ export default function Shop() {
                 </div>
               </div>
 
-              {/* Controls */}
               <div className="flex items-center gap-2">
                 <p className="hidden text-xs text-brand-brown/50 sm:block">
                   {filtered.length}{' '}
@@ -348,7 +411,17 @@ export default function Shop() {
                       event.target.value as typeof sortBy,
                     )
                   }
-                  className="min-h-[44px] flex-1 cursor-pointer rounded-xl border border-brand-green/10 bg-white px-3 text-xs font-medium text-brand-green outline-none focus:border-brand-saffron/40 sm:flex-none sm:text-sm"
+                  className="
+                    min-h-[46px] flex-1 cursor-pointer
+                    rounded-xl border border-brand-green/10
+                    bg-white px-3
+                    text-xs font-medium text-brand-green
+                    shadow-[0_3px_0_rgba(62,39,35,0.05)]
+                    outline-none transition-all
+                    hover:-translate-y-0.5
+                    focus:border-brand-saffron/40
+                    sm:flex-none sm:text-sm
+                  "
                   aria-label="Sort products"
                 >
                   <option value="default">Recommended</option>
@@ -362,7 +435,18 @@ export default function Shop() {
                   onClick={() =>
                     setShowMobileFilters(!showMobileFilters)
                   }
-                  className="relative flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-xl border border-brand-green/10 bg-white px-3 text-brand-green hover:bg-brand-green/5 lg:hidden"
+                  className="
+                    relative flex min-h-[46px] shrink-0
+                    items-center justify-center gap-1.5
+                    rounded-xl border border-brand-green/10
+                    bg-white px-3 text-brand-green
+                    shadow-[0_3px_0_rgba(62,39,35,0.05)]
+                    transition-all
+                    hover:-translate-y-0.5
+                    hover:bg-brand-green/5
+                    active:translate-y-[1px]
+                    lg:hidden
+                  "
                   aria-label="Open shop filters"
                   aria-expanded={showMobileFilters}
                 >
@@ -372,7 +456,15 @@ export default function Shop() {
                   </span>
 
                   {activeFilterCount > 0 && (
-                    <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-saffron px-1 text-[10px] font-bold text-white">
+                    <span
+                      className="
+                        absolute -right-1.5 -top-1.5
+                        flex h-5 min-w-5 items-center justify-center
+                        rounded-full bg-brand-saffron px-1
+                        text-[10px] font-bold text-white
+                        shadow-[0_2px_5px_rgba(230,126,34,0.30)]
+                      "
+                    >
                       {activeFilterCount}
                     </span>
                   )}
@@ -387,7 +479,12 @@ export default function Shop() {
                   <button
                     type="button"
                     onClick={() => setCategory('all')}
-                    className="inline-flex min-h-[32px] items-center gap-1 rounded-full bg-brand-green/10 px-3 text-xs font-medium text-brand-green"
+                    className="
+                      inline-flex min-h-[32px] items-center gap-1
+                      rounded-full bg-brand-green/10 px-3
+                      text-xs font-medium text-brand-green
+                      transition-all hover:-translate-y-0.5
+                    "
                   >
                     {CATEGORY_LABELS[category]}
                     <X className="h-3 w-3" />
@@ -398,7 +495,12 @@ export default function Shop() {
                   <button
                     type="button"
                     onClick={() => setMaxPrice(MAX_PRICE)}
-                    className="inline-flex min-h-[32px] items-center gap-1 rounded-full bg-brand-saffron/10 px-3 text-xs font-medium text-brand-saffron"
+                    className="
+                      inline-flex min-h-[32px] items-center gap-1
+                      rounded-full bg-brand-saffron/10 px-3
+                      text-xs font-medium text-brand-saffron
+                      transition-all hover:-translate-y-0.5
+                    "
                   >
                     Under ₹{maxPrice}
                     <X className="h-3 w-3" />
@@ -409,7 +511,12 @@ export default function Shop() {
                   <button
                     type="button"
                     onClick={() => setSearch('')}
-                    className="inline-flex min-h-[32px] max-w-full items-center gap-1 rounded-full bg-brand-green/10 px-3 text-xs font-medium text-brand-green"
+                    className="
+                      inline-flex min-h-[32px] max-w-full items-center gap-1
+                      rounded-full bg-brand-green/10 px-3
+                      text-xs font-medium text-brand-green
+                      transition-all hover:-translate-y-0.5
+                    "
                   >
                     <span className="max-w-[180px] truncate">
                       Search: {search}
@@ -421,7 +528,11 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="min-h-[32px] px-2 text-xs font-medium text-brand-brown/50 hover:text-brand-green"
+                  className="
+                    min-h-[32px] px-2 text-xs font-medium
+                    text-brand-brown/50 transition-colors
+                    hover:text-brand-green
+                  "
                 >
                   Clear all
                 </button>
@@ -435,8 +546,22 @@ export default function Shop() {
 
             {/* Empty */}
             {filtered.length === 0 ? (
-              <div className="rounded-2xl border-2 border-dashed border-brand-green/10 px-5 py-16 text-center sm:py-20">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-ivory">
+              <div
+                className="
+                  rounded-3xl
+                  border-2 border-dashed border-brand-green/10
+                  px-5 py-16 text-center
+                  sm:py-20
+                "
+              >
+                <div
+                  className="
+                    mx-auto mb-4 flex h-14 w-14
+                    items-center justify-center
+                    rounded-full bg-brand-ivory
+                    shadow-[0_4px_0_rgba(62,39,35,0.05)]
+                  "
+                >
                   <Search className="h-6 w-6 text-brand-green/30" />
                 </div>
 
@@ -452,13 +577,26 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="btn-primary mt-6 min-h-[44px] px-6"
+                  className="
+                    btn-primary mt-6 min-h-[46px] px-6
+                    shadow-[0_4px_0_#b9230a]
+                    hover:-translate-y-0.5
+                    active:translate-y-[2px]
+                    active:shadow-none
+                  "
                 >
                   Clear All Filters
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
+              <div
+                className="
+                  grid grid-cols-2 gap-3
+                  sm:gap-5
+                  lg:grid-cols-3 lg:gap-6
+                  xl:grid-cols-4
+                "
+              >
                 {filtered.map((product, index) => (
                   <Reveal
                     key={product.id}
