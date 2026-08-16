@@ -1,4 +1,9 @@
-import { products, ProductFamily, Sku, ProductCategory } from '../data/products';
+import {
+  products,
+  ProductFamily,
+  Sku,
+  ProductCategory,
+} from '../data/products';
 
 export interface FlatProductItem {
   familyId: string;
@@ -21,50 +26,113 @@ export const ProductService = {
     return products;
   },
 
-  getProductBySlug(slug: string): ProductFamily | undefined {
-    return products.find((p) => p.slug === slug);
-  },
-
-  getProductsByCategory(category: string): ProductFamily[] {
-    if (!category || category === 'all') return products;
-    return products.filter((p) => p.category === category);
-  },
-
-  getFeaturedProducts(): ProductFamily[] {
-    return products.filter((p) => p.featured);
-  },
-
-  getProductBySku(skuCode: string): { family: ProductFamily; skuObj: Sku } | undefined {
-    for (const product of products) {
-      const skuObj = product.skus.find((s) => s.sku === skuCode);
-      if (skuObj) return { family: product, skuObj };
-    }
-    return undefined;
-  },
-
-  searchProducts(query: string): ProductFamily[] {
-    const q = query.toLowerCase().trim();
-    if (!q) return products;
-    return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.hindiName.includes(q) ||
-        p.variant.toLowerCase().includes(q) ||
-        p.category.includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.skus.some((s) => s.sku.toLowerCase().includes(q) || String(s.packSize).includes(q)),
+  getProductBySlug(
+    slug: string,
+  ): ProductFamily | undefined {
+    return products.find(
+      (p) => p.slug === slug,
     );
   },
 
-  getRelatedProducts(product: ProductFamily, count = 4): ProductFamily[] {
+  getProductsByCategory(
+    category: string,
+  ): ProductFamily[] {
+    if (!category || category === 'all') {
+      return products;
+    }
+
+    return products.filter(
+      (p) => p.category === category,
+    );
+  },
+
+  getFeaturedProducts(): ProductFamily[] {
+    return products.filter(
+      (p) => p.featured,
+    );
+  },
+
+  getProductBySku(
+    skuCode: string,
+  ):
+    | {
+        family: ProductFamily;
+        skuObj: Sku;
+      }
+    | undefined {
+    for (const product of products) {
+      const skuObj = product.skus.find(
+        (s) => s.sku === skuCode,
+      );
+
+      if (skuObj) {
+        return {
+          family: product,
+          skuObj,
+        };
+      }
+    }
+
+    return undefined;
+  },
+
+  searchProducts(
+    query: string,
+  ): ProductFamily[] {
+    const q = query
+      .toLowerCase()
+      .trim();
+
+    if (!q) {
+      return products;
+    }
+
+    return products.filter(
+      (p) =>
+        p.name
+          .toLowerCase()
+          .includes(q) ||
+        p.hindiName.includes(q) ||
+        p.variant
+          .toLowerCase()
+          .includes(q) ||
+        p.category.includes(q) ||
+        p.description
+          .toLowerCase()
+          .includes(q) ||
+        p.skus.some(
+          (s) =>
+            s.sku
+              .toLowerCase()
+              .includes(q) ||
+            String(s.packSize).includes(q),
+        ),
+    );
+  },
+
+  getRelatedProducts(
+    product: ProductFamily,
+    count = 4,
+  ): ProductFamily[] {
     return products
-      .filter((p) => p.id !== product.id && p.category === product.category)
-      .concat(products.filter((p) => p.id !== product.id && p.category !== product.category))
+      .filter(
+        (p) =>
+          p.id !== product.id &&
+          p.category === product.category,
+      )
+      .concat(
+        products.filter(
+          (p) =>
+            p.id !== product.id &&
+            p.category !== product.category,
+        ),
+      )
       .slice(0, count);
   },
 
   getAllFlatItems(): FlatProductItem[] {
     const list: FlatProductItem[] = [];
+
     for (const family of products) {
       for (const skuObj of family.skus) {
         list.push({
@@ -76,14 +144,24 @@ export const ProductService = {
           description: family.description,
           sku: skuObj.sku,
           packSize: skuObj.packSize,
+
+          /*
+           * Customer-facing pricing:
+           * websitePrice is the final website price.
+           *
+           * Shipping is included in the displayed price.
+           * Do not expose a separate shipping charge.
+           */
           mrp: skuObj.mrp,
           websitePrice: skuObj.websitePrice,
-          shipping: skuObj.shipping,
-          freeShipping: skuObj.freeShipping,
+          shipping: 0,
+          freeShipping: true,
+
           featured: family.featured,
         });
       }
     }
+
     return list;
   },
 };
