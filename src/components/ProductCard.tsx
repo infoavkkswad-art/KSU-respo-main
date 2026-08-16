@@ -92,13 +92,26 @@ export function ProductCard({
 
   const isCombo = product.category === 'combo';
 
+  /*
+   * A SKU is purchasable only when:
+   * 1. It is marked available.
+   * 2. It has a real website selling price.
+   *
+   * This prevents an undecided product such as the Combo Pack
+   * from ever displaying ₹0 or entering the cart.
+   */
+  const isPurchasable =
+    selectedSku.available &&
+    selectedSku.websitePrice !== null;
+
   const hasReviews =
     !!reviewSummary &&
     reviewSummary.reviewCount > 0 &&
     reviewSummary.averageRating > 0;
 
   const handleAdd = () => {
-    if (!selectedSku.available) return;
+    if (!isPurchasable) return;
+
     addItem(selectedSku.sku, 1);
     setAdded(true);
 
@@ -108,7 +121,8 @@ export function ProductCard({
   };
 
   const handleBuyNow = () => {
-    if (!selectedSku.available) return;
+    if (!isPurchasable) return;
+
     addItem(selectedSku.sku, 1);
     navigate('/checkout');
   };
@@ -240,17 +254,19 @@ export function ProductCard({
           {/* Pack */}
           <div className="mb-3 sm:mb-4">
             {isCombo ? (
-              <div className="
-                inline-flex max-w-full items-center
-                rounded-xl
-                border border-brand-brown/10
-                bg-brand-cream
-                px-3 py-1.5
-                text-[9px] font-semibold
-                text-brand-brown
-                shadow-soft
-                sm:text-xs
-              ">
+              <div
+                className="
+                  inline-flex max-w-full items-center
+                  rounded-xl
+                  border border-brand-brown/10
+                  bg-brand-cream
+                  px-3 py-1.5
+                  text-[9px] font-semibold
+                  text-brand-brown
+                  shadow-soft
+                  sm:text-xs
+                "
+              >
                 <span className="truncate">
                   {packLabel}
                 </span>
@@ -318,26 +334,24 @@ export function ProductCard({
 
           {/* Price */}
           <div className="mb-1 flex flex-wrap items-baseline">
-            <span className="
-              text-lg font-bold
-              text-brand-brown
-              sm:text-xl
-            ">
-              {selectedSku.available ? formatPrice(selectedSku.websitePrice) : 'Price Coming Soon'}
+            <span
+              className="
+                text-lg font-bold
+                text-brand-brown
+                sm:text-xl
+              "
+            >
+              {isPurchasable
+                ? formatPrice(selectedSku.websitePrice!)
+                : 'Price Coming Soon'}
             </span>
           </div>
 
           {/* Shipping */}
           <p className="mb-4 text-[9px] leading-relaxed text-brand-brown/55 sm:text-2xs">
-            {selectedSku.freeShipping ? (
-              <span className="font-semibold text-green-700">
-                Free shipping
-              </span>
-            ) : (
-              <>
-                + {formatPrice(selectedSku.shipping)} shipping
-              </>
-            )}
+            <span className="font-semibold text-green-700">
+              Free shipping
+            </span>
           </p>
         </div>
 
@@ -346,7 +360,7 @@ export function ProductCard({
           <button
             type="button"
             onClick={handleAdd}
-            disabled={!selectedSku.available}
+            disabled={!isPurchasable}
             className={`
               group/cart
               relative flex min-h-[44px]
@@ -396,7 +410,7 @@ export function ProductCard({
           <button
             type="button"
             onClick={handleBuyNow}
-            disabled={!selectedSku.available}
+            disabled={!isPurchasable}
             className="
               relative flex min-h-[44px]
               items-center justify-center gap-1.5
