@@ -124,18 +124,6 @@ export default function ProductDetail() {
 
   if (!selectedSku) return null;
 
-  const discount =
-    selectedSku.mrp > 0
-      ? Math.max(
-          0,
-          Math.round(
-            ((selectedSku.mrp - selectedSku.websitePrice) /
-              selectedSku.mrp) *
-              100,
-          ),
-        )
-      : 0;
-
   const averageRating =
     reviewSummary && reviewSummary.reviewCount > 0
       ? reviewSummary.averageRating
@@ -206,8 +194,11 @@ export default function ProductDetail() {
             <div
               className="
                 relative aspect-square overflow-hidden
-                rounded-[2rem] border border-brand-green/10
-                bg-brand-ivory-dark shadow-soft
+                rounded-[2rem]
+                border border-brand-green/10
+                bg-brand-ivory-dark
+                shadow-[0_8px_0_rgba(62,39,35,0.05),0_20px_45px_rgba(62,39,35,0.10)]
+                [perspective:1000px]
                 sm:rounded-[2.5rem]
               "
             >
@@ -218,19 +209,17 @@ export default function ProductDetail() {
                 className="h-full w-full"
               />
 
-              {discount > 0 && (
-                <span
-                  className="
-                    absolute right-3 top-3 z-20
-                    rounded-full bg-brand-saffron
-                    px-3 py-1.5 text-[10px]
-                    font-bold uppercase tracking-wide text-white
-                    sm:right-5 sm:top-5
-                  "
-                >
-                  {discount}% OFF
-                </span>
-              )}
+              {/* Decorative depth ring */}
+              <div
+                className="
+                  pointer-events-none absolute inset-4
+                  rounded-[1.5rem]
+                  border border-white/60
+                  shadow-[inset_0_0_30px_rgba(62,39,35,0.04)]
+                  sm:inset-6
+                "
+                aria-hidden="true"
+              />
             </div>
           </div>
 
@@ -329,14 +318,29 @@ export default function ProductDetail() {
                           setSelectedSkuIndex(index)
                         }
                         className={`
-                          min-h-[44px] rounded-full border
+                          min-h-[44px] rounded-xl border
                           px-5 py-2.5 text-sm font-semibold
-                          transition-all active:scale-[0.98]
+                          transition-all duration-200
                           ${
                             selected
-                              ? 'border-brand-green bg-brand-green text-white shadow-soft'
-                              : 'border-brand-green/15 bg-white text-brand-green hover:border-brand-green/35 hover:bg-brand-green/5'
+                              ? `
+                                -translate-y-0.5
+                                border-brand-green
+                                bg-brand-green
+                                text-white
+                                shadow-[0_4px_0_#315238,0_8px_16px_rgba(62,39,35,0.10)]
+                              `
+                              : `
+                                border-brand-green/15
+                                bg-white
+                                text-brand-green
+                                shadow-[0_3px_0_rgba(62,39,35,0.05)]
+                                hover:-translate-y-0.5
+                                hover:border-brand-green/35
+                                hover:bg-brand-green/5
+                              `
                           }
+                          active:translate-y-[1px]
                         `}
                         aria-pressed={selected}
                       >
@@ -348,23 +352,11 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              <div className="mt-7 flex flex-wrap items-end gap-x-3 gap-y-1">
+              {/* Current selling price only */}
+              <div className="mt-7">
                 <span className="font-bold text-3xl text-brand-green sm:text-4xl">
                   ₹{selectedSku.websitePrice}
                 </span>
-
-                {selectedSku.mrp >
-                  selectedSku.websitePrice && (
-                  <span className="text-base text-brand-brown/35 line-through sm:text-lg">
-                    ₹{selectedSku.mrp}
-                  </span>
-                )}
-
-                {discount > 0 && (
-                  <span className="badge-yellow mb-1">
-                    Save {discount}%
-                  </span>
-                )}
               </div>
 
               <p className="mt-2 text-xs text-brand-brown/55">
@@ -385,8 +377,9 @@ export default function ProductDetail() {
               <div
                 className="
                   flex min-h-[52px] shrink-0 items-center
-                  justify-center rounded-full border
+                  justify-center rounded-xl border
                   border-brand-green/15 bg-white p-1
+                  shadow-[0_4px_0_rgba(62,39,35,0.05)]
                   sm:w-[132px]
                 "
               >
@@ -399,8 +392,10 @@ export default function ProductDetail() {
                   }
                   className="
                     flex h-11 w-11 items-center justify-center
-                    rounded-full text-brand-green
+                    rounded-lg text-brand-green
+                    transition-all
                     hover:bg-brand-green/5
+                    active:scale-90
                   "
                   aria-label="Decrease quantity"
                 >
@@ -418,8 +413,10 @@ export default function ProductDetail() {
                   }
                   className="
                     flex h-11 w-11 items-center justify-center
-                    rounded-full text-brand-green
+                    rounded-lg text-brand-green
+                    transition-all
                     hover:bg-brand-green/5
+                    active:scale-90
                   "
                   aria-label="Increase quantity"
                 >
@@ -430,19 +427,38 @@ export default function ProductDetail() {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="
-                  btn-outline min-h-[52px] flex-1
-                  px-4 sm:px-6
-                "
+                className={`
+                  relative min-h-[52px] flex-1
+                  rounded-xl px-4 sm:px-6
+                  font-semibold
+                  transition-all duration-200
+                  active:translate-y-[2px]
+                  ${
+                    added
+                      ? `
+                        bg-green-700 text-white
+                        shadow-[0_5px_0_#14532d]
+                      `
+                      : `
+                        border-2 border-brand-green
+                        bg-white text-brand-green
+                        shadow-[0_5px_0_rgba(62,39,35,0.10)]
+                        hover:-translate-y-0.5
+                        hover:bg-brand-green
+                        hover:text-white
+                        hover:shadow-[0_7px_0_rgba(49,82,56,0.30)]
+                      `
+                  }
+                `}
               >
                 {added ? (
                   <>
-                    <Check className="h-5 w-5" />
+                    <Check className="mr-2 inline h-5 w-5" />
                     Added to Cart
                   </>
                 ) : (
                   <>
-                    <ShoppingBag className="h-5 w-5" />
+                    <ShoppingBag className="mr-2 inline h-5 w-5" />
                     Add to Cart
                   </>
                 )}
@@ -452,11 +468,21 @@ export default function ProductDetail() {
                 type="button"
                 onClick={handleBuyNow}
                 className="
-                  btn-primary min-h-[52px] flex-1
+                  min-h-[52px] flex-1
+                  rounded-xl
+                  bg-brand-red
                   px-4 sm:px-6
+                  font-bold text-white
+                  shadow-[0_5px_0_#b9230a,0_10px_20px_rgba(254,51,14,0.15)]
+                  transition-all duration-200
+                  hover:-translate-y-0.5
+                  hover:bg-brand-red-dark
+                  hover:shadow-[0_7px_0_#a51f08,0_14px_24px_rgba(254,51,14,0.18)]
+                  active:translate-y-[2px]
+                  active:shadow-none
                 "
               >
-                <Zap className="h-5 w-5" />
+                <Zap className="mr-2 inline h-5 w-5" />
                 Buy Now
               </button>
             </div>
@@ -489,6 +515,9 @@ export default function ProductDetail() {
                     flex flex-col items-center gap-2
                     rounded-xl bg-brand-ivory-dark
                     px-2 py-4 text-center
+                    shadow-[0_3px_0_rgba(62,39,35,0.04)]
+                    transition-transform
+                    hover:-translate-y-1
                   "
                 >
                   <Icon
@@ -581,7 +610,11 @@ export default function ProductDetail() {
                     key={review.reviewId}
                     className="
                       card border border-brand-green/10
-                      bg-white p-5 shadow-soft sm:p-6
+                      bg-white p-5 shadow-soft
+                      transition-all duration-300
+                      hover:-translate-y-1
+                      hover:shadow-lift
+                      sm:p-6
                     "
                   >
                     <div className="flex items-start justify-between gap-4">
