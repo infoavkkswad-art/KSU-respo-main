@@ -6,7 +6,10 @@ import { ProductCard } from '../components/ProductCard';
 import { PageHero } from '../components/Section';
 import { Reveal } from '../components/Reveal';
 import { ProductService } from '../services/product-service';
-import { CATEGORY_LABELS, ProductCategory } from '../data/products';
+import {
+  CATEGORY_LABELS,
+  ProductCategory,
+} from '../data/products';
 
 const categories: (ProductCategory | 'all')[] = [
   'all',
@@ -34,61 +37,91 @@ export default function Products() {
     'default' | 'price-low' | 'price-high' | 'name'
   >('default');
 
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] =
+    useState(false);
 
   const filtered = useMemo(() => {
     let list = ProductService.getAllProducts();
 
-    // 1. Category Filter
+    /* ================================================================
+     * CATEGORY FILTER
+     * ================================================================ */
+
     if (category !== 'all') {
       list = list.filter(
-        (p) => p.category === category,
+        (product) =>
+          product.category === category,
       );
     }
 
-    // 2. Search Filter
+    /* ================================================================
+     * SEARCH FILTER
+     * ================================================================ */
+
     if (search.trim()) {
-      const q = search.toLowerCase().trim();
+      const q = search
+        .toLowerCase()
+        .trim();
 
       list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.hindiName.includes(q) ||
-          p.variant.toLowerCase().includes(q) ||
-          p.category.includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.skus.some(
-            (s) =>
-              s.sku.toLowerCase().includes(q) ||
-              String(s.packSize).includes(q),
+        (product) =>
+          product.name
+            .toLowerCase()
+            .includes(q) ||
+          product.hindiName.includes(q) ||
+          product.variant
+            .toLowerCase()
+            .includes(q) ||
+          product.category
+            .toLowerCase()
+            .includes(q) ||
+          product.description
+            .toLowerCase()
+            .includes(q) ||
+          product.skus.some(
+            (sku) =>
+              sku.sku
+                .toLowerCase()
+                .includes(q) ||
+              String(sku.packSize).includes(q),
           ),
       );
     }
 
-    // 3. Pack Filter
+    /* ================================================================
+     * PACK SIZE FILTER
+     * ================================================================ */
+
     if (packFilter !== null) {
-      list = list.filter((p) =>
-        p.skus.some(
-          (s) => s.packSize === packFilter,
+      list = list.filter((product) =>
+        product.skus.some(
+          (sku) =>
+            sku.packSize === packFilter,
         ),
       );
     }
 
-    // 4. Sort
+    /* ================================================================
+     * SORT
+     *
+     * websitePrice may legitimately be null for products/SKUs that
+     * are not currently purchasable. Never pass null into arithmetic.
+     * ================================================================ */
+
     switch (sortBy) {
       case 'price-low':
         list = [...list].sort(
           (a, b) =>
-            a.skus[0].websitePrice -
-            b.skus[0].websitePrice,
+            (a.skus[0]?.websitePrice ?? 0) -
+            (b.skus[0]?.websitePrice ?? 0),
         );
         break;
 
       case 'price-high':
         list = [...list].sort(
           (a, b) =>
-            b.skus[0].websitePrice -
-            a.skus[0].websitePrice,
+            (b.skus[0]?.websitePrice ?? 0) -
+            (a.skus[0]?.websitePrice ?? 0),
         );
         break;
 
@@ -97,10 +130,19 @@ export default function Products() {
           a.name.localeCompare(b.name),
         );
         break;
+
+      case 'default':
+      default:
+        break;
     }
 
     return list;
-  }, [category, search, packFilter, sortBy]);
+  }, [
+    category,
+    search,
+    packFilter,
+    sortBy,
+  ]);
 
   const activeFilterCount =
     (category !== 'all' ? 1 : 0) +
@@ -120,8 +162,14 @@ export default function Products() {
         description="Browse the full range of Kawad Swad premium papads from Nimar — moong, chana, urad and combo packs in 200g, 500g and 1kg sizes."
         path="/products"
         structuredData={breadcrumbSchema([
-          { name: 'Home', path: '/' },
-          { name: 'Products', path: '/products' },
+          {
+            name: 'Home',
+            path: '/',
+          },
+          {
+            name: 'Products',
+            path: '/products',
+          },
         ])}
       />
 
@@ -132,8 +180,13 @@ export default function Products() {
       />
 
       <section className="container-max container-px py-8 sm:py-10 lg:py-12">
-        {/* Search + Sort */}
+
+        {/* ============================================================
+            SEARCH + SORT
+            ============================================================ */}
+
         <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mb-5 sm:mb-6">
+
           <div className="relative flex-1 min-w-0">
             <Search
               className="
@@ -146,6 +199,7 @@ export default function Products() {
                 text-brand-brown/40
                 pointer-events-none
               "
+              aria-hidden="true"
             />
 
             <input
@@ -183,22 +237,26 @@ export default function Products() {
             <option value="default">
               Sort: Default
             </option>
+
             <option value="price-low">
               Price: Low to High
             </option>
+
             <option value="price-high">
               Price: High to Low
             </option>
+
             <option value="name">
               Name: A to Z
             </option>
           </select>
 
           {/* Mobile Filters */}
+
           <button
             type="button"
             onClick={() =>
-              setShowFilters((s) => !s)
+              setShowFilters((value) => !value)
             }
             className="
               btn-outline
@@ -213,7 +271,10 @@ export default function Products() {
             aria-expanded={showFilters}
             aria-controls="mobile-product-filters"
           >
-            <Filter className="w-4 h-4" />
+            <Filter
+              className="w-4 h-4"
+              aria-hidden="true"
+            />
 
             <span>Filters</span>
 
@@ -239,12 +300,21 @@ export default function Products() {
         </div>
 
         <div className="grid lg:grid-cols-[220px_1fr] gap-5 lg:gap-8">
-          {/* Sidebar Filters */}
+
+          {/* ==========================================================
+              SIDEBAR FILTERS
+              ========================================================== */}
+
           <aside
             id="mobile-product-filters"
-            className={`${
-              showFilters ? 'block' : 'hidden'
-            } lg:block`}
+            className={`
+              ${
+                showFilters
+                  ? 'block'
+                  : 'hidden'
+              }
+              lg:block
+            `}
           >
             <div
               className="
@@ -255,6 +325,7 @@ export default function Products() {
                 top-24
               "
             >
+
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-serif font-semibold text-brand-brown">
                   Filters
@@ -276,6 +347,7 @@ export default function Products() {
               </div>
 
               {/* Category */}
+
               <div className="mb-6">
                 <p className="label-field">
                   Category
@@ -313,6 +385,7 @@ export default function Products() {
               </div>
 
               {/* Pack Size */}
+
               <div>
                 <p className="label-field">
                   Pack Size
@@ -354,6 +427,7 @@ export default function Products() {
               </div>
 
               {/* Close mobile filters */}
+
               <button
                 type="button"
                 onClick={() =>
@@ -371,9 +445,14 @@ export default function Products() {
             </div>
           </aside>
 
-          {/* Product Results */}
+          {/* ==========================================================
+              PRODUCT RESULTS
+              ========================================================== */}
+
           <div className="min-w-0">
+
             <div className="flex items-center justify-between gap-3 mb-4">
+
               <p className="text-xs sm:text-sm text-brand-brown/60">
                 {filtered.length} product
                 {filtered.length !== 1
@@ -383,6 +462,7 @@ export default function Products() {
 
               {activeFilterCount > 0 && (
                 <div className="hidden lg:flex items-center gap-2 flex-wrap justify-end">
+
                   {category !== 'all' && (
                     <span
                       className="
@@ -409,7 +489,10 @@ export default function Products() {
                         }
                         aria-label="Remove category filter"
                       >
-                        <X className="w-3 h-3" />
+                        <X
+                          className="w-3 h-3"
+                          aria-hidden="true"
+                        />
                       </button>
                     </span>
                   )}
@@ -444,7 +527,44 @@ export default function Products() {
                         }
                         aria-label="Remove pack size filter"
                       >
-                        <X className="w-3 h-3" />
+                        <X
+                          className="w-3 h-3"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    </span>
+                  )}
+
+                  {search.trim() && (
+                    <span
+                      className="
+                        badge-brown
+                        flex
+                        items-center
+                        gap-1
+                        px-2.5
+                        py-1
+                        rounded-md
+                        bg-amber-50
+                        text-xs
+                        text-brand-brown
+                        border
+                        border-amber-200
+                      "
+                    >
+                      Search: {search.trim()}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSearch('')
+                        }
+                        aria-label="Remove search filter"
+                      >
+                        <X
+                          className="w-3 h-3"
+                          aria-hidden="true"
+                        />
                       </button>
                     </span>
                   )}
@@ -471,15 +591,6 @@ export default function Products() {
                 </button>
               </div>
             ) : (
-              /*
-               * Mobile grid:
-               * - 1 column on very narrow screens
-               * - 2 columns from sm upward
-               * - 3 columns on large screens
-               *
-               * This prevents product cards from becoming
-               * excessively cramped on small phones.
-               */
               <div
                 className="
                   grid
@@ -491,20 +602,22 @@ export default function Products() {
                   lg:gap-6
                 "
               >
-                {filtered.map((product, i) => (
-                  <Reveal
-                    key={product.id}
-                    delay={Math.min(
-                      i * 50,
-                      300,
-                    )}
-                  >
-                    <ProductCard
-                      product={product}
-                      className="h-full"
-                    />
-                  </Reveal>
-                ))}
+                {filtered.map(
+                  (product, index) => (
+                    <Reveal
+                      key={product.id}
+                      delay={Math.min(
+                        index * 50,
+                        300,
+                      )}
+                    >
+                      <ProductCard
+                        product={product}
+                        className="h-full"
+                      />
+                    </Reveal>
+                  ),
+                )}
               </div>
             )}
           </div>
