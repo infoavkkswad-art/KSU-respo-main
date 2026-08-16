@@ -5,10 +5,11 @@ export type PackSize = 200 | 500 | 1000 | 235;
 export interface Sku {
   sku: string;
   packSize: number;
-  mrp: number;
-  websitePrice: number;
+  mrp: number | null;
+  websitePrice: number | null;
   shipping: number;
   freeShipping: boolean;
+  available: boolean;
 }
 
 export interface ProductFamily {
@@ -44,20 +45,17 @@ export const CATEGORY_LABELS: Record<ProductCategory, string> = {
 
 function makeSkus(
   prefix: string,
-  prices: Array<[number, number]>,
+  prices: Array<[number, number, number]>,
 ): Sku[] {
-  return prices.map(([packSize, websitePrice]) => {
-    const freeShipping = packSize === 1000;
-
-    return {
-      sku: `${prefix}-${packSize}`,
-      packSize,
-      mrp: websitePrice,
-      websitePrice,
-      shipping: freeShipping ? 0 : 49,
-      freeShipping,
-    };
-  });
+  return prices.map(([packSize, mrp, websitePrice]) => ({
+    sku: `${prefix}-${packSize}`,
+    packSize,
+    mrp,
+    websitePrice,
+    shipping: 0,
+    freeShipping: true,
+    available: true,
+  }));
 }
 
 export const products: ProductFamily[] = [
@@ -70,18 +68,24 @@ export const products: ProductFamily[] = [
     variant: 'Classic',
     description:
       'Our signature moong papad, crafted from premium moong dal with a balanced traditional spice blend. Thin, crisp and made for the everyday Nimar table.',
-    ingredients: ['Moong dal flour', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Moong dal flour',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Crisp, savoury and well-balanced with a classic roasted aroma.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-MMP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 110, 55],
+      [500, 249, 140],
+      [1000, 499, 275],
     ]),
     featured: true,
   },
@@ -95,18 +99,25 @@ export const products: ProductFamily[] = [
     variant: 'Garlic',
     description:
       'A crisp moong papad with a bold garlic character and aromatic spice blend. A flavour-forward choice for garlic lovers.',
-    ingredients: ['Moong dal flour', 'Garlic', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Moong dal flour',
+      'Garlic',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Bold garlic aroma with a crisp, savoury bite.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-MGP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 125, 60],
+      [500, 309, 145],
+      [1000, 619, 290],
     ]),
     featured: true,
   },
@@ -120,18 +131,25 @@ export const products: ProductFamily[] = [
     variant: 'Jeera',
     description:
       'A classic moong papad featuring the warm, earthy aroma of jeera. A simple traditional combination that pairs naturally with everyday meals.',
-    ingredients: ['Moong dal flour', 'Cumin seeds', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Moong dal flour',
+      'Cumin seeds',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Warm cumin aroma with a crisp, earthy finish.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-MJP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 109, 65],
+      [500, 279, 155],
+      [1000, 559, 305],
     ]),
     featured: false,
   },
@@ -145,18 +163,25 @@ export const products: ProductFamily[] = [
     variant: 'Pudhina',
     description:
       'A refreshing moong papad with the distinctive aroma of mint. Crisp, light and designed for a fresh twist on traditional papad.',
-    ingredients: ['Moong dal flour', 'Mint', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Moong dal flour',
+      'Mint',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Cool mint aroma with a crisp, refreshing finish.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-MPP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 105, 60],
+      [500, 265, 145],
+      [1000, 529, 285],
     ]),
     featured: false,
   },
@@ -170,18 +195,25 @@ export const products: ProductFamily[] = [
     variant: 'Green Chilli',
     description:
       'A crisp moong papad with the lively flavour of green chilli. Made for those who enjoy a little extra heat with their crunch.',
-    ingredients: ['Moong dal flour', 'Green chilli', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Moong dal flour',
+      'Green chilli',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Spicy green chilli heat with a crisp, savoury base.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-MGCP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 105, 60],
+      [500, 265, 145],
+      [1000, 529, 285],
     ]),
     featured: false,
   },
@@ -195,18 +227,25 @@ export const products: ProductFamily[] = [
     variant: 'Kasuri Methi',
     description:
       'A fragrant moong papad infused with the distinctive character of kasuri methi. Aromatic, savoury and crisp.',
-    ingredients: ['Moong dal flour', 'Kasuri methi', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Moong dal flour',
+      'Kasuri methi',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Fragrant fenugreek aroma with a crisp, savoury finish.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-MKMP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 109, 60],
+      [500, 229, 150],
+      [1000, 559, 300],
     ]),
     featured: false,
   },
@@ -220,18 +259,25 @@ export const products: ProductFamily[] = [
     variant: 'Punjabi Masala',
     description:
       'A bold moong papad seasoned with a Punjabi-style masala blend. Rich in aroma and full of traditional spice character.',
-    ingredients: ['Moong dal flour', 'Punjabi masala blend', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Moong dal flour',
+      'Punjabi masala blend',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Bold, aromatic masala with a crisp, full-bodied finish.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-MPMP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 119, 60],
+      [500, 299, 145],
+      [1000, 599, 285],
     ]),
     featured: false,
   },
@@ -245,18 +291,24 @@ export const products: ProductFamily[] = [
     variant: 'Classic',
     description:
       'A classic chana dal papad with a crisp texture and traditional flavour. A dependable everyday companion for the Nimar meal.',
-    ingredients: ['Chana dal flour', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Chana dal flour',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Crisp and savoury with a classic roasted chana aroma.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-CCP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 110, 55],
+      [500, 249, 140],
+      [1000, 499, 275],
     ]),
     featured: true,
   },
@@ -270,18 +322,25 @@ export const products: ProductFamily[] = [
     variant: 'Garlic',
     description:
       'Chana dal papad with a bold garlic flavour and aromatic spice character. Crisp, savoury and satisfying.',
-    ingredients: ['Chana dal flour', 'Garlic', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Chana dal flour',
+      'Garlic',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Bold garlic aroma with a crisp chana base.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-CGP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 125, 60],
+      [500, 309, 150],
+      [1000, 619, 300],
     ]),
     featured: false,
   },
@@ -295,18 +354,25 @@ export const products: ProductFamily[] = [
     variant: 'Khata Mitha',
     description:
       'A distinctive chana papad with a sweet-and-sour flavour profile. Tangy, crisp and different from the everyday classic.',
-    ingredients: ['Chana dal flour', 'Sweet-and-sour spices', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Chana dal flour',
+      'Sweet-and-sour spices',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Tangy sweet-and-sour flavour with a crisp base.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-CKM', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 99, 60],
+      [500, 249, 145],
+      [1000, 499, 285],
     ]),
     featured: false,
   },
@@ -320,18 +386,25 @@ export const products: ProductFamily[] = [
     variant: 'Tomato',
     description:
       'A crisp chana papad with a tangy tomato flavour and savoury spice base. A zesty take on traditional papad.',
-    ingredients: ['Chana dal flour', 'Tomato flavour', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Chana dal flour',
+      'Tomato flavour',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Tangy tomato flavour with a crisp, savoury base.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-CTP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 99, 60],
+      [500, 249, 150],
+      [1000, 499, 300],
     ]),
     featured: false,
   },
@@ -345,18 +418,25 @@ export const products: ProductFamily[] = [
     variant: 'Punjabi Masala',
     description:
       'A chana papad seasoned with a rich Punjabi-style masala blend. Bold, aromatic and packed with character.',
-    ingredients: ['Chana dal flour', 'Punjabi masala blend', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Chana dal flour',
+      'Punjabi masala blend',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Bold, aromatic masala with a crisp chana base.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-CPM', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 119, 60],
+      [500, 299, 145],
+      [1000, 599, 285],
     ]),
     featured: false,
   },
@@ -370,18 +450,24 @@ export const products: ProductFamily[] = [
     variant: 'Classic',
     description:
       'A premium urad dal papad with a rich, hearty traditional character. Crisp, satisfying and full of depth.',
-    ingredients: ['Urad dal flour', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Urad dal flour',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Rich, hearty and savoury with a classic roasted urad aroma.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-UGP', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 119, 65],
+      [500, 299, 160],
+      [1000, 599, 315],
     ]),
     featured: true,
   },
@@ -395,18 +481,25 @@ export const products: ProductFamily[] = [
     variant: 'Garlic',
     description:
       'A rich urad dal papad with bold garlic flavour and an aromatic spice character. Hearty, crisp and deeply satisfying.',
-    ingredients: ['Urad dal flour', 'Garlic', 'Natural spices', 'Edible oil', 'Salt'],
+    ingredients: [
+      'Urad dal flour',
+      'Garlic',
+      'Natural spices',
+      'Edible oil',
+      'Salt',
+    ],
     tasteProfile:
       'Bold garlic aroma with a rich, hearty urad base.',
     storage:
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: makeSkus('KS-UGG', [
-      [200, 47],
-      [500, 71],
-      [1000, 150],
+      [200, 125, 70],
+      [500, 319, 170],
+      [1000, 639, 335],
     ]),
     featured: false,
   },
@@ -432,15 +525,17 @@ export const products: ProductFamily[] = [
       'Store in a cool, dry place in an airtight container.',
     serving:
       'Roast or deep-fry until crisp. Serve as a side or snack.',
-    nutritionNote: 'Nutrition information will be available soon.',
+    nutritionNote:
+      'Nutrition information will be available soon.',
     skus: [
       {
         sku: 'KS-COMB-235',
         packSize: 235,
-        mrp: 189,
-        websitePrice: 189,
-        shipping: 49,
-        freeShipping: false,
+        mrp: null,
+        websitePrice: null,
+        shipping: 0,
+        freeShipping: true,
+        available: false,
       },
     ],
     featured: true,
