@@ -114,25 +114,12 @@ const loadRazorpayScript = (): Promise<boolean> => {
       };
 
       const cleanup = () => {
-        existingScript.removeEventListener(
-          'load',
-          handleLoad,
-        );
-        existingScript.removeEventListener(
-          'error',
-          handleError,
-        );
+        existingScript.removeEventListener('load', handleLoad);
+        existingScript.removeEventListener('error', handleError);
       };
 
-      existingScript.addEventListener(
-        'load',
-        handleLoad,
-      );
-
-      existingScript.addEventListener(
-        'error',
-        handleError,
-      );
+      existingScript.addEventListener('load', handleLoad);
+      existingScript.addEventListener('error', handleError);
 
       return;
     }
@@ -145,7 +132,6 @@ const loadRazorpayScript = (): Promise<boolean> => {
     script.async = true;
 
     script.onload = () => resolve(true);
-
     script.onerror = () => resolve(false);
 
     document.body.appendChild(script);
@@ -176,9 +162,7 @@ function validateCheckoutCustomer(
       'Full name must contain at least 4 characters.',
     );
   } else if (
-    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(
-      fullName,
-    )
+    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(fullName)
   ) {
     errors.push(
       'Please enter a valid name using letters only.',
@@ -265,15 +249,12 @@ export default function Checkout() {
   const {
     items,
     subtotal,
-    shippingTotal,
     total,
     clearCart,
   } = useCart();
 
   const orderContext = useOrder();
-
   const navigate = useNavigate();
-
   const form = useFormState(initial);
 
   const [error, setError] = useState('');
@@ -342,16 +323,13 @@ export default function Checkout() {
           : 'Please correct the highlighted fields before continuing.';
 
       setError(message);
-
       form.setStatus('error');
-
       setPaymentStage('idle');
 
       return;
     }
 
     form.setStatus('submitting');
-
     setPaymentStage('creating-order');
 
     try {
@@ -383,9 +361,7 @@ export default function Checkout() {
 
       const options = {
         key: orderResponse.razorpayKeyId,
-
         amount: orderResponse.amount,
-
         currency:
           orderResponse.currency || 'INR',
 
@@ -415,13 +391,6 @@ export default function Checkout() {
           response: any,
         ) => {
           try {
-            console.log(
-              'Razorpay payment response received:',
-              response,
-            );
-
-            setPaymentStage('opening-payment');
-
             const verifyRes =
               await apiClient.verifyPayment({
                 razorpay_order_id:
@@ -434,15 +403,14 @@ export default function Checkout() {
                   response.razorpay_signature,
               });
 
-            console.log(
-              'Razorpay payment verified:',
-              verifyRes,
-            );
-
             /*
-             * IMPORTANT:
-             * RazorpayCheckoutOrder uses totalShipping
-             * and timestamp on the frontend Order model.
+             * Shipping is already included in the
+             * website selling prices.
+             *
+             * The completed order therefore keeps
+             * the backend-confirmed totals while
+             * exposing shipping as zero/free in the
+             * customer-facing order flow.
              */
             const completedOrder = {
               orderId:
@@ -458,8 +426,7 @@ export default function Checkout() {
               subtotal:
                 orderResponse.subtotal,
 
-              totalShipping:
-                orderResponse.totalShipping,
+              totalShipping: 0,
 
               total:
                 orderResponse.total,
@@ -478,7 +445,6 @@ export default function Checkout() {
             clearCart();
 
             form.setStatus('success');
-
             setPaymentStage('idle');
 
             navigate(
@@ -504,9 +470,7 @@ export default function Checkout() {
             }
 
             setError(msg);
-
             form.setStatus('error');
-
             setPaymentStage('idle');
           }
         },
@@ -514,7 +478,6 @@ export default function Checkout() {
         modal: {
           ondismiss: () => {
             form.setStatus('idle');
-
             setPaymentStage('idle');
 
             setError(
@@ -545,9 +508,7 @@ export default function Checkout() {
       }
 
       setError(msg);
-
       form.setStatus('error');
-
       setPaymentStage('idle');
     }
   };
@@ -668,7 +629,7 @@ export default function Checkout() {
                   </h1>
 
                   <p className="text-xs sm:text-sm text-brand-brown/60 mt-1">
-                    Provide your shipping information and complete secure payment.
+                    Provide your delivery information and complete secure payment.
                   </p>
                 </div>
 
@@ -1034,6 +995,12 @@ export default function Checkout() {
                       ] ||
                       `${skuObj.packSize}g`;
 
+                    const unitPrice =
+                      skuObj.websitePrice ?? 0;
+
+                    const lineTotal =
+                      unitPrice * quantity;
+
                     return (
                       <div
                         key={sku}
@@ -1103,10 +1070,7 @@ export default function Checkout() {
                           </p>
 
                           <p className="mt-1 text-sm font-bold text-brand-red">
-                            {formatPrice(
-                              skuObj.websitePrice *
-                                quantity,
-                            )}
+                            {formatPrice(lineTotal)}
                           </p>
                         </div>
 
@@ -1123,27 +1087,21 @@ export default function Checkout() {
 
                 <div className="flex justify-between gap-4 text-brand-brown/70">
                   <span>
-                    Subtotal
+                    Items
                   </span>
 
                   <span className="font-medium text-right">
-                    {formatPrice(
-                      subtotal,
-                    )}
+                    {formatPrice(subtotal)}
                   </span>
                 </div>
 
-                <div className="flex justify-between gap-4 text-brand-brown/70">
+                <div className="flex justify-between gap-4 text-brand-green font-medium">
                   <span>
                     Shipping
                   </span>
 
-                  <span className="font-medium text-right">
-                    {shippingTotal
-                      ? formatPrice(
-                          shippingTotal,
-                        )
-                      : 'Free'}
+                  <span className="text-right">
+                    Free
                   </span>
                 </div>
 
@@ -1169,13 +1127,33 @@ export default function Checkout() {
 
               </div>
 
-              {/* Secure Payment Note */}
+              {/* Free Shipping Note */}
 
               <div className="
                 mt-5
                 pt-4
                 border-t
                 border-brand-brown/5
+                flex
+                items-center
+                justify-center
+                gap-2
+                text-[10px]
+                sm:text-xs
+                text-brand-green
+                font-medium
+              ">
+                <ShoppingBag className="w-3.5 h-3.5" />
+
+                <span>
+                  Free shipping included
+                </span>
+              </div>
+
+              {/* Secure Payment Note */}
+
+              <div className="
+                mt-3
                 flex
                 items-center
                 justify-center
