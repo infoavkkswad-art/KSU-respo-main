@@ -124,6 +124,11 @@ export default function ProductDetail() {
 
   if (!selectedSku) return null;
 
+  const isPurchasable =
+    selectedSku.available === true &&
+    selectedSku.websitePrice !== null &&
+    Number.isFinite(selectedSku.websitePrice);
+
   const averageRating =
     reviewSummary && reviewSummary.reviewCount > 0
       ? reviewSummary.averageRating
@@ -133,6 +138,8 @@ export default function ProductDetail() {
     reviewSummary?.reviewCount ?? reviews.length;
 
   const handleAddToCart = () => {
+    if (!isPurchasable) return;
+
     addItem(selectedSku.sku, quantity);
     setAdded(true);
 
@@ -142,6 +149,8 @@ export default function ProductDetail() {
   };
 
   const handleBuyNow = () => {
+    if (!isPurchasable) return;
+
     addItem(selectedSku.sku, quantity);
     navigate('/checkout');
   };
@@ -209,7 +218,6 @@ export default function ProductDetail() {
                 className="h-full w-full"
               />
 
-              {/* Decorative depth ring */}
               <div
                 className="
                   pointer-events-none absolute inset-4
@@ -310,17 +318,30 @@ export default function ProductDetail() {
                     const selected =
                       selectedSkuIndex === index;
 
+                    const skuAvailable =
+                      sku.available === true &&
+                      sku.websitePrice !== null &&
+                      Number.isFinite(sku.websitePrice);
+
                     return (
                       <button
                         key={sku.sku}
                         type="button"
-                        onClick={() =>
-                          setSelectedSkuIndex(index)
-                        }
+                        onClick={() => {
+                          setSelectedSkuIndex(index);
+                          setQuantity(1);
+                          setAdded(false);
+                        }}
                         className={`
-                          min-h-[44px] rounded-xl border
-                          px-5 py-2.5 text-sm font-semibold
-                          transition-all duration-200
+                          min-h-[44px]
+                          rounded-xl
+                          border
+                          px-5
+                          py-2.5
+                          text-sm
+                          font-semibold
+                          transition-all
+                          duration-200
                           ${
                             selected
                               ? `
@@ -341,6 +362,11 @@ export default function ProductDetail() {
                               `
                           }
                           active:translate-y-[1px]
+                          ${
+                            !skuAvailable
+                              ? 'opacity-60'
+                              : ''
+                          }
                         `}
                         aria-pressed={selected}
                       >
@@ -352,22 +378,30 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {/* Current selling price only */}
+              {/* Final customer price only */}
               <div className="mt-7">
-                <span className="font-bold text-3xl text-brand-green sm:text-4xl">
-                  ₹{selectedSku.websitePrice}
-                </span>
-              </div>
-
-              <p className="mt-2 text-xs text-brand-brown/55">
-                {selectedSku.freeShipping ? (
-                  <span className="font-semibold text-brand-green">
-                    Free shipping
+                {isPurchasable ? (
+                  <span className="font-bold text-3xl text-brand-green sm:text-4xl">
+                    ₹{selectedSku.websitePrice}
                   </span>
                 ) : (
-                  `+ ₹${selectedSku.shipping} shipping`
+                  <span className="font-bold text-2xl text-brand-brown/55 sm:text-3xl">
+                    Price Coming Soon
+                  </span>
                 )}
-              </p>
+              </div>
+
+              {/* Shipping is already included in website price */}
+              <div className="mt-2 flex items-center gap-2">
+                <Truck
+                  className="h-4 w-4 text-green-700"
+                  aria-hidden="true"
+                />
+
+                <span className="text-xs font-semibold text-green-700">
+                  Free shipping
+                </span>
+              </div>
             </div>
 
             {/* Purchase controls */}
@@ -390,12 +424,15 @@ export default function ProductDetail() {
                       Math.max(1, value - 1),
                     )
                   }
+                  disabled={!isPurchasable}
                   className="
                     flex h-11 w-11 items-center justify-center
                     rounded-lg text-brand-green
                     transition-all
                     hover:bg-brand-green/5
                     active:scale-90
+                    disabled:cursor-not-allowed
+                    disabled:opacity-40
                   "
                   aria-label="Decrease quantity"
                 >
@@ -411,12 +448,15 @@ export default function ProductDetail() {
                   onClick={() =>
                     setQuantity((value) => value + 1)
                   }
+                  disabled={!isPurchasable}
                   className="
                     flex h-11 w-11 items-center justify-center
                     rounded-lg text-brand-green
                     transition-all
                     hover:bg-brand-green/5
                     active:scale-90
+                    disabled:cursor-not-allowed
+                    disabled:opacity-40
                   "
                   aria-label="Increase quantity"
                 >
@@ -427,12 +467,15 @@ export default function ProductDetail() {
               <button
                 type="button"
                 onClick={handleAddToCart}
+                disabled={!isPurchasable}
                 className={`
                   relative min-h-[52px] flex-1
                   rounded-xl px-4 sm:px-6
                   font-semibold
                   transition-all duration-200
                   active:translate-y-[2px]
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
                   ${
                     added
                       ? `
@@ -467,6 +510,7 @@ export default function ProductDetail() {
               <button
                 type="button"
                 onClick={handleBuyNow}
+                disabled={!isPurchasable}
                 className="
                   min-h-[52px] flex-1
                   rounded-xl
@@ -480,6 +524,8 @@ export default function ProductDetail() {
                   hover:shadow-[0_7px_0_#a51f08,0_14px_24px_rgba(254,51,14,0.18)]
                   active:translate-y-[2px]
                   active:shadow-none
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
                 "
               >
                 <Zap className="mr-2 inline h-5 w-5" />
@@ -506,7 +552,7 @@ export default function ProductDetail() {
                 },
                 {
                   icon: Truck,
-                  label: 'Delivery Available',
+                  label: 'Free Shipping',
                 },
               ].map(({ icon: Icon, label }) => (
                 <div
