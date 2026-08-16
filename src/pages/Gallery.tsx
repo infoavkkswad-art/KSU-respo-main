@@ -29,24 +29,39 @@ const instagramPosts = [
   'https://www.instagram.com/p/DTnag6ciDYj/',
 ];
 
+declare global {
+  interface Window {
+    instgrm?: {
+      Embeds?: {
+        process: () => void;
+      };
+    };
+  }
+}
+
 export default function Gallery() {
   useEffect(() => {
+    const processEmbeds = () => {
+      window.instgrm?.Embeds?.process();
+    };
+
     const existingScript = document.querySelector(
       'script[src="https://www.instagram.com/embed.js"]',
     );
 
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.src = 'https://www.instagram.com/embed.js';
-      script.async = true;
-      document.body.appendChild(script);
-    } else {
-      window.instgrm?.Embeds?.process();
+    if (existingScript) {
+      processEmbeds();
+      return;
     }
 
-    return () => {
-      // Keep Instagram's script loaded for other pages/components.
-    };
+    const script = document.createElement('script');
+
+    script.src = 'https://www.instagram.com/embed.js';
+    script.async = true;
+
+    script.onload = processEmbeds;
+
+    document.body.appendChild(script);
   }, []);
 
   return (
@@ -71,23 +86,51 @@ export default function Gallery() {
         {/* Gallery introduction */}
         <Reveal>
           <div className="mx-auto mb-10 max-w-2xl text-center sm:mb-14">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-saffron/10 text-brand-saffron shadow-soft">
+            <div
+              className="
+                mx-auto mb-4 flex h-12 w-12
+                items-center justify-center
+                rounded-2xl
+                bg-brand-saffron/10
+                text-brand-saffron
+                shadow-soft
+              "
+            >
               <Instagram className="h-6 w-6" />
             </div>
 
-            <h2 className="font-serif text-2xl font-bold text-brand-green sm:text-3xl">
+            <h2
+              className="
+                font-serif text-2xl font-bold
+                text-brand-green
+                sm:text-3xl
+              "
+            >
               From our real Instagram journey
             </h2>
 
-            <p className="mt-3 text-sm leading-relaxed text-brand-brown/65 sm:text-base">
+            <p
+              className="
+                mt-3 text-sm leading-relaxed
+                text-brand-brown/65
+                sm:text-base
+              "
+            >
               Products, people, moments and stories directly from
-              Kawad Swad's Instagram.
+              Kawad Swad&apos;s Instagram.
             </p>
           </div>
         </Reveal>
 
-        {/* Real Instagram posts */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {/* Real Instagram posts and Reels */}
+        <div
+          className="
+            grid gap-6
+            sm:grid-cols-2
+            lg:grid-cols-3
+            xl:grid-cols-4
+          "
+        >
           {instagramPosts.map((url, index) => (
             <Reveal
               key={url}
@@ -129,10 +172,27 @@ export default function Gallery() {
                       width: '100%',
                     }}
                   >
-                    <div className="flex min-h-[280px] items-center justify-center p-6 text-center">
+                    <div
+                      className="
+                        flex min-h-[280px]
+                        items-center justify-center
+                        p-6 text-center
+                      "
+                    >
                       <div>
-                        <Instagram className="mx-auto mb-3 h-8 w-8 text-brand-saffron" />
-                        <p className="text-xs font-medium text-brand-brown/50">
+                        <Instagram
+                          className="
+                            mx-auto mb-3 h-8 w-8
+                            text-brand-saffron
+                          "
+                        />
+
+                        <p
+                          className="
+                            text-xs font-medium
+                            text-brand-brown/50
+                          "
+                        >
                           Loading Instagram post…
                         </p>
                       </div>
@@ -140,8 +200,21 @@ export default function Gallery() {
                   </blockquote>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 px-2 pb-1 pt-3">
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-brand-brown/45">
+                <div
+                  className="
+                    flex items-center
+                    justify-between gap-3
+                    px-2 pb-1 pt-3
+                  "
+                >
+                  <span
+                    className="
+                      inline-flex items-center gap-1.5
+                      text-[10px] font-semibold
+                      uppercase tracking-wider
+                      text-brand-brown/45
+                    "
+                  >
                     <Instagram className="h-3.5 w-3.5" />
                     Kawad Swad
                   </span>
@@ -183,13 +256,29 @@ export default function Gallery() {
               sm:mt-20 sm:p-9
             "
           >
-            <Instagram className="mx-auto mb-4 h-7 w-7 text-brand-saffron" />
+            <Instagram
+              className="
+                mx-auto mb-4 h-7 w-7
+                text-brand-saffron
+              "
+            />
 
-            <h2 className="font-serif text-2xl font-bold text-brand-green">
+            <h2
+              className="
+                font-serif text-2xl font-bold
+                text-brand-green
+              "
+            >
               Follow the journey
             </h2>
 
-            <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-brand-brown/65">
+            <p
+              className="
+                mx-auto mt-2 max-w-lg
+                text-sm leading-relaxed
+                text-brand-brown/65
+              "
+            >
               Follow Kawad Swad on Instagram for new products,
               Reels, behind-the-scenes moments and updates.
             </p>
