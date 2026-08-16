@@ -1,3 +1,8 @@
+import {
+  getSalesSku,
+  type SalesSkuConfig,
+} from './sales-config';
+
 export type ProductCategory =
   'moong' | 'chana' | 'urad' | 'combo';
 
@@ -9,8 +14,8 @@ export interface Sku {
   packSize: number;
   mrp: number | null;
   websitePrice: number | null;
-  shipping: number;
-  freeShipping: boolean;
+  shipping: 0;
+  freeShipping: true;
   available: boolean;
 }
 
@@ -48,37 +53,54 @@ export const CATEGORY_LABELS: Record<
   combo: 'Combo',
 };
 
-/*
- * IMPORTANT CUSTOMER-PRICING RULE
+/**
+ * ================================================================
+ * SKU RESOLUTION
+ * ================================================================
  *
- * websitePrice is the FINAL customer-facing price.
- * It already includes the shipping cost.
+ * Product information lives here.
  *
- * The website must:
- * - show only websitePrice
- * - show "Free Shipping"
- * - never add shipping again
- * - never display a separate shipping charge
- * - never display a discount/sale percentage
+ * All customer-facing sales values come from:
+ *   src/data/sales-config.ts
  *
- * Costing is intentionally NOT stored here.
+ * Therefore this file does NOT contain:
+ * - Costing
+ * - Factory price
+ * - Dealer price
+ * - Distributor price
+ * - Shipping charges
+ * - Offer calculations
+ * - Coupon calculations
+ *
+ * websitePrice from Sales Config is the FINAL customer-facing price.
  */
 
+function makeSku(
+  skuCode: string,
+): Sku {
+  const salesSku = getSalesSku(skuCode);
+
+  if (!salesSku) {
+    throw new Error(
+      `Missing sales configuration for SKU: ${skuCode}`,
+    );
+  }
+
+  return {
+    sku: salesSku.sku,
+    packSize: salesSku.packSize,
+    mrp: salesSku.mrp,
+    websitePrice: salesSku.sellingPrice,
+    shipping: 0,
+    freeShipping: true,
+    available: salesSku.available,
+  };
+}
+
 function makeSkus(
-  prefix: string,
-  prices: Array<[number, number, number]>,
+  skuCodes: string[],
 ): Sku[] {
-  return prices.map(
-    ([packSize, mrp, websitePrice]) => ({
-      sku: `${prefix}-${packSize}`,
-      packSize,
-      mrp,
-      websitePrice,
-      shipping: 0,
-      freeShipping: true,
-      available: true,
-    }),
-  );
+  return skuCodes.map(makeSku);
 }
 
 export const products: ProductFamily[] = [
@@ -105,10 +127,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-MMP', [
-      [200, 110, 102],
-      [500, 249, 211],
-      [1000, 499, 425],
+    skus: makeSkus([
+      'KS-MMP-200',
+      'KS-MMP-500',
+      'KS-MMP-1000',
     ]),
     featured: true,
   },
@@ -137,10 +159,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-MGP', [
-      [200, 125, 107],
-      [500, 309, 216],
-      [1000, 619, 440],
+    skus: makeSkus([
+      'KS-MGP-200',
+      'KS-MGP-500',
+      'KS-MGP-1000',
     ]),
     featured: true,
   },
@@ -169,10 +191,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-MJP', [
-      [200, 109, 112],
-      [500, 279, 226],
-      [1000, 559, 455],
+    skus: makeSkus([
+      'KS-MJP-200',
+      'KS-MJP-500',
+      'KS-MJP-1000',
     ]),
     featured: false,
   },
@@ -201,10 +223,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-MPP', [
-      [200, 105, 107],
-      [500, 265, 216],
-      [1000, 529, 435],
+    skus: makeSkus([
+      'KS-MPP-200',
+      'KS-MPP-500',
+      'KS-MPP-1000',
     ]),
     featured: false,
   },
@@ -233,10 +255,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-MGCP', [
-      [200, 105, 107],
-      [500, 265, 216],
-      [1000, 529, 435],
+    skus: makeSkus([
+      'KS-MGCP-200',
+      'KS-MGCP-500',
+      'KS-MGCP-1000',
     ]),
     featured: false,
   },
@@ -265,10 +287,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-MKMP', [
-      [200, 109, 107],
-      [500, 229, 221],
-      [1000, 559, 450],
+    skus: makeSkus([
+      'KS-MKMP-200',
+      'KS-MKMP-500',
+      'KS-MKMP-1000',
     ]),
     featured: false,
   },
@@ -297,10 +319,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-MPMP', [
-      [200, 119, 107],
-      [500, 299, 216],
-      [1000, 599, 435],
+    skus: makeSkus([
+      'KS-MPMP-200',
+      'KS-MPMP-500',
+      'KS-MPMP-1000',
     ]),
     featured: false,
   },
@@ -328,10 +350,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-CCP', [
-      [200, 110, 102],
-      [500, 249, 211],
-      [1000, 499, 425],
+    skus: makeSkus([
+      'KS-CCP-200',
+      'KS-CCP-500',
+      'KS-CCP-1000',
     ]),
     featured: true,
   },
@@ -360,10 +382,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-CGP', [
-      [200, 125, 107],
-      [500, 309, 221],
-      [1000, 619, 450],
+    skus: makeSkus([
+      'KS-CGP-200',
+      'KS-CGP-500',
+      'KS-CGP-1000',
     ]),
     featured: false,
   },
@@ -392,10 +414,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-CKM', [
-      [200, 99, 107],
-      [500, 249, 216],
-      [1000, 499, 435],
+    skus: makeSkus([
+      'KS-CKM-200',
+      'KS-CKM-500',
+      'KS-CKM-1000',
     ]),
     featured: false,
   },
@@ -424,10 +446,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-CTP', [
-      [200, 99, 107],
-      [500, 249, 221],
-      [1000, 499, 450],
+    skus: makeSkus([
+      'KS-CTP-200',
+      'KS-CTP-500',
+      'KS-CTP-1000',
     ]),
     featured: false,
   },
@@ -456,10 +478,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-CPM', [
-      [200, 119, 107],
-      [500, 299, 216],
-      [1000, 599, 435],
+    skus: makeSkus([
+      'KS-CPM-200',
+      'KS-CPM-500',
+      'KS-CPM-1000',
     ]),
     featured: false,
   },
@@ -487,10 +509,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-UGP', [
-      [200, 119, 112],
-      [500, 299, 231],
-      [1000, 599, 465],
+    skus: makeSkus([
+      'KS-UGP-200',
+      'KS-UGP-500',
+      'KS-UGP-1000',
     ]),
     featured: true,
   },
@@ -519,10 +541,10 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: makeSkus('KS-UGG', [
-      [200, 125, 117],
-      [500, 319, 241],
-      [1000, 639, 485],
+    skus: makeSkus([
+      'KS-UGG-200',
+      'KS-UGG-500',
+      'KS-UGG-1000',
     ]),
     featured: false,
   },
@@ -550,17 +572,86 @@ export const products: ProductFamily[] = [
       'Roast or deep-fry until crisp. Serve as a side or snack.',
     nutritionNote:
       'Nutrition information will be available soon.',
-    skus: [
-      {
-        sku: 'KS-COMB-235',
-        packSize: 235,
-        mrp: 199,
-        websitePrice: null,
-        shipping: 0,
-        freeShipping: true,
-        available: false,
-      },
-    ],
+    skus: makeSkus([
+      'KS-COMB-235',
+    ]),
     featured: true,
   },
 ];
+
+/**
+ * ================================================================
+ * SALES CONFIGURATION CHECK
+ * ================================================================
+ *
+ * Ensures every product SKU has a corresponding entry
+ * in the central sales configuration.
+ */
+
+export function validateProductSalesMapping(): {
+  valid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  for (const product of products) {
+    for (const sku of product.skus) {
+      const salesSku: SalesSkuConfig | undefined =
+        getSalesSku(sku.sku);
+
+      if (!salesSku) {
+        errors.push(
+          `${product.name}: missing sales configuration for ${sku.sku}`,
+        );
+        continue;
+      }
+
+      if (sku.packSize !== salesSku.packSize) {
+        errors.push(
+          `${sku.sku}: pack size mismatch`,
+        );
+      }
+
+      if (sku.mrp !== salesSku.mrp) {
+        errors.push(
+          `${sku.sku}: MRP mismatch`,
+        );
+      }
+
+      if (
+        sku.websitePrice !==
+        salesSku.sellingPrice
+      ) {
+        errors.push(
+          `${sku.sku}: website price mismatch`,
+        );
+      }
+
+      if (sku.shipping !== 0) {
+        errors.push(
+          `${sku.sku}: shipping must remain 0`,
+        );
+      }
+
+      if (!sku.freeShipping) {
+        errors.push(
+          `${sku.sku}: freeShipping must remain true`,
+        );
+      }
+
+      if (
+        sku.available !==
+        salesSku.available
+      ) {
+        errors.push(
+          `${sku.sku}: availability mismatch`,
+        );
+      }
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
