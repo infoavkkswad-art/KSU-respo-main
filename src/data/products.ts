@@ -1,6 +1,8 @@
-export type ProductCategory = 'moong' | 'chana' | 'urad' | 'combo';
+export type ProductCategory =
+  'moong' | 'chana' | 'urad' | 'combo';
 
-export type PackSize = 200 | 500 | 1000 | 235;
+export type PackSize =
+  200 | 500 | 1000 | 235;
 
 export interface Sku {
   sku: string;
@@ -36,26 +38,47 @@ export const PACK_LABELS: Record<number, string> = {
   235: '235g Combo',
 };
 
-export const CATEGORY_LABELS: Record<ProductCategory, string> = {
+export const CATEGORY_LABELS: Record<
+  ProductCategory,
+  string
+> = {
   moong: 'Moong',
   chana: 'Chana',
   urad: 'Urad',
   combo: 'Combo',
 };
 
+/*
+ * IMPORTANT CUSTOMER-PRICING RULE
+ *
+ * websitePrice is the FINAL customer-facing price.
+ * It already includes the shipping cost.
+ *
+ * The website must:
+ * - show only websitePrice
+ * - show "Free Shipping"
+ * - never add shipping again
+ * - never display a separate shipping charge
+ * - never display a discount/sale percentage
+ *
+ * Costing is intentionally NOT stored here.
+ */
+
 function makeSkus(
   prefix: string,
   prices: Array<[number, number, number]>,
 ): Sku[] {
-  return prices.map(([packSize, mrp, websitePrice]) => ({
-    sku: `${prefix}-${packSize}`,
-    packSize,
-    mrp,
-    websitePrice,
-    shipping: 0,
-    freeShipping: true,
-    available: true,
-  }));
+  return prices.map(
+    ([packSize, mrp, websitePrice]) => ({
+      sku: `${prefix}-${packSize}`,
+      packSize,
+      mrp,
+      websitePrice,
+      shipping: 0,
+      freeShipping: true,
+      available: true,
+    }),
+  );
 }
 
 export const products: ProductFamily[] = [
@@ -83,9 +106,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-MMP', [
-      [200, 110, 55],
-      [500, 249, 140],
-      [1000, 499, 275],
+      [200, 110, 102],
+      [500, 249, 211],
+      [1000, 499, 425],
     ]),
     featured: true,
   },
@@ -115,9 +138,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-MGP', [
-      [200, 125, 60],
-      [500, 309, 145],
-      [1000, 619, 290],
+      [200, 125, 107],
+      [500, 309, 216],
+      [1000, 619, 440],
     ]),
     featured: true,
   },
@@ -147,9 +170,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-MJP', [
-      [200, 109, 65],
-      [500, 279, 155],
-      [1000, 559, 305],
+      [200, 109, 112],
+      [500, 279, 226],
+      [1000, 559, 455],
     ]),
     featured: false,
   },
@@ -179,9 +202,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-MPP', [
-      [200, 105, 60],
-      [500, 265, 145],
-      [1000, 529, 285],
+      [200, 105, 107],
+      [500, 265, 216],
+      [1000, 529, 435],
     ]),
     featured: false,
   },
@@ -211,9 +234,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-MGCP', [
-      [200, 105, 60],
-      [500, 265, 145],
-      [1000, 529, 285],
+      [200, 105, 107],
+      [500, 265, 216],
+      [1000, 529, 435],
     ]),
     featured: false,
   },
@@ -243,9 +266,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-MKMP', [
-      [200, 109, 60],
-      [500, 229, 150],
-      [1000, 559, 300],
+      [200, 109, 107],
+      [500, 229, 221],
+      [1000, 559, 450],
     ]),
     featured: false,
   },
@@ -275,9 +298,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-MPMP', [
-      [200, 119, 60],
-      [500, 299, 145],
-      [1000, 599, 285],
+      [200, 119, 107],
+      [500, 299, 216],
+      [1000, 599, 435],
     ]),
     featured: false,
   },
@@ -306,9 +329,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-CCP', [
-      [200, 110, 55],
-      [500, 249, 140],
-      [1000, 499, 275],
+      [200, 110, 102],
+      [500, 249, 211],
+      [1000, 499, 425],
     ]),
     featured: true,
   },
@@ -338,9 +361,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-CGP', [
-      [200, 125, 60],
-      [500, 309, 150],
-      [1000, 619, 300],
+      [200, 125, 107],
+      [500, 309, 221],
+      [1000, 619, 450],
     ]),
     featured: false,
   },
@@ -370,9 +393,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-CKM', [
-      [200, 99, 60],
-      [500, 249, 145],
-      [1000, 499, 285],
+      [200, 99, 107],
+      [500, 249, 216],
+      [1000, 499, 435],
     ]),
     featured: false,
   },
@@ -402,9 +425,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-CTP', [
-      [200, 99, 60],
-      [500, 249, 150],
-      [1000, 499, 300],
+      [200, 99, 107],
+      [500, 249, 221],
+      [1000, 499, 450],
     ]),
     featured: false,
   },
@@ -434,9 +457,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-CPM', [
-      [200, 119, 60],
-      [500, 299, 145],
-      [1000, 599, 285],
+      [200, 119, 107],
+      [500, 299, 216],
+      [1000, 599, 435],
     ]),
     featured: false,
   },
@@ -465,9 +488,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-UGP', [
-      [200, 119, 65],
-      [500, 299, 160],
-      [1000, 599, 315],
+      [200, 119, 112],
+      [500, 299, 231],
+      [1000, 599, 465],
     ]),
     featured: true,
   },
@@ -497,9 +520,9 @@ export const products: ProductFamily[] = [
     nutritionNote:
       'Nutrition information will be available soon.',
     skus: makeSkus('KS-UGG', [
-      [200, 125, 70],
-      [500, 319, 170],
-      [1000, 639, 335],
+      [200, 125, 117],
+      [500, 319, 241],
+      [1000, 639, 485],
     ]),
     featured: false,
   },
@@ -531,7 +554,7 @@ export const products: ProductFamily[] = [
       {
         sku: 'KS-COMB-235',
         packSize: 235,
-        mrp: null,
+        mrp: 199,
         websitePrice: null,
         shipping: 0,
         freeShipping: true,
