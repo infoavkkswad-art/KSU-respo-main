@@ -5,6 +5,7 @@ import {
   Trash2,
   ArrowRight,
   ShoppingBag,
+  Truck,
 } from 'lucide-react';
 
 import { SEO } from '../components/SEO';
@@ -28,9 +29,7 @@ export default function Cart() {
   } = useCart();
 
   const resolvedItems = items.map((item) => {
-    const res = ProductService.getProductBySku(
-      item.sku,
-    );
+    const res = ProductService.getProductBySku(item.sku);
 
     return {
       ...item,
@@ -90,10 +89,6 @@ export default function Cart() {
 
       <section className="container-max container-px py-8 sm:py-10 lg:py-12">
         {items.length === 0 ? (
-          /* ==============================================================
-             EMPTY CART
-          =============================================================== */
-
           <div
             className="
               card
@@ -172,16 +167,12 @@ export default function Cart() {
                     PACK_LABELS[skuObj.packSize] ||
                     `${skuObj.packSize}g`;
 
-                  /*
-                   * A cart item is purchasable only when it is available
-                   * and has a real website selling price.
-                   *
-                   * This protects the cart from an unavailable SKU such
-                   * as the undecided Combo Pack.
-                   */
                   const isPurchasable =
-                    skuObj.available &&
-                    skuObj.websitePrice !== null;
+                    skuObj.available === true &&
+                    skuObj.websitePrice !== null &&
+                    Number.isFinite(
+                      skuObj.websitePrice,
+                    );
 
                   return (
                     <div
@@ -214,8 +205,6 @@ export default function Cart() {
                         ================================================== */}
 
                         <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-                          {/* Product Image */}
-
                           <Link
                             to={`/product/${product.slug}`}
                             aria-label={`View ${product.name}`}
@@ -247,8 +236,6 @@ export default function Cart() {
                               "
                             />
                           </Link>
-
-                          {/* Product Details */}
 
                           <div className="min-w-0 flex-1">
                             <Link
@@ -302,6 +289,17 @@ export default function Cart() {
                                 : 'Price Coming Soon'}
                             </p>
 
+                            <p
+                              className="
+                                mt-1
+                                text-[10px]
+                                font-semibold
+                                text-green-700
+                              "
+                            >
+                              Free shipping
+                            </p>
+
                             {!isPurchasable && (
                               <p className="mt-1 text-[10px] font-medium text-brand-brown/50">
                                 This item is currently unavailable.
@@ -331,8 +329,6 @@ export default function Cart() {
                             sm:pt-0
                           "
                         >
-                          {/* Quantity */}
-
                           <div
                             className={`
                               flex
@@ -412,8 +408,6 @@ export default function Cart() {
                             </button>
                           </div>
 
-                          {/* Remove */}
-
                           <button
                             type="button"
                             onClick={() =>
@@ -442,8 +436,6 @@ export default function Cart() {
                   );
                 },
               )}
-
-              {/* Continue Shopping */}
 
               <div className="pt-2 sm:pt-4">
                 <Link
@@ -507,12 +499,14 @@ export default function Cart() {
                   </span>
                 </div>
 
-                {/* Shipping is always free and is not shown as a charge. */}
-                <div className="flex justify-between gap-4 text-brand-brown/70">
-                  <span>Shipping</span>
+                <div className="flex items-center gap-2 rounded-xl bg-green-50 px-3 py-2.5 text-green-700">
+                  <Truck
+                    className="h-4 w-4 shrink-0"
+                    aria-hidden="true"
+                  />
 
-                  <span className="whitespace-nowrap font-semibold text-green-700">
-                    Free
+                  <span className="text-xs font-semibold">
+                    Free shipping included
                   </span>
                 </div>
 
