@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useMemo,
   useState,
 } from 'react';
 
@@ -16,7 +17,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-import type { ProductFamily } from '@/data/products';
+import type { ProductFamily, Sku } from '@/data/products';
 import { PACK_LABELS } from '@/data/products';
 import { ProductImage } from '@/components/ProductImage';
 import {
@@ -31,6 +32,22 @@ import type { ReviewSummary } from '@/types/reviews';
 interface ProductCardProps {
   product: ProductFamily;
   className?: string;
+}
+
+function isPurchasableSku(
+  sku: Sku | undefined,
+): sku is Sku & {
+  websitePrice: number;
+  mrp: number;
+} {
+  return (
+    !!sku &&
+    sku.available === true &&
+    sku.websitePrice !== null &&
+    Number.isFinite(sku.websitePrice) &&
+    sku.mrp !== null &&
+    Number.isFinite(sku.mrp)
+  );
 }
 
 export function ProductCard({
@@ -53,9 +70,28 @@ export function ProductCard({
 
   const selectId = useId();
 
+  const purchasableSkus = useMemo(
+    () =>
+      product.skus.filter((sku) =>
+        isPurchasableSku(sku),
+      ),
+    [product.skus],
+  );
+
   const selectedSku =
-    product.skus[selectedSkuIndex] ||
-    product.skus[0];
+    purchasableSkus[selectedSkuIndex] ??
+    purchasableSkus[0];
+
+  useEffect(() => {
+    if (
+      selectedSkuIndex >= purchasableSkus.length
+    ) {
+      setSelectedSkuIndex(0);
+    }
+  }, [
+    selectedSkuIndex,
+    purchasableSkus.length,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,9 +139,7 @@ export function ProductCard({
     `${selectedSku.packSize}g`;
 
   const isPurchasable =
-    selectedSku.available === true &&
-    selectedSku.websitePrice !== null &&
-    Number.isFinite(selectedSku.websitePrice);
+    isPurchasableSku(selectedSku);
 
   const hasReviews =
     !!reviewSummary &&
@@ -158,10 +192,6 @@ export function ProductCard({
         ${className}
       `}
     >
-      {/* ================================================================
-          PRODUCT IMAGE
-      ================================================================= */}
-
       <Link
         to={`/product/${product.slug}`}
         aria-label={`View details for ${product.name}`}
@@ -175,8 +205,6 @@ export function ProductCard({
           [perspective:1200px]
         "
       >
-        {/* Adaptive product stage */}
-
         <div
           className="
             pointer-events-none
@@ -196,8 +224,6 @@ export function ProductCard({
           "
           aria-hidden="true"
         />
-
-        {/* Product floor shadow */}
 
         <div
           className="
@@ -221,8 +247,6 @@ export function ProductCard({
           aria-hidden="true"
         />
 
-        {/* Product image */}
-
         <div
           className="
             relative
@@ -240,14 +264,9 @@ export function ProductCard({
             productId={product.id}
             product={product}
             variant="card"
-            className="
-              h-full
-              w-full
-            "
+            className="h-full w-full"
           />
         </div>
-
-        {/* Premium image highlight */}
 
         <div
           className="
@@ -267,8 +286,6 @@ export function ProductCard({
           aria-hidden="true"
         />
 
-        {/* Image edge */}
-
         <div
           className="
             pointer-events-none
@@ -286,10 +303,6 @@ export function ProductCard({
         />
       </Link>
 
-      {/* ================================================================
-          PRODUCT INFORMATION
-      ================================================================= */}
-
       <div
         className="
           flex
@@ -301,9 +314,6 @@ export function ProductCard({
         "
       >
         <div className="min-w-0">
-
-          {/* Product name */}
-
           <Link
             to={`/product/${product.slug}`}
             className="
@@ -323,8 +333,6 @@ export function ProductCard({
             {product.name}
           </Link>
 
-          {/* Variant */}
-
           <p
             className="
               mb-2
@@ -339,10 +347,6 @@ export function ProductCard({
           >
             {product.variant}
           </p>
-
-          {/* ============================================================
-              REVIEWS
-          ============================================================ */}
 
           <Link
             to={`/product/${product.slug}#reviews`}
@@ -424,10 +428,6 @@ export function ProductCard({
             )}
           </Link>
 
-          {/* ============================================================
-              PACK SIZE
-          ============================================================ */}
-
           <div className="mb-3 sm:mb-4">
             {product.category === 'combo' ? (
               <div
@@ -505,7 +505,7 @@ export function ProductCard({
                     "
                     aria-label={`Select pack size for ${product.name}`}
                   >
-                    {product.skus.map(
+                    {purchasableSkus.map(
                       (skuObj, index) => (
                         <option
                           key={skuObj.sku}
@@ -538,10 +538,6 @@ export function ProductCard({
             )}
           </div>
 
-          {/* ============================================================
-              FINAL WEBSITE PRICE
-          ============================================================ */}
-
           <div className="mb-1 flex flex-wrap items-baseline">
             <span
               className="
@@ -553,15 +549,11 @@ export function ProductCard({
             >
               {isPurchasable
                 ? formatPrice(
-                    selectedSku.websitePrice!,
+                    selectedSku.websitePrice,
                   )
                 : 'Price Coming Soon'}
             </span>
           </div>
-
-          {/* ============================================================
-              FREE SHIPPING
-          ============================================================ */}
 
           <p
             className="
@@ -578,14 +570,7 @@ export function ProductCard({
           </p>
         </div>
 
-        {/* ==============================================================
-            ACTIONS
-        ============================================================== */}
-
         <div className="mt-1 grid grid-cols-2 gap-2">
-
-          {/* Add to Cart */}
-
           <button
             type="button"
             onClick={handleAdd}
@@ -646,7 +631,6 @@ export function ProductCard({
                     sm:w-4
                   "
                 />
-
                 <span>Added</span>
               </>
             ) : (
@@ -660,13 +644,10 @@ export function ProductCard({
                     sm:w-4
                   "
                 />
-
                 <span>Cart</span>
               </>
             )}
           </button>
-
-          {/* Buy Now */}
 
           <button
             type="button"
