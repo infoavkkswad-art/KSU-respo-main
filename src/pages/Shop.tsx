@@ -20,38 +20,89 @@ const categories: (ProductCategory | 'all')[] = [
   'combo',
 ];
 
-const CATEGORY_LABELS: Record<string, string> = {
+const CATEGORY_LABELS: Record<
+  ProductCategory,
+  string
+> = {
   moong: 'Moong Family',
   chana: 'Chana Family',
   urad: 'Urad Family',
   combo: 'Combo Packs',
 };
 
-const MAX_PRICE = 700;
-const MIN_PRICE = 47;
+const SORT_OPTIONS = [
+  'default',
+  'price-low',
+  'price-high',
+  'name',
+] as const;
+
+type SortOption =
+  (typeof SORT_OPTIONS)[number];
+
+/*
+ * Customer-facing price limits are derived from
+ * the central sales configuration through ProductService.
+ *
+ * No shipping is added here.
+ */
+const getCatalogPrices = () =>
+  ProductService.getAllFlatItems()
+    .map((item) => item.websitePrice)
+    .filter(
+      (price) =>
+        Number.isFinite(price) &&
+        price >= 0,
+    );
+
+const catalogPrices = getCatalogPrices();
+
+const MIN_PRICE =
+  catalogPrices.length > 0
+    ? Math.min(...catalogPrices)
+    : 0;
+
+const MAX_PRICE =
+  catalogPrices.length > 0
+    ? Math.max(...catalogPrices)
+    : 0;
 
 export default function Shop() {
-  const [searchParams] = useSearchParams();
+  const [searchParams] =
+    useSearchParams();
 
-  const initialQuery = searchParams.get('q') || '';
+  const initialQuery =
+    searchParams.get('q') || '';
 
-  const [search, setSearch] = useState(initialQuery);
+  const [search, setSearch] =
+    useState(initialQuery);
 
   const [category, setCategory] =
-    useState<ProductCategory | 'all'>('all');
+    useState<
+      ProductCategory | 'all'
+    >('all');
 
-  const [sortBy, setSortBy] = useState<
-    'default' | 'price-low' | 'price-high' | 'name'
-  >('default');
+  const [sortBy, setSortBy] =
+    useState<SortOption>('default');
 
   const [maxPrice, setMaxPrice] =
     useState(MAX_PRICE);
 
-  const [showMobileFilters, setShowMobileFilters] =
-    useState(false);
+  const [
+    showMobileFilters,
+    setShowMobileFilters,
+  ] = useState(false);
 
   const filtered = useMemo(() => {
-    let list = ProductService.getAllProducts();
+    /*
+     * Start with only product families that
+     * contain at least one currently purchasable SKU.
+     *
+     * This prevents unavailable products such as
+     * an undecided combo from appearing in the shop.
+     */
+    let list =
+      ProductService.getPurchasableProducts();
 
     /* ================================================================
        CATEGORY FILTER
@@ -68,104 +119,150 @@ export default function Shop() {
        SEARCH FILTER
     ================================================================= */
 
-    const query = search.trim().toLowerCase();
+    const query =
+      search.trim().toLowerCase();
 
     if (query) {
-      list = list.filter((product) => {
-        const matchesProduct =
-          product.name
-            .toLowerCase()
-            .includes(query) ||
-          product.hindiName.includes(query) ||
-          product.variant
-            .toLowerCase()
-            .includes(query) ||
-          product.category
-            .toLowerCase()
-            .includes(query) ||
-          product.description
-            .toLowerCase()
-            .includes(query);
+      list = list.filter(
+        (product) => {
+          const matchesProduct =
+            product.name
+              .toLowerCase()
+              .includes(query) ||
+            product.hindiName.includes(
+              query,
+            ) ||
+            product.variant
+              .toLowerCase()
+              .includes(query) ||
+            product.category
+              .toLowerCase()
+              .includes(query) ||
+            product.description
+              .toLowerCase()
+              .includes(query);
 
-        const matchesSku =
-          product.skus.some(
-            (sku) =>
-              sku.sku
-                .toLowerCase()
-                .includes(query) ||
-              String(sku.packSize).includes(
-                query,
-              ),
+          const matchesSku =
+            product.skus.some(
+              (sku) =>
+                !sku.available
+                  ? false
+                  : sku.sku
+                      .toLowerCase()
+                      .includes(query) ||
+                    String(
+                      sku.packSize,
+                    ).includes(query),
+            );
+
+          return (
+            matchesProduct ||
+            matchesSku
           );
-
-        return (
-          matchesProduct ||
-          matchesSku
-        );
-      });
+        },
+      );
     }
 
     /* ================================================================
        PRICE FILTER
-
-       websitePrice can be null for a product that does not currently
-       have a customer-facing website price.
-
-       Null prices are excluded from price filtering instead of being
-       treated as zero.
+    =================================================================
+       A product family remains visible when at least one of its
+       currently purchasable SKUs is within the selected price limit.
     ================================================================= */
 
-    list = list.filter((product) =>
-      product.skus.some(
-        (sku) =>
-          sku.websitePrice !== null &&
-          sku.websitePrice <= maxPrice,
-      ),
+    list = list.filter(
+      (product) =>
+        ProductService.getAvailableSkus(
+          product,
+        ).some(
+          (sku) =>
+            sku.websitePrice !==
+              null &&
+            sku.websitePrice <=
+              maxPrice,
+        ),
     );
 
     /* ================================================================
        SORTING
-
-       Only priced SKUs participate in price sorting.
-       Null website prices are never used in arithmetic.
     ================================================================= */
 
     switch (sortBy) {
       case 'price-low':
-        list = [...list].sort((a, b) => {
-          const aPrice =
-            a.skus.find(
-              (sku) =>
-                sku.websitePrice !== null,
-            )?.websitePrice ?? Infinity;
+        list = [...list].sort(
+          (a, b) => {
+            const aPrices =
+              ProductService.getAvailableSkus(
+                a,
+              ).map(
+                (sku) =>
+                  sku.websitePrice,
+              );
 
-          const bPrice =
-            b.skus.find(
-              (sku) =>
-                sku.websitePrice !== null,
-            )?.websitePrice ?? Infinity;
+            const bPrices =
+              ProductService.getAvailableSkus(
+                b,
+              ).map(
+                (sku) =>
+                  sku.websitePrice,
+              );
 
-          return aPrice - bPrice;
-        });
+            const aPrice =
+              aPrices.length > 0
+                ? Math.min(
+                    ...aPrices,
+                  )
+                : Infinity;
+
+            const bPrice =
+              bPrices.length > 0
+                ? Math.min(
+                    ...bPrices,
+                  )
+                : Infinity;
+
+            return aPrice - bPrice;
+          },
+        );
 
         break;
 
       case 'price-high':
-        list = [...list].sort((a, b) => {
-          const aPrice =
-            a.skus.find(
-              (sku) =>
-                sku.websitePrice !== null,
-            )?.websitePrice ?? -Infinity;
+        list = [...list].sort(
+          (a, b) => {
+            const aPrices =
+              ProductService.getAvailableSkus(
+                a,
+              ).map(
+                (sku) =>
+                  sku.websitePrice,
+              );
 
-          const bPrice =
-            b.skus.find(
-              (sku) =>
-                sku.websitePrice !== null,
-            )?.websitePrice ?? -Infinity;
+            const bPrices =
+              ProductService.getAvailableSkus(
+                b,
+              ).map(
+                (sku) =>
+                  sku.websitePrice,
+              );
 
-          return bPrice - aPrice;
-        });
+            const aPrice =
+              aPrices.length > 0
+                ? Math.max(
+                    ...aPrices,
+                  )
+                : -Infinity;
+
+            const bPrice =
+              bPrices.length > 0
+                ? Math.max(
+                    ...bPrices,
+                  )
+                : -Infinity;
+
+            return bPrice - aPrice;
+          },
+        );
 
         break;
 
@@ -326,7 +423,9 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={() =>
-                    setShowMobileFilters(false)
+                    setShowMobileFilters(
+                      false,
+                    )
                   }
                   className="
                     flex h-10 w-10
@@ -361,53 +460,59 @@ export default function Shop() {
                 </h3>
 
                 <div className="space-y-1">
-                  {categories.map((cat) => {
-                    const active =
-                      category === cat;
+                  {categories.map(
+                    (cat) => {
+                      const active =
+                        category === cat;
 
-                    return (
-                      <button
-                        type="button"
-                        key={cat}
-                        onClick={() =>
-                          setCategory(cat)
-                        }
-                        className={`
-                          flex
-                          min-h-[44px]
-                          w-full
-                          items-center
-                          rounded-xl
-                          px-3
-                          py-2.5
-                          text-left
-                          text-sm
-                          transition-all
-                          duration-200
-                          ${
-                            active
-                              ? `
-                                bg-brand-green
-                                font-semibold
-                                text-white
-                                shadow-[0_3px_0_#315238,0_6px_12px_rgba(62,39,35,0.10)]
-                                -translate-y-0.5
-                              `
-                              : `
-                                text-brand-brown/70
-                                hover:-translate-y-0.5
-                                hover:bg-brand-green/5
-                                hover:text-brand-green
-                              `
+                      return (
+                        <button
+                          type="button"
+                          key={cat}
+                          onClick={() =>
+                            setCategory(
+                              cat,
+                            )
                           }
-                        `}
-                      >
-                        {cat === 'all'
-                          ? 'All Products'
-                          : CATEGORY_LABELS[cat]}
-                      </button>
-                    );
-                  })}
+                          className={`
+                            flex
+                            min-h-[44px]
+                            w-full
+                            items-center
+                            rounded-xl
+                            px-3
+                            py-2.5
+                            text-left
+                            text-sm
+                            transition-all
+                            duration-200
+                            ${
+                              active
+                                ? `
+                                  bg-brand-green
+                                  font-semibold
+                                  text-white
+                                  shadow-[0_3px_0_#315238,0_6px_12px_rgba(62,39,35,0.10)]
+                                  -translate-y-0.5
+                                `
+                                : `
+                                  text-brand-brown/70
+                                  hover:-translate-y-0.5
+                                  hover:bg-brand-green/5
+                                  hover:text-brand-green
+                                `
+                            }
+                          `}
+                        >
+                          {cat === 'all'
+                            ? 'All Products'
+                            : CATEGORY_LABELS[
+                                cat
+                              ]}
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
               </div>
 
@@ -441,12 +546,13 @@ export default function Shop() {
                   type="range"
                   min={MIN_PRICE}
                   max={MAX_PRICE}
-                  step="25"
+                  step="1"
                   value={maxPrice}
                   onChange={(event) =>
                     setMaxPrice(
                       Number(
-                        event.target.value,
+                        event.target
+                          .value,
                       ),
                     )
                   }
@@ -459,6 +565,7 @@ export default function Shop() {
                     bg-brand-green/10
                     accent-brand-saffron
                   "
+                  aria-label="Maximum product price"
                 />
 
                 <div className="mt-2 flex justify-between text-[10px] text-brand-brown/40">
@@ -467,7 +574,7 @@ export default function Shop() {
                   </span>
 
                   <span>
-                    ₹{MAX_PRICE}+
+                    ₹{MAX_PRICE}
                   </span>
                 </div>
               </div>
@@ -477,7 +584,9 @@ export default function Shop() {
               <div className="mt-6 flex gap-2 lg:hidden">
                 <button
                   type="button"
-                  onClick={clearFilters}
+                  onClick={
+                    clearFilters
+                  }
                   className="
                     min-h-[46px]
                     flex-1
@@ -499,7 +608,9 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={() =>
-                    setShowMobileFilters(false)
+                    setShowMobileFilters(
+                      false,
+                    )
                   }
                   className="
                     min-h-[46px]
@@ -613,18 +724,29 @@ export default function Shop() {
               <div className="flex items-center gap-2">
                 <p className="hidden text-xs text-brand-brown/50 sm:block">
                   {filtered.length}{' '}
-                  {filtered.length === 1
+                  {filtered.length ===
+                  1
                     ? 'product'
                     : 'products'}
                 </p>
 
                 <select
                   value={sortBy}
-                  onChange={(event) =>
-                    setSortBy(
-                      event.target.value as typeof sortBy,
-                    )
-                  }
+                  onChange={(event) => {
+                    const value =
+                      event.target
+                        .value;
+
+                    if (
+                      SORT_OPTIONS.includes(
+                        value as SortOption,
+                      )
+                    ) {
+                      setSortBy(
+                        value as SortOption,
+                      );
+                    }
+                  }}
                   className="
                     min-h-[46px]
                     flex-1
@@ -703,7 +825,8 @@ export default function Shop() {
                     Filters
                   </span>
 
-                  {activeFilterCount > 0 && (
+                  {activeFilterCount >
+                    0 && (
                     <span
                       className="
                         absolute
@@ -723,7 +846,9 @@ export default function Shop() {
                         shadow-[0_2px_5px_rgba(230,126,34,0.30)]
                       "
                     >
-                      {activeFilterCount}
+                      {
+                        activeFilterCount
+                      }
                     </span>
                   )}
                 </button>
@@ -732,14 +857,17 @@ export default function Shop() {
 
             {/* Active filters */}
 
-            {activeFilterCount > 0 && (
+            {activeFilterCount >
+              0 && (
               <div className="mb-5 flex flex-wrap items-center gap-2">
-
-                {category !== 'all' && (
+                {category !==
+                  'all' && (
                   <button
                     type="button"
                     onClick={() =>
-                      setCategory('all')
+                      setCategory(
+                        'all',
+                      )
                     }
                     className="
                       inline-flex
@@ -756,17 +884,24 @@ export default function Shop() {
                       hover:-translate-y-0.5
                     "
                   >
-                    {CATEGORY_LABELS[category]}
+                    {
+                      CATEGORY_LABELS[
+                        category
+                      ]
+                    }
 
                     <X className="h-3 w-3" />
                   </button>
                 )}
 
-                {maxPrice < MAX_PRICE && (
+                {maxPrice <
+                  MAX_PRICE && (
                   <button
                     type="button"
                     onClick={() =>
-                      setMaxPrice(MAX_PRICE)
+                      setMaxPrice(
+                        MAX_PRICE,
+                      )
                     }
                     className="
                       inline-flex
@@ -783,7 +918,8 @@ export default function Shop() {
                       hover:-translate-y-0.5
                     "
                   >
-                    Under ₹{maxPrice}
+                    Under ₹
+                    {maxPrice}
 
                     <X className="h-3 w-3" />
                   </button>
@@ -812,7 +948,8 @@ export default function Shop() {
                     "
                   >
                     <span className="max-w-[180px] truncate">
-                      Search: {search}
+                      Search:{' '}
+                      {search}
                     </span>
 
                     <X className="h-3 w-3 shrink-0" />
@@ -821,7 +958,9 @@ export default function Shop() {
 
                 <button
                   type="button"
-                  onClick={clearFilters}
+                  onClick={
+                    clearFilters
+                  }
                   className="
                     min-h-[32px]
                     px-2
@@ -839,14 +978,16 @@ export default function Shop() {
 
             <div className="mb-4 text-xs text-brand-brown/50 sm:hidden">
               Showing {filtered.length}{' '}
-              {filtered.length === 1
+              {filtered.length ===
+              1
                 ? 'product'
                 : 'products'}
             </div>
 
             {/* Empty State */}
 
-            {filtered.length === 0 ? (
+            {filtered.length ===
+            0 ? (
               <div
                 className="
                   rounded-3xl
@@ -881,13 +1022,18 @@ export default function Shop() {
                 </h2>
 
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-brand-brown/50">
-                  Try another search or remove some
-                  filters to discover more products.
+                  Try another search
+                  or remove some
+                  filters to
+                  discover more
+                  products.
                 </p>
 
                 <button
                   type="button"
-                  onClick={clearFilters}
+                  onClick={
+                    clearFilters
+                  }
                   className="
                     btn-primary
                     mt-6
@@ -915,16 +1061,24 @@ export default function Shop() {
                 "
               >
                 {filtered.map(
-                  (product, index) => (
+                  (
+                    product,
+                    index,
+                  ) => (
                     <Reveal
-                      key={product.id}
+                      key={
+                        product.id
+                      }
                       delay={Math.min(
-                        index * 40,
+                        index *
+                          40,
                         240,
                       )}
                     >
                       <ProductCard
-                        product={product}
+                        product={
+                          product
+                        }
                       />
                     </Reveal>
                   ),
