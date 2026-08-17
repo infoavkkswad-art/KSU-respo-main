@@ -61,18 +61,25 @@ type PurchasableCardSku = Sku & {
   websitePrice: number;
 };
 
+/**
+ * Converts the nullable catalog SKU type into a
+ * guaranteed purchasable SKU.
+ *
+ * This is intentionally kept here rather than changing
+ * Sku.mrp / Sku.websitePrice in products.ts.
+ */
 function isPurchasableSku(
   sku: Sku | undefined,
 ): sku is PurchasableCardSku {
   return (
-    !!sku &&
+    sku !== undefined &&
     sku.available === true &&
-    typeof sku.websitePrice === 'number' &&
-    Number.isFinite(sku.websitePrice) &&
-    sku.websitePrice >= 0 &&
     typeof sku.mrp === 'number' &&
     Number.isFinite(sku.mrp) &&
     sku.mrp >= 0 &&
+    typeof sku.websitePrice === 'number' &&
+    Number.isFinite(sku.websitePrice) &&
+    sku.websitePrice >= 0 &&
     sku.websitePrice <= sku.mrp
   );
 }
@@ -81,22 +88,19 @@ export function ProductCard({
   product,
   className = '',
 }: ProductCardProps) {
-  const {
-    addItem,
-  } = useCart();
+  const { addItem } = useCart();
 
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
+
+  const selectId = useId();
 
   const [
     selectedSkuIndex,
     setSelectedSkuIndex,
   ] = useState(0);
 
-  const [
-    added,
-    setAdded,
-  ] = useState(false);
+  const [added, setAdded] =
+    useState(false);
 
   const [
     reviewSummary,
@@ -111,51 +115,36 @@ export function ProductCard({
     setReviewsLoading,
   ] = useState(true);
 
-  const selectId =
-    useId();
-
   /*
-   * ProductService is the single customer-facing
-   * catalog authority.
+   * ProductService is the customer-facing
+   * product authority.
    *
-   * ProductCard never calculates:
+   * ProductCard does NOT calculate:
    * - factory price
    * - dealer price
    * - distributor price
    * - shipping
-   * - profit
    * - discounts
-   *
-   * websitePrice is the final customer-facing price.
+   * - profit
    */
   const purchasableSkus =
-    useMemo(
-      () =>
-        ProductService
-          .getAvailableSkus(
-            product,
-          )
-          .filter(
-            isPurchasableSku,
-          ),
-      [product],
-    );
+    useMemo(() => {
+      return ProductService
+        .getAvailableSkus(product)
+        .filter(isPurchasableSku);
+    }, [product]);
 
   const selectedSku =
     purchasableSkus[
       selectedSkuIndex
-    ] ??
-    purchasableSkus[0];
+    ] ?? purchasableSkus[0];
 
   /*
-   * Keep selected SKU valid if
-   * the catalog changes.
+   * Keep the selected index valid if the
+   * product catalog changes.
    */
   useEffect(() => {
-    if (
-      purchasableSkus.length ===
-      0
-    ) {
+    if (purchasableSkus.length === 0) {
       setSelectedSkuIndex(0);
       return;
     }
@@ -167,50 +156,42 @@ export function ProductCard({
       setSelectedSkuIndex(0);
     }
   }, [
-    selectedSkuIndex,
     purchasableSkus.length,
+    selectedSkuIndex,
   ]);
 
   /*
-   * Load real approved-review summary.
+   * Load the approved review summary.
    */
   useEffect(() => {
     let cancelled = false;
 
-    const loadReviewSummary =
-      async () => {
-        setReviewsLoading(
-          true,
-        );
+    async function loadReviewSummary() {
+      setReviewsLoading(true);
 
-        try {
-          const summary =
-            await ReviewService.getSummary(
-              product.id,
-            );
+      try {
+        const summary =
+          await ReviewService.getSummary(
+            product.id,
+          );
 
-          if (!cancelled) {
-            setReviewSummary(
-              summary,
-            );
-          }
-        } catch {
-          if (!cancelled) {
-            setReviewSummary({
-              productId:
-                product.id,
-              averageRating: 0,
-              reviewCount: 0,
-            });
-          }
-        } finally {
-          if (!cancelled) {
-            setReviewsLoading(
-              false,
-            );
-          }
+        if (!cancelled) {
+          setReviewSummary(summary);
         }
-      };
+      } catch {
+        if (!cancelled) {
+          setReviewSummary({
+            productId: product.id,
+            averageRating: 0,
+            reviewCount: 0,
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          setReviewsLoading(false);
+        }
+      }
+    }
 
     void loadReviewSummary();
 
@@ -220,51 +201,34 @@ export function ProductCard({
   }, [product.id]);
 
   /*
-   * Never render a broken card when
-   * no purchasable SKU exists.
+   * Do not display an incomplete product card.
    */
   if (!selectedSku) {
     return null;
   }
 
   const packLabel =
-    PACK_LABELS[
-      selectedSku.packSize
-    ] ??
+    PACK_LABELS[selectedSku.packSize] ??
     `${selectedSku.packSize}g`;
 
   const hasReviews =
     reviewSummary !== null &&
-    reviewSummary.reviewCount >
-      0 &&
-    reviewSummary.averageRating >
-      0;
+    reviewSummary.reviewCount > 0 &&
+    reviewSummary.averageRating > 0;
 
   const handleAdd = () => {
-    addItem(
-      selectedSku.sku,
-      1,
-    );
+    addItem(selectedSku.sku, 1);
 
     setAdded(true);
 
-    window.setTimeout(
-      () => {
-        setAdded(false);
-      },
-      2000,
-    );
+    window.setTimeout(() => {
+      setAdded(false);
+    }, 2000);
   };
 
   const handleBuyNow = () => {
-    addItem(
-      selectedSku.sku,
-      1,
-    );
-
-    navigate(
-      '/checkout',
-    );
+    addItem(selectedSku.sku, 1);
+    navigate('/checkout');
   };
 
   return (
@@ -571,17 +535,25 @@ export function ProductCard({
                 <div className="relative w-full">
                   <select
                     id={`pack-size-${selectId}`}
-                    value={
-                      selectedSkuIndex
-                    }
-                    onChange={(
-                      event,
-                    ) => {
-                      setSelectedSkuIndex(
+                    value={selectedSkuIndex}
+                    onChange={(event) => {
+                      const nextIndex =
                         Number(
                           event.target.value,
-                        ),
-                      );
+                        );
+
+                      if (
+                        Number.isInteger(
+                          nextIndex,
+                        ) &&
+                        nextIndex >= 0 &&
+                        nextIndex <
+                          purchasableSkus.length
+                      ) {
+                        setSelectedSkuIndex(
+                          nextIndex,
+                        );
+                      }
                     }}
                     className="
                       min-h-[40px]
@@ -608,14 +580,9 @@ export function ProductCard({
                     aria-label={`Select pack size for ${product.name}`}
                   >
                     {purchasableSkus.map(
-                      (
-                        sku,
-                        index,
-                      ) => (
+                      (sku, index) => (
                         <option
-                          key={
-                            sku.sku
-                          }
+                          key={sku.sku}
                           value={index}
                         >
                           {PACK_LABELS[
@@ -734,21 +701,13 @@ export function ProductCard({
           >
             {added ? (
               <>
-                <Check
-                  className="h-3.5 w-3.5"
-                />
-                <span>
-                  Added
-                </span>
+                <Check className="h-3.5 w-3.5" />
+                <span>Added</span>
               </>
             ) : (
               <>
-                <Plus
-                  className="h-3.5 w-3.5"
-                />
-                <span>
-                  Cart
-                </span>
+                <Plus className="h-3.5 w-3.5" />
+                <span>Cart</span>
               </>
             )}
           </button>
@@ -782,12 +741,8 @@ export function ProductCard({
               md:text-sm
             "
           >
-            <Zap
-              className="h-3.5 w-3.5"
-            />
-            <span>
-              Buy Now
-            </span>
+            <Zap className="h-3.5 w-3.5" />
+            <span>Buy Now</span>
           </button>
         </div>
       </div>
