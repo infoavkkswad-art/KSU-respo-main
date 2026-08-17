@@ -43,20 +43,12 @@ export default function Products() {
   const filtered = useMemo(() => {
     let list = ProductService.getAllProducts();
 
-    /* ================================================================
-     * CATEGORY FILTER
-     * ================================================================ */
-
     if (category !== 'all') {
       list = list.filter(
         (product) =>
           product.category === category,
       );
     }
-
-    /* ================================================================
-     * SEARCH FILTER
-     * ================================================================ */
 
     if (search.trim()) {
       const q = search
@@ -83,51 +75,103 @@ export default function Products() {
               sku.sku
                 .toLowerCase()
                 .includes(q) ||
-              String(sku.packSize).includes(q),
+              String(
+                sku.packSize,
+              ).includes(q),
           ),
       );
     }
 
-    /* ================================================================
-     * PACK SIZE FILTER
-     * ================================================================ */
-
     if (packFilter !== null) {
       list = list.filter((product) =>
-        product.skus.some(
+        ProductService.getAvailableSkus(
+          product,
+        ).some(
           (sku) =>
             sku.packSize === packFilter,
         ),
       );
     }
 
-    /* ================================================================
-     * SORT
-     *
-     * websitePrice may legitimately be null for products/SKUs that
-     * are not currently purchasable. Never pass null into arithmetic.
-     * ================================================================ */
-
     switch (sortBy) {
       case 'price-low':
-        list = [...list].sort(
-          (a, b) =>
-            (a.skus[0]?.websitePrice ?? 0) -
-            (b.skus[0]?.websitePrice ?? 0),
-        );
+        list = [...list].sort((a, b) => {
+          const aSkus =
+            ProductService.getAvailableSkus(
+              a,
+            );
+
+          const bSkus =
+            ProductService.getAvailableSkus(
+              b,
+            );
+
+          const aPrice =
+            aSkus.length > 0
+              ? Math.min(
+                  ...aSkus.map(
+                    (sku) =>
+                      sku.websitePrice,
+                  ),
+                )
+              : Number.POSITIVE_INFINITY;
+
+          const bPrice =
+            bSkus.length > 0
+              ? Math.min(
+                  ...bSkus.map(
+                    (sku) =>
+                      sku.websitePrice,
+                  ),
+                )
+              : Number.POSITIVE_INFINITY;
+
+          return aPrice - bPrice;
+        });
         break;
 
       case 'price-high':
-        list = [...list].sort(
-          (a, b) =>
-            (b.skus[0]?.websitePrice ?? 0) -
-            (a.skus[0]?.websitePrice ?? 0),
-        );
+        list = [...list].sort((a, b) => {
+          const aSkus =
+            ProductService.getAvailableSkus(
+              a,
+            );
+
+          const bSkus =
+            ProductService.getAvailableSkus(
+              b,
+            );
+
+          const aPrice =
+            aSkus.length > 0
+              ? Math.min(
+                  ...aSkus.map(
+                    (sku) =>
+                      sku.websitePrice,
+                  ),
+                )
+              : Number.NEGATIVE_INFINITY;
+
+          const bPrice =
+            bSkus.length > 0
+              ? Math.min(
+                  ...bSkus.map(
+                    (sku) =>
+                      sku.websitePrice,
+                  ),
+                )
+              : Number.NEGATIVE_INFINITY;
+
+          return bPrice - aPrice;
+        });
         break;
 
       case 'name':
-        list = [...list].sort((a, b) =>
-          a.name.localeCompare(b.name),
+        list = [...list].sort(
+          (a, b) =>
+            a.name.localeCompare(
+              b.name,
+            ),
         );
         break;
 
@@ -180,13 +224,7 @@ export default function Products() {
       />
 
       <section className="container-max container-px py-8 sm:py-10 lg:py-12">
-
-        {/* ============================================================
-            SEARCH + SORT
-            ============================================================ */}
-
         <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mb-5 sm:mb-6">
-
           <div className="relative flex-1 min-w-0">
             <Search
               className="
@@ -251,12 +289,12 @@ export default function Products() {
             </option>
           </select>
 
-          {/* Mobile Filters */}
-
           <button
             type="button"
             onClick={() =>
-              setShowFilters((value) => !value)
+              setShowFilters(
+                (value) => !value,
+              )
             }
             className="
               btn-outline
@@ -300,11 +338,6 @@ export default function Products() {
         </div>
 
         <div className="grid lg:grid-cols-[220px_1fr] gap-5 lg:gap-8">
-
-          {/* ==========================================================
-              SIDEBAR FILTERS
-              ========================================================== */}
-
           <aside
             id="mobile-product-filters"
             className={`
@@ -325,7 +358,6 @@ export default function Products() {
                 top-24
               "
             >
-
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-serif font-semibold text-brand-brown">
                   Filters
@@ -345,8 +377,6 @@ export default function Products() {
                   </button>
                 )}
               </div>
-
-              {/* Category */}
 
               <div className="mb-6">
                 <p className="label-field">
@@ -378,13 +408,13 @@ export default function Products() {
                     >
                       {cat === 'all'
                         ? 'All Products'
-                        : CATEGORY_LABELS[cat]}
+                        : CATEGORY_LABELS[
+                            cat
+                          ]}
                     </button>
                   ))}
                 </div>
               </div>
-
-              {/* Pack Size */}
 
               <div>
                 <p className="label-field">
@@ -426,8 +456,6 @@ export default function Products() {
                 </div>
               </div>
 
-              {/* Close mobile filters */}
-
               <button
                 type="button"
                 onClick={() =>
@@ -445,14 +473,8 @@ export default function Products() {
             </div>
           </aside>
 
-          {/* ==========================================================
-              PRODUCT RESULTS
-              ========================================================== */}
-
           <div className="min-w-0">
-
             <div className="flex items-center justify-between gap-3 mb-4">
-
               <p className="text-xs sm:text-sm text-brand-brown/60">
                 {filtered.length} product
                 {filtered.length !== 1
@@ -462,7 +484,6 @@ export default function Products() {
 
               {activeFilterCount > 0 && (
                 <div className="hidden lg:flex items-center gap-2 flex-wrap justify-end">
-
                   {category !== 'all' && (
                     <span
                       className="
@@ -480,7 +501,9 @@ export default function Products() {
                         border-amber-200
                       "
                     >
-                      {CATEGORY_LABELS[category]}
+                      {CATEGORY_LABELS[
+                        category
+                      ]}
 
                       <button
                         type="button"
