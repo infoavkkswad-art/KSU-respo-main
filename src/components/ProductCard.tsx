@@ -17,7 +17,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-import type { ProductFamily, Sku } from '@/data/products';
+import type { ProductFamily } from '@/data/products';
 import { PACK_LABELS } from '@/data/products';
 import { ProductImage } from '@/components/ProductImage';
 import {
@@ -26,28 +26,13 @@ import {
 } from '@/context/CartContext';
 import { StarRating } from '@/components/StarRating';
 import { ReviewService } from '@/services/review-service';
+import { ProductService } from '@/services/product-service';
 
 import type { ReviewSummary } from '@/types/reviews';
 
 interface ProductCardProps {
   product: ProductFamily;
   className?: string;
-}
-
-function isPurchasableSku(
-  sku: Sku | undefined,
-): sku is Sku & {
-  websitePrice: number;
-  mrp: number;
-} {
-  return (
-    !!sku &&
-    sku.available === true &&
-    sku.websitePrice !== null &&
-    Number.isFinite(sku.websitePrice) &&
-    sku.mrp !== null &&
-    Number.isFinite(sku.mrp)
-  );
 }
 
 export function ProductCard({
@@ -70,12 +55,21 @@ export function ProductCard({
 
   const selectId = useId();
 
+  /*
+   * IMPORTANT:
+   * ProductService is the single customer-facing
+   * pricing authority.
+   *
+   * ProductCard never calculates or adds shipping.
+   * The returned websitePrice is already the final
+   * customer-facing price including shipping.
+   */
   const purchasableSkus = useMemo(
     () =>
-      product.skus.filter((sku) =>
-        isPurchasableSku(sku),
+      ProductService.getAvailableSkus(
+        product,
       ),
-    [product.skus],
+    [product],
   );
 
   const selectedSku =
@@ -84,7 +78,8 @@ export function ProductCard({
 
   useEffect(() => {
     if (
-      selectedSkuIndex >= purchasableSkus.length
+      selectedSkuIndex >=
+      purchasableSkus.length
     ) {
       setSelectedSkuIndex(0);
     }
@@ -130,6 +125,10 @@ export function ProductCard({
     };
   }, [product.id]);
 
+  /*
+   * If the product has no currently purchasable SKU,
+   * do not render a broken product card.
+   */
   if (!selectedSku) {
     return null;
   }
@@ -139,7 +138,11 @@ export function ProductCard({
     `${selectedSku.packSize}g`;
 
   const isPurchasable =
-    isPurchasableSku(selectedSku);
+    selectedSku.available === true &&
+    Number.isFinite(
+      selectedSku.websitePrice,
+    ) &&
+    Number.isFinite(selectedSku.mrp);
 
   const hasReviews =
     !!reviewSummary &&
@@ -429,7 +432,8 @@ export function ProductCard({
           </Link>
 
           <div className="mb-3 sm:mb-4">
-            {product.category === 'combo' ? (
+            {product.category ===
+            'combo' ? (
               <div
                 className="
                   inline-flex
@@ -472,11 +476,16 @@ export function ProductCard({
                 <div className="relative w-full">
                   <select
                     id={`pack-size-${selectId}`}
-                    value={selectedSkuIndex}
-                    onChange={(event) =>
+                    value={
+                      selectedSkuIndex
+                    }
+                    onChange={(
+                      event,
+                    ) =>
                       setSelectedSkuIndex(
                         Number(
-                          event.target.value,
+                          event.target
+                            .value,
                         ),
                       )
                     }
@@ -506,9 +515,14 @@ export function ProductCard({
                     aria-label={`Select pack size for ${product.name}`}
                   >
                     {purchasableSkus.map(
-                      (skuObj, index) => (
+                      (
+                        skuObj,
+                        index,
+                      ) => (
                         <option
-                          key={skuObj.sku}
+                          key={
+                            skuObj.sku
+                          }
                           value={index}
                         >
                           {PACK_LABELS[
