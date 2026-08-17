@@ -5,10 +5,12 @@ import {
   useEffect,
   type ReactNode,
 } from 'react';
+
 import type { CartItem } from './CartContext';
+
 import {
   apiClient,
-  OrderStatusType,
+  type OrderStatusType,
 } from '../services/api-client';
 
 export interface CustomerInfo {
@@ -43,7 +45,7 @@ interface OrderContextValue {
   lastOrder: Order | null;
 
   setCompletedOrder: (
-    order: Order
+    order: Order,
   ) => void;
 
   placeOrder: (
@@ -54,17 +56,253 @@ interface OrderContextValue {
       totalShipping: number;
       total: number;
     },
-    idempotencyKey?: string
+    idempotencyKey?: string,
   ) => Promise<Order>;
 
   clearLastOrder: () => void;
 }
 
 const OrderContext =
-  createContext<OrderContextValue | null>(null);
+  createContext<OrderContextValue | null>(
+    null,
+  );
 
 const ORDER_STORAGE_KEY =
   'kawad-swad-last-order-v1';
+
+/* ============================================================================
+ * LOCAL ORDER VALIDATION
+ * ========================================================================== */
+
+function isValidCustomer(
+  customer: unknown,
+): customer is CustomerInfo {
+  if (
+    !customer ||
+    typeof customer !== 'object'
+  ) {
+    return false;
+  }
+
+  const value =
+    customer as Record<string, unknown>;
+
+  return (
+    typeof value.fullName === 'string' &&
+    typeof value.phone === 'string' &&
+    typeof value.email === 'string' &&
+    typeof value.address === 'string' &&
+    typeof value.city === 'string' &&
+    typeof value.state === 'string' &&
+    typeof value.pincode === 'string'
+  );
+}
+
+function isValidOrderItem(
+  item: unknown,
+): item is OrderItemSnapshotItem {
+  if (
+    !item ||
+    typeof item !== 'object'
+  ) {
+    return false;
+  }
+
+  const value =
+    item as Record<string, unknown>;
+
+  if (
+    typeof value.sku !== 'string' ||
+    typeof value.quantity !== 'number' ||
+    !Number.isFinite(
+      value.quantity,
+    ) ||
+    value.quantity <= 0
+  ) {
+    return false;
+  }
+
+  if (
+    value.unitPrice !== undefined &&
+    (
+      typeof value.unitPrice !==
+        'number' ||
+      !Number.isFinite(
+        value.unitPrice,
+      ) ||
+      value.unitPrice < 0
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    value.productNameSnapshot !==
+      undefined &&
+    typeof value.productNameSnapshot !==
+      'string'
+  ) {
+    return false;
+  }
+
+  if (
+    value.packSizeSnapshot !==
+      undefined &&
+    (
+      typeof value.packSizeSnapshot !==
+        'number' ||
+      !Number.isFinite(
+        value.packSizeSnapshot,
+      )
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function isValidOrder(
+  value: unknown,
+): value is Order {
+  if (
+    !value ||
+    typeof value !== 'object'
+  ) {
+    return false;
+  }
+
+  const order =
+    value as Record<string, unknown>;
+
+  if (
+    typeof order.orderId !==
+      'string' ||
+    !order.orderId.trim()
+  ) {
+    return false;
+  }
+
+  if (
+    !isValidCustomer(
+      order.customer,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    !Array.isArray(order.items) ||
+    order.items.length === 0 ||
+    !order.items.every(
+      isValidOrderItem,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    typeof order.subtotal !==
+      'number' ||
+    !Number.isFinite(
+      order.subtotal,
+    ) ||
+    order.subtotal < 0
+  ) {
+    return false;
+  }
+
+  /*
+   * Customer-facing shipping is always FREE.
+   * Historical orders are normalized to zero so
+   * stale localStorage data cannot reintroduce
+   * a separate shipping charge.
+   */
+  if (
+    typeof order.totalShipping !==
+      'number' ||
+    !Number.isFinite(
+      order.totalShipping,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    typeof order.total !==
+      'number' ||
+    !Number.isFinite(
+      order.total,
+    ) ||
+    order.total < 0
+  ) {
+    return false;
+  }
+
+  if (
+    typeof order.timestamp !==
+      'string'
+  ) {
+    return false;
+  }
+
+  if (
+    typeof order.status !==
+      'string'
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+/* ============================================================================
+ * NORMALIZE CUSTOMER-FACING ORDER
+ * ========================================================================== */
+
+function normalizeOrder(
+  order: Order,
+): Order {
+  return {
+    ...order,
+
+    /*
+     * Shipping is included in the final product
+     * selling price and is therefore always zero
+     * as a separate order charge.
+     */
+    totalShipping: 0,
+
+    items: order.items.map(
+      (item) => ({
+        ...item,
+        quantity: Math.floor(
+          item.quantity,
+        ),
+
+        /*
+         * Never store negative/invalid historical
+         * prices as customer-facing snapshots.
+         */
+        ...(item.unitPrice !==
+          undefined &&
+        Number.isFinite(
+          item.unitPrice,
+        ) &&
+        item.unitPrice >= 0
+          ? {
+              unitPrice:
+                item.unitPrice,
+            }
+          : {}),
+      }),
+    ),
+  };
+}
+
+/* ============================================================================
+ * PROVIDER
+ * ========================================================================== */
 
 export function OrderProvider({
   children,
@@ -76,13 +314,36 @@ export function OrderProvider({
       try {
         const saved =
           localStorage.getItem(
-            ORDER_STORAGE_KEY
+            ORDER_STORAGE_KEY,
           );
 
-        return saved
-          ? (JSON.parse(saved) as Order)
-          : null;
+        if (!saved) {
+          return null;
+        }
+
+        const parsed: unknown =
+          JSON.parse(saved);
+
+        if (!isValidOrder(parsed)) {
+          localStorage.removeItem(
+            ORDER_STORAGE_KEY,
+          );
+
+          return null;
+        }
+
+        return normalizeOrder(
+          parsed,
+        );
       } catch {
+        try {
+          localStorage.removeItem(
+            ORDER_STORAGE_KEY,
+          );
+        } catch {
+          // Ignore storage errors.
+        }
+
         return null;
       }
     });
@@ -92,11 +353,15 @@ export function OrderProvider({
       if (lastOrder) {
         localStorage.setItem(
           ORDER_STORAGE_KEY,
-          JSON.stringify(lastOrder)
+          JSON.stringify(
+            normalizeOrder(
+              lastOrder,
+            ),
+          ),
         );
       } else {
         localStorage.removeItem(
-          ORDER_STORAGE_KEY
+          ORDER_STORAGE_KEY,
         );
       }
     } catch {
@@ -104,11 +369,33 @@ export function OrderProvider({
     }
   }, [lastOrder]);
 
+  /* ==========================================================================
+   * COMPLETED PAYMENT ORDER
+   * ======================================================================== */
+
   const setCompletedOrder = (
-    order: Order
+    order: Order,
   ) => {
-    setLastOrder(order);
+    if (!isValidOrder(order)) {
+      console.error(
+        'Invalid completed order received.',
+      );
+
+      return;
+    }
+
+    setLastOrder(
+      normalizeOrder(order),
+    );
   };
+
+  /* ==========================================================================
+   * LEGACY / DIRECT ORDER PLACEMENT
+   *
+   * Kept for compatibility with existing project code.
+   * The backend remains the authority for final pricing,
+   * availability and order totals.
+   * ======================================================================== */
 
   const placeOrder:
     OrderContextValue['placeOrder'] =
@@ -116,7 +403,7 @@ export function OrderProvider({
       customer,
       items,
       _totals,
-      idempotencyKey
+      idempotencyKey,
     ) => {
       const order =
         await apiClient.createOrder({
@@ -125,17 +412,24 @@ export function OrderProvider({
           idempotencyKey,
         });
 
-      setLastOrder(order);
+      const normalized =
+        normalizeOrder(order);
 
-      return order;
+      setLastOrder(normalized);
+
+      return normalized;
     };
+
+  /* ==========================================================================
+   * CLEAR
+   * ======================================================================== */
 
   const clearLastOrder = () => {
     setLastOrder(null);
 
     try {
       localStorage.removeItem(
-        ORDER_STORAGE_KEY
+        ORDER_STORAGE_KEY,
       );
     } catch {
       // Ignore localStorage errors.
@@ -156,13 +450,17 @@ export function OrderProvider({
   );
 }
 
+/* ============================================================================
+ * HOOK
+ * ========================================================================== */
+
 export function useOrder(): OrderContextValue {
   const ctx =
     useContext(OrderContext);
 
   if (!ctx) {
     throw new Error(
-      'useOrder must be used within OrderProvider'
+      'useOrder must be used within OrderProvider',
     );
   }
 
