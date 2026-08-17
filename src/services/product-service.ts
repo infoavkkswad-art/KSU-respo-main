@@ -4,10 +4,15 @@ import {
   type Sku,
   type ProductCategory,
 } from '../data/products';
+
 import {
   getSalesSku,
   type SalesSkuConfig,
 } from '../data/sales-config';
+
+/* ============================================================================
+ * CUSTOMER-FACING FLAT PRODUCT
+ * ========================================================================== */
 
 export interface FlatProductItem {
   familyId: string;
@@ -26,6 +31,10 @@ export interface FlatProductItem {
   featured?: boolean;
 }
 
+/* ============================================================================
+ * PRODUCT RESULT TYPES
+ * ========================================================================== */
+
 export interface ProductSkuResult {
   family: ProductFamily;
   skuObj: Sku;
@@ -33,7 +42,7 @@ export interface ProductSkuResult {
 
 export type PurchasableSku = Omit<
   Sku,
-  'mrp' | 'websitePrice'
+  'mrp' | 'websitePrice' | 'available'
 > & {
   mrp: number;
   websitePrice: number;
@@ -47,42 +56,64 @@ export interface PurchasableProductSkuResult {
   skuObj: PurchasableSku;
 }
 
+/* ============================================================================
+ * NORMALIZATION
+ * ========================================================================== */
+
 function normalizeSkuCode(
   skuCode: string,
 ): string {
-  return skuCode.trim().toUpperCase();
+  return skuCode
+    .trim()
+    .toUpperCase();
 }
 
-/**
- * Sales configuration is the single authority for:
+/* ============================================================================
+ * SALES CONFIG RESOLUTION
+ *
+ * sales-config.ts is the SINGLE authority for:
+ *
  * - MRP
- * - final website selling price
+ * - final website price
  * - availability
+ * - pack size
  * - shipping policy
  *
- * Product data remains responsible for:
+ * products.ts remains responsible for:
+ *
  * - product identity
  * - descriptions
  * - ingredients
  * - images
- * - family/category information
- */
+ * - category
+ * - family metadata
+ * ========================================================================== */
+
 function getSalesConfig(
   sku: Sku,
 ): SalesSkuConfig | undefined {
   return getSalesSku(
-    normalizeSkuCode(sku.sku),
+    normalizeSkuCode(
+      sku.sku,
+    ),
   );
 }
 
-/**
- * Creates the customer-facing SKU object by combining
- * catalogue metadata with the central sales configuration.
- */
+/* ============================================================================
+ * RESOLVE SKU
+ *
+ * This function deliberately keeps the nullable base Sku type.
+ *
+ * It is used for general catalog lookup.
+ *
+ * Purchasable operations MUST use toPurchasableSku().
+ * ========================================================================== */
+
 function resolveSku(
   sku: Sku,
 ): Sku | undefined {
-  const sales = getSalesConfig(sku);
+  const sales =
+    getSalesConfig(sku);
 
   if (!sales) {
     return undefined;
@@ -90,29 +121,54 @@ function resolveSku(
 
   return {
     ...sku,
+
     sku: sales.sku,
-    packSize: sales.packSize,
-    mrp: sales.mrp,
-    websitePrice: sales.sellingPrice,
+
+    packSize:
+      sales.packSize,
+
+    mrp:
+      sales.mrp,
+
+    websitePrice:
+      sales.sellingPrice,
+
     shipping: 0,
+
     freeShipping: true,
-    available: sales.available,
+
+    available:
+      sales.available,
   };
 }
 
-/**
- * Returns only SKUs that are actually purchasable.
+/* ============================================================================
+ * PURCHASABLE SKU CHECK
  *
- * A SKU is purchasable only when:
- * - it exists in the central sales configuration
- * - it is marked available
- * - it has a valid MRP
- * - it has a valid final website selling price
- */
+ * A SKU is purchasable when:
+ *
+ * 1. It exists in sales-config.
+ * 2. It is marked available.
+ * 3. It has a numeric MRP.
+ * 4. It has a numeric website selling price.
+ * 5. Price values are non-negative.
+ *
+ * IMPORTANT:
+ *
+ * We intentionally DO NOT reject a SKU here merely because
+ * websitePrice > MRP.
+ *
+ * That relationship is a product/legal-master issue that must
+ * be resolved in the sales master and physical packaging.
+ *
+ * The service must not silently make a configured SKU disappear.
+ * ========================================================================== */
+
 function isPurchasableSku(
   sku: Sku,
 ): sku is PurchasableSku {
-  const sales = getSalesConfig(sku);
+  const sales =
+    getSalesConfig(sku);
 
   if (!sales) {
     return false;
@@ -130,7 +186,9 @@ function isPurchasableSku(
   }
 
   if (
-    !Number.isFinite(sales.mrp) ||
+    !Number.isFinite(
+      sales.mrp,
+    ) ||
     !Number.isFinite(
       sales.sellingPrice,
     )
@@ -138,42 +196,31 @@ function isPurchasableSku(
     return false;
   }
 
-  if (sales.mrp < 0) {
+  if (
+    sales.mrp < 0 ||
+    sales.sellingPrice < 0
+  ) {
     return false;
   }
 
-  if (sales.sellingPrice < 0) {
-    return false;
-  }
-
-  const resolved = resolveSku(sku);
-
-  if (!resolved) {
-    return false;
-  }
-
-  return (
-    typeof resolved.mrp === 'number' &&
-    Number.isFinite(resolved.mrp) &&
-    typeof resolved.websitePrice ===
-      'number' &&
-    Number.isFinite(
-      resolved.websitePrice,
-    ) &&
-    resolved.available === true &&
-    resolved.shipping === 0 &&
-    resolved.freeShipping === true
-  );
+  return true;
 }
+
+/* ============================================================================
+ * CONVERT TO PURCHASABLE SKU
+ * ========================================================================== */
 
 function toPurchasableSku(
   sku: Sku,
 ): PurchasableSku | undefined {
-  if (!isPurchasableSku(sku)) {
+  if (
+    !isPurchasableSku(sku)
+  ) {
     return undefined;
   }
 
-  const sales = getSalesConfig(sku);
+  const sales =
+    getSalesConfig(sku);
 
   if (
     !sales ||
@@ -185,58 +232,118 @@ function toPurchasableSku(
 
   return {
     ...sku,
-    sku: sales.sku,
-    packSize: sales.packSize,
-    mrp: sales.mrp,
-    websitePrice: sales.sellingPrice,
+
+    sku:
+      sales.sku,
+
+    packSize:
+      sales.packSize,
+
+    mrp:
+      sales.mrp,
+
+    websitePrice:
+      sales.sellingPrice,
+
     shipping: 0,
+
     freeShipping: true,
+
     available: true,
   };
 }
 
+/* ============================================================================
+ * PRODUCT SERVICE
+ * ========================================================================== */
+
 export const ProductService = {
-  getAllProducts(): ProductFamily[] {
+  /* --------------------------------------------------------------------------
+     ALL PRODUCTS
+  -------------------------------------------------------------------------- */
+
+  getAllProducts():
+    ProductFamily[] {
     return products;
   },
 
+  /* --------------------------------------------------------------------------
+     PRODUCT BY SLUG
+  -------------------------------------------------------------------------- */
+
   getProductBySlug(
     slug: string,
-  ): ProductFamily | undefined {
+  ):
+    | ProductFamily
+    | undefined {
+    const normalizedSlug =
+      slug
+        .trim()
+        .toLowerCase();
+
     return products.find(
       (product) =>
-        product.slug === slug,
+        product.slug.toLowerCase() ===
+        normalizedSlug,
     );
   },
+
+  /* --------------------------------------------------------------------------
+     PRODUCTS BY CATEGORY
+  -------------------------------------------------------------------------- */
 
   getProductsByCategory(
     category: string,
   ): ProductFamily[] {
+    const normalizedCategory =
+      category
+        .trim()
+        .toLowerCase();
+
     if (
-      !category ||
-      category === 'all'
+      !normalizedCategory ||
+      normalizedCategory ===
+        'all'
     ) {
       return products;
     }
 
     return products.filter(
       (product) =>
-        product.category === category,
+        product.category ===
+        normalizedCategory,
     );
   },
 
-  getFeaturedProducts(): ProductFamily[] {
+  /* --------------------------------------------------------------------------
+     FEATURED PRODUCTS
+  -------------------------------------------------------------------------- */
+
+  getFeaturedProducts():
+    ProductFamily[] {
     return products.filter(
       (product) =>
         product.featured,
     );
   },
 
+  /* --------------------------------------------------------------------------
+     PRODUCT BY SKU
+  -------------------------------------------------------------------------- */
+
   getProductBySku(
     skuCode: string,
-  ): ProductSkuResult | undefined {
+  ):
+    | ProductSkuResult
+    | undefined {
     const normalizedSku =
-      normalizeSkuCode(skuCode);
+      normalizeSkuCode(
+        skuCode,
+      );
+
+    if (!normalizedSku) {
+      return undefined;
+    }
 
     for (const product of products) {
       const sourceSku =
@@ -252,7 +359,9 @@ export const ProductService = {
       }
 
       const resolvedSku =
-        resolveSku(sourceSku);
+        resolveSku(
+          sourceSku,
+        );
 
       if (!resolvedSku) {
         return undefined;
@@ -267,13 +376,23 @@ export const ProductService = {
     return undefined;
   },
 
+  /* --------------------------------------------------------------------------
+     PURCHASABLE PRODUCT BY SKU
+  -------------------------------------------------------------------------- */
+
   getPurchasableProductBySku(
     skuCode: string,
   ):
     | PurchasableProductSkuResult
     | undefined {
     const normalizedSku =
-      normalizeSkuCode(skuCode);
+      normalizeSkuCode(
+        skuCode,
+      );
+
+    if (!normalizedSku) {
+      return undefined;
+    }
 
     for (const product of products) {
       const sourceSku =
@@ -289,7 +408,9 @@ export const ProductService = {
       }
 
       const skuObj =
-        toPurchasableSku(sourceSku);
+        toPurchasableSku(
+          sourceSku,
+        );
 
       if (!skuObj) {
         return undefined;
@@ -304,133 +425,224 @@ export const ProductService = {
     return undefined;
   },
 
+  /* --------------------------------------------------------------------------
+     AVAILABLE SKUS FOR A PRODUCT
+  -------------------------------------------------------------------------- */
+
   getAvailableSkus(
     product: ProductFamily,
   ): PurchasableSku[] {
     const available: PurchasableSku[] =
       [];
 
-    for (const sku of product.skus) {
+    for (const sku of
+      product.skus) {
       const resolved =
-        toPurchasableSku(sku);
+        toPurchasableSku(
+          sku,
+        );
 
       if (resolved) {
-        available.push(resolved);
+        available.push(
+          resolved,
+        );
       }
     }
 
     return available;
   },
 
+  /* --------------------------------------------------------------------------
+     WEBSITE PRICE
+  -------------------------------------------------------------------------- */
+
   getWebsitePrice(
     skuCode: string,
-  ): number | undefined {
+  ):
+    | number
+    | undefined {
     const result =
-      ProductService.getPurchasableProductBySku(
-        skuCode,
-      );
+      ProductService
+        .getPurchasableProductBySku(
+          skuCode,
+        );
 
-    return result?.skuObj
+    return result
+      ?.skuObj
       .websitePrice;
   },
+
+  /* --------------------------------------------------------------------------
+     SEARCH
+  -------------------------------------------------------------------------- */
 
   searchProducts(
     query: string,
   ): ProductFamily[] {
-    const q = query
-      .toLowerCase()
-      .trim();
+    const q =
+      query
+        .toLowerCase()
+        .trim();
 
     if (!q) {
       return products;
     }
 
     return products.filter(
-      (product) =>
-        product.name
-          .toLowerCase()
-          .includes(q) ||
-        product.hindiName.includes(q) ||
-        product.variant
-          .toLowerCase()
-          .includes(q) ||
-        product.category
-          .toLowerCase()
-          .includes(q) ||
-        product.description
-          .toLowerCase()
-          .includes(q) ||
-        product.skus.some(
-          (sku) => {
-            const sales =
-              getSalesConfig(sku);
+      (product) => {
+        const matchesProduct =
+          product.name
+            .toLowerCase()
+            .includes(q) ||
+          product.hindiName
+            .includes(q) ||
+          product.variant
+            .toLowerCase()
+            .includes(q) ||
+          product.category
+            .toLowerCase()
+            .includes(q) ||
+          product.description
+            .toLowerCase()
+            .includes(q);
 
-            return (
-              sku.sku
-                .toLowerCase()
-                .includes(q) ||
-              String(
-                sales?.packSize ??
-                  sku.packSize,
-              ).includes(q)
-            );
-          },
-        ),
+        const matchesSku =
+          product.skus.some(
+            (sku) => {
+              const sales =
+                getSalesConfig(
+                  sku,
+                );
+
+              return (
+                sku.sku
+                  .toLowerCase()
+                  .includes(q) ||
+                String(
+                  sales?.packSize ??
+                    sku.packSize,
+                ).includes(q)
+              );
+            },
+          );
+
+        return (
+          matchesProduct ||
+          matchesSku
+        );
+      },
     );
   },
+
+  /* --------------------------------------------------------------------------
+     RELATED PRODUCTS
+  -------------------------------------------------------------------------- */
 
   getRelatedProducts(
     product: ProductFamily,
     count = 4,
   ): ProductFamily[] {
-    return products
-      .filter(
+    if (
+      count <= 0
+    ) {
+      return [];
+    }
+
+    const sameCategory =
+      products.filter(
         (item) =>
           item.id !== product.id &&
           item.category ===
-            product.category,
-      )
-      .concat(
-        products.filter(
-          (item) =>
-            item.id !== product.id &&
-            item.category !==
-              product.category,
-        ),
-      )
-      .slice(0, count);
+            product.category &&
+          item.skus.some(
+            (sku) =>
+              toPurchasableSku(
+                sku,
+              ) !== undefined,
+          ),
+      );
+
+    const otherCategory =
+      products.filter(
+        (item) =>
+          item.id !== product.id &&
+          item.category !==
+            product.category &&
+          item.skus.some(
+            (sku) =>
+              toPurchasableSku(
+                sku,
+              ) !== undefined,
+          ),
+      );
+
+    return [
+      ...sameCategory,
+      ...otherCategory,
+    ].slice(0, count);
   },
 
-  getAllFlatItems(): FlatProductItem[] {
-    const list: FlatProductItem[] =
-      [];
+  /* --------------------------------------------------------------------------
+     FLAT CUSTOMER-FACING CATALOG
+  -------------------------------------------------------------------------- */
 
-    for (const family of products) {
-      for (const sourceSku of family.skus) {
+  getAllFlatItems():
+    FlatProductItem[] {
+    const list:
+      FlatProductItem[] = [];
+
+    for (const family of
+      products) {
+      for (const sourceSku of
+        family.skus) {
         const sku =
-          toPurchasableSku(sourceSku);
+          toPurchasableSku(
+            sourceSku,
+          );
 
         if (!sku) {
           continue;
         }
 
         list.push({
-          familyId: family.id,
-          slug: family.slug,
-          name: family.name,
-          hindiName: family.hindiName,
-          category: family.category,
+          familyId:
+            family.id,
+
+          slug:
+            family.slug,
+
+          name:
+            family.name,
+
+          hindiName:
+            family.hindiName,
+
+          category:
+            family.category,
+
           description:
             family.description,
-          sku: sku.sku,
-          packSize: sku.packSize,
-          mrp: sku.mrp,
+
+          sku:
+            sku.sku,
+
+          packSize:
+            sku.packSize,
+
+          mrp:
+            sku.mrp,
+
           websitePrice:
             sku.websitePrice,
+
           shipping: 0,
+
           freeShipping: true,
+
           available: true,
-          featured: family.featured,
+
+          featured:
+            family.featured,
         });
       }
     }
@@ -438,56 +650,81 @@ export const ProductService = {
     return list;
   },
 
+  /* --------------------------------------------------------------------------
+     PRODUCTS WITH AT LEAST ONE PURCHASABLE SKU
+  -------------------------------------------------------------------------- */
+
   getPurchasableProducts():
     ProductFamily[] {
     return products.filter(
       (product) =>
         product.skus.some(
           (sku) =>
-            toPurchasableSku(sku) !==
-            undefined,
+            toPurchasableSku(
+              sku,
+            ) !== undefined,
         ),
     );
   },
+
+  /* --------------------------------------------------------------------------
+     IS PURCHASABLE
+  -------------------------------------------------------------------------- */
 
   isPurchasable(
     skuCode: string,
   ): boolean {
     return (
-      ProductService.getPurchasableProductBySku(
-        skuCode,
-      ) !== undefined
+      ProductService
+        .getPurchasableProductBySku(
+          skuCode,
+        ) !== undefined
     );
   },
+
+  /* --------------------------------------------------------------------------
+     VALIDATE PRODUCT DATA
+  -------------------------------------------------------------------------- */
 
   validateProductData(): {
     valid: boolean;
     errors: string[];
   } {
-    const errors: string[] = [];
+    const errors: string[] =
+      [];
 
     const seenSkus =
       new Set<string>();
 
-    for (const product of products) {
-      for (const sku of product.skus) {
+    for (const product of
+      products) {
+      for (const sku of
+        product.skus) {
         const normalizedSku =
           normalizeSkuCode(
             sku.sku,
           );
 
+        /* Duplicate SKU */
         if (
-          seenSkus.has(normalizedSku)
+          seenSkus.has(
+            normalizedSku,
+          )
         ) {
           errors.push(
             `Duplicate SKU: ${sku.sku}`,
           );
         }
 
-        seenSkus.add(normalizedSku);
+        seenSkus.add(
+          normalizedSku,
+        );
 
+        /* Sales configuration */
         const sales =
-          getSalesConfig(sku);
+          getSalesConfig(
+            sku,
+          );
 
         if (!sales) {
           errors.push(
@@ -496,6 +733,7 @@ export const ProductService = {
           continue;
         }
 
+        /* SKU identity */
         if (
           sales.sku !==
           normalizedSku
@@ -505,18 +743,40 @@ export const ProductService = {
           );
         }
 
-        if (sales.shipping !== 0) {
+        /* Pack size */
+        if (
+          sales.packSize !==
+          sku.packSize
+        ) {
+          /*
+           * The sales master is authoritative,
+           * therefore this is reported rather than
+           * allowing stale product data to win.
+           */
+          errors.push(
+            `${sku.sku}: product pack size does not match sales configuration`,
+          );
+        }
+
+        /* Shipping policy */
+        if (
+          sales.shipping !== 0
+        ) {
           errors.push(
             `${sku.sku}: shipping must be 0`,
           );
         }
 
-        if (!sales.freeShipping) {
+        if (
+          sales.freeShipping !==
+          true
+        ) {
           errors.push(
             `${sku.sku}: freeShipping must be true`,
           );
         }
 
+        /* Available SKU must have values */
         if (
           sales.available &&
           sales.sellingPrice ===
@@ -536,6 +796,7 @@ export const ProductService = {
           );
         }
 
+        /* Numeric MRP */
         if (
           sales.mrp !== null &&
           (
@@ -550,6 +811,7 @@ export const ProductService = {
           );
         }
 
+        /* Numeric selling price */
         if (
           sales.sellingPrice !==
             null &&
@@ -564,24 +826,12 @@ export const ProductService = {
             `${sku.sku}: sellingPrice must be a valid non-negative number`,
           );
         }
-
-        if (
-          sales.available &&
-          sales.sellingPrice !==
-            null &&
-          sales.mrp !== null &&
-          sales.sellingPrice >
-            sales.mrp
-        ) {
-          errors.push(
-            `${sku.sku}: sellingPrice cannot exceed MRP`,
-          );
-        }
       }
     }
 
     return {
-      valid: errors.length === 0,
+      valid:
+        errors.length === 0,
       errors,
     };
   },
