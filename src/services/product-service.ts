@@ -1,8 +1,8 @@
 import {
   products,
-  ProductFamily,
-  Sku,
-  ProductCategory,
+  type ProductFamily,
+  type Sku,
+  type ProductCategory,
 } from '../data/products';
 
 export interface FlatProductItem {
@@ -13,12 +13,12 @@ export interface FlatProductItem {
   category: ProductCategory;
   description: string;
   sku: string;
-  packSize: number;
+  packSize: number | string;
   mrp: number;
   websitePrice: number;
   shipping: 0;
   freeShipping: true;
-  available: boolean;
+  available: true;
   featured?: boolean;
 }
 
@@ -27,11 +27,14 @@ export interface ProductSkuResult {
   skuObj: Sku;
 }
 
+export type PurchasableSku = Sku & {
+  mrp: number;
+  websitePrice: number;
+};
+
 export interface PurchasableProductSkuResult {
   family: ProductFamily;
-  skuObj: Sku & {
-    websitePrice: number;
-  };
+  skuObj: PurchasableSku;
 }
 
 export const ProductService = {
@@ -66,12 +69,6 @@ export const ProductService = {
     );
   },
 
-  /**
-   * Returns the complete SKU record.
-   *
-   * This can include unavailable SKUs whose
-   * websitePrice is null.
-   */
   getProductBySku(
     skuCode: string,
   ): ProductSkuResult | undefined {
@@ -96,17 +93,6 @@ export const ProductService = {
     return undefined;
   },
 
-  /**
-   * Returns a SKU only when it is currently
-   * purchasable on the website.
-   *
-   * This is the method to use for:
-   * - Cart
-   * - Checkout
-   * - Order totals
-   * - Buy buttons
-   * - Add-to-cart actions
-   */
   getPurchasableProductBySku(
     skuCode: string,
   ): PurchasableProductSkuResult | undefined {
@@ -115,44 +101,55 @@ export const ProductService = {
         skuCode,
       );
 
+    if (!result) {
+      return undefined;
+    }
+
+    const { family, skuObj } = result;
+
+    const websitePrice =
+      skuObj.websitePrice;
+
+    const mrp = skuObj.mrp;
+
     if (
-      !result ||
-      !result.skuObj.available ||
-      result.skuObj.websitePrice === null
+      !skuObj.available ||
+      websitePrice === null ||
+      mrp === null ||
+      !Number.isFinite(websitePrice) ||
+      !Number.isFinite(mrp)
     ) {
       return undefined;
     }
 
     return {
-      family: result.family,
+      family,
       skuObj: {
-        ...result.skuObj,
-        websitePrice:
-          result.skuObj.websitePrice,
+        ...skuObj,
+        websitePrice,
+        mrp,
+        shipping: 0,
+        freeShipping: true,
+        available: true,
       },
     };
   },
 
-  /**
-   * Returns only currently available SKUs
-   * for a product family.
-   */
   getAvailableSkus(
     product: ProductFamily,
   ): Sku[] {
     return product.skus.filter(
       (sku) =>
         sku.available &&
-        sku.websitePrice !== null,
+        sku.websitePrice !== null &&
+        sku.mrp !== null &&
+        Number.isFinite(
+          sku.websitePrice,
+        ) &&
+        Number.isFinite(sku.mrp),
     );
   },
 
-  /**
-   * Returns the customer-facing price.
-   *
-   * websitePrice is already the final price.
-   * Shipping is never added here.
-   */
   getWebsitePrice(
     skuCode: string,
   ): number | undefined {
@@ -222,21 +219,22 @@ export const ProductService = {
       .slice(0, count);
   },
 
-  /**
-   * Returns only purchasable SKU records.
-   *
-   * This keeps null website prices and
-   * unavailable SKUs out of shopping data.
-   */
   getAllFlatItems(): FlatProductItem[] {
     const list: FlatProductItem[] = [];
 
     for (const family of products) {
       for (const skuObj of family.skus) {
+        const websitePrice =
+          skuObj.websitePrice;
+
+        const mrp = skuObj.mrp;
+
         if (
           !skuObj.available ||
-          skuObj.websitePrice === null ||
-          skuObj.mrp === null
+          websitePrice === null ||
+          mrp === null ||
+          !Number.isFinite(websitePrice) ||
+          !Number.isFinite(mrp)
         ) {
           continue;
         }
@@ -250,23 +248,11 @@ export const ProductService = {
           description: family.description,
           sku: skuObj.sku,
           packSize: skuObj.packSize,
-          mrp: skuObj.mrp,
-          websitePrice:
-            skuObj.websitePrice,
-
-          /*
-           * Customer-facing sales rule:
-           *
-           * websitePrice is the FINAL price.
-           * Shipping is already included.
-           *
-           * Never add shipping again.
-           * Never display a separate shipping charge.
-           */
+          mrp,
+          websitePrice,
           shipping: 0,
           freeShipping: true,
           available: true,
-
           featured: family.featured,
         });
       }
@@ -275,25 +261,22 @@ export const ProductService = {
     return list;
   },
 
-  /**
-   * Returns only products that have at least
-   * one currently purchasable SKU.
-   */
   getPurchasableProducts(): ProductFamily[] {
     return products.filter(
       (product) =>
         product.skus.some(
           (sku) =>
             sku.available &&
-            sku.websitePrice !== null,
+            sku.websitePrice !== null &&
+            sku.mrp !== null &&
+            Number.isFinite(
+              sku.websitePrice,
+            ) &&
+            Number.isFinite(sku.mrp),
         ),
     );
   },
 
-  /**
-   * Returns whether a SKU can currently be
-   * purchased from the website.
-   */
   isPurchasable(
     skuCode: string,
   ): boolean {
@@ -304,32 +287,26 @@ export const ProductService = {
     );
   },
 
-  /**
-   * Central validation for the product/sales
-   * relationship.
-   *
-   * Customer pricing rules:
-   * - shipping is always 0
-   * - freeShipping is always true
-   * - websitePrice comes from sales config
-   */
   validateProductData(): {
     valid: boolean;
     errors: string[];
   } {
     const errors: string[] = [];
 
-    for (const product of products) {
-      const skuSet = new Set<string>();
+    const seenSkus = new Set<string>();
 
+    for (const product of products) {
       for (const sku of product.skus) {
-        if (skuSet.has(sku.sku)) {
+        const normalizedSku =
+          sku.sku.toUpperCase();
+
+        if (seenSkus.has(normalizedSku)) {
           errors.push(
             `Duplicate SKU: ${sku.sku}`,
           );
         }
 
-        skuSet.add(sku.sku);
+        seenSkus.add(normalizedSku);
 
         if (sku.shipping !== 0) {
           errors.push(
@@ -345,28 +322,50 @@ export const ProductService = {
 
         if (
           sku.available &&
-          sku.websitePrice === null
+          (
+            sku.websitePrice === null ||
+            sku.mrp === null
+          )
         ) {
           errors.push(
-            `${sku.sku}: available SKU cannot have null websitePrice`,
+            `${sku.sku}: available SKU must have both websitePrice and MRP`,
           );
         }
 
         if (
           sku.mrp !== null &&
-          sku.mrp < 0
+          (
+            !Number.isFinite(sku.mrp) ||
+            sku.mrp < 0
+          )
         ) {
           errors.push(
-            `${sku.sku}: MRP cannot be negative`,
+            `${sku.sku}: MRP must be a valid non-negative number`,
           );
         }
 
         if (
           sku.websitePrice !== null &&
-          sku.websitePrice < 0
+          (
+            !Number.isFinite(
+              sku.websitePrice,
+            ) ||
+            sku.websitePrice < 0
+          )
         ) {
           errors.push(
-            `${sku.sku}: websitePrice cannot be negative`,
+            `${sku.sku}: websitePrice must be a valid non-negative number`,
+          );
+        }
+
+        if (
+          sku.available &&
+          sku.websitePrice !== null &&
+          sku.mrp !== null &&
+          sku.websitePrice > sku.mrp
+        ) {
+          errors.push(
+            `${sku.sku}: websitePrice cannot exceed MRP`,
           );
         }
       }
