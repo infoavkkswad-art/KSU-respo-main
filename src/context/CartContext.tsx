@@ -5,12 +5,18 @@ import React, {
   useState,
   type ReactNode,
 } from 'react';
+
 import {
   calculateCartTotals,
 } from '../utils/cart-calculations';
+
 import {
   ProductService,
 } from '../services/product-service';
+
+/* ============================================================================
+ * CART TYPES
+ * ========================================================================== */
 
 export interface CartItem {
   sku: string;
@@ -19,29 +25,90 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
+
   addItem: (
     sku: string,
     quantity?: number,
   ) => void;
-  removeItem: (sku: string) => void;
+
+  removeItem: (
+    sku: string,
+  ) => void;
+
   updateQuantity: (
     sku: string,
     quantity: number,
   ) => void;
+
   clearCart: () => void;
+
   subtotal: number;
+
   shippingTotal: 0;
+
   total: number;
+
   itemCount: number;
 }
 
+/* ============================================================================
+ * CONTEXT
+ * ========================================================================== */
+
 const CartContext =
-  createContext<CartContextType | undefined>(
-    undefined,
-  );
+  createContext<
+    CartContextType | undefined
+  >(undefined);
 
 const STORAGE_KEY =
   'kawad-swad-cart-v1';
+
+/* ============================================================================
+ * SKU NORMALIZATION
+ * ========================================================================== */
+
+function normalizeSku(
+  sku: string,
+): string {
+  return sku
+    .trim()
+    .toUpperCase();
+}
+
+/* ============================================================================
+ * QUANTITY NORMALIZATION
+ * ========================================================================== */
+
+function normalizeQuantity(
+  quantity: number,
+): number {
+  if (
+    !Number.isFinite(quantity) ||
+    quantity <= 0
+  ) {
+    return 0;
+  }
+
+  return Math.floor(quantity);
+}
+
+/* ============================================================================
+ * CART SANITIZATION
+ *
+ * Cart stores ONLY:
+ *
+ *   SKU + quantity
+ *
+ * It does NOT store:
+ *
+ * - price
+ * - MRP
+ * - shipping
+ * - product name
+ * - discount
+ *
+ * Those values must always come from the central catalog/sales system.
+ * ========================================================================== */
 
 function sanitizeCartItems(
   value: unknown,
@@ -50,10 +117,8 @@ function sanitizeCartItems(
     return [];
   }
 
-  const quantities = new Map<
-    string,
-    number
-  >();
+  const quantities =
+    new Map<string, number>();
 
   for (const item of value) {
     if (
@@ -69,36 +134,38 @@ function sanitizeCartItems(
     if (
       typeof candidate.sku !==
         'string' ||
-      !candidate.sku.trim() ||
+      !candidate.sku.trim()
+    ) {
+      continue;
+    }
+
+    if (
       typeof candidate.quantity !==
-        'number' ||
-      !Number.isFinite(
-        candidate.quantity,
-      ) ||
-      candidate.quantity <= 0
+        'number'
     ) {
       continue;
     }
 
     const sku =
-      candidate.sku
-        .trim()
-        .toUpperCase();
+      normalizeSku(
+        candidate.sku,
+      );
 
-    const quantity = Math.floor(
-      candidate.quantity,
-    );
+    const quantity =
+      normalizeQuantity(
+        candidate.quantity,
+      );
 
-    if (quantity <= 0) {
+    if (
+      !sku ||
+      quantity <= 0
+    ) {
       continue;
     }
 
     /*
-     * Resolve against the central product
-     * service. This automatically removes:
-     * - deleted SKUs
-     * - unavailable SKUs
-     * - SKUs without a valid website price
+     * ProductService is the gatekeeper for
+     * current SKU availability and pricing.
      */
     if (
       !ProductService.isPurchasable(
@@ -108,10 +175,28 @@ function sanitizeCartItems(
       continue;
     }
 
+    const previous =
+      quantities.get(sku) ?? 0;
+
+    const combined =
+      previous + quantity;
+
+    /*
+     * Protect against accidental numeric overflow.
+     * This is not expected during normal use, but
+     * keeps malformed localStorage data harmless.
+     */
+    if (
+      !Number.isSafeInteger(
+        combined,
+      )
+    ) {
+      continue;
+    }
+
     quantities.set(
       sku,
-      (quantities.get(sku) ?? 0) +
-        quantity,
+      combined,
     );
   }
 
@@ -124,6 +209,10 @@ function sanitizeCartItems(
     }),
   );
 }
+
+/* ============================================================================
+ * LOCAL STORAGE
+ * ========================================================================== */
 
 function readStoredCart(): CartItem[] {
   try {
@@ -150,9 +239,25 @@ function readStoredCart(): CartItem[] {
       parsed,
     );
   } catch {
+    /*
+     * Broken/corrupted localStorage
+     * must never break the shop.
+     */
+    try {
+      window.localStorage.removeItem(
+        STORAGE_KEY,
+      );
+    } catch {
+      // Ignore storage errors.
+    }
+
     return [];
   }
 }
+
+/* ============================================================================
+ * PROVIDER
+ * ========================================================================== */
 
 export function CartProvider({
   children,
@@ -164,36 +269,66 @@ export function CartProvider({
       readStoredCart,
     );
 
+  /* --------------------------------------------------------------------------
+     PERSIST CART
+  -------------------------------------------------------------------------- */
+
   useEffect(() => {
     try {
+      if (items.length === 0) {
+        window.localStorage.removeItem(
+          STORAGE_KEY,
+        );
+
+        return;
+      }
+
       window.localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify(items),
       );
     } catch {
-      // Ignore localStorage errors.
+      /*
+       * Storage failure must never
+       * break cart functionality.
+       */
     }
   }, [items]);
+
+  /* --------------------------------------------------------------------------
+     ADD ITEM
+  -------------------------------------------------------------------------- */
 
   const addItem = (
     sku: string,
     quantity = 1,
   ) => {
     if (
-      typeof sku !== 'string' ||
-      !sku.trim() ||
-      !Number.isFinite(quantity) ||
-      quantity <= 0
+      typeof sku !== 'string'
     ) {
       return;
     }
 
     const normalizedSku =
-      sku.trim().toUpperCase();
+      normalizeSku(sku);
+
+    if (!normalizedSku) {
+      return;
+    }
+
+    const qty =
+      normalizeQuantity(
+        quantity,
+      );
+
+    if (qty <= 0) {
+      return;
+    }
 
     /*
-     * Never allow unavailable or
-     * unpriced SKUs into the cart.
+     * Never allow a SKU into the cart unless
+     * the current central product service says
+     * that it is purchasable.
      */
     if (
       !ProductService.isPurchasable(
@@ -203,21 +338,39 @@ export function CartProvider({
       return;
     }
 
-    const qty = Math.floor(quantity);
+    setItems(
+      (previous) => {
+        const existing =
+          previous.find(
+            (item) =>
+              item.sku ===
+              normalizedSku,
+          );
 
-    if (qty <= 0) {
-      return;
-    }
+        if (!existing) {
+          return [
+            ...previous,
+            {
+              sku:
+                normalizedSku,
+              quantity:
+                qty,
+            },
+          ];
+        }
 
-    setItems((previous) => {
-      const existing =
-        previous.find(
-          (item) =>
-            item.sku ===
-            normalizedSku,
-        );
+        const combinedQuantity =
+          existing.quantity +
+          qty;
 
-      if (existing) {
+        if (
+          !Number.isSafeInteger(
+            combinedQuantity,
+          )
+        ) {
+          return previous;
+        }
+
         return previous.map(
           (item) =>
             item.sku ===
@@ -225,133 +378,197 @@ export function CartProvider({
               ? {
                   ...item,
                   quantity:
-                    item.quantity +
-                    qty,
+                    combinedQuantity,
                 }
               : item,
         );
-      }
-
-      return [
-        ...previous,
-        {
-          sku: normalizedSku,
-          quantity: qty,
-        },
-      ];
-    });
+      },
+    );
   };
+
+  /* --------------------------------------------------------------------------
+     REMOVE ITEM
+  -------------------------------------------------------------------------- */
 
   const removeItem = (
     sku: string,
   ) => {
-    const normalizedSku =
-      sku.trim().toUpperCase();
+    if (
+      typeof sku !== 'string'
+    ) {
+      return;
+    }
 
-    setItems((previous) =>
-      previous.filter(
-        (item) =>
-          item.sku !==
-          normalizedSku,
-      ),
+    const normalizedSku =
+      normalizeSku(sku);
+
+    if (!normalizedSku) {
+      return;
+    }
+
+    setItems(
+      (previous) =>
+        previous.filter(
+          (item) =>
+            item.sku !==
+            normalizedSku,
+        ),
     );
   };
+
+  /* --------------------------------------------------------------------------
+     UPDATE QUANTITY
+  -------------------------------------------------------------------------- */
 
   const updateQuantity = (
     sku: string,
     quantity: number,
   ) => {
-    const normalizedSku =
-      sku.trim().toUpperCase();
-
     if (
-      !Number.isFinite(quantity) ||
-      quantity <= 0
+      typeof sku !== 'string'
     ) {
-      removeItem(normalizedSku);
+      return;
+    }
+
+    const normalizedSku =
+      normalizeSku(sku);
+
+    if (!normalizedSku) {
+      return;
+    }
+
+    const qty =
+      normalizeQuantity(
+        quantity,
+      );
+
+    /*
+     * Quantity 0 means remove.
+     */
+    if (qty <= 0) {
+      removeItem(
+        normalizedSku,
+      );
+
       return;
     }
 
     /*
-     * Do not allow a quantity update to
-     * resurrect an unavailable SKU.
+     * Never resurrect a deleted/unavailable
+     * or unpriced SKU.
      */
     if (
       !ProductService.isPurchasable(
         normalizedSku,
       )
     ) {
-      removeItem(normalizedSku);
+      removeItem(
+        normalizedSku,
+      );
+
       return;
     }
 
-    const qty = Math.floor(quantity);
-
-    if (qty <= 0) {
-      removeItem(normalizedSku);
-      return;
-    }
-
-    setItems((previous) =>
-      previous.map(
-        (item) =>
-          item.sku ===
-          normalizedSku
-            ? {
-                ...item,
-                quantity: qty,
-              }
-            : item,
-      ),
+    setItems(
+      (previous) =>
+        previous.map(
+          (item) =>
+            item.sku ===
+            normalizedSku
+              ? {
+                  ...item,
+                  quantity: qty,
+                }
+              : item,
+        ),
     );
   };
+
+  /* --------------------------------------------------------------------------
+     CLEAR CART
+  -------------------------------------------------------------------------- */
 
   const clearCart = () => {
     setItems([]);
   };
 
-  /*
-   * All monetary calculations are centralized
-   * in cart-calculations.ts.
-   *
-   * websitePrice is already the final price
-   * including the shipping cost.
-   */
-  const {
-    subtotal,
-    shippingTotal,
-    total,
-    itemCount,
-  } = calculateCartTotals(items);
+  /* --------------------------------------------------------------------------
+     CLEAN EXISTING CART
+     -------------------------------------------------------------------------- */
 
-  /*
-   * If catalog data changes while the cart is
-   * open, calculation safely ignores invalid
-   * SKUs. Keep the stored cart clean as well.
-   */
   useEffect(() => {
     const sanitized =
       sanitizeCartItems(items);
 
     if (
-      JSON.stringify(sanitized) !==
+      JSON.stringify(
+        sanitized,
+      ) !==
       JSON.stringify(items)
     ) {
       setItems(sanitized);
     }
   }, [items]);
 
+  /* --------------------------------------------------------------------------
+     CALCULATE TOTALS
+  -------------------------------------------------------------------------- */
+
+  /*
+   * IMPORTANT:
+   *
+   * CartContext does NOT calculate product prices itself.
+   *
+   * calculateCartTotals() resolves each SKU through
+   * ProductService, which resolves pricing through
+   * sales-config.ts.
+   *
+   * Therefore:
+   *
+   * sales-config
+   *      ↓
+   * ProductService
+   *      ↓
+   * cart-calculations
+   *      ↓
+   * CartContext
+   *
+   * Website price already includes shipping.
+   */
+
+  const {
+    subtotal,
+    shippingTotal,
+    total,
+    itemCount,
+  } =
+    calculateCartTotals(
+      items,
+    );
+
+  /* --------------------------------------------------------------------------
+     PROVIDER VALUE
+  -------------------------------------------------------------------------- */
+
   return (
     <CartContext.Provider
       value={{
         items,
+
         addItem,
+
         removeItem,
+
         updateQuantity,
+
         clearCart,
+
         subtotal,
+
         shippingTotal,
+
         total,
+
         itemCount,
       }}
     >
@@ -360,9 +577,15 @@ export function CartProvider({
   );
 }
 
-export function useCart() {
+/* ============================================================================
+ * HOOK
+ * ========================================================================== */
+
+export function useCart(): CartContextType {
   const context =
-    useContext(CartContext);
+    useContext(
+      CartContext,
+    );
 
   if (!context) {
     throw new Error(
@@ -372,6 +595,10 @@ export function useCart() {
 
   return context;
 }
+
+/* ============================================================================
+ * PRICE FORMATTER
+ * ========================================================================== */
 
 export function formatPrice(
   amount: number,
