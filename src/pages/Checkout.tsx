@@ -3,37 +3,33 @@ import {
   useState,
   type FormEvent,
 } from 'react';
-
 import {
   Link,
   useNavigate,
 } from 'react-router-dom';
-
 import {
   ArrowLeft,
   ArrowRight,
+  CheckCircle,
   Lock,
   ShoppingBag,
-  Truck,
   ShieldCheck,
-  CheckCircle,
+  Truck,
 } from 'lucide-react';
 
-import {
-  SEO,
-} from '@/components/SEO';
+import { SEO } from '@/components/SEO';
 
 import {
+  FormContainer,
   FormField,
   FormStatusMessage,
-  FormContainer,
   useFormState,
   validators,
 } from '@/components/Form';
 
 import {
-  useCart,
   formatPrice,
+  useCart,
 } from '@/context/CartContext';
 
 import {
@@ -41,17 +37,11 @@ import {
   type CustomerInfo,
 } from '@/context/OrderContext';
 
-import {
-  ProductService,
-} from '@/services/product-service';
+import { ProductService } from '@/services/product-service';
 
-import {
-  PACK_LABELS,
-} from '@/data/products';
+import { PACK_LABELS } from '@/data/products';
 
-import {
-  apiClient,
-} from '@/services/api-client';
+import { apiClient } from '@/services/api-client';
 
 /* ============================================================================
  * CUSTOMER FORM
@@ -160,7 +150,7 @@ declare global {
 }
 
 /* ============================================================================
- * RAZORPAY SCRIPT LOADER
+ * RAZORPAY SCRIPT
  * ========================================================================== */
 
 const RAZORPAY_SCRIPT =
@@ -215,29 +205,20 @@ function loadRazorpayScript(): Promise<boolean> {
     }
 
     const script =
-      document.createElement(
-        'script',
-      );
+      document.createElement('script');
 
-    script.src =
-      RAZORPAY_SCRIPT;
-
+    script.src = RAZORPAY_SCRIPT;
     script.async = true;
 
-    script.onload = () =>
-      resolve(true);
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
 
-    script.onerror = () =>
-      resolve(false);
-
-    document.body.appendChild(
-      script,
-    );
+    document.body.appendChild(script);
   });
 }
 
 /* ============================================================================
- * CUSTOMER VALIDATION
+ * VALIDATION
  * ========================================================================== */
 
 function validateCustomer(
@@ -270,19 +251,9 @@ function validateCustomer(
     errors.push(
       'Please enter your full name.',
     );
-  } else if (
-    fullName.length < 4
-  ) {
+  } else if (fullName.length < 4) {
     errors.push(
       'Full name must contain at least 4 characters.',
-    );
-  } else if (
-    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(
-      fullName,
-    )
-  ) {
-    errors.push(
-      'Please enter a valid full name.',
     );
   }
 
@@ -290,11 +261,7 @@ function validateCustomer(
     errors.push(
       'Please enter your mobile number.',
     );
-  } else if (
-    !/^[6-9]\d{9}$/.test(
-      phone,
-    )
-  ) {
+  } else if (!/^[6-9]\d{9}$/.test(phone)) {
     errors.push(
       'Please enter a valid 10-digit Indian mobile number.',
     );
@@ -318,9 +285,7 @@ function validateCustomer(
     errors.push(
       'Please enter your delivery address.',
     );
-  } else if (
-    address.length < 10
-  ) {
+  } else if (address.length < 10) {
     errors.push(
       'Delivery address must contain at least 10 characters.',
     );
@@ -330,33 +295,11 @@ function validateCustomer(
     errors.push(
       'Please enter your city.',
     );
-  } else if (
-    city.length < 3
-  ) {
-    errors.push(
-      'Please enter a valid city.',
-    );
-  } else if (
-    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(
-      city,
-    )
-  ) {
-    errors.push(
-      'Please enter a valid city.',
-    );
   }
 
   if (!state) {
     errors.push(
       'Please select your state.',
-    );
-  } else if (
-    !INDIAN_STATES_AND_UTS.includes(
-      state as (typeof INDIAN_STATES_AND_UTS)[number],
-    )
-  ) {
-    errors.push(
-      'Please select a valid Indian state or union territory.',
     );
   }
 
@@ -364,11 +307,7 @@ function validateCustomer(
     errors.push(
       'Please enter your PIN code.',
     );
-  } else if (
-    !/^[1-9][0-9]{5}$/.test(
-      pincode,
-    )
-  ) {
+  } else if (!/^[1-9][0-9]{5}$/.test(pincode)) {
     errors.push(
       'Please enter a valid 6-digit Indian PIN code.',
     );
@@ -378,15 +317,13 @@ function validateCustomer(
 }
 
 /* ============================================================================
- * IDEMPOTENCY KEY
+ * IDEMPOTENCY
  * ========================================================================== */
 
 function createIdempotencyKey(): string {
   if (
-    typeof crypto !==
-      'undefined' &&
-    typeof crypto.randomUUID ===
-      'function'
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
   ) {
     return `ks-${crypto.randomUUID()}`;
   }
@@ -397,7 +334,7 @@ function createIdempotencyKey(): string {
 }
 
 /* ============================================================================
- * CHECKOUT
+ * CHECKOUT PAGE
  * ========================================================================== */
 
 export default function Checkout() {
@@ -417,9 +354,7 @@ export default function Checkout() {
     useNavigate();
 
   const form =
-    useFormState(
-      initialCustomer,
-    );
+    useFormState(initialCustomer);
 
   const [error, setError] =
     useState('');
@@ -429,22 +364,16 @@ export default function Checkout() {
     setPaymentOpening,
   ] = useState(false);
 
-  /*
-   * Preload Razorpay while the checkout page
-   * is visible.
-   */
   useEffect(() => {
     void loadRazorpayScript();
   }, []);
 
-  /*
-   * Resolve catalog snapshots for display only.
-   *
-   * Backend remains authoritative for final
-   * price, availability and order totals.
-   */
-  const resolvedItems =
-    items.map((item) => {
+  /* ==========================================================================
+   * PRODUCT DISPLAY DATA
+   * ======================================================================== */
+
+  const resolvedItems = items.map(
+    (item) => {
       const result =
         ProductService.getProductBySku(
           item.sku,
@@ -453,12 +382,13 @@ export default function Checkout() {
       return {
         ...item,
         family: result?.family,
-        sku: result?.skuObj,
+        skuData: result?.skuObj,
       };
-    });
+    },
+  );
 
   /* ==========================================================================
-   * SUBMIT
+   * SUBMIT ORDER
    * ======================================================================== */
 
   const submit = async (
@@ -469,17 +399,13 @@ export default function Checkout() {
     if (
       items.length === 0 ||
       paymentOpening ||
-      form.status ===
-        'submitting'
+      form.status === 'submitting'
     ) {
       return;
     }
 
     setError('');
 
-    /*
-     * Shared project validation.
-     */
     const sharedValid =
       form.validate({
         fullName:
@@ -498,9 +424,6 @@ export default function Checkout() {
           validators.pincode(),
       });
 
-    /*
-     * Checkout-specific validation.
-     */
     const validationErrors =
       validateCustomer(
         form.values,
@@ -508,8 +431,7 @@ export default function Checkout() {
 
     if (
       !sharedValid ||
-      validationErrors.length >
-        0
+      validationErrors.length > 0
     ) {
       setError(
         validationErrors[0] ??
@@ -521,48 +443,39 @@ export default function Checkout() {
       return;
     }
 
-    form.setStatus(
-      'submitting',
-    );
-
+    form.setStatus('submitting');
     setPaymentOpening(true);
 
     try {
       /* ================================================================
-       * 1. CREATE SERVER-SIDE ORDER
+       * CREATE BACKEND ORDER
        * ================================================================ */
 
       const orderResponse =
-        await apiClient.createOrder(
-          {
-            customer: {
-              ...form.values,
-              fullName:
-                form.values.fullName.trim(),
-              phone:
-                form.values.phone.trim(),
-              email:
-                form.values.email.trim(),
-              address:
-                form.values.address.trim(),
-              city:
-                form.values.city.trim(),
-              state:
-                form.values.state.trim(),
-              pincode:
-                form.values.pincode.trim(),
-            },
-
-            items,
-
-            idempotencyKey:
-              createIdempotencyKey(),
+        await apiClient.createOrder({
+          customer: {
+            ...form.values,
+            fullName:
+              form.values.fullName.trim(),
+            phone:
+              form.values.phone.trim(),
+            email:
+              form.values.email.trim(),
+            address:
+              form.values.address.trim(),
+            city:
+              form.values.city.trim(),
+            state:
+              form.values.state.trim(),
+            pincode:
+              form.values.pincode.trim(),
           },
-        );
 
-      /* ================================================================
-       * 2. VALIDATE PAYMENT DATA FROM BACKEND
-       * ================================================================ */
+          items,
+
+          idempotencyKey:
+            createIdempotencyKey(),
+        });
 
       if (
         !orderResponse.razorpayOrderId
@@ -586,8 +499,7 @@ export default function Checkout() {
         !Number.isFinite(
           orderResponse.amount,
         ) ||
-        orderResponse.amount <=
-          0
+        orderResponse.amount <= 0
       ) {
         throw new Error(
           'Invalid payment amount received from the server.',
@@ -595,7 +507,7 @@ export default function Checkout() {
       }
 
       /* ================================================================
-       * 3. LOAD RAZORPAY
+       * LOAD RAZORPAY
        * ================================================================ */
 
       const loaded =
@@ -611,182 +523,152 @@ export default function Checkout() {
       }
 
       /* ================================================================
-       * 4. OPEN RAZORPAY
+       * RAZORPAY OPTIONS
        * ================================================================ */
 
-      const options: RazorpayOptions =
-        {
-          key:
-            orderResponse.razorpayKeyId,
+      const options: RazorpayOptions = {
+        key:
+          orderResponse.razorpayKeyId,
 
-          amount:
-            orderResponse.amount,
+        amount:
+          orderResponse.amount,
 
-          currency:
-            orderResponse.currency ||
-            'INR',
+        currency:
+          orderResponse.currency ||
+          'INR',
 
+        name:
+          'Kawad Swad Udhyog',
+
+        description:
+          'Authentic Traditional Papad Order',
+
+        order_id:
+          orderResponse.razorpayOrderId,
+
+        prefill: {
           name:
-            'Kawad Swad Udhyog',
+            form.values.fullName.trim(),
 
-          description:
-            'Authentic Traditional Papad Order',
+          email:
+            form.values.email.trim(),
 
-          order_id:
-            orderResponse.razorpayOrderId,
+          contact:
+            form.values.phone.trim(),
+        },
 
-          prefill: {
-            name:
-              form.values.fullName.trim(),
+        theme: {
+          color: '#D97706',
+        },
 
-            email:
-              form.values.email.trim(),
+        handler:
+          async (
+            paymentResponse,
+          ) => {
+            try {
+              /* ======================================================
+               * VERIFY PAYMENT ON SERVER
+               * ====================================================== */
 
-            contact:
-              form.values.phone.trim(),
-          },
+              const verification =
+                await apiClient.verifyPayment({
+                  razorpay_order_id:
+                    paymentResponse.razorpay_order_id,
 
-          theme: {
-            color:
-              '#D97706',
-          },
+                  razorpay_payment_id:
+                    paymentResponse.razorpay_payment_id,
 
-          handler:
-            async (
-              paymentResponse,
-            ) => {
-              try {
-                /*
-                 * 5. SERVER-SIDE PAYMENT
-                 *    VERIFICATION
-                 */
-                const verification =
-                  await apiClient.verifyPayment(
-                    {
-                      razorpay_order_id:
-                        paymentResponse.razorpay_order_id,
-
-                      razorpay_payment_id:
-                        paymentResponse.razorpay_payment_id,
-
-                      razorpay_signature:
-                        paymentResponse.razorpay_signature,
-                    },
-                  );
-
-                if (
-                  verification.success !==
-                    true
-                ) {
-                  throw new Error(
-                    verification.message ||
-                      'Payment verification failed.',
-                  );
-                }
-
-                /*
-                 * 6. SAVE VERIFIED ORDER
-                 *
-                 * Use backend-confirmed order
-                 * data only.
-                 */
-                setCompletedOrder({
-                  orderId:
-                    verification.orderId ||
-                    orderResponse.orderId,
-
-                  customer:
-                    orderResponse.customer,
-
-                  items:
-                    orderResponse.items,
-
-                  subtotal:
-                    orderResponse.subtotal,
-
-                  /*
-                   * Shipping is always free on
-                   * the customer-facing website.
-                   */
-                  totalShipping: 0,
-
-                  total:
-                    orderResponse.total,
-
-                  timestamp:
-                    orderResponse.createdAt,
-
-                  status:
-                    'confirmed',
+                  razorpay_signature:
+                    paymentResponse.razorpay_signature,
                 });
 
-                /*
-                 * 7. CLEAR CART
-                 */
-                clearCart();
-
-                form.setStatus(
-                  'success',
-                );
-
-                setPaymentOpening(
-                  false,
-                );
-
-                /*
-                 * 8. SUCCESS PAGE
-                 */
-                navigate(
-                  '/order-success',
-                  {
-                    replace: true,
-                  },
-                );
-              } catch (
-                verificationError: unknown
+              if (
+                verification.success !==
+                true
               ) {
-                console.error(
-                  'PAYMENT VERIFICATION ERROR:',
-                  verificationError,
-                );
-
-                const message =
-                  verificationError instanceof
-                    Error &&
-                  verificationError.message
-                    ? verificationError.message
-                    : 'Payment verification failed. Please contact Kawad Swad support if money was deducted.';
-
-                setError(
-                  message,
-                );
-
-                form.setStatus(
-                  'error',
-                );
-
-                setPaymentOpening(
-                  false,
+                throw new Error(
+                  verification.message ||
+                    'Payment verification failed.',
                 );
               }
-            },
 
-          modal: {
-            ondismiss: () => {
-              form.setStatus(
-                'idle',
+              /* ======================================================
+               * SAVE VERIFIED ORDER
+               * ====================================================== */
+
+              setCompletedOrder({
+                orderId:
+                  verification.orderId ||
+                  orderResponse.orderId,
+
+                customer:
+                  orderResponse.customer,
+
+                items:
+                  orderResponse.items,
+
+                subtotal:
+                  orderResponse.subtotal,
+
+                totalShipping:
+                  orderResponse.shipping,
+
+                total:
+                  orderResponse.total,
+
+                timestamp:
+                  orderResponse.createdAt,
+
+                status: 'confirmed',
+              });
+
+              /* ======================================================
+               * CLEAR CART
+               * ====================================================== */
+
+              clearCart();
+
+              form.setStatus('success');
+              setPaymentOpening(false);
+
+              navigate(
+                '/order-success',
+                {
+                  replace: true,
+                },
+              );
+            } catch (
+              verificationError: unknown
+            ) {
+              console.error(
+                'PAYMENT VERIFICATION ERROR:',
+                verificationError,
               );
 
-              setPaymentOpening(
-                false,
-              );
+              const message =
+                verificationError instanceof
+                  Error &&
+                verificationError.message
+                  ? verificationError.message
+                  : 'Payment verification failed. Please contact Kawad Swad support if money was deducted.';
 
-              setError(
-                'Payment was cancelled or dismissed. You can retry anytime.',
-              );
-            },
+              setError(message);
+              form.setStatus('error');
+              setPaymentOpening(false);
+            }
           },
-        };
+
+        modal: {
+          ondismiss: () => {
+            form.setStatus('idle');
+            setPaymentOpening(false);
+
+            setError(
+              'Payment was cancelled or dismissed. You can retry anytime.',
+            );
+          },
+        },
+      };
 
       const razorpay =
         new window.Razorpay(
@@ -794,7 +676,9 @@ export default function Checkout() {
         );
 
       razorpay.open();
-    } catch (checkoutError: unknown) {
+    } catch (
+      checkoutError: unknown
+    ) {
       console.error(
         'CHECKOUT ERROR:',
         checkoutError,
@@ -808,14 +692,8 @@ export default function Checkout() {
           : 'We could not submit your order right now. Please try again.';
 
       setError(message);
-
-      form.setStatus(
-        'error',
-      );
-
-      setPaymentOpening(
-        false,
-      );
+      form.setStatus('error');
+      setPaymentOpening(false);
     }
   };
 
@@ -858,7 +736,7 @@ export default function Checkout() {
   }
 
   /* ==========================================================================
-   * RENDER
+   * PAGE
    * ======================================================================== */
 
   return (
@@ -872,8 +750,6 @@ export default function Checkout() {
 
       <section className="bg-brand-cream py-6 sm:py-8 lg:py-12">
         <div className="container-max container-px">
-
-          {/* Breadcrumb */}
 
           <div className="mb-5 flex items-center gap-2 text-xs text-brand-brown/50 sm:mb-6">
             <Link
@@ -1068,10 +944,12 @@ export default function Checkout() {
                   onChange={(value) =>
                     form.setValue(
                       'pincode',
-                      value.replace(
-                        /\D/g,
-                        '',
-                      ).slice(0, 6),
+                      value
+                        .replace(
+                          /\D/g,
+                          '',
+                        )
+                        .slice(0, 6),
                     )
                   }
                   error={
@@ -1122,7 +1000,6 @@ export default function Checkout() {
                     active:shadow-none
                     disabled:cursor-not-allowed
                     disabled:opacity-60
-                    disabled:hover:translate-y-0
                   "
                 >
                   {paymentOpening ? (
@@ -1191,8 +1068,7 @@ export default function Checkout() {
 
                   <p className="mt-1 text-xs text-brand-brown/50">
                     {items.length}{' '}
-                    {items.length ===
-                    1
+                    {items.length === 1
                       ? 'product'
                       : 'products'}{' '}
                     in your order
@@ -1206,22 +1082,22 @@ export default function Checkout() {
                         const product =
                           item.family;
 
-                        const sku =
-                          item.sku;
+                        const skuData =
+                          item.skuData;
 
                         const packLabel =
-                          sku
+                          skuData
                             ? PACK_LABELS[
-                                sku.packSize
+                                skuData.packSize
                               ] ??
-                              `${sku.packSize}g`
+                              `${skuData.packSize}g`
                             : '';
 
                         const unitPrice =
-                          sku &&
-                          typeof sku.websitePrice ===
+                          skuData &&
+                          typeof skuData.websitePrice ===
                             'number'
-                            ? sku.websitePrice
+                            ? skuData.websitePrice
                             : 0;
 
                         const lineTotal =
@@ -1230,9 +1106,7 @@ export default function Checkout() {
 
                         return (
                           <div
-                            key={
-                              item.sku
-                            }
+                            key={item.sku}
                             className="flex gap-3"
                           >
                             <div className="min-w-0 flex-1">
@@ -1262,6 +1136,7 @@ export default function Checkout() {
 
                 <div className="border-t border-brand-brown/10 p-5">
                   <div className="space-y-2.5 text-sm">
+
                     <div className="flex justify-between gap-4 text-brand-brown/65">
                       <span>
                         Subtotal
@@ -1280,8 +1155,7 @@ export default function Checkout() {
                       </span>
 
                       <span className="font-semibold text-green-700">
-                        {shippingTotal ===
-                        0
+                        {shippingTotal === 0
                           ? 'Free'
                           : formatPrice(
                               shippingTotal,
@@ -1300,6 +1174,7 @@ export default function Checkout() {
                         )}
                       </span>
                     </div>
+
                   </div>
 
                   <div className="mt-5 rounded-xl bg-green-50 px-4 py-3 text-xs leading-relaxed text-green-800">
@@ -1341,6 +1216,7 @@ export default function Checkout() {
                 Back to Cart
               </Link>
             </aside>
+
           </div>
         </div>
       </section>
