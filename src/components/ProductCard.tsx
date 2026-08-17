@@ -19,6 +19,7 @@ import {
 
 import type {
   ProductFamily,
+  Sku,
 } from '@/data/products';
 
 import {
@@ -42,25 +43,47 @@ import {
   ReviewService,
 } from '@/services/review-service';
 
-import {
-  ProductService,
-} from '@/services/product-service';
-
 import type {
   ReviewSummary,
 } from '@/types/reviews';
+
+import {
+  ProductService,
+} from '@/services/product-service';
 
 interface ProductCardProps {
   product: ProductFamily;
   className?: string;
 }
 
+type PurchasableCardSku = Sku & {
+  mrp: number;
+  websitePrice: number;
+};
+
+function isPurchasableSku(
+  sku: Sku | undefined,
+): sku is PurchasableCardSku {
+  return (
+    !!sku &&
+    sku.available === true &&
+    typeof sku.websitePrice === 'number' &&
+    Number.isFinite(sku.websitePrice) &&
+    sku.websitePrice >= 0 &&
+    typeof sku.mrp === 'number' &&
+    Number.isFinite(sku.mrp) &&
+    sku.mrp >= 0 &&
+    sku.websitePrice <= sku.mrp
+  );
+}
+
 export function ProductCard({
   product,
   className = '',
 }: ProductCardProps) {
-  const { addItem } =
-    useCart();
+  const {
+    addItem,
+  } = useCart();
 
   const navigate =
     useNavigate();
@@ -92,8 +115,8 @@ export function ProductCard({
     useId();
 
   /*
-   * ProductService receives the SKU data already
-   * resolved through the central sales configuration.
+   * ProductService is the single customer-facing
+   * catalog authority.
    *
    * ProductCard never calculates:
    * - factory price
@@ -101,16 +124,20 @@ export function ProductCard({
    * - distributor price
    * - shipping
    * - profit
-   * - discount
+   * - discounts
    *
    * websitePrice is the final customer-facing price.
    */
   const purchasableSkus =
     useMemo(
       () =>
-        ProductService.getAvailableSkus(
-          product,
-        ),
+        ProductService
+          .getAvailableSkus(
+            product,
+          )
+          .filter(
+            isPurchasableSku,
+          ),
       [product],
     );
 
@@ -121,8 +148,8 @@ export function ProductCard({
     purchasableSkus[0];
 
   /*
-   * Keep selected SKU valid if the available
-   * SKU list changes.
+   * Keep selected SKU valid if
+   * the catalog changes.
    */
   useEffect(() => {
     if (
@@ -145,7 +172,7 @@ export function ProductCard({
   ]);
 
   /*
-   * Load review summary.
+   * Load real approved-review summary.
    */
   useEffect(() => {
     let cancelled = false;
@@ -185,7 +212,7 @@ export function ProductCard({
         }
       };
 
-    loadReviewSummary();
+    void loadReviewSummary();
 
     return () => {
       cancelled = true;
@@ -193,8 +220,8 @@ export function ProductCard({
   }, [product.id]);
 
   /*
-   * A product without an available SKU must
-   * never render a broken purchase card.
+   * Never render a broken card when
+   * no purchasable SKU exists.
    */
   if (!selectedSku) {
     return null;
@@ -203,27 +230,8 @@ export function ProductCard({
   const packLabel =
     PACK_LABELS[
       selectedSku.packSize
-    ] ||
+    ] ??
     `${selectedSku.packSize}g`;
-
-  const isPurchasable =
-    selectedSku.available ===
-      true &&
-    typeof selectedSku.websitePrice ===
-      'number' &&
-    Number.isFinite(
-      selectedSku.websitePrice,
-    ) &&
-    selectedSku.websitePrice >=
-      0 &&
-    typeof selectedSku.mrp ===
-      'number' &&
-    Number.isFinite(
-      selectedSku.mrp,
-    ) &&
-    selectedSku.mrp >= 0 &&
-    selectedSku.websitePrice <=
-      selectedSku.mrp;
 
   const hasReviews =
     reviewSummary !== null &&
@@ -233,10 +241,6 @@ export function ProductCard({
       0;
 
   const handleAdd = () => {
-    if (!isPurchasable) {
-      return;
-    }
-
     addItem(
       selectedSku.sku,
       1,
@@ -253,10 +257,6 @@ export function ProductCard({
   };
 
   const handleBuyNow = () => {
-    if (!isPurchasable) {
-      return;
-    }
-
     addItem(
       selectedSku.sku,
       1,
@@ -291,10 +291,6 @@ export function ProductCard({
         ${className}
       `}
     >
-      {/* ================================================================
-          PRODUCT IMAGE
-      ================================================================ */}
-
       <Link
         to={`/product/${product.slug}`}
         aria-label={`View details for ${product.name}`}
@@ -323,7 +319,6 @@ export function ProductCard({
             transition-all
             duration-500
             group-hover/image:inset-1.5
-            group-hover/image:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-14px_30px_rgba(62,39,35,0.08)]
           "
           aria-hidden="true"
         />
@@ -345,7 +340,6 @@ export function ProductCard({
             duration-500
             group-hover/image:w-[54%]
             group-hover/image:bg-brand-brown/20
-            group-hover/image:blur-[11px]
           "
           aria-hidden="true"
         />
@@ -406,10 +400,6 @@ export function ProductCard({
         />
       </Link>
 
-      {/* ================================================================
-          PRODUCT INFORMATION
-      ================================================================ */}
-
       <div
         className="
           flex
@@ -421,9 +411,6 @@ export function ProductCard({
         "
       >
         <div className="min-w-0">
-
-          {/* PRODUCT NAME */}
-
           <Link
             to={`/product/${product.slug}`}
             className="
@@ -443,8 +430,6 @@ export function ProductCard({
             {product.name}
           </Link>
 
-          {/* VARIANT */}
-
           <p
             className="
               mb-2
@@ -459,10 +444,6 @@ export function ProductCard({
           >
             {product.variant}
           </p>
-
-          {/* ============================================================
-              REVIEWS
-          ============================================================ */}
 
           <Link
             to={`/product/${product.slug}#reviews`}
@@ -482,7 +463,7 @@ export function ProductCard({
               reviewsLoading
                 ? `Loading reviews for ${product.name}`
                 : hasReviews
-                  ? `${reviewSummary!.averageRating.toFixed(1)} out of 5 stars from ${reviewSummary!.reviewCount} reviews`
+                  ? `${reviewSummary.averageRating.toFixed(1)} out of 5 stars from ${reviewSummary.reviewCount} reviews`
                   : `No reviews yet for ${product.name}`
             }
           >
@@ -502,16 +483,15 @@ export function ProductCard({
                     sm:w-3
                   "
                 />
-
                 Loading reviews...
               </span>
             ) : hasReviews ? (
               <StarRating
                 rating={
-                  reviewSummary!.averageRating
+                  reviewSummary.averageRating
                 }
                 reviewCount={
-                  reviewSummary!.reviewCount
+                  reviewSummary.reviewCount
                 }
                 size="sm"
                 showValue
@@ -539,17 +519,12 @@ export function ProductCard({
                 >
                   ☆☆☆☆☆
                 </span>
-
                 <span>
                   No reviews yet
                 </span>
               </span>
             )}
           </Link>
-
-          {/* ============================================================
-              PACK SIZE
-          ============================================================ */}
 
           <div className="mb-3 sm:mb-4">
             {product.category ===
@@ -601,14 +576,13 @@ export function ProductCard({
                     }
                     onChange={(
                       event,
-                    ) =>
+                    ) => {
                       setSelectedSkuIndex(
                         Number(
-                          event.target
-                            .value,
+                          event.target.value,
                         ),
-                      )
-                    }
+                      );
+                    }}
                     className="
                       min-h-[40px]
                       w-full
@@ -629,26 +603,25 @@ export function ProductCard({
                       focus:border-brand-red
                       focus:ring-2
                       focus:ring-brand-red/10
-                      hover:border-brand-brown/25
                       sm:text-xs
                     "
                     aria-label={`Select pack size for ${product.name}`}
                   >
                     {purchasableSkus.map(
                       (
-                        skuObj,
+                        sku,
                         index,
                       ) => (
                         <option
                           key={
-                            skuObj.sku
+                            sku.sku
                           }
                           value={index}
                         >
                           {PACK_LABELS[
-                            skuObj.packSize
-                          ] ||
-                            `${skuObj.packSize}g`}
+                            sku.packSize
+                          ] ??
+                            `${sku.packSize}g`}
                         </option>
                       ),
                     )}
@@ -672,10 +645,6 @@ export function ProductCard({
             )}
           </div>
 
-          {/* ============================================================
-              PRICE
-          ============================================================ */}
-
           <div className="mb-1 flex flex-wrap items-baseline gap-2">
             <span
               className="
@@ -685,32 +654,26 @@ export function ProductCard({
                 sm:text-xl
               "
             >
-              {isPurchasable
-                ? formatPrice(
-                    selectedSku.websitePrice,
-                  )
-                : 'Price Coming Soon'}
+              {formatPrice(
+                selectedSku.websitePrice,
+              )}
             </span>
 
-            {isPurchasable &&
-              selectedSku.mrp >
-                selectedSku.websitePrice && (
-                <span
-                  className="
-                    text-xs
-                    text-brand-brown/40
-                    line-through
-                  "
-                  aria-label={`MRP ${formatPrice(selectedSku.mrp)}`}
-                >
-                  {formatPrice(
-                    selectedSku.mrp,
-                  )}
-                </span>
-              )}
+            {selectedSku.mrp >
+              selectedSku.websitePrice && (
+              <span
+                className="
+                  text-xs
+                  text-brand-brown/40
+                  line-through
+                "
+              >
+                {formatPrice(
+                  selectedSku.mrp,
+                )}
+              </span>
+            )}
           </div>
-
-          {/* SHIPPING */}
 
           <p
             className="
@@ -727,22 +690,10 @@ export function ProductCard({
           </p>
         </div>
 
-        {/* ================================================================
-            ACTIONS
-        ================================================================ */}
-
         <div className="mt-1 grid grid-cols-2 gap-2">
-
-          {/* ADD TO CART */}
-
           <button
             type="button"
-            onClick={
-              handleAdd
-            }
-            disabled={
-              !isPurchasable
-            }
+            onClick={handleAdd}
             className={`
               group/cart
               relative
@@ -760,12 +711,8 @@ export function ProductCard({
               transition-all
               duration-200
               active:translate-y-[2px]
-              active:shadow-none
-              disabled:cursor-not-allowed
-              disabled:opacity-50
               sm:text-xs
               md:text-sm
-
               ${
                 added
                   ? `
@@ -780,26 +727,16 @@ export function ProductCard({
                     text-brand-brown
                     shadow-[0_4px_0_rgba(78,52,46,0.10)]
                     hover:-translate-y-0.5
-                    hover:border-brand-brown/25
                     hover:bg-brand-cream
-                    hover:shadow-[0_6px_0_rgba(78,52,46,0.12)]
                   `
               }
             `}
-            aria-label={`Add ${product.name} (${packLabel}) to cart`}
           >
             {added ? (
               <>
                 <Check
-                  className="
-                    h-3.5
-                    w-3.5
-                    shrink-0
-                    sm:h-4
-                    sm:w-4
-                  "
+                  className="h-3.5 w-3.5"
                 />
-
                 <span>
                   Added
                 </span>
@@ -807,15 +744,8 @@ export function ProductCard({
             ) : (
               <>
                 <Plus
-                  className="
-                    h-3.5
-                    w-3.5
-                    shrink-0
-                    sm:h-4
-                    sm:w-4
-                  "
+                  className="h-3.5 w-3.5"
                 />
-
                 <span>
                   Cart
                 </span>
@@ -823,16 +753,9 @@ export function ProductCard({
             )}
           </button>
 
-          {/* BUY NOW */}
-
           <button
             type="button"
-            onClick={
-              handleBuyNow
-            }
-            disabled={
-              !isPurchasable
-            }
+            onClick={handleBuyNow}
             className="
               relative
               flex
@@ -853,26 +776,15 @@ export function ProductCard({
               duration-200
               hover:-translate-y-0.5
               hover:bg-brand-red-dark
-              hover:shadow-[0_6px_0_#a51f08]
               active:translate-y-[2px]
               active:shadow-none
-              disabled:cursor-not-allowed
-              disabled:opacity-50
               sm:text-xs
               md:text-sm
             "
-            aria-label={`Buy ${product.name} (${packLabel}) now`}
           >
             <Zap
-              className="
-                h-3.5
-                w-3.5
-                shrink-0
-                sm:h-4
-                sm:w-4
-              "
+              className="h-3.5 w-3.5"
             />
-
             <span>
               Buy Now
             </span>
