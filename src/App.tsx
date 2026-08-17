@@ -16,47 +16,78 @@ import { FloatingCart } from '@/components/FloatingCart';
 import { CartProvider } from '@/context/CartContext';
 import { OrderProvider } from '@/context/OrderContext';
 
+// ProductDetail is imported directly because its current
+// module export must remain compatible with TypeScript's
+// React.lazy default-export contract.
+import ProductDetail from '@/pages/ProductDetail';
+
 // Lazy load pages for code splitting
 const Home = lazy(() => import('@/pages/Home'));
 const About = lazy(() => import('@/pages/About'));
 const Products = lazy(() => import('@/pages/Products'));
-const ProductDetail = lazy(
-  () => import('@/pages/ProductDetail'),
-);
 const Shop = lazy(() => import('@/pages/Shop'));
 const Cart = lazy(() => import('@/pages/Cart'));
 const Checkout = lazy(() => import('@/pages/Checkout'));
+
 const OrderSuccess = lazy(
   () => import('@/pages/OrderSuccess'),
 );
+
 const TrackOrder = lazy(
   () => import('@/pages/TrackOrder'),
 );
+
 const Business = lazy(
   () => import('@/pages/Business'),
 );
+
 const BulkOrders = lazy(
   () => import('@/pages/BulkOrders'),
 );
+
 const Distributor = lazy(
   () => import('@/pages/Distributor'),
 );
+
 const Manufacturing = lazy(
   () => import('@/pages/Manufacturing'),
 );
+
 const WorkWithUs = lazy(
   () => import('@/pages/WorkWithUs'),
 );
-const Gallery = lazy(() => import('@/pages/Gallery'));
-const Reviews = lazy(() => import('@/pages/Reviews'));
-const Blog = lazy(() => import('@/pages/Blog'));
+
+const Gallery = lazy(
+  () => import('@/pages/Gallery'),
+);
+
+const Reviews = lazy(
+  () => import('@/pages/Reviews'),
+);
+
+const Blog = lazy(
+  () => import('@/pages/Blog'),
+);
+
 const BlogDetail = lazy(
   () => import('@/pages/BlogDetail'),
 );
-const Media = lazy(() => import('@/pages/Media'));
-const Contact = lazy(() => import('@/pages/Contact'));
-const FAQ = lazy(() => import('@/pages/FAQ'));
-const Policies = lazy(() => import('@/pages/Policies'));
+
+const Media = lazy(
+  () => import('@/pages/Media'),
+);
+
+const Contact = lazy(
+  () => import('@/pages/Contact'),
+);
+
+const FAQ = lazy(
+  () => import('@/pages/FAQ'),
+);
+
+const Policies = lazy(
+  () => import('@/pages/Policies'),
+);
 
 function PageLoader() {
   return (
@@ -247,7 +278,6 @@ export default function App() {
 
             <Footer />
 
-            {/* Sticky cart appears after an item is added */}
             <FloatingCart />
 
             <WhatsAppButton />
