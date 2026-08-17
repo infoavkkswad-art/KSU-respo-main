@@ -6,10 +6,16 @@ import {
   Search,
 } from 'lucide-react';
 
-import { SEO, breadcrumbSchema } from '@/components/SEO';
+import {
+  SEO,
+  breadcrumbSchema,
+} from '@/components/SEO';
+
 import { ProductCard } from '@/components/ProductCard';
 import { Reveal } from '@/components/Reveal';
+
 import { ProductService } from '@/services/product-service';
+
 import {
   getSalesSku,
   isSkuAvailable,
@@ -52,13 +58,13 @@ type SortOption =
   (typeof SORT_OPTIONS)[number];
 
 /**
- * A SKU is purchasable only when:
- * 1. It exists in the central sales configuration.
- * 2. It is marked available there.
- * 3. It has a valid selling price.
- * 4. It has a valid MRP.
+ * Customer-facing SKU after validation against
+ * the central sales configuration.
  *
- * The sales-config file is the authority.
+ * IMPORTANT:
+ * products.ts intentionally allows nullable prices.
+ * ShopSku represents only a SKU that has passed all
+ * customer-facing purchase checks.
  */
 type ShopSku = Sku & {
   websitePrice: number;
@@ -68,6 +74,12 @@ type ShopSku = Sku & {
   freeShipping: true;
 };
 
+/**
+ * Validate and convert a catalog SKU into a
+ * customer-facing sales-controlled SKU.
+ *
+ * sales-config.ts is the pricing authority.
+ */
 function getSalesControlledSku(
   sku: Sku,
 ): ShopSku | null {
@@ -119,8 +131,8 @@ function getSalesControlledSku(
     ...sku,
 
     /*
-     * CENTRAL SALES CONFIG OVERRIDES
-     * old product data.
+     * Central sales configuration overrides
+     * any stale pricing in products.ts.
      */
     websitePrice:
       salesSku.sellingPrice,
@@ -141,9 +153,6 @@ function getSalesControlledSku(
 /**
  * Create a product copy whose SKU pricing is
  * controlled by sales-config.ts.
- *
- * This is important because ProductCard receives
- * ProductFamily and reads its SKU prices.
  */
 function getSalesControlledProduct(
   product: ProductFamily,
@@ -186,30 +195,71 @@ function getShopProducts(): ProductFamily[] {
 }
 
 /**
- * The price slider must use current sales prices,
- * not old prices stored elsewhere.
+ * Get only valid numeric prices from a
+ * ProductFamily.
+ *
+ * This is the important TypeScript boundary.
+ *
+ * ProductFamily.skus is declared using the base
+ * Sku type, where websitePrice may be null.
+ *
+ * Therefore we must narrow it again before
+ * passing prices into Math.min / Math.max.
+ */
+function getValidWebsitePrices(
+  product: ProductFamily,
+): number[] {
+  return product.skus
+    .map(
+      (sku) => sku.websitePrice,
+    )
+    .filter(
+      (
+        price,
+      ): price is number =>
+        typeof price === 'number' &&
+        Number.isFinite(price),
+    );
+}
+
+/**
+ * Safely get the lowest valid website price.
+ */
+function getMinimumWebsitePrice(
+  product: ProductFamily,
+): number {
+  const prices =
+    getValidWebsitePrices(product);
+
+  return prices.length > 0
+    ? Math.min(...prices)
+    : Number.POSITIVE_INFINITY;
+}
+
+/**
+ * Safely get the highest valid website price.
+ */
+function getMaximumWebsitePrice(
+  product: ProductFamily,
+): number {
+  const prices =
+    getValidWebsitePrices(product);
+
+  return prices.length > 0
+    ? Math.max(...prices)
+    : Number.NEGATIVE_INFINITY;
+}
+
+/**
+ * Build the catalog once for the static price
+ * slider boundaries.
  */
 const catalogProducts =
   getShopProducts();
 
 const catalogPrices =
   catalogProducts.flatMap(
-    (product) =>
-      product.skus
-        .map(
-          (sku) =>
-            typeof sku.websitePrice ===
-            'number'
-              ? sku.websitePrice
-              : null,
-        )
-        .filter(
-          (
-            price,
-          ): price is number =>
-            price !== null &&
-            Number.isFinite(price),
-        ),
+    getValidWebsitePrices,
   );
 
 const MIN_PRICE =
@@ -318,18 +368,17 @@ export default function Shop() {
       /*
        * PRICE FILTER
        *
-       * Any product with at least one
-       * purchasable SKU inside the selected
-       * price range remains visible.
+       * Keep a product visible if at least
+       * one valid customer-facing SKU is
+       * within the selected price limit.
        */
       list = list.filter(
         (product) =>
-          product.skus.some(
-            (sku) =>
-              typeof sku.websitePrice ===
-                'number' &&
-              sku.websitePrice <=
-                maxPrice,
+          getValidWebsitePrices(
+            product,
+          ).some(
+            (price) =>
+              price <= maxPrice,
           ),
       );
 
@@ -339,53 +388,25 @@ export default function Shop() {
       switch (sortBy) {
         case 'price-low':
           list = [...list].sort(
-            (a, b) => {
-              const aPrice =
-                Math.min(
-                  ...a.skus.map(
-                    (sku) =>
-                      sku.websitePrice,
-                  ),
-                );
-
-              const bPrice =
-                Math.min(
-                  ...b.skus.map(
-                    (sku) =>
-                      sku.websitePrice,
-                  ),
-                );
-
-              return (
-                aPrice - bPrice
-              );
-            },
+            (a, b) =>
+              getMinimumWebsitePrice(
+                a,
+              ) -
+              getMinimumWebsitePrice(
+                b,
+              ),
           );
           break;
 
         case 'price-high':
           list = [...list].sort(
-            (a, b) => {
-              const aPrice =
-                Math.max(
-                  ...a.skus.map(
-                    (sku) =>
-                      sku.websitePrice,
-                  ),
-                );
-
-              const bPrice =
-                Math.max(
-                  ...b.skus.map(
-                    (sku) =>
-                      sku.websitePrice,
-                  ),
-                );
-
-              return (
-                bPrice - aPrice
-              );
-            },
+            (a, b) =>
+              getMaximumWebsitePrice(
+                b,
+              ) -
+              getMaximumWebsitePrice(
+                a,
+              ),
           );
           break;
 
@@ -1190,8 +1211,6 @@ export default function Shop() {
                 </button>
               </div>
             ) : (
-              /* PRODUCT GRID */
-
               <div
                 className="
                   grid
