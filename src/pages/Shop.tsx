@@ -40,7 +40,14 @@ const SORT_OPTIONS = [
 
 type SortOption = (typeof SORT_OPTIONS)[number];
 
-function isPurchasableSku(sku: Sku): boolean {
+type PurchasableSku = Sku & {
+  websitePrice: number;
+  mrp: number;
+};
+
+function isPurchasableSku(
+  sku: Sku,
+): sku is PurchasableSku {
   return (
     sku.available === true &&
     typeof sku.websitePrice === 'number' &&
@@ -52,18 +59,27 @@ function isPurchasableSku(sku: Sku): boolean {
   );
 }
 
-function getAvailableSkus(product: ProductFamily): Sku[] {
-  return product.skus.filter(isPurchasableSku);
+function getAvailableSkus(
+  product: ProductFamily,
+): PurchasableSku[] {
+  return product.skus.filter(
+    isPurchasableSku,
+  );
 }
 
-function getAvailablePrices(product: ProductFamily): number[] {
+function getAvailablePrices(
+  product: ProductFamily,
+): number[] {
   return getAvailableSkus(product).map(
     (sku) => sku.websitePrice,
   );
 }
 
-const catalogPrices: number[] = ProductService.getAllProducts()
-  .flatMap((product) => getAvailablePrices(product));
+const catalogPrices: number[] =
+  ProductService.getAllProducts()
+    .flatMap((product) =>
+      getAvailablePrices(product),
+    );
 
 const MIN_PRICE =
   catalogPrices.length > 0
@@ -76,15 +92,25 @@ const MAX_PRICE =
     : 0;
 
 export default function Shop() {
-  const [searchParams] = useSearchParams();
+  const [searchParams] =
+    useSearchParams();
 
-  const initialQuery = searchParams.get('q') || '';
+  const initialQuery =
+    searchParams.get('q') || '';
 
-  const [search, setSearch] = useState(initialQuery);
+  const [search, setSearch] =
+    useState(initialQuery);
+
   const [category, setCategory] =
-    useState<ProductCategory | 'all'>('all');
+    useState<
+      ProductCategory | 'all'
+    >('all');
+
   const [sortBy, setSortBy] =
-    useState<SortOption>('default');
+    useState<SortOption>(
+      'default',
+    );
+
   const [maxPrice, setMaxPrice] =
     useState(MAX_PRICE);
 
@@ -94,102 +120,160 @@ export default function Shop() {
   ] = useState(false);
 
   const filtered = useMemo(() => {
-    let list = ProductService
-      .getPurchasableProducts()
-      .filter((product) =>
-        getAvailableSkus(product).length > 0,
-      );
+    let list =
+      ProductService.getPurchasableProducts()
+        .filter(
+          (product) =>
+            getAvailableSkus(product)
+              .length > 0,
+        );
 
+    /*
+     * CATEGORY
+     */
     if (category !== 'all') {
       list = list.filter(
         (product) =>
-          product.category === category,
+          product.category ===
+          category,
       );
     }
 
-    const query = search.trim().toLowerCase();
+    /*
+     * SEARCH
+     */
+    const query =
+      search.trim().toLowerCase();
 
     if (query) {
-      list = list.filter((product) => {
-        const matchesProduct =
-          product.name
-            .toLowerCase()
-            .includes(query) ||
-          product.hindiName.includes(query) ||
-          product.variant
-            .toLowerCase()
-            .includes(query) ||
-          product.category
-            .toLowerCase()
-            .includes(query) ||
-          product.description
-            .toLowerCase()
-            .includes(query);
-
-        const matchesSku = getAvailableSkus(product).some(
-          (sku) =>
-            sku.sku
+      list = list.filter(
+        (product) => {
+          const matchesProduct =
+            product.name
               .toLowerCase()
               .includes(query) ||
-            String(sku.packSize).includes(query),
-        );
+            product.hindiName.includes(
+              query,
+            ) ||
+            product.variant
+              .toLowerCase()
+              .includes(query) ||
+            product.category
+              .toLowerCase()
+              .includes(query) ||
+            product.description
+              .toLowerCase()
+              .includes(query);
 
-        return matchesProduct || matchesSku;
-      });
+          const matchesSku =
+            getAvailableSkus(
+              product,
+            ).some(
+              (sku) =>
+                sku.sku
+                  .toLowerCase()
+                  .includes(query) ||
+                String(
+                  sku.packSize,
+                ).includes(query),
+            );
+
+          return (
+            matchesProduct ||
+            matchesSku
+          );
+        },
+      );
     }
 
-    list = list.filter((product) =>
-      getAvailablePrices(product).some(
-        (price) => price <= maxPrice,
-      ),
+    /*
+     * PRICE FILTER
+     */
+    list = list.filter(
+      (product) =>
+        getAvailablePrices(
+          product,
+        ).some(
+          (price) =>
+            price <= maxPrice,
+        ),
     );
 
+    /*
+     * SORT
+     */
     switch (sortBy) {
       case 'price-low':
-        list = [...list].sort((a, b) => {
-          const aPrices = getAvailablePrices(a);
-          const bPrices = getAvailablePrices(b);
+        list = [...list].sort(
+          (a, b) => {
+            const aPrices =
+              getAvailablePrices(a);
 
-          const aPrice =
-            aPrices.length > 0
-              ? Math.min(...aPrices)
-              : Infinity;
+            const bPrices =
+              getAvailablePrices(b);
 
-          const bPrice =
-            bPrices.length > 0
-              ? Math.min(...bPrices)
-              : Infinity;
+            const aPrice =
+              aPrices.length > 0
+                ? Math.min(
+                    ...aPrices,
+                  )
+                : Infinity;
 
-          return aPrice - bPrice;
-        });
+            const bPrice =
+              bPrices.length > 0
+                ? Math.min(
+                    ...bPrices,
+                  )
+                : Infinity;
+
+            return (
+              aPrice - bPrice
+            );
+          },
+        );
         break;
 
       case 'price-high':
-        list = [...list].sort((a, b) => {
-          const aPrices = getAvailablePrices(a);
-          const bPrices = getAvailablePrices(b);
+        list = [...list].sort(
+          (a, b) => {
+            const aPrices =
+              getAvailablePrices(a);
 
-          const aPrice =
-            aPrices.length > 0
-              ? Math.max(...aPrices)
-              : -Infinity;
+            const bPrices =
+              getAvailablePrices(b);
 
-          const bPrice =
-            bPrices.length > 0
-              ? Math.max(...bPrices)
-              : -Infinity;
+            const aPrice =
+              aPrices.length > 0
+                ? Math.max(
+                    ...aPrices,
+                  )
+                : -Infinity;
 
-          return bPrice - aPrice;
-        });
+            const bPrice =
+              bPrices.length > 0
+                ? Math.max(
+                    ...bPrices,
+                  )
+                : -Infinity;
+
+            return (
+              bPrice - aPrice
+            );
+          },
+        );
         break;
 
       case 'name':
-        list = [...list].sort((a, b) =>
-          a.name.localeCompare(
-            b.name,
-            undefined,
-            { sensitivity: 'base' },
-          ),
+        list = [...list].sort(
+          (a, b) =>
+            a.name.localeCompare(
+              b.name,
+              undefined,
+              {
+                sensitivity:
+                  'base',
+              },
+            ),
         );
         break;
 
@@ -198,7 +282,12 @@ export default function Shop() {
     }
 
     return list;
-  }, [category, search, sortBy, maxPrice]);
+  }, [
+    category,
+    search,
+    sortBy,
+    maxPrice,
+  ]);
 
   const clearFilters = () => {
     setCategory('all');
@@ -208,8 +297,12 @@ export default function Shop() {
   };
 
   const activeFilterCount =
-    (category !== 'all' ? 1 : 0) +
-    (maxPrice < MAX_PRICE ? 1 : 0) +
+    (category !== 'all'
+      ? 1
+      : 0) +
+    (maxPrice < MAX_PRICE
+      ? 1
+      : 0) +
     (search.trim() ? 1 : 0);
 
   return (
@@ -219,8 +312,14 @@ export default function Shop() {
         description="Shop authentic Kawad Swad papads from Nimar. Explore moong, chana, urad and combo packs."
         path="/shop"
         structuredData={breadcrumbSchema([
-          { name: 'Home', path: '/' },
-          { name: 'Shop', path: '/shop' },
+          {
+            name: 'Home',
+            path: '/',
+          },
+          {
+            name: 'Shop',
+            path: '/shop',
+          },
         ])}
       />
 
@@ -312,7 +411,9 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={() =>
-                    setShowMobileFilters(false)
+                    setShowMobileFilters(
+                      false,
+                    )
                   }
                   className="
                     flex h-10 w-10
@@ -345,50 +446,60 @@ export default function Shop() {
                 </h3>
 
                 <div className="space-y-1">
-                  {categories.map((cat) => {
-                    const active = category === cat;
+                  {categories.map(
+                    (cat) => {
+                      const active =
+                        category === cat;
 
-                    return (
-                      <button
-                        type="button"
-                        key={cat}
-                        onClick={() => setCategory(cat)}
-                        className={`
-                          flex
-                          min-h-[44px]
-                          w-full
-                          items-center
-                          rounded-xl
-                          px-3
-                          py-2.5
-                          text-left
-                          text-sm
-                          transition-all
-                          duration-200
-                          ${
-                            active
-                              ? `
-                                bg-brand-green
-                                font-semibold
-                                text-white
-                                shadow-[0_3px_0_#315238,0_6px_12px_rgba(62,39,35,0.10)]
-                                -translate-y-0.5
-                              `
-                              : `
-                                text-brand-brown/70
-                                hover:-translate-y-0.5
-                                hover:bg-brand-green/5
-                                hover:text-brand-green
-                              `
+                      return (
+                        <button
+                          type="button"
+                          key={cat}
+                          onClick={() =>
+                            setCategory(
+                              cat,
+                            )
                           }
-                        `}
-                      >
-                        {cat === 'all'
-                          ? 'All Products'
-                          : CATEGORY_LABELS[cat]}
-                      </button>
-                    );
-                  })}
+                          className={`
+                            flex
+                            min-h-[44px]
+                            w-full
+                            items-center
+                            rounded-xl
+                            px-3
+                            py-2.5
+                            text-left
+                            text-sm
+                            transition-all
+                            duration-200
+                            ${
+                              active
+                                ? `
+                                  bg-brand-green
+                                  font-semibold
+                                  text-white
+                                  shadow-[0_3px_0_#315238,0_6px_12px_rgba(62,39,35,0.10)]
+                                  -translate-y-0.5
+                                `
+                                : `
+                                  text-brand-brown/70
+                                  hover:-translate-y-0.5
+                                  hover:bg-brand-green/5
+                                  hover:text-brand-green
+                                `
+                            }
+                          `}
+                        >
+                          {cat ===
+                          'all'
+                            ? 'All Products'
+                            : CATEGORY_LABELS[
+                                cat
+                              ]}
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
               </div>
 
@@ -424,7 +535,10 @@ export default function Shop() {
                   value={maxPrice}
                   onChange={(event) =>
                     setMaxPrice(
-                      Number(event.target.value),
+                      Number(
+                        event.target
+                          .value,
+                      ),
                     )
                   }
                   className="
@@ -440,15 +554,22 @@ export default function Shop() {
                 />
 
                 <div className="mt-2 flex justify-between text-[10px] text-brand-brown/40">
-                  <span>₹{MIN_PRICE}</span>
-                  <span>₹{MAX_PRICE}</span>
+                  <span>
+                    ₹{MIN_PRICE}
+                  </span>
+
+                  <span>
+                    ₹{MAX_PRICE}
+                  </span>
                 </div>
               </div>
 
               <div className="mt-6 flex gap-2 lg:hidden">
                 <button
                   type="button"
-                  onClick={clearFilters}
+                  onClick={
+                    clearFilters
+                  }
                   className="
                     min-h-[46px]
                     flex-1
@@ -470,7 +591,9 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={() =>
-                    setShowMobileFilters(false)
+                    setShowMobileFilters(
+                      false,
+                    )
                   }
                   className="
                     min-h-[46px]
@@ -529,7 +652,10 @@ export default function Shop() {
                     type="search"
                     value={search}
                     onChange={(event) =>
-                      setSearch(event.target.value)
+                      setSearch(
+                        event.target
+                          .value,
+                      )
                     }
                     placeholder="Search papads, flavours or pack sizes..."
                     className="
@@ -548,7 +674,9 @@ export default function Shop() {
                   {search && (
                     <button
                       type="button"
-                      onClick={() => setSearch('')}
+                      onClick={() =>
+                        setSearch('')
+                      }
                       className="
                         flex
                         h-8
@@ -573,7 +701,8 @@ export default function Shop() {
               <div className="flex items-center gap-2">
                 <p className="hidden text-xs text-brand-brown/50 sm:block">
                   {filtered.length}{' '}
-                  {filtered.length === 1
+                  {filtered.length ===
+                  1
                     ? 'product'
                     : 'products'}
                 </p>
@@ -581,7 +710,9 @@ export default function Shop() {
                 <select
                   value={sortBy}
                   onChange={(event) => {
-                    const value = event.target.value;
+                    const value =
+                      event.target
+                        .value;
 
                     if (
                       SORT_OPTIONS.includes(
@@ -661,7 +792,9 @@ export default function Shop() {
                     lg:hidden
                   "
                   aria-label="Open shop filters"
-                  aria-expanded={showMobileFilters}
+                  aria-expanded={
+                    showMobileFilters
+                  }
                 >
                   <SlidersHorizontal className="h-4 w-4" />
 
@@ -669,7 +802,8 @@ export default function Shop() {
                     Filters
                   </span>
 
-                  {activeFilterCount > 0 && (
+                  {activeFilterCount >
+                    0 && (
                     <span
                       className="
                         absolute
@@ -689,20 +823,26 @@ export default function Shop() {
                         shadow-[0_2px_5px_rgba(230,126,34,0.30)]
                       "
                     >
-                      {activeFilterCount}
+                      {
+                        activeFilterCount
+                      }
                     </span>
                   )}
                 </button>
               </div>
             </div>
 
-            {activeFilterCount > 0 && (
+            {activeFilterCount >
+              0 && (
               <div className="mb-5 flex flex-wrap items-center gap-2">
-                {category !== 'all' && (
+                {category !==
+                  'all' && (
                   <button
                     type="button"
                     onClick={() =>
-                      setCategory('all')
+                      setCategory(
+                        'all',
+                      )
                     }
                     className="
                       inline-flex
@@ -719,16 +859,24 @@ export default function Shop() {
                       hover:-translate-y-0.5
                     "
                   >
-                    {CATEGORY_LABELS[category]}
+                    {
+                      CATEGORY_LABELS[
+                        category
+                      ]
+                    }
+
                     <X className="h-3 w-3" />
                   </button>
                 )}
 
-                {maxPrice < MAX_PRICE && (
+                {maxPrice <
+                  MAX_PRICE && (
                   <button
                     type="button"
                     onClick={() =>
-                      setMaxPrice(MAX_PRICE)
+                      setMaxPrice(
+                        MAX_PRICE,
+                      )
                     }
                     className="
                       inline-flex
@@ -745,7 +893,9 @@ export default function Shop() {
                       hover:-translate-y-0.5
                     "
                   >
-                    Under ₹{maxPrice}
+                    Under ₹
+                    {maxPrice}
+
                     <X className="h-3 w-3" />
                   </button>
                 )}
@@ -753,7 +903,9 @@ export default function Shop() {
                 {search.trim() && (
                   <button
                     type="button"
-                    onClick={() => setSearch('')}
+                    onClick={() =>
+                      setSearch('')
+                    }
                     className="
                       inline-flex
                       min-h-[32px]
@@ -771,7 +923,8 @@ export default function Shop() {
                     "
                   >
                     <span className="max-w-[180px] truncate">
-                      Search: {search}
+                      Search:{' '}
+                      {search}
                     </span>
 
                     <X className="h-3 w-3 shrink-0" />
@@ -780,7 +933,9 @@ export default function Shop() {
 
                 <button
                   type="button"
-                  onClick={clearFilters}
+                  onClick={
+                    clearFilters
+                  }
                   className="
                     min-h-[32px]
                     px-2
@@ -798,12 +953,14 @@ export default function Shop() {
 
             <div className="mb-4 text-xs text-brand-brown/50 sm:hidden">
               Showing {filtered.length}{' '}
-              {filtered.length === 1
+              {filtered.length ===
+              1
                 ? 'product'
                 : 'products'}
             </div>
 
-            {filtered.length === 0 ? (
+            {filtered.length ===
+            0 ? (
               <div
                 className="
                   rounded-3xl
@@ -838,13 +995,18 @@ export default function Shop() {
                 </h2>
 
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-brand-brown/50">
-                  Try another search or remove some
-                  filters to discover more products.
+                  Try another search
+                  or remove some
+                  filters to
+                  discover more
+                  products.
                 </p>
 
                 <button
                   type="button"
-                  onClick={clearFilters}
+                  onClick={
+                    clearFilters
+                  }
                   className="
                     btn-primary
                     mt-6
@@ -871,17 +1033,29 @@ export default function Shop() {
                   xl:grid-cols-4
                 "
               >
-                {filtered.map((product, index) => (
-                  <Reveal
-                    key={product.id}
-                    delay={Math.min(
-                      index * 40,
-                      240,
-                    )}
-                  >
-                    <ProductCard product={product} />
-                  </Reveal>
-                ))}
+                {filtered.map(
+                  (
+                    product,
+                    index,
+                  ) => (
+                    <Reveal
+                      key={
+                        product.id
+                      }
+                      delay={Math.min(
+                        index *
+                          40,
+                        240,
+                      )}
+                    >
+                      <ProductCard
+                        product={
+                          product
+                        }
+                      />
+                    </Reveal>
+                  ),
+                )}
               </div>
             )}
           </main>
