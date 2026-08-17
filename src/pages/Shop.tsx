@@ -10,13 +10,20 @@ import { SEO, breadcrumbSchema } from '@/components/SEO';
 import { ProductCard } from '@/components/ProductCard';
 import { Reveal } from '@/components/Reveal';
 import { ProductService } from '@/services/product-service';
+import {
+  getSalesSku,
+  isSkuAvailable,
+} from '@/data/sales-config';
+
 import type {
   ProductCategory,
   ProductFamily,
   Sku,
 } from '@/data/products';
 
-const categories: Array<ProductCategory | 'all'> = [
+const categories: Array<
+  ProductCategory | 'all'
+> = [
   'all',
   'moong',
   'chana',
@@ -24,7 +31,10 @@ const categories: Array<ProductCategory | 'all'> = [
   'combo',
 ];
 
-const CATEGORY_LABELS: Record<ProductCategory, string> = {
+const CATEGORY_LABELS: Record<
+  ProductCategory,
+  string
+> = {
   moong: 'Moong Family',
   chana: 'Chana Family',
   urad: 'Urad Family',
@@ -38,44 +48,168 @@ const SORT_OPTIONS = [
   'name',
 ] as const;
 
-type SortOption = (typeof SORT_OPTIONS)[number];
+type SortOption =
+  (typeof SORT_OPTIONS)[number];
 
-type PurchasableSku = Sku & {
+/**
+ * A SKU is purchasable only when:
+ * 1. It exists in the central sales configuration.
+ * 2. It is marked available there.
+ * 3. It has a valid selling price.
+ * 4. It has a valid MRP.
+ *
+ * The sales-config file is the authority.
+ */
+type ShopSku = Sku & {
   websitePrice: number;
   mrp: number;
+  available: true;
+  shipping: 0;
+  freeShipping: true;
 };
 
-function isPurchasableSku(
+function getSalesControlledSku(
   sku: Sku,
-): sku is PurchasableSku {
-  return (
-    sku.available === true &&
-    typeof sku.websitePrice === 'number' &&
-    Number.isFinite(sku.websitePrice) &&
-    sku.websitePrice >= 0 &&
-    typeof sku.mrp === 'number' &&
-    Number.isFinite(sku.mrp) &&
-    sku.mrp >= 0
+): ShopSku | null {
+  const salesSku = getSalesSku(
+    sku.sku,
   );
+
+  if (!salesSku) {
+    return null;
+  }
+
+  if (!isSkuAvailable(sku.sku)) {
+    return null;
+  }
+
+  if (
+    salesSku.sellingPrice === null ||
+    salesSku.mrp === null
+  ) {
+    return null;
+  }
+
+  if (
+    !Number.isFinite(
+      salesSku.sellingPrice,
+    ) ||
+    !Number.isFinite(
+      salesSku.mrp,
+    )
+  ) {
+    return null;
+  }
+
+  if (
+    salesSku.sellingPrice < 0 ||
+    salesSku.mrp < 0
+  ) {
+    return null;
+  }
+
+  if (
+    salesSku.sellingPrice >
+    salesSku.mrp
+  ) {
+    return null;
+  }
+
+  return {
+    ...sku,
+
+    /*
+     * CENTRAL SALES CONFIG OVERRIDES
+     * old product data.
+     */
+    websitePrice:
+      salesSku.sellingPrice,
+
+    mrp: salesSku.mrp,
+
+    packSize:
+      salesSku.packSize,
+
+    available: true,
+
+    shipping: 0,
+
+    freeShipping: true,
+  };
 }
 
-function getPurchasableSkus(
+/**
+ * Create a product copy whose SKU pricing is
+ * controlled by sales-config.ts.
+ *
+ * This is important because ProductCard receives
+ * ProductFamily and reads its SKU prices.
+ */
+function getSalesControlledProduct(
   product: ProductFamily,
-): PurchasableSku[] {
-  return product.skus.filter(isPurchasableSku);
+): ProductFamily | null {
+  const salesSkus = product.skus
+    .map(getSalesControlledSku)
+    .filter(
+      (
+        sku,
+      ): sku is ShopSku =>
+        sku !== null,
+    );
+
+  if (salesSkus.length === 0) {
+    return null;
+  }
+
+  return {
+    ...product,
+    skus: salesSkus,
+  };
 }
 
-function getPurchasablePrices(
-  product: ProductFamily,
-): number[] {
-  return getPurchasableSkus(product).map(
-    (sku) => sku.websitePrice,
-  );
+/**
+ * Build the complete customer-facing catalog
+ * from the central sales configuration.
+ */
+function getShopProducts(): ProductFamily[] {
+  return ProductService
+    .getAllProducts()
+    .map(
+      getSalesControlledProduct,
+    )
+    .filter(
+      (
+        product,
+      ): product is ProductFamily =>
+        product !== null,
+    );
 }
 
-const catalogPrices = ProductService.getAllProducts()
-  .flatMap((product) =>
-    getPurchasablePrices(product),
+/**
+ * The price slider must use current sales prices,
+ * not old prices stored elsewhere.
+ */
+const catalogProducts =
+  getShopProducts();
+
+const catalogPrices =
+  catalogProducts.flatMap(
+    (product) =>
+      product.skus
+        .map(
+          (sku) =>
+            typeof sku.websitePrice ===
+            'number'
+              ? sku.websitePrice
+              : null,
+        )
+        .filter(
+          (
+            price,
+          ): price is number =>
+            price !== null &&
+            Number.isFinite(price),
+        ),
   );
 
 const MIN_PRICE =
@@ -89,7 +223,8 @@ const MAX_PRICE =
     : 0;
 
 export default function Shop() {
-  const [searchParams] = useSearchParams();
+  const [searchParams] =
+    useSearchParams();
 
   const initialQuery =
     searchParams.get('q') ?? '';
@@ -98,10 +233,14 @@ export default function Shop() {
     useState(initialQuery);
 
   const [category, setCategory] =
-    useState<ProductCategory | 'all'>('all');
+    useState<
+      ProductCategory | 'all'
+    >('all');
 
   const [sortBy, setSortBy] =
-    useState<SortOption>('default');
+    useState<SortOption>(
+      'default',
+    );
 
   const [maxPrice, setMaxPrice] =
     useState(MAX_PRICE);
@@ -111,133 +250,170 @@ export default function Shop() {
     setShowMobileFilters,
   ] = useState(false);
 
-  const filtered = useMemo(() => {
-    let list = ProductService.getAllProducts()
-      .map((product) => ({
-        product,
-        skus: getPurchasableSkus(product),
-      }))
-      .filter(
-        (entry) => entry.skus.length > 0,
-      );
+  const filtered =
+    useMemo(() => {
+      let list =
+        getShopProducts();
 
-    if (category !== 'all') {
-      list = list.filter(
-        ({ product }) =>
-          product.category === category,
-      );
-    }
+      /*
+       * CATEGORY
+       */
+      if (
+        category !== 'all'
+      ) {
+        list = list.filter(
+          (product) =>
+            product.category ===
+            category,
+        );
+      }
 
-    const query =
-      search.trim().toLowerCase();
+      /*
+       * SEARCH
+       */
+      const query =
+        search
+          .trim()
+          .toLowerCase();
 
-    if (query) {
-      list = list.filter(
-        ({ product, skus }) => {
-          const matchesProduct =
-            product.name
-              .toLowerCase()
-              .includes(query) ||
-            product.hindiName.includes(query) ||
-            product.variant
-              .toLowerCase()
-              .includes(query) ||
-            product.category
-              .toLowerCase()
-              .includes(query) ||
-            product.description
-              .toLowerCase()
-              .includes(query);
-
-          const matchesSku = skus.some(
-            (sku) =>
-              sku.sku
+      if (query) {
+        list = list.filter(
+          (product) => {
+            const matchesProduct =
+              product.name
                 .toLowerCase()
                 .includes(query) ||
-              String(sku.packSize).includes(
+              product.hindiName.includes(
                 query,
-              ),
-          );
+              ) ||
+              product.variant
+                .toLowerCase()
+                .includes(query) ||
+              product.category
+                .toLowerCase()
+                .includes(query) ||
+              product.description
+                .toLowerCase()
+                .includes(query);
 
-          return (
-            matchesProduct ||
-            matchesSku
-          );
-        },
+            const matchesSku =
+              product.skus.some(
+                (sku) =>
+                  sku.sku
+                    .toLowerCase()
+                    .includes(query) ||
+                  String(
+                    sku.packSize,
+                  ).includes(query),
+              );
+
+            return (
+              matchesProduct ||
+              matchesSku
+            );
+          },
+        );
+      }
+
+      /*
+       * PRICE FILTER
+       *
+       * Any product with at least one
+       * purchasable SKU inside the selected
+       * price range remains visible.
+       */
+      list = list.filter(
+        (product) =>
+          product.skus.some(
+            (sku) =>
+              typeof sku.websitePrice ===
+                'number' &&
+              sku.websitePrice <=
+                maxPrice,
+          ),
       );
-    }
 
-    list = list.filter(
-      ({ skus }) =>
-        skus.some(
-          (sku) =>
-            sku.websitePrice <= maxPrice,
-        ),
-    );
+      /*
+       * SORT
+       */
+      switch (sortBy) {
+        case 'price-low':
+          list = [...list].sort(
+            (a, b) => {
+              const aPrice =
+                Math.min(
+                  ...a.skus.map(
+                    (sku) =>
+                      sku.websitePrice,
+                  ),
+                );
 
-    switch (sortBy) {
-      case 'price-low':
-        list = [...list].sort(
-          (a, b) =>
-            Math.min(
-              ...a.skus.map(
-                (sku) =>
-                  sku.websitePrice,
+              const bPrice =
+                Math.min(
+                  ...b.skus.map(
+                    (sku) =>
+                      sku.websitePrice,
+                  ),
+                );
+
+              return (
+                aPrice - bPrice
+              );
+            },
+          );
+          break;
+
+        case 'price-high':
+          list = [...list].sort(
+            (a, b) => {
+              const aPrice =
+                Math.max(
+                  ...a.skus.map(
+                    (sku) =>
+                      sku.websitePrice,
+                  ),
+                );
+
+              const bPrice =
+                Math.max(
+                  ...b.skus.map(
+                    (sku) =>
+                      sku.websitePrice,
+                  ),
+                );
+
+              return (
+                bPrice - aPrice
+              );
+            },
+          );
+          break;
+
+        case 'name':
+          list = [...list].sort(
+            (a, b) =>
+              a.name.localeCompare(
+                b.name,
+                undefined,
+                {
+                  sensitivity:
+                    'base',
+                },
               ),
-            ) -
-            Math.min(
-              ...b.skus.map(
-                (sku) =>
-                  sku.websitePrice,
-              ),
-            ),
-        );
-        break;
+          );
+          break;
 
-      case 'price-high':
-        list = [...list].sort(
-          (a, b) =>
-            Math.max(
-              ...b.skus.map(
-                (sku) =>
-                  sku.websitePrice,
-              ),
-            ) -
-            Math.max(
-              ...a.skus.map(
-                (sku) =>
-                  sku.websitePrice,
-              ),
-            ),
-        );
-        break;
+        default:
+          break;
+      }
 
-      case 'name':
-        list = [...list].sort(
-          (a, b) =>
-            a.product.name.localeCompare(
-              b.product.name,
-              undefined,
-              {
-                sensitivity: 'base',
-              },
-            ),
-        );
-        break;
-
-      default:
-        break;
-    }
-
-    return list.map(
-      ({ product }) => product,
-    );
-  }, [
-    category,
-    search,
-    sortBy,
-    maxPrice,
-  ]);
+      return list;
+    }, [
+      category,
+      search,
+      sortBy,
+      maxPrice,
+    ]);
 
   const clearFilters = () => {
     setCategory('all');
@@ -247,9 +423,15 @@ export default function Shop() {
   };
 
   const activeFilterCount =
-    (category !== 'all' ? 1 : 0) +
-    (maxPrice < MAX_PRICE ? 1 : 0) +
-    (search.trim() ? 1 : 0);
+    (category !== 'all'
+      ? 1
+      : 0) +
+    (maxPrice < MAX_PRICE
+      ? 1
+      : 0) +
+    (search.trim()
+      ? 1
+      : 0);
 
   return (
     <>
@@ -257,17 +439,23 @@ export default function Shop() {
         title="Shop Premium Papads"
         description="Shop authentic Kawad Swad papads from Nimar. Explore moong, chana, urad and combo packs."
         path="/shop"
-        structuredData={breadcrumbSchema([
-          {
-            name: 'Home',
-            path: '/',
-          },
-          {
-            name: 'Shop',
-            path: '/shop',
-          },
-        ])}
+        structuredData={breadcrumbSchema(
+          [
+            {
+              name: 'Home',
+              path: '/',
+            },
+            {
+              name: 'Shop',
+              path: '/shop',
+            },
+          ],
+        )}
       />
+
+      {/* ================================================================
+          SHOP HERO
+      ================================================================ */}
 
       <section className="relative overflow-hidden bg-brand-ivory py-10 sm:py-14 lg:py-20">
         <div
@@ -321,8 +509,17 @@ export default function Shop() {
         </div>
       </section>
 
+      {/* ================================================================
+          SHOP CONTENT
+      ================================================================ */}
+
       <section className="container-max container-px py-8 sm:py-10 lg:py-14">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+
+          {/* ============================================================
+              FILTER SIDEBAR
+          ============================================================ */}
+
           <aside
             className={`
               w-full shrink-0 lg:w-64
@@ -357,7 +554,9 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={() =>
-                    setShowMobileFilters(false)
+                    setShowMobileFilters(
+                      false,
+                    )
                   }
                   className="
                     flex h-10 w-10
@@ -373,6 +572,8 @@ export default function Shop() {
                   <X className="h-5 w-5" />
                 </button>
               </div>
+
+              {/* CATEGORY */}
 
               <div>
                 <h3
@@ -390,57 +591,66 @@ export default function Shop() {
                 </h3>
 
                 <div className="space-y-1">
-                  {categories.map((cat) => {
-                    const active =
-                      category === cat;
+                  {categories.map(
+                    (cat) => {
+                      const active =
+                        category === cat;
 
-                    return (
-                      <button
-                        type="button"
-                        key={cat}
-                        onClick={() =>
-                          setCategory(cat)
-                        }
-                        className={`
-                          flex
-                          min-h-[44px]
-                          w-full
-                          items-center
-                          rounded-xl
-                          px-3
-                          py-2.5
-                          text-left
-                          text-sm
-                          transition-all
-                          duration-200
-                          ${
-                            active
-                              ? `
-                                bg-brand-green
-                                font-semibold
-                                text-white
-                                shadow-[0_3px_0_#315238,0_6px_12px_rgba(62,39,35,0.10)]
-                                -translate-y-0.5
-                              `
-                              : `
-                                text-brand-brown/70
-                                hover:-translate-y-0.5
-                                hover:bg-brand-green/5
-                                hover:text-brand-green
-                              `
+                      return (
+                        <button
+                          type="button"
+                          key={cat}
+                          onClick={() =>
+                            setCategory(
+                              cat,
+                            )
                           }
-                        `}
-                      >
-                        {cat === 'all'
-                          ? 'All Products'
-                          : CATEGORY_LABELS[cat]}
-                      </button>
-                    );
-                  })}
+                          className={`
+                            flex
+                            min-h-[44px]
+                            w-full
+                            items-center
+                            rounded-xl
+                            px-3
+                            py-2.5
+                            text-left
+                            text-sm
+                            transition-all
+                            duration-200
+                            ${
+                              active
+                                ? `
+                                  bg-brand-green
+                                  font-semibold
+                                  text-white
+                                  shadow-[0_3px_0_#315238,0_6px_12px_rgba(62,39,35,0.10)]
+                                  -translate-y-0.5
+                                `
+                                : `
+                                  text-brand-brown/70
+                                  hover:-translate-y-0.5
+                                  hover:bg-brand-green/5
+                                  hover:text-brand-green
+                                `
+                            }
+                          `}
+                        >
+                          {cat ===
+                          'all'
+                            ? 'All Products'
+                            : CATEGORY_LABELS[
+                                cat
+                              ]}
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
               </div>
 
               <div className="my-6 h-px bg-brand-green/10" />
+
+              {/* PRICE */}
 
               <div>
                 <label
@@ -470,9 +680,14 @@ export default function Shop() {
                   max={MAX_PRICE}
                   step="1"
                   value={maxPrice}
-                  onChange={(event) =>
+                  onChange={(
+                    event,
+                  ) =>
                     setMaxPrice(
-                      Number(event.target.value),
+                      Number(
+                        event.target
+                          .value,
+                      ),
                     )
                   }
                   className="
@@ -488,15 +703,24 @@ export default function Shop() {
                 />
 
                 <div className="mt-2 flex justify-between text-[10px] text-brand-brown/40">
-                  <span>₹{MIN_PRICE}</span>
-                  <span>₹{MAX_PRICE}</span>
+                  <span>
+                    ₹{MIN_PRICE}
+                  </span>
+
+                  <span>
+                    ₹{MAX_PRICE}
+                  </span>
                 </div>
               </div>
+
+              {/* MOBILE ACTIONS */}
 
               <div className="mt-6 flex gap-2 lg:hidden">
                 <button
                   type="button"
-                  onClick={clearFilters}
+                  onClick={
+                    clearFilters
+                  }
                   className="
                     min-h-[46px]
                     flex-1
@@ -518,7 +742,9 @@ export default function Shop() {
                 <button
                   type="button"
                   onClick={() =>
-                    setShowMobileFilters(false)
+                    setShowMobileFilters(
+                      false,
+                    )
                   }
                   className="
                     min-h-[46px]
@@ -543,7 +769,14 @@ export default function Shop() {
             </div>
           </aside>
 
+          {/* ============================================================
+              PRODUCT AREA
+          ============================================================ */}
+
           <main className="min-w-0 flex-1">
+
+            {/* SEARCH + SORT */}
+
             <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
                 <div
@@ -576,9 +809,12 @@ export default function Shop() {
                   <input
                     type="search"
                     value={search}
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setSearch(
-                        event.target.value,
+                        event.target
+                          .value,
                       )
                     }
                     placeholder="Search papads, flavours or pack sizes..."
@@ -625,16 +861,20 @@ export default function Shop() {
               <div className="flex items-center gap-2">
                 <p className="hidden text-xs text-brand-brown/50 sm:block">
                   {filtered.length}{' '}
-                  {filtered.length === 1
+                  {filtered.length ===
+                  1
                     ? 'product'
                     : 'products'}
                 </p>
 
                 <select
                   value={sortBy}
-                  onChange={(event) => {
+                  onChange={(
+                    event,
+                  ) => {
                     const value =
-                      event.target.value;
+                      event.target
+                        .value;
 
                     if (
                       SORT_OPTIONS.includes(
@@ -724,7 +964,8 @@ export default function Shop() {
                     Filters
                   </span>
 
-                  {activeFilterCount > 0 && (
+                  {activeFilterCount >
+                    0 && (
                     <span
                       className="
                         absolute
@@ -744,20 +985,28 @@ export default function Shop() {
                         shadow-[0_2px_5px_rgba(230,126,34,0.30)]
                       "
                     >
-                      {activeFilterCount}
+                      {
+                        activeFilterCount
+                      }
                     </span>
                   )}
                 </button>
               </div>
             </div>
 
-            {activeFilterCount > 0 && (
+            {/* ACTIVE FILTERS */}
+
+            {activeFilterCount >
+              0 && (
               <div className="mb-5 flex flex-wrap items-center gap-2">
-                {category !== 'all' && (
+                {category !==
+                  'all' && (
                   <button
                     type="button"
                     onClick={() =>
-                      setCategory('all')
+                      setCategory(
+                        'all',
+                      )
                     }
                     className="
                       inline-flex
@@ -774,16 +1023,24 @@ export default function Shop() {
                       hover:-translate-y-0.5
                     "
                   >
-                    {CATEGORY_LABELS[category]}
+                    {
+                      CATEGORY_LABELS[
+                        category
+                      ]
+                    }
+
                     <X className="h-3 w-3" />
                   </button>
                 )}
 
-                {maxPrice < MAX_PRICE && (
+                {maxPrice <
+                  MAX_PRICE && (
                   <button
                     type="button"
                     onClick={() =>
-                      setMaxPrice(MAX_PRICE)
+                      setMaxPrice(
+                        MAX_PRICE,
+                      )
                     }
                     className="
                       inline-flex
@@ -800,7 +1057,9 @@ export default function Shop() {
                       hover:-translate-y-0.5
                     "
                   >
-                    Under ₹{maxPrice}
+                    Under ₹
+                    {maxPrice}
+
                     <X className="h-3 w-3" />
                   </button>
                 )}
@@ -828,7 +1087,8 @@ export default function Shop() {
                     "
                   >
                     <span className="max-w-[180px] truncate">
-                      Search: {search}
+                      Search:{' '}
+                      {search}
                     </span>
 
                     <X className="h-3 w-3 shrink-0" />
@@ -837,7 +1097,9 @@ export default function Shop() {
 
                 <button
                   type="button"
-                  onClick={clearFilters}
+                  onClick={
+                    clearFilters
+                  }
                   className="
                     min-h-[32px]
                     px-2
@@ -853,14 +1115,21 @@ export default function Shop() {
               </div>
             )}
 
+            {/* MOBILE COUNT */}
+
             <div className="mb-4 text-xs text-brand-brown/50 sm:hidden">
-              Showing {filtered.length}{' '}
-              {filtered.length === 1
+              Showing{' '}
+              {filtered.length}{' '}
+              {filtered.length ===
+              1
                 ? 'product'
                 : 'products'}
             </div>
 
-            {filtered.length === 0 ? (
+            {/* EMPTY STATE */}
+
+            {filtered.length ===
+            0 ? (
               <div
                 className="
                   rounded-3xl
@@ -903,7 +1172,9 @@ export default function Shop() {
 
                 <button
                   type="button"
-                  onClick={clearFilters}
+                  onClick={
+                    clearFilters
+                  }
                   className="
                     btn-primary
                     mt-6
@@ -919,6 +1190,8 @@ export default function Shop() {
                 </button>
               </div>
             ) : (
+              /* PRODUCT GRID */
+
               <div
                 className="
                   grid
@@ -931,16 +1204,24 @@ export default function Shop() {
                 "
               >
                 {filtered.map(
-                  (product, index) => (
+                  (
+                    product,
+                    index,
+                  ) => (
                     <Reveal
-                      key={product.id}
+                      key={
+                        product.id
+                      }
                       delay={Math.min(
-                        index * 40,
+                        index *
+                          40,
                         240,
                       )}
                     >
                       <ProductCard
-                        product={product}
+                        product={
+                          product
+                        }
                       />
                     </Reveal>
                   ),
