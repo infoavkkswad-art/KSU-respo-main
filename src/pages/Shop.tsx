@@ -16,11 +16,6 @@ import { Reveal } from '@/components/Reveal';
 
 import { ProductService } from '@/services/product-service';
 
-import {
-  getSalesSku,
-  isSkuAvailable,
-} from '@/data/sales-config';
-
 import type {
   ProductCategory,
   ProductFamily,
@@ -57,15 +52,13 @@ const SORT_OPTIONS = [
 type SortOption =
   (typeof SORT_OPTIONS)[number];
 
-/**
- * Customer-facing SKU after validation against
- * the central sales configuration.
+/* ============================================================================
+ * CUSTOMER-FACING SKU
  *
- * IMPORTANT:
- * products.ts intentionally allows nullable prices.
- * ShopSku represents only a SKU that has passed all
- * customer-facing purchase checks.
- */
+ * ProductService is the single pricing/purchasability authority used by
+ * Shop, Cart, Cart calculations and checkout.
+ * ========================================================================== */
+
 type ShopSku = Sku & {
   websitePrice: number;
   mrp: number;
@@ -75,161 +68,92 @@ type ShopSku = Sku & {
 };
 
 /**
- * Validate and convert a catalog SKU into a
- * customer-facing sales-controlled SKU.
+ * Return only SKUs that are actually purchasable.
  *
- * sales-config.ts is the pricing authority.
+ * ProductService.getAvailableSkus() already validates:
+ * - availability
+ * - website price
+ * - MRP
+ * - finite numeric values
  */
-function getSalesControlledSku(
-  sku: Sku,
-): ShopSku | null {
-  const salesSku = getSalesSku(
-    sku.sku,
-  );
-
-  if (!salesSku) {
-    return null;
-  }
-
-  if (!isSkuAvailable(sku.sku)) {
-    return null;
-  }
-
-  if (
-    salesSku.sellingPrice === null ||
-    salesSku.mrp === null
-  ) {
-    return null;
-  }
-
-  if (
-    !Number.isFinite(
-      salesSku.sellingPrice,
-    ) ||
-    !Number.isFinite(
-      salesSku.mrp,
-    )
-  ) {
-    return null;
-  }
-
-  if (
-    salesSku.sellingPrice < 0 ||
-    salesSku.mrp < 0
-  ) {
-    return null;
-  }
-
-  if (
-    salesSku.sellingPrice >
-    salesSku.mrp
-  ) {
-    return null;
-  }
-
-  return {
-    ...sku,
-
-    /*
-     * Central sales configuration overrides
-     * any stale pricing in products.ts.
-     */
-    websitePrice:
-      salesSku.sellingPrice,
-
-    mrp: salesSku.mrp,
-
-    packSize:
-      salesSku.packSize,
-
-    available: true,
-
-    shipping: 0,
-
-    freeShipping: true,
-  };
-}
-
-/**
- * Create a product copy whose SKU pricing is
- * controlled by sales-config.ts.
- */
-function getSalesControlledProduct(
+function getPurchasableSkus(
   product: ProductFamily,
-): ProductFamily | null {
-  const salesSkus = product.skus
-    .map(getSalesControlledSku)
+): ShopSku[] {
+  return ProductService
+    .getAvailableSkus(product)
     .filter(
       (
         sku,
       ): sku is ShopSku =>
-        sku !== null,
+        sku.available === true &&
+        sku.websitePrice !== null &&
+        sku.mrp !== null &&
+        Number.isFinite(
+          sku.websitePrice,
+        ) &&
+        Number.isFinite(
+          sku.mrp,
+        ) &&
+        sku.shipping === 0 &&
+        sku.freeShipping === true,
+    )
+    .map(
+      (sku) => ({
+        ...sku,
+        websitePrice:
+          sku.websitePrice as number,
+        mrp: sku.mrp as number,
+        available: true,
+        shipping: 0,
+        freeShipping: true,
+      }),
     );
-
-  if (salesSkus.length === 0) {
-    return null;
-  }
-
-  return {
-    ...product,
-    skus: salesSkus,
-  };
 }
 
 /**
- * Build the complete customer-facing catalog
- * from the central sales configuration.
+ * Build the customer-facing shop catalog.
+ *
+ * IMPORTANT:
+ * We do not copy prices from sales-config.ts.
+ *
+ * ProductService is the same source used by the cart and product purchase
+ * flow, preventing Shop from displaying one price while Cart displays another.
  */
 function getShopProducts(): ProductFamily[] {
   return ProductService
     .getAllProducts()
-    .map(
-      getSalesControlledProduct,
-    )
     .filter(
-      (
-        product,
-      ): product is ProductFamily =>
-        product !== null,
+      (product) =>
+        getPurchasableSkus(
+          product,
+        ).length > 0,
     );
 }
 
 /**
- * Get only valid numeric prices from a
- * ProductFamily.
- *
- * This is the important TypeScript boundary.
- *
- * ProductFamily.skus is declared using the base
- * Sku type, where websitePrice may be null.
- *
- * Therefore we must narrow it again before
- * passing prices into Math.min / Math.max.
+ * Get valid numeric website prices.
  */
 function getValidWebsitePrices(
   product: ProductFamily,
 ): number[] {
-  return product.skus
-    .map(
-      (sku) => sku.websitePrice,
-    )
-    .filter(
-      (
-        price,
-      ): price is number =>
-        typeof price === 'number' &&
-        Number.isFinite(price),
-    );
+  return getPurchasableSkus(
+    product,
+  ).map(
+    (sku) =>
+      sku.websitePrice,
+  );
 }
 
 /**
- * Safely get the lowest valid website price.
+ * Safely get the lowest customer-facing price.
  */
 function getMinimumWebsitePrice(
   product: ProductFamily,
 ): number {
   const prices =
-    getValidWebsitePrices(product);
+    getValidWebsitePrices(
+      product,
+    );
 
   return prices.length > 0
     ? Math.min(...prices)
@@ -237,23 +161,25 @@ function getMinimumWebsitePrice(
 }
 
 /**
- * Safely get the highest valid website price.
+ * Safely get the highest customer-facing price.
  */
 function getMaximumWebsitePrice(
   product: ProductFamily,
 ): number {
   const prices =
-    getValidWebsitePrices(product);
+    getValidWebsitePrices(
+      product,
+    );
 
   return prices.length > 0
     ? Math.max(...prices)
     : Number.NEGATIVE_INFINITY;
 }
 
-/**
- * Build the catalog once for the static price
- * slider boundaries.
- */
+/* ============================================================================
+ * STATIC PRICE RANGE
+ * ========================================================================== */
+
 const catalogProducts =
   getShopProducts();
 
@@ -271,6 +197,10 @@ const MAX_PRICE =
   catalogPrices.length > 0
     ? Math.max(...catalogPrices)
     : 0;
+
+/* ============================================================================
+ * PAGE
+ * ========================================================================== */
 
 export default function Shop() {
   const [searchParams] =
@@ -305,9 +235,10 @@ export default function Shop() {
       let list =
         getShopProducts();
 
-      /*
+      /* ----------------------------------------------------------------------
        * CATEGORY
-       */
+       * -------------------------------------------------------------------- */
+
       if (
         category !== 'all'
       ) {
@@ -318,9 +249,10 @@ export default function Shop() {
         );
       }
 
-      /*
+      /* ----------------------------------------------------------------------
        * SEARCH
-       */
+       * -------------------------------------------------------------------- */
+
       const query =
         search
           .trim()
@@ -347,7 +279,9 @@ export default function Shop() {
                 .includes(query);
 
             const matchesSku =
-              product.skus.some(
+              getPurchasableSkus(
+                product,
+              ).some(
                 (sku) =>
                   sku.sku
                     .toLowerCase()
@@ -365,13 +299,13 @@ export default function Shop() {
         );
       }
 
-      /*
+      /* ----------------------------------------------------------------------
        * PRICE FILTER
        *
-       * Keep a product visible if at least
-       * one valid customer-facing SKU is
-       * within the selected price limit.
-       */
+       * A product remains visible when at least one of its purchasable SKUs
+       * is within the selected maximum price.
+       * -------------------------------------------------------------------- */
+
       list = list.filter(
         (product) =>
           getValidWebsitePrices(
@@ -382,9 +316,10 @@ export default function Shop() {
           ),
       );
 
-      /*
+      /* ----------------------------------------------------------------------
        * SORT
-       */
+       * -------------------------------------------------------------------- */
+
       switch (sortBy) {
         case 'price-low':
           list = [...list].sort(
