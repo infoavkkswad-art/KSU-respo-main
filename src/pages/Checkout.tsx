@@ -58,63 +58,38 @@ import {
 } from '@/context/CartContext';
 
 export default function ProductDetail() {
-  const {
-    slug,
-  } =
-    useParams<{
-      slug: string;
-    }>();
+  const { slug } = useParams<{
+    slug: string;
+  }>();
 
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
-  const {
-    addItem,
-  } = useCart();
+  const { addItem } = useCart();
 
-  /*
-   * ProductService is the single catalog authority.
-   *
-   * Customer-facing price and availability must come
-   * from the purchasable SKU list.
-   */
-  const product =
-    slug
-      ? ProductService.getProductBySlug(
-          slug,
-        )
-      : undefined;
+  const product = slug
+    ? ProductService.getProductBySlug(slug)
+    : undefined;
 
   const [
     selectedSkuIndex,
     setSelectedSkuIndex,
   ] = useState(0);
 
-  const [
-    quantity,
-    setQuantity,
-  ] = useState(1);
+  const [quantity, setQuantity] =
+    useState(1);
 
-  const [
-    added,
-    setAdded,
-  ] = useState(false);
+  const [added, setAdded] =
+    useState(false);
 
   const [
     reviewSummary,
     setReviewSummary,
-  ] =
-    useState<ReviewSummary | null>(
-      null,
-    );
+  ] = useState<ReviewSummary | null>(
+    null,
+  );
 
-  const [
-    reviews,
-    setReviews,
-  ] =
-    useState<ReviewResponse[]>(
-      [],
-    );
+  const [reviews, setReviews] =
+    useState<ReviewResponse[]>([]);
 
   const [
     reviewsLoading,
@@ -126,10 +101,6 @@ export default function ProductDetail() {
     setReviewsError,
   ] = useState(false);
 
-  /*
-   * Only available, valid, priced SKUs are exposed
-   * to the customer.
-   */
   const purchasableSkus =
     useMemo(() => {
       if (!product) {
@@ -141,11 +112,6 @@ export default function ProductDetail() {
       );
     }, [product]);
 
-  /*
-   * Related products are also filtered through
-   * ProductService so unavailable products are not
-   * displayed as recommendations.
-   */
   const relatedProducts =
     useMemo(() => {
       if (!product) {
@@ -153,97 +119,68 @@ export default function ProductDetail() {
       }
 
       return ProductService
-        .getRelatedProducts(
-          product,
-          4,
-        )
+        .getRelatedProducts(product, 4)
         .filter(
           (item) =>
-            ProductService
-              .getAvailableSkus(
-                item,
-              ).length > 0,
+            ProductService.getAvailableSkus(
+              item,
+            ).length > 0,
         )
         .slice(0, 4);
     }, [product]);
 
-  /*
-   * Load reviews.
-   */
   useEffect(() => {
     if (!product) {
+      setReviewsLoading(false);
       return;
     }
 
     let cancelled = false;
 
-    const loadReviews =
-      async () => {
-        setReviewsLoading(
-          true,
-        );
+    const loadReviews = async () => {
+      setReviewsLoading(true);
+      setReviewsError(false);
 
-        setReviewsError(
-          false,
-        );
-
-        try {
-          const [
-            summary,
-            reviewList,
-          ] =
-            await Promise.all([
-              ReviewService.getSummary(
-                product.id,
-              ),
-
-              ReviewService.getReviews(
-                product.id,
-                20,
-                0,
-              ),
-            ]);
-
-          if (cancelled) {
-            return;
-          }
-
-          setReviewSummary(
-            summary,
-          );
-
-          /*
-           * Only approved reviews are displayed publicly.
-           */
-          setReviews(
-            reviewList.filter(
-              (review) =>
-                review.status ===
-                'approved',
+      try {
+        const [summary, reviewList] =
+          await Promise.all([
+            ReviewService.getSummary(
+              product.id,
             ),
-          );
-        } catch {
-          if (cancelled) {
-            return;
-          }
+            ReviewService.getReviews(
+              product.id,
+              20,
+              0,
+            ),
+          ]);
 
-          setReviewSummary(
-            null,
-          );
-
-          setReviews([]);
-
-          setReviewsError(
-            true,
-          );
-        } finally {
-          if (!cancelled) {
-            setReviewsLoading(
-              false,
-            );
-          }
+        if (cancelled) {
+          return;
         }
-      };
+
+        setReviewSummary(summary);
+
+        setReviews(
+          reviewList.filter(
+            (review) =>
+              review.status ===
+              'approved',
+          ),
+        );
+      } catch {
+        if (cancelled) {
+          return;
+        }
+
+        setReviewSummary(null);
+        setReviews([]);
+        setReviewsError(true);
+      } finally {
+        if (!cancelled) {
+          setReviewsLoading(false);
+        }
+      }
+    };
 
     loadReviews();
 
@@ -252,14 +189,8 @@ export default function ProductDetail() {
     };
   }, [product]);
 
-  /*
-   * Keep selected SKU valid if the catalog changes.
-   */
   useEffect(() => {
-    if (
-      purchasableSkus.length ===
-      0
-    ) {
+    if (purchasableSkus.length === 0) {
       setSelectedSkuIndex(0);
       setQuantity(1);
       setAdded(false);
@@ -279,9 +210,6 @@ export default function ProductDetail() {
     purchasableSkus.length,
   ]);
 
-  /*
-   * Product not found.
-   */
   if (!product) {
     return (
       <>
@@ -331,42 +259,30 @@ export default function ProductDetail() {
     );
   }
 
-  /*
-   * Selected SKU.
-   */
   const selectedSku =
     purchasableSkus[
       selectedSkuIndex
     ] ??
     purchasableSkus[0];
 
-  /*
-   * Strict customer purchase validation.
-   */
   const isPurchasable =
     !!selectedSku &&
-    selectedSku.available ===
-      true &&
+    selectedSku.available === true &&
     typeof selectedSku.websitePrice ===
       'number' &&
     Number.isFinite(
       selectedSku.websitePrice,
     ) &&
-    selectedSku.websitePrice >=
-      0 &&
-    typeof selectedSku.mrp ===
-      'number' &&
-    Number.isFinite(
-      selectedSku.mrp,
-    ) &&
+    selectedSku.websitePrice >= 0 &&
+    typeof selectedSku.mrp === 'number' &&
+    Number.isFinite(selectedSku.mrp) &&
     selectedSku.mrp >= 0 &&
     selectedSku.websitePrice <=
       selectedSku.mrp;
 
   const averageRating =
     reviewSummary &&
-    reviewSummary.reviewCount >
-      0
+    reviewSummary.reviewCount > 0
       ? reviewSummary.averageRating
       : 0;
 
@@ -374,66 +290,42 @@ export default function ProductDetail() {
     reviewSummary?.reviewCount ??
     reviews.length;
 
-  const packLabel =
-    selectedSku
-      ? PACK_LABELS[
-          selectedSku.packSize
-        ] ||
-        `${selectedSku.packSize}g`
-      : '';
+  const handleAddToCart = () => {
+    if (
+      !isPurchasable ||
+      !selectedSku
+    ) {
+      return;
+    }
 
-  /*
-   * Add to cart.
-   */
-  const handleAddToCart =
-    () => {
-      if (
-        !isPurchasable ||
-        !selectedSku
-      ) {
-        return;
-      }
+    addItem(
+      selectedSku.sku,
+      quantity,
+    );
 
-      addItem(
-        selectedSku.sku,
-        quantity,
-      );
+    setAdded(true);
 
-      setAdded(true);
+    window.setTimeout(() => {
+      setAdded(false);
+    }, 2000);
+  };
 
-      window.setTimeout(
-        () => {
-          setAdded(false);
-        },
-        2000,
-      );
-    };
+  const handleBuyNow = () => {
+    if (
+      !isPurchasable ||
+      !selectedSku
+    ) {
+      return;
+    }
 
-  /*
-   * Buy now.
-   */
-  const handleBuyNow =
-    () => {
-      if (
-        !isPurchasable ||
-        !selectedSku
-      ) {
-        return;
-      }
+    addItem(
+      selectedSku.sku,
+      quantity,
+    );
 
-      addItem(
-        selectedSku.sku,
-        quantity,
-      );
+    navigate('/checkout');
+  };
 
-      navigate(
-        '/checkout',
-      );
-    };
-
-  /*
-   * Rating stars.
-   */
   const renderStars = (
     rating: number,
     size = 'h-4 w-4',
@@ -452,9 +344,7 @@ export default function ProductDetail() {
               ${size}
               ${
                 star <=
-                Math.round(
-                  rating,
-                )
+                Math.round(rating)
                   ? 'fill-brand-saffron text-brand-saffron'
                   : 'text-brand-brown/15'
               }
@@ -491,10 +381,6 @@ export default function ProductDetail() {
         )}
       />
 
-      {/* ================================================================
-          PRODUCT
-      ================================================================ */}
-
       <main className="container-max container-px py-8 sm:py-12 lg:py-16">
         <div
           className="
@@ -506,10 +392,6 @@ export default function ProductDetail() {
             xl:gap-20
           "
         >
-          {/* ============================================================
-              PRODUCT IMAGE
-          ============================================================ */}
-
           <div className="lg:sticky lg:top-28">
             <div
               className="
@@ -526,12 +408,8 @@ export default function ProductDetail() {
               "
             >
               <ProductImage
-                productId={
-                  product.id
-                }
-                product={
-                  product
-                }
+                productId={product.id}
+                product={product}
                 variant="detail"
                 className="h-full w-full"
               />
@@ -551,10 +429,6 @@ export default function ProductDetail() {
               />
             </div>
           </div>
-
-          {/* ============================================================
-              PRODUCT INFORMATION
-          ============================================================ */}
 
           <div className="min-w-0">
             <span className="section-eyebrow">
@@ -589,17 +463,12 @@ export default function ProductDetail() {
               {product.description}
             </p>
 
-            {/* ==========================================================
-                RATING
-            ========================================================== */}
-
             <div className="mt-5 flex flex-wrap items-center gap-3">
               {reviewsLoading ? (
                 <span className="text-sm text-brand-brown/45">
                   Loading reviews...
                 </span>
-              ) : reviewCount >
-                0 ? (
+              ) : reviewCount > 0 ? (
                 <>
                   {renderStars(
                     averageRating,
@@ -622,8 +491,7 @@ export default function ProductDetail() {
                     "
                   >
                     ({reviewCount}{' '}
-                    {reviewCount ===
-                    1
+                    {reviewCount === 1
                       ? 'review'
                       : 'reviews'}
                     )
@@ -648,10 +516,6 @@ export default function ProductDetail() {
                 </>
               )}
             </div>
-
-            {/* ==========================================================
-                PURCHASE CONFIGURATION
-            ========================================================== */}
 
             <div
               className="
@@ -682,32 +546,21 @@ export default function ProductDetail() {
               0 ? (
                 <div className="flex flex-wrap gap-2">
                   {purchasableSkus.map(
-                    (
-                      sku,
-                      index,
-                    ) => {
+                    (sku, index) => {
                       const selected =
                         selectedSkuIndex ===
                         index;
 
                       return (
                         <button
-                          key={
-                            sku.sku
-                          }
+                          key={sku.sku}
                           type="button"
                           onClick={() => {
                             setSelectedSkuIndex(
                               index,
                             );
-
-                            setQuantity(
-                              1,
-                            );
-
-                            setAdded(
-                              false,
-                            );
+                            setQuantity(1);
+                            setAdded(false);
                           }}
                           className={`
                             min-h-[44px]
@@ -771,10 +624,6 @@ export default function ProductDetail() {
                 </div>
               )}
 
-              {/* ========================================================
-                  CUSTOMER PRICE
-              ======================================================== */}
-
               <div className="mt-7 flex flex-wrap items-baseline gap-3">
                 {isPurchasable &&
                 selectedSku ? (
@@ -801,7 +650,6 @@ export default function ProductDetail() {
                 )}
               </div>
 
-              {/* No separate shipping charge */}
               <div className="mt-2 flex items-center gap-2">
                 <Truck
                   className="h-4 w-4 text-green-700"
@@ -814,13 +662,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* ==========================================================
-                PURCHASE CONTROLS
-            ========================================================== */}
-
             <div className="flex flex-col gap-3 py-7 sm:flex-row sm:items-stretch sm:py-8">
-              {/* Quantity */}
-
               <div
                 className="
                   flex
@@ -844,14 +686,11 @@ export default function ProductDetail() {
                       (value) =>
                         Math.max(
                           1,
-                          value -
-                            1,
+                          value - 1,
                         ),
                     )
                   }
-                  disabled={
-                    !isPurchasable
-                  }
+                  disabled={!isPurchasable}
                   className="
                     flex
                     h-11
@@ -887,13 +726,10 @@ export default function ProductDetail() {
                   onClick={() =>
                     setQuantity(
                       (value) =>
-                        value +
-                        1,
+                        value + 1,
                     )
                   }
-                  disabled={
-                    !isPurchasable
-                  }
+                  disabled={!isPurchasable}
                   className="
                     flex
                     h-11
@@ -914,16 +750,12 @@ export default function ProductDetail() {
                 </button>
               </div>
 
-              {/* Add to Cart */}
-
               <button
                 type="button"
                 onClick={
                   handleAddToCart
                 }
-                disabled={
-                  !isPurchasable
-                }
+                disabled={!isPurchasable}
                 className={`
                   relative
                   min-h-[52px]
@@ -970,16 +802,10 @@ export default function ProductDetail() {
                 )}
               </button>
 
-              {/* Buy Now */}
-
               <button
                 type="button"
-                onClick={
-                  handleBuyNow
-                }
-                disabled={
-                  !isPurchasable
-                }
+                onClick={handleBuyNow}
+                disabled={!isPurchasable}
                 className="
                   min-h-[52px]
                   flex-1
@@ -1005,10 +831,6 @@ export default function ProductDetail() {
               </button>
             </div>
 
-            {/* ==========================================================
-                TRUST INFORMATION
-            ========================================================== */}
-
             <div
               className="
                 grid
@@ -1027,8 +849,7 @@ export default function ProductDetail() {
                     '100% Vegetarian',
                 },
                 {
-                  icon:
-                    ShieldCheck,
+                  icon: ShieldCheck,
                   label:
                     'FSSAI Registered',
                 },
@@ -1089,10 +910,6 @@ export default function ProductDetail() {
         </div>
       </main>
 
-      {/* ================================================================
-          REVIEWS
-      ================================================================ */}
-
       <section
         id="reviews"
         className="
@@ -1147,8 +964,7 @@ export default function ProductDetail() {
 
                     <span className="text-sm text-brand-brown/50">
                       {reviewCount}{' '}
-                      {reviewCount ===
-                      1
+                      {reviewCount === 1
                         ? 'review'
                         : 'reviews'}
                     </span>
@@ -1198,9 +1014,7 @@ export default function ProductDetail() {
             ) : (
               <div className="grid gap-5 md:grid-cols-2">
                 {reviews.map(
-                  (
-                    review,
-                  ) => (
+                  (review) => (
                     <article
                       key={
                         review.reviewId
@@ -1276,10 +1090,6 @@ export default function ProductDetail() {
         </div>
       </section>
 
-      {/* ================================================================
-          RELATED PRODUCTS
-      ================================================================ */}
-
       {relatedProducts.length >
         0 && (
         <section className="bg-brand-ivory-dark py-16 sm:py-20">
@@ -1297,9 +1107,7 @@ export default function ProductDetail() {
 
             <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
               {relatedProducts.map(
-                (
-                  relatedProduct,
-                ) => (
+                (relatedProduct) => (
                   <ProductCard
                     key={
                       relatedProduct.id
