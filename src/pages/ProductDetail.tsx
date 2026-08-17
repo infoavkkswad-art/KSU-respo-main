@@ -1,898 +1,884 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  Minus,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+} from 'react';
+
+import {
+  Link,
+  useNavigate,
+} from 'react-router-dom';
+
+import {
   Plus,
-  ShoppingBag,
   Check,
-  Truck,
-  ShieldCheck,
-  Leaf,
+  ChevronDown,
   Zap,
-  Star,
 } from 'lucide-react';
 
-import { SEO, breadcrumbSchema } from '@/components/SEO';
-import { ProductCard } from '@/components/ProductCard';
-import { ProductImage } from '@/components/ProductImage';
-import { ProductService } from '@/services/product-service';
-import { ReviewService } from '@/services/review-service';
 import type {
-  ReviewResponse,
+  ProductFamily,
+} from '@/data/products';
+
+import {
+  PACK_LABELS,
+} from '@/data/products';
+
+import {
+  ProductImage,
+} from '@/components/ProductImage';
+
+import {
+  useCart,
+  formatPrice,
+} from '@/context/CartContext';
+
+import {
+  StarRating,
+} from '@/components/StarRating';
+
+import {
+  ReviewService,
+} from '@/services/review-service';
+
+import {
+  ProductService,
+} from '@/services/product-service';
+
+import type {
   ReviewSummary,
 } from '@/types/reviews';
-import { PACK_LABELS } from '@/data/products';
-import { useCart } from '@/context/CartContext';
 
-export default function ProductDetail() {
-  const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
-  const { addItem } = useCart();
+interface ProductCardProps {
+  product: ProductFamily;
+  className?: string;
+}
 
-  const product = slug
-    ? ProductService.getProductBySlug(slug)
-    : undefined;
+export function ProductCard({
+  product,
+  className = '',
+}: ProductCardProps) {
+  const { addItem } =
+    useCart();
 
-  const [selectedSkuIndex, setSelectedSkuIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [added, setAdded] = useState(false);
+  const navigate =
+    useNavigate();
 
-  const [reviewSummary, setReviewSummary] =
-    useState<ReviewSummary | null>(null);
-  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
-  const [reviewsLoading, setReviewsLoading] = useState(true);
-  const [reviewsError, setReviewsError] = useState(false);
+  const [
+    selectedSkuIndex,
+    setSelectedSkuIndex,
+  ] = useState(0);
+
+  const [
+    added,
+    setAdded,
+  ] = useState(false);
+
+  const [
+    reviewSummary,
+    setReviewSummary,
+  ] =
+    useState<ReviewSummary | null>(
+      null,
+    );
+
+  const [
+    reviewsLoading,
+    setReviewsLoading,
+  ] = useState(true);
+
+  const selectId =
+    useId();
 
   /*
-   * IMPORTANT:
-   * Never use product.skus directly for customer-facing
-   * pricing or availability.
+   * ProductService receives the SKU data already
+   * resolved through the central sales configuration.
    *
-   * ProductService resolves the SKU through the central
-   * sales configuration.
+   * ProductCard never calculates:
+   * - factory price
+   * - dealer price
+   * - distributor price
+   * - shipping
+   * - profit
+   * - discount
+   *
+   * websitePrice is the final customer-facing price.
    */
-  const purchasableSkus = useMemo(() => {
-    if (!product) {
-      return [];
-    }
+  const purchasableSkus =
+    useMemo(
+      () =>
+        ProductService.getAvailableSkus(
+          product,
+        ),
+      [product],
+    );
 
-    return ProductService.getAvailableSkus(product);
-  }, [product]);
+  const selectedSku =
+    purchasableSkus[
+      selectedSkuIndex
+    ] ??
+    purchasableSkus[0];
 
-  const relatedProducts = useMemo(() => {
-    if (!product) {
-      return [];
-    }
-
-    return ProductService.getProductsByCategory(
-      product.category,
-    )
-      .filter(
-        (item) => item.id !== product.id,
-      )
-      .filter(
-        (item) =>
-          ProductService.getAvailableSkus(item).length > 0,
-      )
-      .slice(0, 4);
-  }, [product]);
-
+  /*
+   * Keep selected SKU valid if the available
+   * SKU list changes.
+   */
   useEffect(() => {
-    if (!product) {
+    if (
+      purchasableSkus.length ===
+      0
+    ) {
+      setSelectedSkuIndex(0);
       return;
     }
 
-    let cancelled = false;
-
-    const loadReviews = async () => {
-      setReviewsLoading(true);
-      setReviewsError(false);
-
-      try {
-        const [summary, reviewList] =
-          await Promise.all([
-            ReviewService.getSummary(product.id),
-            ReviewService.getReviews(
-              product.id,
-              20,
-              0,
-            ),
-          ]);
-
-        if (cancelled) {
-          return;
-        }
-
-        setReviewSummary(summary);
-
-        setReviews(
-          reviewList.filter(
-            (review) =>
-              review.status === 'approved',
-          ),
-        );
-      } catch {
-        if (cancelled) {
-          return;
-        }
-
-        setReviewSummary(null);
-        setReviews([]);
-        setReviewsError(true);
-      } finally {
-        if (!cancelled) {
-          setReviewsLoading(false);
-        }
-      }
-    };
-
-    loadReviews();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [product]);
-
-  useEffect(() => {
     if (
       selectedSkuIndex >=
       purchasableSkus.length
     ) {
       setSelectedSkuIndex(0);
-      setQuantity(1);
-      setAdded(false);
     }
   }, [
     selectedSkuIndex,
     purchasableSkus.length,
   ]);
 
-  if (!product) {
-    return (
-      <div className="container-max container-px py-20 text-center">
-        <SEO
-          title="Product Not Found"
-          description="Product not found"
-          path="/product/not-found"
-        />
+  /*
+   * Load review summary.
+   */
+  useEffect(() => {
+    let cancelled = false;
 
-        <h1 className="font-serif text-3xl font-bold text-brand-green">
-          Product not found
-        </h1>
+    const loadReviewSummary =
+      async () => {
+        setReviewsLoading(
+          true,
+        );
 
-        <p className="mx-auto mt-3 max-w-md text-sm text-brand-brown/60">
-          The product you are looking for may have moved
-          or is no longer available.
-        </p>
+        try {
+          const summary =
+            await ReviewService.getSummary(
+              product.id,
+            );
 
-        <Link
-          to="/shop"
-          className="btn-primary mt-7"
-        >
-          Browse Papads
-        </Link>
-      </div>
-    );
+          if (!cancelled) {
+            setReviewSummary(
+              summary,
+            );
+          }
+        } catch {
+          if (!cancelled) {
+            setReviewSummary({
+              productId:
+                product.id,
+              averageRating: 0,
+              reviewCount: 0,
+            });
+          }
+        } finally {
+          if (!cancelled) {
+            setReviewsLoading(
+              false,
+            );
+          }
+        }
+      };
+
+    loadReviewSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [product.id]);
+
+  /*
+   * A product without an available SKU must
+   * never render a broken purchase card.
+   */
+  if (!selectedSku) {
+    return null;
   }
 
-  const selectedSku =
-    purchasableSkus[selectedSkuIndex] ??
-    purchasableSkus[0];
+  const packLabel =
+    PACK_LABELS[
+      selectedSku.packSize
+    ] ||
+    `${selectedSku.packSize}g`;
 
   const isPurchasable =
-    !!selectedSku &&
-    selectedSku.available === true &&
+    selectedSku.available ===
+      true &&
+    typeof selectedSku.websitePrice ===
+      'number' &&
     Number.isFinite(
       selectedSku.websitePrice,
     ) &&
-    Number.isFinite(selectedSku.mrp);
+    selectedSku.websitePrice >=
+      0 &&
+    typeof selectedSku.mrp ===
+      'number' &&
+    Number.isFinite(
+      selectedSku.mrp,
+    ) &&
+    selectedSku.mrp >= 0 &&
+    selectedSku.websitePrice <=
+      selectedSku.mrp;
 
-  const averageRating =
-    reviewSummary &&
-    reviewSummary.reviewCount > 0
-      ? reviewSummary.averageRating
-      : 0;
+  const hasReviews =
+    reviewSummary !== null &&
+    reviewSummary.reviewCount >
+      0 &&
+    reviewSummary.averageRating >
+      0;
 
-  const reviewCount =
-    reviewSummary?.reviewCount ??
-    reviews.length;
-
-  const handleAddToCart = () => {
-    if (
-      !isPurchasable ||
-      !selectedSku
-    ) {
+  const handleAdd = () => {
+    if (!isPurchasable) {
       return;
     }
 
     addItem(
       selectedSku.sku,
-      quantity,
+      1,
     );
 
     setAdded(true);
 
-    window.setTimeout(() => {
-      setAdded(false);
-    }, 2000);
+    window.setTimeout(
+      () => {
+        setAdded(false);
+      },
+      2000,
+    );
   };
 
   const handleBuyNow = () => {
-    if (
-      !isPurchasable ||
-      !selectedSku
-    ) {
+    if (!isPurchasable) {
       return;
     }
 
     addItem(
       selectedSku.sku,
-      quantity,
+      1,
     );
 
-    navigate('/checkout');
+    navigate(
+      '/checkout',
+    );
   };
 
-  const renderStars = (
-    rating: number,
-    size = 'h-4 w-4',
-  ) => (
-    <div
-      className="flex items-center gap-0.5"
-      aria-label={`${rating.toFixed(
-        1,
-      )} out of 5 stars`}
-    >
-      {[1, 2, 3, 4, 5].map(
-        (star) => (
-          <Star
-            key={star}
-            className={`${size} ${
-              star <=
-              Math.round(rating)
-                ? 'fill-brand-saffron text-brand-saffron'
-                : 'text-brand-brown/15'
-            }`}
-          />
-        ),
-      )}
-    </div>
-  );
-
   return (
-    <>
-      <SEO
-        title={product.name}
-        description={product.description}
-        path={`/product/${product.slug}`}
-        structuredData={breadcrumbSchema([
-          {
-            name: 'Home',
-            path: '/',
-          },
-          {
-            name: 'Shop',
-            path: '/shop',
-          },
-          {
-            name: product.name,
-            path: `/product/${product.slug}`,
-          },
-        ])}
-      />
+    <article
+      className={`
+        group
+        relative
+        flex
+        h-full
+        min-w-0
+        flex-col
+        overflow-hidden
+        rounded-3xl
+        border
+        border-brand-brown/10
+        bg-white
+        shadow-[0_5px_0_rgba(62,39,35,0.06),0_14px_30px_rgba(62,39,35,0.10)]
+        transition-all
+        duration-500
+        ease-out
+        [transform-style:preserve-3d]
+        hover:-translate-y-2
+        hover:shadow-[0_8px_0_rgba(62,39,35,0.07),0_22px_42px_rgba(62,39,35,0.15)]
+        ${className}
+      `}
+    >
+      {/* ================================================================
+          PRODUCT IMAGE
+      ================================================================ */}
+
+      <Link
+        to={`/product/${product.slug}`}
+        aria-label={`View details for ${product.name}`}
+        className="
+          group/image
+          relative
+          block
+          aspect-square
+          overflow-hidden
+          bg-brand-cream-dark
+          [perspective:1200px]
+        "
+      >
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-2
+            z-0
+            rounded-2xl
+            bg-gradient-to-br
+            from-white
+            via-brand-cream
+            to-brand-brown/5
+            shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-10px_25px_rgba(62,39,35,0.05)]
+            transition-all
+            duration-500
+            group-hover/image:inset-1.5
+            group-hover/image:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-14px_30px_rgba(62,39,35,0.08)]
+          "
+          aria-hidden="true"
+        />
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            bottom-[9%]
+            left-1/2
+            z-0
+            h-[8%]
+            w-[48%]
+            -translate-x-1/2
+            rounded-[50%]
+            bg-brand-brown/15
+            blur-[9px]
+            transition-all
+            duration-500
+            group-hover/image:w-[54%]
+            group-hover/image:bg-brand-brown/20
+            group-hover/image:blur-[11px]
+          "
+          aria-hidden="true"
+        />
+
+        <div
+          className="
+            relative
+            z-10
+            h-full
+            w-full
+            transition-transform
+            duration-500
+            ease-out
+            [transform-style:preserve-3d]
+            group-hover/image:[transform:translateY(-5px)_rotateX(3deg)_rotateY(-2deg)_scale(1.015)]
+          "
+        >
+          <ProductImage
+            productId={product.id}
+            product={product}
+            variant="card"
+            className="h-full w-full"
+          />
+        </div>
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            z-20
+            bg-gradient-to-br
+            from-white/25
+            via-transparent
+            to-brand-brown/5
+            opacity-70
+            transition-opacity
+            duration-500
+            group-hover/image:opacity-100
+          "
+          aria-hidden="true"
+        />
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-2
+            z-30
+            rounded-2xl
+            border
+            border-white/50
+            transition-all
+            duration-500
+            group-hover/image:inset-1.5
+          "
+          aria-hidden="true"
+        />
+      </Link>
 
       {/* ================================================================
-          PRODUCT
-      ================================================================= */}
-      <main className="container-max container-px py-8 sm:py-12 lg:py-16">
-        <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-14 xl:gap-20">
-          {/* Product image */}
-          <div className="lg:sticky lg:top-28">
-            <div
-              className="
-                relative aspect-square overflow-hidden
-                rounded-[2rem]
-                border border-brand-green/10
-                bg-brand-ivory-dark
-                shadow-[0_8px_0_rgba(62,39,35,0.05),0_20px_45px_rgba(62,39,35,0.10)]
-                [perspective:1000px]
-                sm:rounded-[2.5rem]
-              "
-            >
-              <ProductImage
-                productId={product.id}
-                product={product}
-                variant="detail"
-                className="h-full w-full"
-              />
+          PRODUCT INFORMATION
+      ================================================================ */}
 
-              <div
-                className="
-                  pointer-events-none absolute inset-4
-                  rounded-[1.5rem]
-                  border border-white/60
-                  shadow-[inset_0_0_30px_rgba(62,39,35,0.04)]
-                  sm:inset-6
-                "
-                aria-hidden="true"
-              />
-            </div>
-          </div>
+      <div
+        className="
+          flex
+          flex-1
+          flex-col
+          justify-between
+          p-4
+          sm:p-5
+        "
+      >
+        <div className="min-w-0">
 
-          {/* Product information */}
-          <div className="min-w-0">
-            <div>
-              <span className="section-eyebrow">
-                {product.category}
-              </span>
+          {/* PRODUCT NAME */}
 
-              <h1
-                className="
-                  mt-2 font-serif font-bold
-                  text-3xl leading-tight text-brand-green
-                  sm:text-4xl lg:text-5xl
-                "
-              >
-                {product.name}
-              </h1>
+          <Link
+            to={`/product/${product.slug}`}
+            className="
+              block
+              truncate
+              font-serif
+              text-sm
+              font-semibold
+              leading-tight
+              text-brand-brown
+              transition-colors
+              hover:text-brand-red
+              sm:text-base
+            "
+            title={product.name}
+          >
+            {product.name}
+          </Link>
 
-              <p
-                className="
-                  mt-4 max-w-2xl text-base leading-relaxed
-                  text-brand-brown/65 sm:text-lg
-                "
-              >
-                {product.description}
-              </p>
+          {/* VARIANT */}
 
-              {/* Rating */}
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                {reviewsLoading ? (
-                  <span className="text-sm text-brand-brown/45">
-                    Loading reviews...
-                  </span>
-                ) : reviewCount > 0 ? (
-                  <>
-                    {renderStars(
-                      averageRating,
-                    )}
+          <p
+            className="
+              mb-2
+              mt-1
+              truncate
+              text-[10px]
+              text-brand-brown/55
+              sm:mb-3
+              sm:text-xs
+            "
+            title={product.variant}
+          >
+            {product.variant}
+          </p>
 
-                    <span className="text-sm font-bold text-brand-green">
-                      {averageRating.toFixed(
-                        1,
-                      )}
-                    </span>
+          {/* ============================================================
+              REVIEWS
+          ============================================================ */}
 
-                    <a
-                      href="#reviews"
-                      className="
-                        text-sm text-brand-brown/50
-                        underline-offset-2
-                        hover:text-brand-green
-                        hover:underline
-                      "
-                    >
-                      ({reviewCount}{' '}
-                      {reviewCount === 1
-                        ? 'review'
-                        : 'reviews'}
-                      )
-                    </a>
-                  </>
-                ) : (
-                  <>
-                    <span
-                      className="
-                        text-lg tracking-wide
-                        text-brand-brown/25
-                      "
-                      aria-hidden="true"
-                    >
-                      ☆☆☆☆☆
-                    </span>
-
-                    <span className="text-sm text-brand-brown/45">
-                      No reviews yet
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Purchase configuration */}
-            <div
-              className="
-                mt-8 border-y border-brand-green/10
-                py-7 sm:mt-9 sm:py-8
-              "
-            >
-              <div>
-                <label
+          <Link
+            to={`/product/${product.slug}#reviews`}
+            className="
+              mb-3
+              inline-flex
+              min-h-[30px]
+              max-w-full
+              items-center
+              rounded-md
+              focus:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-brand-red/40
+              sm:mb-4
+            "
+            aria-label={
+              reviewsLoading
+                ? `Loading reviews for ${product.name}`
+                : hasReviews
+                  ? `${reviewSummary!.averageRating.toFixed(1)} out of 5 stars from ${reviewSummary!.reviewCount} reviews`
+                  : `No reviews yet for ${product.name}`
+            }
+          >
+            {reviewsLoading ? (
+              <span className="inline-flex items-center gap-1.5 text-[9px] text-brand-brown/40 sm:text-xs">
+                <span
                   className="
-                    mb-3 block text-xs font-bold uppercase
-                    tracking-[0.16em] text-brand-green
-                    sm:text-sm
+                    inline-block
+                    h-2.5
+                    w-2.5
+                    animate-spin
+                    rounded-full
+                    border-2
+                    border-brand-brown/15
+                    border-t-brand-red
+                    sm:h-3
+                    sm:w-3
                   "
-                >
-                  Choose Pack Size
-                </label>
-
-                {purchasableSkus.length >
-                0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {purchasableSkus.map(
-                      (
-                        sku,
-                        index,
-                      ) => {
-                        const selected =
-                          selectedSkuIndex ===
-                          index;
-
-                        return (
-                          <button
-                            key={sku.sku}
-                            type="button"
-                            onClick={() => {
-                              setSelectedSkuIndex(
-                                index,
-                              );
-                              setQuantity(1);
-                              setAdded(
-                                false,
-                              );
-                            }}
-                            className={`
-                              min-h-[44px]
-                              rounded-xl
-                              border
-                              px-5
-                              py-2.5
-                              text-sm
-                              font-semibold
-                              transition-all
-                              duration-200
-                              ${
-                                selected
-                                  ? `
-                                    -translate-y-0.5
-                                    border-brand-green
-                                    bg-brand-green
-                                    text-white
-                                    shadow-[0_4px_0_#315238,0_8px_16px_rgba(62,39,35,0.10)]
-                                  `
-                                  : `
-                                    border-brand-green/15
-                                    bg-white
-                                    text-brand-green
-                                    shadow-[0_3px_0_rgba(62,39,35,0.05)]
-                                    hover:-translate-y-0.5
-                                    hover:border-brand-green/35
-                                    hover:bg-brand-green/5
-                                  `
-                              }
-                              active:translate-y-[1px]
-                            `}
-                            aria-pressed={
-                              selected
-                            }
-                          >
-                            {PACK_LABELS[
-                              sku.packSize
-                            ] ||
-                              `${sku.packSize}g`}
-                          </button>
-                        );
-                      },
-                    )}
-                  </div>
-                ) : (
-                  <div
-                    className="
-                      rounded-xl
-                      border border-brand-brown/10
-                      bg-brand-cream
-                      px-4 py-3
-                      text-sm
-                      text-brand-brown/60
-                    "
-                  >
-                    This product is currently
-                    unavailable.
-                  </div>
-                )}
-              </div>
-
-              {/* Final customer price only */}
-              <div className="mt-7">
-                {isPurchasable &&
-                selectedSku ? (
-                  <span className="font-bold text-3xl text-brand-green sm:text-4xl">
-                    ₹
-                    {selectedSku.websitePrice.toLocaleString(
-                      'en-IN',
-                    )}
-                  </span>
-                ) : (
-                  <span className="font-bold text-2xl text-brand-brown/55 sm:text-3xl">
-                    Price Coming Soon
-                  </span>
-                )}
-              </div>
-
-              {/* Shipping is already included in website price */}
-              <div className="mt-2 flex items-center gap-2">
-                <Truck
-                  className="h-4 w-4 text-green-700"
-                  aria-hidden="true"
                 />
 
-                <span className="text-xs font-semibold text-green-700">
-                  Free shipping
+                Loading reviews...
+              </span>
+            ) : hasReviews ? (
+              <StarRating
+                rating={
+                  reviewSummary!.averageRating
+                }
+                reviewCount={
+                  reviewSummary!.reviewCount
+                }
+                size="sm"
+                showValue
+                showCount
+              />
+            ) : (
+              <span
+                className="
+                  inline-flex
+                  items-center
+                  gap-1
+                  text-[9px]
+                  text-brand-brown/45
+                  sm:gap-1.5
+                  sm:text-xs
+                "
+              >
+                <span
+                  className="
+                    shrink-0
+                    tracking-[1px]
+                    text-brand-brown/25
+                  "
+                  aria-hidden="true"
+                >
+                  ☆☆☆☆☆
                 </span>
-              </div>
-            </div>
 
-            {/* Purchase controls */}
-            <div className="flex flex-col gap-3 py-7 sm:flex-row sm:items-stretch sm:py-8">
-              {/* Quantity */}
+                <span>
+                  No reviews yet
+                </span>
+              </span>
+            )}
+          </Link>
+
+          {/* ============================================================
+              PACK SIZE
+          ============================================================ */}
+
+          <div className="mb-3 sm:mb-4">
+            {product.category ===
+            'combo' ? (
               <div
                 className="
-                  flex min-h-[52px] shrink-0 items-center
-                  justify-center rounded-xl border
-                  border-brand-green/15 bg-white p-1
-                  shadow-[0_4px_0_rgba(62,39,35,0.05)]
-                  sm:w-[132px]
-                "
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    setQuantity(
-                      (value) =>
-                        Math.max(
-                          1,
-                          value - 1,
-                        ),
-                    )
-                  }
-                  disabled={!isPurchasable}
-                  className="
-                    flex h-11 w-11 items-center justify-center
-                    rounded-lg text-brand-green
-                    transition-all
-                    hover:bg-brand-green/5
-                    active:scale-90
-                    disabled:cursor-not-allowed
-                    disabled:opacity-40
-                  "
-                  aria-label="Decrease quantity"
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-
-                <span className="w-10 text-center font-bold text-brand-green">
-                  {quantity}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setQuantity(
-                      (value) =>
-                        value + 1,
-                    )
-                  }
-                  disabled={!isPurchasable}
-                  className="
-                    flex h-11 w-11 items-center justify-center
-                    rounded-lg text-brand-green
-                    transition-all
-                    hover:bg-brand-green/5
-                    active:scale-90
-                    disabled:cursor-not-allowed
-                    disabled:opacity-40
-                  "
-                  aria-label="Increase quantity"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={
-                  handleAddToCart
-                }
-                disabled={!isPurchasable}
-                className={`
-                  relative min-h-[52px] flex-1
-                  rounded-xl px-4 sm:px-6
-                  font-semibold
-                  transition-all duration-200
-                  active:translate-y-[2px]
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                  ${
-                    added
-                      ? `
-                        bg-green-700 text-white
-                        shadow-[0_5px_0_#14532d]
-                      `
-                      : `
-                        border-2 border-brand-green
-                        bg-white text-brand-green
-                        shadow-[0_5px_0_rgba(62,39,35,0.10)]
-                        hover:-translate-y-0.5
-                        hover:bg-brand-green
-                        hover:text-white
-                        hover:shadow-[0_7px_0_rgba(49,82,56,0.30)]
-                      `
-                  }
-                `}
-              >
-                {added ? (
-                  <>
-                    <Check className="mr-2 inline h-5 w-5" />
-                    Added to Cart
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="mr-2 inline h-5 w-5" />
-                    Add to Cart
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={
-                  handleBuyNow
-                }
-                disabled={!isPurchasable}
-                className="
-                  min-h-[52px] flex-1
+                  inline-flex
+                  max-w-full
+                  items-center
                   rounded-xl
-                  bg-brand-red
-                  px-4 sm:px-6
-                  font-bold text-white
-                  shadow-[0_5px_0_#b9230a,0_10px_20px_rgba(254,51,14,0.15)]
-                  transition-all duration-200
-                  hover:-translate-y-0.5
-                  hover:bg-brand-red-dark
-                  hover:shadow-[0_7px_0_#a51f08,0_14px_24px_rgba(254,51,14,0.18)]
-                  active:translate-y-[2px]
-                  active:shadow-none
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
+                  border
+                  border-brand-brown/10
+                  bg-brand-cream
+                  px-3
+                  py-1.5
+                  text-[9px]
+                  font-semibold
+                  text-brand-brown
+                  shadow-soft
+                  sm:text-xs
                 "
               >
-                <Zap className="mr-2 inline h-5 w-5" />
-                Buy Now
-              </button>
-            </div>
-
-            {/* Trust */}
-            <div
-              className="
-                grid grid-cols-3 gap-2
-                border-t border-brand-green/10 pt-6
-                sm:gap-4
-              "
-            >
-              {[
-                {
-                  icon: Leaf,
-                  label: '100% Vegetarian',
-                },
-                {
-                  icon: ShieldCheck,
-                  label: 'FSSAI Registered',
-                },
-                {
-                  icon: Truck,
-                  label: 'Free Shipping',
-                },
-              ].map(
-                ({
-                  icon: Icon,
-                  label,
-                }) => (
-                  <div
-                    key={label}
-                    className="
-                      flex flex-col items-center gap-2
-                      rounded-xl bg-brand-ivory-dark
-                      px-2 py-4 text-center
-                      shadow-[0_3px_0_rgba(62,39,35,0.04)]
-                      transition-transform
-                      hover:-translate-y-1
-                    "
-                  >
-                    <Icon
-                      className="h-5 w-5 text-brand-green sm:h-6 sm:w-6"
-                      aria-hidden="true"
-                    />
-
-                    <span className="text-[9px] font-semibold leading-tight text-brand-brown/65 sm:text-xs">
-                      {label}
-                    </span>
-                  </div>
-                ),
-              )}
-            </div>
-          </div>
-        </div>
-      </main>
-
-      {/* ================================================================
-          REVIEWS
-      ================================================================= */}
-      <section
-        id="reviews"
-        className="bg-brand-ivory-light py-16 sm:py-20"
-      >
-        <div className="container-max container-px">
-          <div className="mx-auto max-w-5xl">
-            <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="section-eyebrow mb-2">
-                  Customer Reviews
-                </p>
-
-                <h2 className="font-serif text-3xl font-bold text-brand-green">
-                  What customers say
-                </h2>
-              </div>
-
-              {!reviewsLoading &&
-                reviewCount > 0 && (
-                  <div className="flex items-center gap-3">
-                    {renderStars(
-                      averageRating,
-                      'h-5 w-5',
-                    )}
-
-                    <span className="text-lg font-bold text-brand-green">
-                      {averageRating.toFixed(
-                        1,
-                      )}
-                    </span>
-
-                    <span className="text-sm text-brand-brown/50">
-                      {reviewCount}{' '}
-                      {reviewCount === 1
-                        ? 'review'
-                        : 'reviews'}
-                    </span>
-                  </div>
-                )}
-            </div>
-
-            {reviewsLoading ? (
-              <div className="card border border-brand-green/10 bg-white p-8 text-center">
-                <p className="text-sm text-brand-brown/50">
-                  Loading customer reviews...
-                </p>
-              </div>
-            ) : reviewsError ? (
-              <div className="card border border-brand-green/10 bg-white p-8 text-center">
-                <p className="text-sm text-brand-brown/60">
-                  Reviews are temporarily unavailable.
-                </p>
-              </div>
-            ) : reviews.length === 0 ? (
-              <div className="card border border-brand-green/10 bg-white p-10 text-center">
-                <div className="mb-3 text-2xl tracking-widest text-brand-brown/20">
-                  ☆☆☆☆☆
-                </div>
-
-                <p className="font-medium text-brand-green">
-                  No reviews yet
-                </p>
-
-                <p className="mt-1 text-sm text-brand-brown/50">
-                  Be the first customer to
-                  share your experience.
-                </p>
+                <span className="truncate">
+                  {packLabel}
+                </span>
               </div>
             ) : (
-              <div className="grid gap-5 md:grid-cols-2">
-                {reviews.map(
-                  (review) => (
-                    <article
-                      key={
-                        review.reviewId
-                      }
-                      className="
-                        card border border-brand-green/10
-                        bg-white p-5 shadow-soft
-                        transition-all duration-300
-                        hover:-translate-y-1
-                        hover:shadow-lift
-                        sm:p-6
-                      "
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        {renderStars(
-                          review.rating,
-                        )}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor={`pack-size-${selectId}`}
+                  className="
+                    block
+                    text-[9px]
+                    font-bold
+                    uppercase
+                    tracking-wider
+                    text-brand-brown/60
+                    sm:text-2xs
+                  "
+                >
+                  Pack Size
+                </label>
 
-                        {review.verifiedPurchase && (
-                          <span className="whitespace-nowrap text-2xs font-semibold text-emerald-600">
-                            Verified purchase
-                          </span>
-                        )}
-                      </div>
+                <div className="relative w-full">
+                  <select
+                    id={`pack-size-${selectId}`}
+                    value={
+                      selectedSkuIndex
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      setSelectedSkuIndex(
+                        Number(
+                          event.target
+                            .value,
+                        ),
+                      )
+                    }
+                    className="
+                      min-h-[40px]
+                      w-full
+                      appearance-none
+                      cursor-pointer
+                      rounded-xl
+                      border
+                      border-brand-brown/15
+                      bg-brand-cream
+                      px-3
+                      py-2
+                      pr-8
+                      text-[10px]
+                      font-semibold
+                      text-brand-brown
+                      outline-none
+                      transition-all
+                      focus:border-brand-red
+                      focus:ring-2
+                      focus:ring-brand-red/10
+                      hover:border-brand-brown/25
+                      sm:text-xs
+                    "
+                    aria-label={`Select pack size for ${product.name}`}
+                  >
+                    {purchasableSkus.map(
+                      (
+                        skuObj,
+                        index,
+                      ) => (
+                        <option
+                          key={
+                            skuObj.sku
+                          }
+                          value={index}
+                        >
+                          {PACK_LABELS[
+                            skuObj.packSize
+                          ] ||
+                            `${skuObj.packSize}g`}
+                        </option>
+                      ),
+                    )}
+                  </select>
 
-                      {review.title && (
-                        <h3 className="mt-4 font-serif font-semibold text-brand-green">
-                          {review.title}
-                        </h3>
-                      )}
-
-                      <p className="mt-2 text-sm leading-relaxed text-brand-brown/70">
-                        {review.comment}
-                      </p>
-
-                      <div className="mt-5 border-t border-brand-green/10 pt-4">
-                        <p className="text-xs font-semibold text-brand-brown">
-                          {review.customerName}
-                        </p>
-
-                        <p className="mt-1 text-2xs text-brand-brown/40">
-                          {new Date(
-                            review.createdAt,
-                          ).toLocaleDateString(
-                            'en-IN',
-                            {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            },
-                          )}
-                        </p>
-                      </div>
-                    </article>
-                  ),
-                )}
+                  <ChevronDown
+                    className="
+                      pointer-events-none
+                      absolute
+                      right-2.5
+                      top-1/2
+                      h-3.5
+                      w-3.5
+                      -translate-y-1/2
+                      text-brand-brown/45
+                    "
+                    aria-hidden="true"
+                  />
+                </div>
               </div>
             )}
           </div>
-        </div>
-      </section>
 
-      {/* ================================================================
-          RELATED PRODUCTS
-      ================================================================= */}
-      {relatedProducts.length > 0 && (
-        <section className="bg-brand-ivory-dark py-16 sm:py-20">
-          <div className="container-max container-px">
-            <div className="mb-8 text-center sm:mb-10">
-              <p className="section-eyebrow mb-2">
-                You May Also Like
-              </p>
+          {/* ============================================================
+              PRICE
+          ============================================================ */}
 
-              <h2 className="font-serif text-3xl font-bold text-brand-green">
-                More from {product.category}
-              </h2>
-            </div>
+          <div className="mb-1 flex flex-wrap items-baseline gap-2">
+            <span
+              className="
+                text-lg
+                font-bold
+                text-brand-brown
+                sm:text-xl
+              "
+            >
+              {isPurchasable
+                ? formatPrice(
+                    selectedSku.websitePrice,
+                  )
+                : 'Price Coming Soon'}
+            </span>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
-              {relatedProducts.map(
-                (relatedProduct) => (
-                  <ProductCard
-                    key={relatedProduct.id}
-                    product={
-                      relatedProduct
-                    }
-                  />
-                ),
+            {isPurchasable &&
+              selectedSku.mrp >
+                selectedSku.websitePrice && (
+                <span
+                  className="
+                    text-xs
+                    text-brand-brown/40
+                    line-through
+                  "
+                  aria-label={`MRP ${formatPrice(selectedSku.mrp)}`}
+                >
+                  {formatPrice(
+                    selectedSku.mrp,
+                  )}
+                </span>
               )}
-            </div>
           </div>
-        </section>
-      )}
-    </>
+
+          {/* SHIPPING */}
+
+          <p
+            className="
+              mb-4
+              text-[9px]
+              leading-relaxed
+              text-brand-brown/55
+              sm:text-2xs
+            "
+          >
+            <span className="font-semibold text-green-700">
+              Free shipping
+            </span>
+          </p>
+        </div>
+
+        {/* ================================================================
+            ACTIONS
+        ================================================================ */}
+
+        <div className="mt-1 grid grid-cols-2 gap-2">
+
+          {/* ADD TO CART */}
+
+          <button
+            type="button"
+            onClick={
+              handleAdd
+            }
+            disabled={
+              !isPurchasable
+            }
+            className={`
+              group/cart
+              relative
+              flex
+              min-h-[44px]
+              items-center
+              justify-center
+              gap-1.5
+              overflow-hidden
+              rounded-xl
+              px-2
+              py-2
+              text-[10px]
+              font-semibold
+              transition-all
+              duration-200
+              active:translate-y-[2px]
+              active:shadow-none
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+              sm:text-xs
+              md:text-sm
+
+              ${
+                added
+                  ? `
+                    bg-green-700
+                    text-white
+                    shadow-[0_4px_0_#14532d]
+                  `
+                  : `
+                    border
+                    border-brand-brown/15
+                    bg-white
+                    text-brand-brown
+                    shadow-[0_4px_0_rgba(78,52,46,0.10)]
+                    hover:-translate-y-0.5
+                    hover:border-brand-brown/25
+                    hover:bg-brand-cream
+                    hover:shadow-[0_6px_0_rgba(78,52,46,0.12)]
+                  `
+              }
+            `}
+            aria-label={`Add ${product.name} (${packLabel}) to cart`}
+          >
+            {added ? (
+              <>
+                <Check
+                  className="
+                    h-3.5
+                    w-3.5
+                    shrink-0
+                    sm:h-4
+                    sm:w-4
+                  "
+                />
+
+                <span>
+                  Added
+                </span>
+              </>
+            ) : (
+              <>
+                <Plus
+                  className="
+                    h-3.5
+                    w-3.5
+                    shrink-0
+                    sm:h-4
+                    sm:w-4
+                  "
+                />
+
+                <span>
+                  Cart
+                </span>
+              </>
+            )}
+          </button>
+
+          {/* BUY NOW */}
+
+          <button
+            type="button"
+            onClick={
+              handleBuyNow
+            }
+            disabled={
+              !isPurchasable
+            }
+            className="
+              relative
+              flex
+              min-h-[44px]
+              items-center
+              justify-center
+              gap-1.5
+              overflow-hidden
+              rounded-xl
+              bg-brand-red
+              px-2
+              py-2
+              text-[10px]
+              font-bold
+              text-white
+              shadow-[0_4px_0_#b9230a]
+              transition-all
+              duration-200
+              hover:-translate-y-0.5
+              hover:bg-brand-red-dark
+              hover:shadow-[0_6px_0_#a51f08]
+              active:translate-y-[2px]
+              active:shadow-none
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+              sm:text-xs
+              md:text-sm
+            "
+            aria-label={`Buy ${product.name} (${packLabel}) now`}
+          >
+            <Zap
+              className="
+                h-3.5
+                w-3.5
+                shrink-0
+                sm:h-4
+                sm:w-4
+              "
+            />
+
+            <span>
+              Buy Now
+            </span>
+          </button>
+        </div>
+      </div>
+    </article>
   );
 }
