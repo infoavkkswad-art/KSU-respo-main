@@ -1,21 +1,23 @@
 import { ProductService } from '../services/product-service';
 import { CartItem } from '../context/CartContext';
 
+export interface CalculatedCartItem {
+  sku: string;
+  quantity: number;
+  name: string;
+  packSize: number | string;
+  websitePrice: number;
+  mrp: number;
+  shipping: 0;
+  freeShipping: true;
+}
+
 export interface CalculatedCart {
   subtotal: number;
-  shippingTotal: number;
+  shippingTotal: 0;
   total: number;
   itemCount: number;
-  resolvedItems: Array<{
-    sku: string;
-    quantity: number;
-    name: string;
-    packSize: number | string;
-    websitePrice: number;
-    mrp: number;
-    shipping: number;
-    freeShipping: boolean;
-  }>;
+  resolvedItems: CalculatedCartItem[];
 }
 
 export function calculateCartTotals(
@@ -24,13 +26,13 @@ export function calculateCartTotals(
   let subtotal = 0;
   let itemCount = 0;
 
-  const resolvedItems: CalculatedCart['resolvedItems'] =
-    [];
+  const resolvedItems: CalculatedCartItem[] = [];
 
   for (const item of items) {
     if (
       !item ||
       typeof item.sku !== 'string' ||
+      !item.sku.trim() ||
       typeof item.quantity !== 'number' ||
       !Number.isFinite(item.quantity) ||
       item.quantity <= 0
@@ -38,64 +40,71 @@ export function calculateCartTotals(
       continue;
     }
 
-    const res = ProductService.getProductBySku(
-      item.sku,
+    /*
+     * Resolve through the central purchasable-product
+     * method so TypeScript knows that websitePrice and
+     * MRP are guaranteed to be numbers.
+     */
+    const result =
+      ProductService.getPurchasableProductBySku(
+        item.sku,
+      );
+
+    if (!result) {
+      continue;
+    }
+
+    const { family, skuObj } = result;
+
+    const quantity = Math.floor(
+      item.quantity,
     );
 
-    if (!res) {
-      continue;
-    }
-
-    const { family, skuObj } = res;
-
-    /*
-     * A SKU without a website price is not purchasable.
-     * Never treat a missing price as ₹0.
-     */
-    if (
-      skuObj.websitePrice === null ||
-      !Number.isFinite(skuObj.websitePrice)
-    ) {
-      continue;
-    }
-
-    const qty = Math.floor(item.quantity);
-
-    if (qty <= 0) {
+    if (quantity <= 0) {
       continue;
     }
 
     /*
-     * websitePrice is the final customer-facing price.
-     * Shipping is already included in this price.
+     * websitePrice is the FINAL customer-facing price.
      *
-     * Therefore:
-     * - no shipping is added to the subtotal
-     * - no separate shipping charge is calculated
-     * - customer-facing shipping remains FREE
+     * Shipping is already included.
+     *
+     * NEVER:
+     * websitePrice + shipping
+     *
+     * ALWAYS:
+     * websitePrice × quantity
      */
     const itemSubtotal =
-      skuObj.websitePrice * qty;
+      skuObj.websitePrice * quantity;
 
     subtotal += itemSubtotal;
-    itemCount += qty;
+    itemCount += quantity;
 
     resolvedItems.push({
       sku: skuObj.sku,
-      quantity: qty,
+      quantity,
       name: family.name,
       packSize: skuObj.packSize,
       websitePrice: skuObj.websitePrice,
       mrp: skuObj.mrp,
+
+      // Free shipping is the permanent website rule.
       shipping: 0,
       freeShipping: true,
     });
   }
 
   /*
-   * Shipping is already included in websitePrice.
-   * The cart total therefore equals the displayed
-   * product selling-price subtotal.
+   * CENTRAL WEBSITE SALES RULE
+   *
+   * Product websitePrice already includes the
+   * customer's shipping cost.
+   *
+   * Customer sees:
+   * Product price = Final price
+   * Shipping = FREE
+   * Cart total = Product price total
    */
   const shippingTotal = 0;
   const total = subtotal;
