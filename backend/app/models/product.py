@@ -1,21 +1,26 @@
 # Authoritative backend replica of the 43 SKUs across 15 product families.
 #
 # IMPORTANT:
-# The backend must mirror the current customer-facing sales configuration.
+# The backend must mirror the final customer-facing website sales master.
 #
-# Customer-facing rule:
+# Customer-facing rules:
 # - websitePrice = final selling price
 # - shipping = 0
 # - freeShipping = True
-# - MRP is the reference MRP
+# - MRP = product/pack reference MRP
 #
-# The backend remains the final authority for order pricing and Razorpay
-# amounts. Therefore these values must stay synchronized with:
+# The backend remains the final authority for:
+# - order pricing
+# - order totals
+# - Razorpay amount
+#
+# Therefore this file MUST remain synchronized with:
 #
 #   src/data/sales-config.ts
 #
-# Do NOT add manufacturing cost, dealer price, distributor price, or profit
-# data to this file.
+# Do not put factory cost, dealer price, distributor price,
+# manufacturing cost, or profit information here.
+
 
 BACKEND_PRODUCTS = [
     {
@@ -51,6 +56,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "moong-garlic",
         "slug": "moong-garlic-papad",
@@ -84,6 +90,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "moong-jeera",
         "slug": "moong-jeera-papad",
@@ -95,7 +102,7 @@ BACKEND_PRODUCTS = [
                 "sku": "KS-MJP-200",
                 "packSize": 200,
                 "mrp": 109,
-                "websitePrice": 102,
+                "websitePrice": 112,
                 "shipping": 0,
                 "freeShipping": True,
             },
@@ -117,6 +124,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "moong-pudhina",
         "slug": "moong-pudhina-papad",
@@ -150,6 +158,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "moong-green-chilli",
         "slug": "moong-green-chilli-papad",
@@ -161,7 +170,7 @@ BACKEND_PRODUCTS = [
                 "sku": "KS-MGCP-200",
                 "packSize": 200,
                 "mrp": 105,
-                "websitePrice": 102,
+                "websitePrice": 107,
                 "shipping": 0,
                 "freeShipping": True,
             },
@@ -183,6 +192,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "moong-kasuri-methi",
         "slug": "moong-kasuri-methi-papad",
@@ -194,7 +204,7 @@ BACKEND_PRODUCTS = [
                 "sku": "KS-MKMP-200",
                 "packSize": 200,
                 "mrp": 109,
-                "websitePrice": 102,
+                "websitePrice": 107,
                 "shipping": 0,
                 "freeShipping": True,
             },
@@ -216,6 +226,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "moong-punjabi-masala",
         "slug": "moong-punjabi-masala-papad",
@@ -227,7 +238,7 @@ BACKEND_PRODUCTS = [
                 "sku": "KS-MPMP-200",
                 "packSize": 200,
                 "mrp": 119,
-                "websitePrice": 102,
+                "websitePrice": 107,
                 "shipping": 0,
                 "freeShipping": True,
             },
@@ -249,6 +260,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "chana-chotu",
         "slug": "chana-chotu-papad",
@@ -282,6 +294,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "chana-garlic",
         "slug": "chana-garlic-papad",
@@ -315,6 +328,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "chana-khata-mitha",
         "slug": "chana-khata-mitha-papad",
@@ -326,7 +340,7 @@ BACKEND_PRODUCTS = [
                 "sku": "KS-CKM-200",
                 "packSize": 200,
                 "mrp": 99,
-                "websitePrice": 99,
+                "websitePrice": 107,
                 "shipping": 0,
                 "freeShipping": True,
             },
@@ -348,6 +362,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "chana-tomato",
         "slug": "chana-tomato-papad",
@@ -359,7 +374,7 @@ BACKEND_PRODUCTS = [
                 "sku": "KS-CTP-200",
                 "packSize": 200,
                 "mrp": 99,
-                "websitePrice": 99,
+                "websitePrice": 107,
                 "shipping": 0,
                 "freeShipping": True,
             },
@@ -381,6 +396,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "chana-punjabi-masala",
         "slug": "chana-punjabi-masala-papad",
@@ -392,7 +408,7 @@ BACKEND_PRODUCTS = [
                 "sku": "KS-CPM-200",
                 "packSize": 200,
                 "mrp": 119,
-                "websitePrice": 102,
+                "websitePrice": 107,
                 "shipping": 0,
                 "freeShipping": True,
             },
@@ -414,6 +430,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "urad-guru",
         "slug": "urad-guru-papad",
@@ -425,7 +442,7 @@ BACKEND_PRODUCTS = [
                 "sku": "KS-UGP-200",
                 "packSize": 200,
                 "mrp": 119,
-                "websitePrice": 102,
+                "websitePrice": 112,
                 "shipping": 0,
                 "freeShipping": True,
             },
@@ -447,6 +464,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "urad-garlic",
         "slug": "urad-garlic-papad",
@@ -480,6 +498,7 @@ BACKEND_PRODUCTS = [
             },
         ],
     },
+
     {
         "id": "combo-235",
         "slug": "kawad-swad-combo-pack",
@@ -491,7 +510,7 @@ BACKEND_PRODUCTS = [
                 "sku": "KS-COMB-235",
                 "packSize": 235,
                 "mrp": 199,
-                "websitePrice": None,
+                "websitePrice": 199,
                 "shipping": 0,
                 "freeShipping": True,
             },
@@ -500,12 +519,19 @@ BACKEND_PRODUCTS = [
 ]
 
 
-def find_sku_in_backend(sku_code: str):
-    normalized_sku = sku_code.strip().upper()
+def find_sku_in_backend(
+    sku_code: str,
+):
+    normalized_sku = (
+        sku_code.strip().upper()
+    )
 
     for family in BACKEND_PRODUCTS:
         for sku in family["skus"]:
-            if sku["sku"].upper() == normalized_sku:
+            if (
+                sku["sku"].upper()
+                == normalized_sku
+            ):
                 return family, sku
 
     return None, None
