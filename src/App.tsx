@@ -16,19 +16,13 @@ import { FloatingCart } from '@/components/FloatingCart';
 import { CartProvider } from '@/context/CartContext';
 import { OrderProvider } from '@/context/OrderContext';
 
-// Lazy load pages for code splitting
+// Lazy-loaded pages
 const Home = lazy(() => import('@/pages/Home'));
 const About = lazy(() => import('@/pages/About'));
 const Products = lazy(() => import('@/pages/Products'));
-
-const ProductDetail = lazy(() =>
-  import('@/pages/ProductDetail').then(
-    (module) => ({
-      default: module.ProductDetail,
-    }),
-  ),
+const ProductDetail = lazy(
+  () => import('@/pages/ProductDetail'),
 );
-
 const Shop = lazy(() => import('@/pages/Shop'));
 const Cart = lazy(() => import('@/pages/Cart'));
 const Checkout = lazy(() => import('@/pages/Checkout'));
@@ -106,6 +100,7 @@ function PageLoader() {
           rounded-full
           animate-spin
         "
+        aria-label="Loading page"
       />
     </div>
   );
