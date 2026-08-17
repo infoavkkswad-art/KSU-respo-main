@@ -35,14 +35,19 @@ export type SalesSkuConfig = {
   packSize: SalesPackSize;
 
   /**
-   * Legal/reference MRP.
-   * Customer-facing MRP must not be exceeded.
+   * Legal/reference MRP printed on the product.
+   *
+   * IMPORTANT:
+   * This must match the actual MRP used on the
+   * physical retail pack.
    */
   mrp: number | null;
 
   /**
    * FINAL CUSTOMER-FACING WEBSITE PRICE.
-   * Shipping is already included.
+   *
+   * This is the amount charged for the product
+   * on the website, with shipping already included.
    */
   sellingPrice: number | null;
 
@@ -72,69 +77,36 @@ export type SalesOffer = {
   id: string;
   name: string;
   type: SalesOfferType;
-
-  /**
-   * percentage:
-   *   10 = 10%
-   *
-   * fixed:
-   *   50 = ₹50
-   *
-   * buy_x_get_y / bundle:
-   *   Reserved for the future promotion engine.
-   */
   value: number;
-
   enabled: boolean;
-
   startsAt?: string;
   endsAt?: string;
-
   minimumOrderValue?: number;
   maximumDiscount?: number;
-
-  /**
-   * Empty/undefined = all eligible SKUs.
-   */
   skuCodes?: string[];
 };
 
 export type SalesCoupon = {
   code: string;
   name: string;
-
-  type:
-    | 'percentage'
-    | 'fixed';
-
+  type: 'percentage' | 'fixed';
   value: number;
-
   enabled: boolean;
-
   startsAt?: string;
   endsAt?: string;
-
   minimumOrderValue?: number;
   maximumDiscount?: number;
-
   usageLimit?: number;
   perCustomerLimit?: number;
-
-  /**
-   * Empty/undefined = all eligible SKUs.
-   */
   skuCodes?: string[];
 };
 
 export type SalesCampaign = {
   id: string;
   name: string;
-
   enabled: boolean;
-
   startsAt?: string;
   endsAt?: string;
-
   offerIds: string[];
   couponCodes: string[];
 };
@@ -146,8 +118,7 @@ export type SalesCampaign = {
 export const SALES_POLICY = {
   currency: 'INR' as const,
 
-  shippingIncludedInSellingPrice:
-    true,
+  shippingIncludedInSellingPrice: true,
 
   freeShipping: true,
 
@@ -169,10 +140,6 @@ export const SALES_POLICY = {
 
   showAutomaticDiscount: false,
 
-  /*
-   * Offers and coupons remain disabled until
-   * explicitly configured.
-   */
   offersEnabled: false,
 
   couponsEnabled: false,
@@ -182,6 +149,68 @@ export const SALES_POLICY = {
 
 /* ============================================================================
  * CURRENT SKU PRICING
+ *
+ * FINAL WEBSITE SELLING PRICES PROVIDED BY KAWAD SWAD.
+ *
+ * Website Price incl. Shipping:
+ *
+ * KS-MMP-200   ₹102
+ * KS-MMP-500   ₹211
+ * KS-MMP-1000  ₹425
+ *
+ * KS-MGP-200   ₹107
+ * KS-MGP-500   ₹216
+ * KS-MGP-1000  ₹440
+ *
+ * KS-MJP-200   ₹112
+ * KS-MJP-500   ₹226
+ * KS-MJP-1000  ₹455
+ *
+ * KS-MPP-200   ₹107
+ * KS-MPP-500   ₹216
+ * KS-MPP-1000  ₹435
+ *
+ * KS-MGCP-200  ₹107
+ * KS-MGCP-500  ₹216
+ * KS-MGCP-1000 ₹435
+ *
+ * KS-MKMP-200  ₹107
+ * KS-MKMP-500  ₹221
+ * KS-MKMP-1000 ₹450
+ *
+ * KS-MPMP-200  ₹107
+ * KS-MPMP-500  ₹216
+ * KS-MPMP-1000 ₹435
+ *
+ * KS-CCP-200   ₹102
+ * KS-CCP-500   ₹211
+ * KS-CCP-1000  ₹425
+ *
+ * KS-CGP-200   ₹107
+ * KS-CGP-500   ₹221
+ * KS-CGP-1000  ₹450
+ *
+ * KS-CKM-200   ₹107
+ * KS-CKM-500   ₹216
+ * KS-CKM-1000  ₹435
+ *
+ * KS-CTP-200   ₹107
+ * KS-CTP-500   ₹221
+ * KS-CTP-1000  ₹450
+ *
+ * KS-CPM-200   ₹107
+ * KS-CPM-500   ₹216
+ * KS-CPM-1000  ₹435
+ *
+ * KS-UGP-200   ₹112
+ * KS-UGP-500   ₹231
+ * KS-UGP-1000  ₹465
+ *
+ * KS-UGG-200   ₹117
+ * KS-UGG-500   ₹241
+ * KS-UGG-1000  ₹485
+ *
+ * KS-COMB-235  ₹199
  * ========================================================================== */
 
 export const SALES_SKUS: Record<
@@ -264,7 +293,7 @@ export const SALES_SKUS: Record<
     sku: 'KS-MJP-200',
     packSize: 200,
     mrp: 109,
-    sellingPrice: 102,
+    sellingPrice: 112,
     shipping: 0,
     freeShipping: true,
     available: true,
@@ -297,7 +326,16 @@ export const SALES_SKUS: Record<
   'KS-MPP-200': {
     sku: 'KS-MPP-200',
     packSize: 200,
+
+    /*
+     * Existing MRP = ₹105.
+     * Final website price = ₹107.
+     *
+     * MRP must be confirmed/updated on the physical pack
+     * before this final website price is published.
+     */
     mrp: 105,
+
     sellingPrice: 107,
     shipping: 0,
     freeShipping: true,
@@ -331,8 +369,17 @@ export const SALES_SKUS: Record<
   'KS-MGCP-200': {
     sku: 'KS-MGCP-200',
     packSize: 200,
+
+    /*
+     * Existing MRP = ₹105.
+     * Final website price = ₹107.
+     *
+     * MRP must be confirmed/updated on the physical pack
+     * before this final website price is published.
+     */
     mrp: 105,
-    sellingPrice: 102,
+
+    sellingPrice: 107,
     shipping: 0,
     freeShipping: true,
     available: true,
@@ -366,7 +413,7 @@ export const SALES_SKUS: Record<
     sku: 'KS-MKMP-200',
     packSize: 200,
     mrp: 109,
-    sellingPrice: 102,
+    sellingPrice: 107,
     shipping: 0,
     freeShipping: true,
     available: true,
@@ -400,7 +447,7 @@ export const SALES_SKUS: Record<
     sku: 'KS-MPMP-200',
     packSize: 200,
     mrp: 119,
-    sellingPrice: 102,
+    sellingPrice: 107,
     shipping: 0,
     freeShipping: true,
     available: true,
@@ -501,8 +548,17 @@ export const SALES_SKUS: Record<
   'KS-CKM-200': {
     sku: 'KS-CKM-200',
     packSize: 200,
+
+    /*
+     * Existing MRP = ₹99.
+     * Final website price = ₹107.
+     *
+     * MRP must be confirmed/updated on the physical pack
+     * before this final website price is published.
+     */
     mrp: 99,
-    sellingPrice: 99,
+
+    sellingPrice: 107,
     shipping: 0,
     freeShipping: true,
     available: true,
@@ -535,8 +591,17 @@ export const SALES_SKUS: Record<
   'KS-CTP-200': {
     sku: 'KS-CTP-200',
     packSize: 200,
+
+    /*
+     * Existing MRP = ₹99.
+     * Final website price = ₹107.
+     *
+     * MRP must be confirmed/updated on the physical pack
+     * before this final website price is published.
+     */
     mrp: 99,
-    sellingPrice: 99,
+
+    sellingPrice: 107,
     shipping: 0,
     freeShipping: true,
     available: true,
@@ -570,7 +635,7 @@ export const SALES_SKUS: Record<
     sku: 'KS-CPM-200',
     packSize: 200,
     mrp: 119,
-    sellingPrice: 102,
+    sellingPrice: 107,
     shipping: 0,
     freeShipping: true,
     available: true,
@@ -604,7 +669,7 @@ export const SALES_SKUS: Record<
     sku: 'KS-UGP-200',
     packSize: 200,
     mrp: 119,
-    sellingPrice: 102,
+    sellingPrice: 112,
     shipping: 0,
     freeShipping: true,
     available: true,
@@ -665,17 +730,17 @@ export const SALES_SKUS: Record<
   },
 
   /* --------------------------------------------------------------------------
-     COMBO
+     COMBO PACK
   -------------------------------------------------------------------------- */
 
   'KS-COMB-235': {
     sku: 'KS-COMB-235',
     packSize: 235,
     mrp: 199,
-    sellingPrice: null,
+    sellingPrice: 199,
     shipping: 0,
     freeShipping: true,
-    available: false,
+    available: true,
   },
 };
 
@@ -733,8 +798,7 @@ export function isSkuAvailable(
   return Boolean(
     config &&
       config.available &&
-      config.sellingPrice !==
-        null,
+      config.sellingPrice !== null,
   );
 }
 
@@ -960,8 +1024,7 @@ export function calculateOfferDiscount(
   let discount = 0;
 
   if (
-    offer.type ===
-    'percentage'
+    offer.type === 'percentage'
   ) {
     discount =
       eligibleAmount *
@@ -1018,8 +1081,7 @@ export function calculateCouponDiscount(
   let discount = 0;
 
   if (
-    coupon.type ===
-    'percentage'
+    coupon.type === 'percentage'
   ) {
     discount =
       eligibleAmount *
@@ -1071,14 +1133,10 @@ export function validateSalesConfig(): {
     SALES_SKUS,
   )) {
     const normalizedKey =
-      skuKey
-        .trim()
-        .toUpperCase();
+      skuKey.trim().toUpperCase();
 
     const normalizedSku =
-      config.sku
-        .trim()
-        .toUpperCase();
+      config.sku.trim().toUpperCase();
 
     /* SKU integrity */
     if (
@@ -1130,8 +1188,7 @@ export function validateSalesConfig(): {
     }
 
     if (
-      config.freeShipping !==
-      true
+      config.freeShipping !== true
     ) {
       errors.push(
         `${config.sku}: freeShipping must be true.`,
@@ -1155,8 +1212,7 @@ export function validateSalesConfig(): {
 
     /* Selling price */
     if (
-      config.sellingPrice !==
-        null &&
+      config.sellingPrice !== null &&
       (
         !Number.isFinite(
           config.sellingPrice,
@@ -1172,8 +1228,7 @@ export function validateSalesConfig(): {
     /* Available SKU */
     if (
       config.available &&
-      config.sellingPrice ===
-        null
+      config.sellingPrice === null
     ) {
       errors.push(
         `${config.sku}: available SKU must have a selling price.`,
@@ -1190,18 +1245,17 @@ export function validateSalesConfig(): {
     }
 
     /*
-     * Consumer selling price must not exceed
-     * declared MRP.
+     * Consumer-facing selling price must not exceed
+     * the MRP declared on the product.
      */
     if (
       config.mrp !== null &&
-      config.sellingPrice !==
-        null &&
+      config.sellingPrice !== null &&
       config.sellingPrice >
         config.mrp
     ) {
       errors.push(
-        `${config.sku}: sellingPrice cannot exceed MRP.`,
+        `${config.sku}: sellingPrice ₹${config.sellingPrice} exceeds MRP ₹${config.mrp}. Confirm/update the physical-pack MRP before publishing this price.`,
       );
     }
   }
@@ -1264,8 +1318,7 @@ export function validateSalesConfig(): {
         !Number.isFinite(
           offer.minimumOrderValue,
         ) ||
-        offer.minimumOrderValue <
-          0
+        offer.minimumOrderValue < 0
       )
     ) {
       errors.push(
@@ -1280,8 +1333,7 @@ export function validateSalesConfig(): {
         !Number.isFinite(
           offer.maximumDiscount,
         ) ||
-        offer.maximumDiscount <
-          0
+        offer.maximumDiscount < 0
       )
     ) {
       errors.push(
@@ -1307,7 +1359,7 @@ export function validateSalesConfig(): {
 
   /* ==========================================================================
    * COUPON VALIDATION
-   * ======================================================================== */
+   * ========================================================================== */
 
   const couponCodes =
     new Set<string>();
@@ -1363,8 +1415,7 @@ export function validateSalesConfig(): {
         !Number.isFinite(
           coupon.minimumOrderValue,
         ) ||
-        coupon.minimumOrderValue <
-          0
+        coupon.minimumOrderValue < 0
       )
     ) {
       errors.push(
@@ -1379,8 +1430,7 @@ export function validateSalesConfig(): {
         !Number.isFinite(
           coupon.maximumDiscount,
         ) ||
-        coupon.maximumDiscount <
-          0
+        coupon.maximumDiscount < 0
       )
     ) {
       errors.push(
@@ -1410,8 +1460,7 @@ export function validateSalesConfig(): {
         !Number.isInteger(
           coupon.perCustomerLimit,
         ) ||
-        coupon.perCustomerLimit <=
-          0
+        coupon.perCustomerLimit <= 0
       )
     ) {
       errors.push(
@@ -1437,7 +1486,7 @@ export function validateSalesConfig(): {
 
   /* ==========================================================================
    * CAMPAIGN VALIDATION
-   * ======================================================================== */
+   * ========================================================================== */
 
   const campaignIds =
     new Set<string>();
@@ -1496,8 +1545,7 @@ export function validateSalesConfig(): {
   }
 
   return {
-    valid:
-      errors.length === 0,
+    valid: errors.length === 0,
     errors,
   };
 }
