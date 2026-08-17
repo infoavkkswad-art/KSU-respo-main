@@ -1,5 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+} from 'react';
+import {
+  Link,
+  useNavigate,
+} from 'react-router-dom';
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -9,6 +17,7 @@ import {
 } from 'lucide-react';
 
 import { SEO } from '../components/SEO';
+
 import {
   FormField,
   FormStatusMessage,
@@ -91,16 +100,17 @@ declare global {
  * RAZORPAY SCRIPT LOADER
  * ========================================================================== */
 
-const loadRazorpayScript = (): Promise<boolean> => {
+function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
     if (window.Razorpay) {
       resolve(true);
       return;
     }
 
-    const existingScript = document.querySelector(
-      'script[src="https://checkout.razorpay.com/v1/checkout.js"]',
-    );
+    const existingScript =
+      document.querySelector(
+        'script[src="https://checkout.razorpay.com/v1/checkout.js"]',
+      );
 
     if (existingScript) {
       const handleLoad = () => {
@@ -114,29 +124,47 @@ const loadRazorpayScript = (): Promise<boolean> => {
       };
 
       const cleanup = () => {
-        existingScript.removeEventListener('load', handleLoad);
-        existingScript.removeEventListener('error', handleError);
+        existingScript.removeEventListener(
+          'load',
+          handleLoad,
+        );
+
+        existingScript.removeEventListener(
+          'error',
+          handleError,
+        );
       };
 
-      existingScript.addEventListener('load', handleLoad);
-      existingScript.addEventListener('error', handleError);
+      existingScript.addEventListener(
+        'load',
+        handleLoad,
+      );
+
+      existingScript.addEventListener(
+        'error',
+        handleError,
+      );
 
       return;
     }
 
-    const script = document.createElement('script');
+    const script =
+      document.createElement('script');
 
     script.src =
       'https://checkout.razorpay.com/v1/checkout.js';
 
     script.async = true;
 
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.onload = () =>
+      resolve(true);
+
+    script.onerror = () =>
+      resolve(false);
 
     document.body.appendChild(script);
   });
-};
+}
 
 /* ============================================================================
  * CHECKOUT VALIDATION
@@ -147,22 +175,39 @@ function validateCheckoutCustomer(
 ): string[] {
   const errors: string[] = [];
 
-  const fullName = customer.fullName.trim();
-  const phone = customer.phone.trim();
-  const email = customer.email.trim();
-  const address = customer.address.trim();
-  const city = customer.city.trim();
-  const state = customer.state.trim();
-  const pincode = customer.pincode.trim();
+  const fullName =
+    customer.fullName.trim();
+
+  const phone =
+    customer.phone.trim();
+
+  const email =
+    customer.email.trim();
+
+  const address =
+    customer.address.trim();
+
+  const city =
+    customer.city.trim();
+
+  const state =
+    customer.state.trim();
+
+  const pincode =
+    customer.pincode.trim();
 
   if (!fullName) {
-    errors.push('Please enter your full name.');
+    errors.push(
+      'Please enter your full name.',
+    );
   } else if (fullName.length < 4) {
     errors.push(
       'Full name must contain at least 4 characters.',
     );
   } else if (
-    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(fullName)
+    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(
+      fullName,
+    )
   ) {
     errors.push(
       'Please enter a valid name using letters only.',
@@ -170,17 +215,25 @@ function validateCheckoutCustomer(
   }
 
   if (!phone) {
-    errors.push('Please enter your mobile number.');
-  } else if (!/^[6-9]\d{9}$/.test(phone)) {
+    errors.push(
+      'Please enter your mobile number.',
+    );
+  } else if (
+    !/^[6-9]\d{9}$/.test(phone)
+  ) {
     errors.push(
       'Please enter a valid 10-digit Indian mobile number.',
     );
   }
 
   if (!email) {
-    errors.push('Please enter your email address.');
+    errors.push(
+      'Please enter your email address.',
+    );
   } else if (
-    !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)
+    !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(
+      email,
+    )
   ) {
     errors.push(
       'Please enter a valid email address.',
@@ -198,13 +251,17 @@ function validateCheckoutCustomer(
   }
 
   if (!city) {
-    errors.push('Please enter your city.');
+    errors.push(
+      'Please enter your city.',
+    );
   } else if (city.length < 4) {
     errors.push(
       'City name must contain at least 4 characters.',
     );
   } else if (
-    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(city)
+    !/^[A-Za-zÀ-ÿ\u0900-\u097F\s.'-]+$/.test(
+      city,
+    )
   ) {
     errors.push(
       'Please enter a valid city name.',
@@ -212,9 +269,13 @@ function validateCheckoutCustomer(
   }
 
   if (!state) {
-    errors.push('Please select your state.');
+    errors.push(
+      'Please select your state.',
+    );
   } else if (
-    !INDIAN_STATES_AND_UTS.includes(state)
+    !INDIAN_STATES_AND_UTS.includes(
+      state,
+    )
   ) {
     errors.push(
       'Please select a valid Indian state or union territory.',
@@ -222,8 +283,14 @@ function validateCheckoutCustomer(
   }
 
   if (!pincode) {
-    errors.push('Please enter your PIN code.');
-  } else if (!/^[1-9][0-9]{5}$/.test(pincode)) {
+    errors.push(
+      'Please enter your PIN code.',
+    );
+  } else if (
+    !/^[1-9][0-9]{5}$/.test(
+      pincode,
+    )
+  ) {
     errors.push(
       'Please enter a valid 6-digit Indian PIN code.',
     );
@@ -254,12 +321,19 @@ export default function Checkout() {
   } = useCart();
 
   const orderContext = useOrder();
+
   const navigate = useNavigate();
-  const form = useFormState(initial);
 
-  const [error, setError] = useState('');
+  const form =
+    useFormState(initial);
 
-  const [paymentStage, setPaymentStage] =
+  const [error, setError] =
+    useState('');
+
+  const [
+    paymentStage,
+    setPaymentStage,
+  ] =
     useState<PaymentStage>('idle');
 
   useEffect(() => {
@@ -267,27 +341,71 @@ export default function Checkout() {
   }, []);
 
   /* ==========================================================================
-   * RESOLVE PRODUCTS
+   * RESOLVE CURRENT CART
    * ======================================================================== */
 
-  const resolvedItems = items.map((item) => {
-    const res = ProductService.getProductBySku(
-      item.sku,
+  const resolvedItems = items
+    .map((item) => {
+      const result =
+        ProductService.getPurchasableProductBySku(
+          item.sku,
+        );
+
+      if (!result) {
+        return null;
+      }
+
+      return {
+        sku: result.skuObj.sku,
+        quantity: item.quantity,
+        product: result.family,
+        skuObj: result.skuObj,
+      };
+    })
+    .filter(
+      (
+        item,
+      ): item is NonNullable<
+        typeof item
+      > => item !== null,
     );
 
-    return {
-      ...item,
-      product: res?.family,
-      skuObj: res?.skuObj,
-    };
-  });
+  /*
+   * The cart can contain an SKU that became unavailable
+   * after it was added.
+   *
+   * Never submit such an SKU to the order API.
+   */
+  const hasInvalidCartItems =
+    resolvedItems.length !==
+    items.length;
+
+  /*
+   * Recalculate the customer-facing total from the
+   * central ProductService instead of trusting stale
+   * localStorage/cart pricing.
+   *
+   * Shipping is always zero because the final website
+   * selling price already includes shipping.
+   */
+  const resolvedSubtotal =
+    resolvedItems.reduce(
+      (sum, item) =>
+        sum +
+        item.skuObj.websitePrice *
+          item.quantity,
+      0,
+    );
+
+  const resolvedTotal =
+    resolvedSubtotal;
 
   /* ==========================================================================
    * SUBMIT
    * ======================================================================== */
 
   const submit = async (
-    e: React.FormEvent<HTMLFormElement>,
+    e: FormEvent<HTMLFormElement>,
   ) => {
     e.preventDefault();
 
@@ -300,18 +418,45 @@ export default function Checkout() {
 
     setError('');
 
-    const sharedValid = form.validate({
-      fullName: validators.required(),
-      phone: validators.phone(),
-      email: validators.email(),
-      address: validators.required(),
-      city: validators.required(),
-      state: validators.required(),
-      pincode: validators.pincode(),
-    });
+    if (hasInvalidCartItems) {
+      setError(
+        'One or more products in your cart are no longer available. Please return to your cart and review the items.',
+      );
+
+      form.setStatus('error');
+      setPaymentStage('idle');
+
+      return;
+    }
+
+    const sharedValid =
+      form.validate({
+        fullName:
+          validators.required(),
+
+        phone:
+          validators.phone(),
+
+        email:
+          validators.email(),
+
+        address:
+          validators.required(),
+
+        city:
+          validators.required(),
+
+        state:
+          validators.required(),
+
+        pincode:
+          validators.pincode(),
+      });
 
     const validationErrors =
-      validateCheckoutCustomer(form.values);
+      validateCheckoutCustomer(
+        form.values,
+      );
 
     if (
       !sharedValid ||
@@ -323,14 +468,19 @@ export default function Checkout() {
           : 'Please correct the highlighted fields before continuing.';
 
       setError(message);
+
       form.setStatus('error');
+
       setPaymentStage('idle');
 
       return;
     }
 
     form.setStatus('submitting');
-    setPaymentStage('creating-order');
+
+    setPaymentStage(
+      'creating-order',
+    );
 
     try {
       const idempotencyKey =
@@ -338,14 +488,53 @@ export default function Checkout() {
           .toString(36)
           .substring(2, 9)}`;
 
+      /*
+       * The backend must remain the final authority
+       * for order/payment validation.
+       *
+       * The frontend sends SKU + quantity only.
+       * It does not send costing, margin, or shipping
+       * charges.
+       */
       const orderResponse =
         await apiClient.createOrder({
           customer: form.values,
-          items,
+
+          items: resolvedItems.map(
+            (item) => ({
+              sku: item.sku,
+              quantity:
+                item.quantity,
+            }),
+          ),
+
           idempotencyKey,
         });
 
-      setPaymentStage('opening-payment');
+      /*
+       * Guard against a backend/frontend total mismatch.
+       *
+       * This protects the checkout UI from silently
+       * displaying a different customer total than the
+       * central website pricing configuration.
+       */
+      if (
+        typeof orderResponse.total ===
+          'number' &&
+        Number.isFinite(
+          orderResponse.total,
+        ) &&
+        orderResponse.total !==
+          resolvedTotal
+      ) {
+        throw new Error(
+          'The order total has changed. Please return to your cart and review the latest prices before paying.',
+        );
+      }
+
+      setPaymentStage(
+        'opening-payment',
+      );
 
       const scriptLoaded =
         await loadRazorpayScript();
@@ -360,12 +549,18 @@ export default function Checkout() {
       }
 
       const options = {
-        key: orderResponse.razorpayKeyId,
-        amount: orderResponse.amount,
-        currency:
-          orderResponse.currency || 'INR',
+        key:
+          orderResponse.razorpayKeyId,
 
-        name: 'Kawad Swad Udhyog',
+        amount:
+          orderResponse.amount,
+
+        currency:
+          orderResponse.currency ||
+          'INR',
+
+        name:
+          'Kawad Swad Udhyog',
 
         description:
           'Authentic Traditional Papad Order',
@@ -374,13 +569,14 @@ export default function Checkout() {
           orderResponse.razorpayOrderId,
 
         prefill: {
-          name: form.values.fullName,
+          name:
+            form.values.fullName,
 
           email:
-            form.values.email ||
-            'kswadu2025@gmail.com',
+            form.values.email,
 
-          contact: form.values.phone,
+          contact:
+            form.values.phone,
         },
 
         theme: {
@@ -392,25 +588,22 @@ export default function Checkout() {
         ) => {
           try {
             const verifyRes =
-              await apiClient.verifyPayment({
-                razorpay_order_id:
-                  response.razorpay_order_id,
+              await apiClient.verifyPayment(
+                {
+                  razorpay_order_id:
+                    response.razorpay_order_id,
 
-                razorpay_payment_id:
-                  response.razorpay_payment_id,
+                  razorpay_payment_id:
+                    response.razorpay_payment_id,
 
-                razorpay_signature:
-                  response.razorpay_signature,
-              });
+                  razorpay_signature:
+                    response.razorpay_signature,
+                },
+              );
 
             /*
-             * Shipping is already included in the
-             * website selling prices.
-             *
-             * The completed order therefore keeps
-             * the backend-confirmed totals while
-             * exposing shipping as zero/free in the
-             * customer-facing order flow.
+             * Customer-facing shipping is always
+             * FREE and already included in product prices.
              */
             const completedOrder = {
               orderId:
@@ -424,12 +617,14 @@ export default function Checkout() {
                 orderResponse.items,
 
               subtotal:
-                orderResponse.subtotal,
+                orderResponse.subtotal ??
+                resolvedSubtotal,
 
               totalShipping: 0,
 
               total:
-                orderResponse.total,
+                orderResponse.total ??
+                resolvedTotal,
 
               timestamp:
                 orderResponse.timestamp,
@@ -444,8 +639,13 @@ export default function Checkout() {
 
             clearCart();
 
-            form.setStatus('success');
-            setPaymentStage('idle');
+            form.setStatus(
+              'success',
+            );
+
+            setPaymentStage(
+              'idle',
+            );
 
             navigate(
               '/order-success',
@@ -453,32 +653,42 @@ export default function Checkout() {
                 replace: true,
               },
             );
-          } catch (err: unknown) {
+          } catch (
+            verificationError: unknown
+          ) {
             console.error(
               'PAYMENT SUCCESS HANDLER ERROR:',
-              err,
+              verificationError,
             );
 
-            let msg =
-              'Payment verification failed.';
+            const message =
+              verificationError instanceof
+                Error &&
+              verificationError.message
+                ? verificationError.message
+                : 'Payment verification failed.';
 
-            if (
-              err instanceof Error &&
-              err.message
-            ) {
-              msg = err.message;
-            }
+            setError(message);
 
-            setError(msg);
-            form.setStatus('error');
-            setPaymentStage('idle');
+            form.setStatus(
+              'error',
+            );
+
+            setPaymentStage(
+              'idle',
+            );
           }
         },
 
         modal: {
           ondismiss: () => {
-            form.setStatus('idle');
-            setPaymentStage('idle');
+            form.setStatus(
+              'idle',
+            );
+
+            setPaymentStage(
+              'idle',
+            );
 
             setError(
               'Payment was cancelled or dismissed. You can retry anytime.',
@@ -488,7 +698,9 @@ export default function Checkout() {
       };
 
       const razorpay =
-        new window.Razorpay(options);
+        new window.Razorpay(
+          options,
+        );
 
       razorpay.open();
     } catch (err: unknown) {
@@ -497,41 +709,46 @@ export default function Checkout() {
         err,
       );
 
-      let msg =
-        'We could not submit your order right now. Please try again.';
-
-      if (
+      const message =
         err instanceof Error &&
         err.message
-      ) {
-        msg = err.message;
-      }
+          ? err.message
+          : 'We could not submit your order right now. Please try again.';
 
-      setError(msg);
-      form.setStatus('error');
-      setPaymentStage('idle');
+      setError(message);
+
+      form.setStatus(
+        'error',
+      );
+
+      setPaymentStage(
+        'idle',
+      );
     }
   };
 
   /* ==========================================================================
-   * PAYMENT BUTTON LABEL
+   * PAYMENT BUTTON
    * ======================================================================== */
 
-  const getPaymentButtonLabel = () => {
-    if (
-      paymentStage === 'creating-order'
-    ) {
-      return 'Creating Secure Order...';
-    }
+  const getPaymentButtonLabel =
+    () => {
+      if (
+        paymentStage ===
+        'creating-order'
+      ) {
+        return 'Creating Secure Order...';
+      }
 
-    if (
-      paymentStage === 'opening-payment'
-    ) {
-      return 'Opening Secure Payment...';
-    }
+      if (
+        paymentStage ===
+        'opening-payment'
+      ) {
+        return 'Opening Secure Payment...';
+      }
 
-    return 'Proceed to Pay';
-  };
+      return 'Proceed to Pay';
+    };
 
   /* ==========================================================================
    * EMPTY CART
@@ -547,10 +764,10 @@ export default function Checkout() {
           indexable={false}
         />
 
-        <div className="container-max container-px py-16 sm:py-20 text-center">
-          <ShoppingBag className="w-12 h-12 mx-auto text-brand-brown/20" />
+        <div className="container-max container-px py-16 text-center sm:py-20">
+          <ShoppingBag className="mx-auto h-12 w-12 text-brand-brown/20" />
 
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold mt-4">
+          <h1 className="mt-4 font-serif text-2xl font-bold sm:text-3xl">
             Your cart is empty
           </h1>
 
@@ -580,10 +797,9 @@ export default function Checkout() {
 
       <div className="bg-brand-cream py-6 sm:py-8 lg:py-12">
         <div className="container-max container-px">
-
           {/* Breadcrumb */}
 
-          <div className="flex items-center gap-2 text-[11px] sm:text-xs text-brand-brown/50 mb-4 sm:mb-6">
+          <div className="mb-4 flex items-center gap-2 text-[11px] text-brand-brown/50 sm:mb-6 sm:text-xs">
             <Link
               to="/cart"
               className="hover:text-brand-red"
@@ -591,64 +807,61 @@ export default function Checkout() {
               Cart
             </Link>
 
-            <ArrowRight className="w-3 h-3" />
+            <ArrowRight className="h-3 w-3" />
 
-            <span>Checkout</span>
+            <span>
+              Checkout
+            </span>
           </div>
 
-          <div className="grid lg:grid-cols-[1fr_400px] gap-5 sm:gap-8 lg:gap-12 items-start">
-
-            {/* CHECKOUT FORM */}
+          <div className="grid items-start gap-5 lg:grid-cols-[1fr_400px] lg:gap-12">
+            {/* ==============================================================
+                CHECKOUT FORM
+            =============================================================== */}
 
             <form
               onSubmit={submit}
               noValidate
               className="
                 card
-                p-4
-                sm:p-6
-                lg:p-8
-                bg-white
                 border
                 border-brand-brown/5
+                bg-white
+                p-4
                 shadow-soft
+                sm:p-6
+                lg:p-8
               "
             >
-
               {/* Header */}
 
-              <div className="flex items-start gap-3 sm:gap-4 mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-brand-brown/10">
-
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-brand-red/10 flex-shrink-0 flex items-center justify-center">
-                  <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-brand-red" />
+              <div className="mb-6 flex items-start gap-3 border-b border-brand-brown/10 pb-5 sm:mb-8 sm:gap-4 sm:pb-6">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-red/10 sm:h-12 sm:w-12 sm:rounded-2xl">
+                  <Lock className="h-5 w-5 text-brand-red sm:h-6 sm:w-6" />
                 </div>
 
                 <div className="min-w-0">
-                  <h1 className="text-xl sm:text-2xl font-serif font-bold text-brand-brown">
+                  <h1 className="font-serif text-xl font-bold text-brand-brown sm:text-2xl">
                     Delivery Details & Payment
                   </h1>
 
-                  <p className="text-xs sm:text-sm text-brand-brown/60 mt-1">
+                  <p className="mt-1 text-xs text-brand-brown/60 sm:text-sm">
                     Provide your delivery information and complete secure payment.
                   </p>
                 </div>
-
               </div>
 
               <FormContainer>
-
-                {/* Full Name */}
-
                 <FormField
                   label="Full Name"
                   name="fullName"
                   value={
                     form.values.fullName
                   }
-                  onChange={(v) =>
+                  onChange={(value) =>
                     form.setValue(
                       'fullName',
-                      v,
+                      value,
                     )
                   }
                   error={
@@ -659,10 +872,7 @@ export default function Checkout() {
                   placeholder="Your full name"
                 />
 
-                {/* Phone + Email */}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     label="Phone"
                     name="phone"
@@ -670,10 +880,10 @@ export default function Checkout() {
                     value={
                       form.values.phone
                     }
-                    onChange={(v) =>
+                    onChange={(value) =>
                       form.setValue(
                         'phone',
-                        v,
+                        value,
                       )
                     }
                     error={
@@ -691,10 +901,10 @@ export default function Checkout() {
                     value={
                       form.values.email
                     }
-                    onChange={(v) =>
+                    onChange={(value) =>
                       form.setValue(
                         'email',
-                        v,
+                        value,
                       )
                     }
                     error={
@@ -704,10 +914,7 @@ export default function Checkout() {
                     autoComplete="email"
                     placeholder="you@example.com"
                   />
-
                 </div>
-
-                {/* Address */}
 
                 <FormField
                   label="Address"
@@ -716,10 +923,10 @@ export default function Checkout() {
                   value={
                     form.values.address
                   }
-                  onChange={(v) =>
+                  onChange={(value) =>
                     form.setValue(
                       'address',
-                      v,
+                      value,
                     )
                   }
                   error={
@@ -730,22 +937,17 @@ export default function Checkout() {
                   rows={3}
                 />
 
-                {/* City / State / PIN */}
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-                  {/* City */}
-
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <FormField
                     label="City"
                     name="city"
                     value={
                       form.values.city
                     }
-                    onChange={(v) =>
+                    onChange={(value) =>
                       form.setValue(
                         'city',
-                        v,
+                        value,
                       )
                     }
                     error={
@@ -755,15 +957,13 @@ export default function Checkout() {
                     placeholder="City"
                   />
 
-                  {/* State */}
-
                   <div className="space-y-2">
                     <label
                       htmlFor="state"
                       className="block text-sm font-medium text-brand-brown"
                     >
                       State
-                      <span className="text-brand-red ml-1">
+                      <span className="ml-1 text-brand-red">
                         *
                       </span>
                     </label>
@@ -774,24 +974,23 @@ export default function Checkout() {
                       value={
                         form.values.state
                       }
-                      onChange={(e) => {
+                      onChange={(event) => {
                         form.setValue(
                           'state',
-                          e.target.value,
+                          event.target
+                            .value,
                         );
 
                         setError('');
                       }}
-                      className={`w-full min-h-[44px] rounded-xl border bg-white px-4 py-3 text-sm text-brand-brown outline-none transition focus:ring-2 focus:ring-brand-red/20 ${
+                      className={`min-h-[44px] w-full rounded-xl border bg-white px-4 py-3 text-sm text-brand-brown outline-none transition focus:ring-2 focus:ring-brand-red/20 ${
                         form.errors.state
                           ? 'border-brand-red'
                           : 'border-brand-brown/15'
                       }`}
-                      aria-invalid={
-                        Boolean(
-                          form.errors.state,
-                        )
-                      }
+                      aria-invalid={Boolean(
+                        form.errors.state,
+                      )}
                     >
                       <option
                         value=""
@@ -814,12 +1013,12 @@ export default function Checkout() {
 
                     {form.errors.state && (
                       <p className="text-xs text-brand-red">
-                        {form.errors.state}
+                        {
+                          form.errors.state
+                        }
                       </p>
                     )}
                   </div>
-
-                  {/* PIN */}
 
                   <FormField
                     label="PIN Code"
@@ -828,10 +1027,10 @@ export default function Checkout() {
                     value={
                       form.values.pincode
                     }
-                    onChange={(v) =>
+                    onChange={(value) =>
                       form.setValue(
                         'pincode',
-                        v,
+                        value,
                       )
                     }
                     error={
@@ -840,12 +1039,8 @@ export default function Checkout() {
                     required
                     placeholder="6 digits"
                   />
-
                 </div>
-
               </FormContainer>
-
-              {/* Error */}
 
               {error && (
                 <div className="mt-5 sm:mt-6">
@@ -857,72 +1052,57 @@ export default function Checkout() {
                 </div>
               )}
 
-              {/* Bottom Controls */}
+              {/* Bottom controls */}
 
-              <div className="
-                mt-6
-                sm:mt-8
-                pt-5
-                sm:pt-6
-                border-t
-                border-brand-brown/10
-                flex
-                flex-col
-                sm:flex-row
-                gap-4
-                items-stretch
-                sm:items-center
-                justify-between
-              ">
-
+              <div className="mt-6 flex flex-col items-stretch justify-between gap-4 border-t border-brand-brown/10 pt-5 sm:mt-8 sm:flex-row sm:items-center sm:pt-6">
                 <Link
                   to="/cart"
                   className="
                     inline-flex
+                    min-h-[44px]
                     items-center
                     justify-center
-                    sm:justify-start
                     gap-2
                     text-sm
+                    font-medium
                     text-brand-brown/70
                     hover:text-brand-red
-                    font-medium
-                    min-h-[44px]
+                    sm:justify-start
                   "
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  <ArrowLeft className="h-4 w-4" />
                   Back to cart
                 </Link>
 
                 <button
                   type="submit"
                   disabled={
-                    form.status === 'submitting'
+                    form.status ===
+                    'submitting'
                   }
                   aria-busy={
-                    form.status === 'submitting'
+                    form.status ===
+                    'submitting'
                   }
                   className="
                     btn-primary
-                    w-full
-                    sm:w-auto
-                    min-w-0
-                    sm:min-w-[210px]
-                    min-h-[48px]
                     inline-flex
+                    min-h-[48px]
+                    w-full
+                    min-w-0
                     items-center
                     justify-center
                     gap-2
-                    transition-all
-                    duration-200
-                    disabled:opacity-70
                     disabled:cursor-not-allowed
+                    disabled:opacity-70
+                    sm:w-auto
+                    sm:min-w-[210px]
                   "
                 >
                   {form.status ===
                   'submitting' ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
 
                       <span className="text-sm">
                         {getPaymentButtonLabel()}
@@ -930,50 +1110,46 @@ export default function Checkout() {
                     </>
                   ) : (
                     <>
-                      <Lock className="w-4 h-4" />
+                      <Lock className="h-4 w-4" />
 
                       <span>
                         Proceed to Pay
                       </span>
 
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="h-4 w-4" />
                     </>
                   )}
                 </button>
-
               </div>
 
-              <p className="mt-5 sm:mt-6 text-2xs text-brand-brown/50 text-center">
+              <p className="mt-5 text-center text-2xs text-brand-brown/50 sm:mt-6">
                 Secure Razorpay payment gateway integration.
               </p>
-
             </form>
 
-            {/* ORDER SUMMARY */}
+            {/* ==============================================================
+                ORDER SUMMARY
+            =============================================================== */}
 
             <aside
               className="
                 card
-                p-4
-                sm:p-6
-                lg:p-8
-                bg-white
                 border
                 border-brand-brown/5
+                bg-white
+                p-4
+                shadow-soft
+                sm:p-6
                 lg:sticky
                 lg:top-28
-                shadow-soft
+                lg:p-8
               "
             >
-
-              <h2 className="text-lg sm:text-xl font-serif font-bold text-brand-brown mb-5 sm:mb-6">
+              <h2 className="mb-5 font-serif text-lg font-bold text-brand-brown sm:mb-6 sm:text-xl">
                 Order Summary
               </h2>
 
-              {/* Product Items */}
-
-              <div className="space-y-3 sm:space-y-4 mb-5 sm:mb-6">
-
+              <div className="mb-5 space-y-3 sm:mb-6 sm:space-y-4">
                 {resolvedItems.map(
                   ({
                     sku,
@@ -981,25 +1157,15 @@ export default function Checkout() {
                     product,
                     skuObj,
                   }) => {
-
-                    if (
-                      !product ||
-                      !skuObj
-                    ) {
-                      return null;
-                    }
-
                     const packLabel =
                       PACK_LABELS[
                         skuObj.packSize
                       ] ||
                       `${skuObj.packSize}g`;
 
-                    const unitPrice =
-                      skuObj.websitePrice ?? 0;
-
                     const lineTotal =
-                      unitPrice * quantity;
+                      skuObj.websitePrice *
+                      quantity;
 
                     return (
                       <div
@@ -1008,46 +1174,41 @@ export default function Checkout() {
                           flex
                           items-center
                           gap-3
-                          sm:gap-4
-                          pb-3
-                          sm:pb-4
                           border-b
                           border-brand-brown/5
+                          pb-3
+                          sm:gap-4
+                          sm:pb-4
                         "
                       >
-
-                        {/* Product Image */}
-
                         <Link
                           to={`/product/${product.slug}`}
                           aria-label={`View ${product.name}`}
                           className="
-                            w-16
+                            block
                             h-16
-                            sm:w-20
-                            sm:h-20
+                            w-16
                             flex-shrink-0
-                            rounded-xl
                             overflow-hidden
-                            bg-brand-cream-dark
+                            rounded-xl
                             border
                             border-brand-brown/5
-                            block
+                            bg-brand-cream-dark
+                            sm:h-20
+                            sm:w-20
                           "
                         >
                           <ProductImage
-                            productId={product.id}
-                            product={product}
+                            productId={
+                              product.id
+                            }
+                            product={
+                              product
+                            }
                             variant="card"
-                            className="
-                              w-full
-                              h-full
-                              object-contain
-                            "
+                            className="h-full w-full object-contain"
                           />
                         </Link>
-
-                        {/* Product Details */}
 
                         <div className="min-w-0 flex-1">
                           <Link
@@ -1056,46 +1217,48 @@ export default function Checkout() {
                               block
                               text-sm
                               font-semibold
-                              text-brand-brown
                               leading-snug
-                              hover:text-brand-red
+                              text-brand-brown
                               transition-colors
+                              hover:text-brand-red
                             "
                           >
                             {product.name}
                           </Link>
 
-                          <p className="mt-0.5 text-[11px] sm:text-xs text-brand-brown/55">
-                            {packLabel} × {quantity}
+                          <p className="mt-0.5 text-[11px] text-brand-brown/55 sm:text-xs">
+                            {packLabel} ×{' '}
+                            {quantity}
                           </p>
 
                           <p className="mt-1 text-sm font-bold text-brand-red">
-                            {formatPrice(lineTotal)}
+                            {formatPrice(
+                              lineTotal,
+                            )}
                           </p>
                         </div>
-
                       </div>
                     );
                   },
                 )}
-
               </div>
 
-              {/* Price Summary */}
+              {/* Price summary */}
 
-              <div className="space-y-3 text-sm pt-1">
-
+              <div className="space-y-3 pt-1 text-sm">
                 <div className="flex justify-between gap-4 text-brand-brown/70">
                   <span>
                     Items
                   </span>
 
-                  <span className="font-medium text-right">
-                    {formatPrice(subtotal)}
+                  <span className="text-right font-medium">
+                    {formatPrice(
+                      resolvedSubtotal,
+                    )}
                   </span>
                 </div>
 
-                <div className="flex justify-between gap-4 text-brand-green font-medium">
+                <div className="flex justify-between gap-4 font-medium text-brand-green">
                   <span>
                     Shipping
                   </span>
@@ -1105,72 +1268,35 @@ export default function Checkout() {
                   </span>
                 </div>
 
-                <div className="
-                  border-t
-                  border-brand-brown/10
-                  pt-4
-                  flex
-                  justify-between
-                  gap-4
-                  text-lg
-                  font-bold
-                  text-brand-brown
-                ">
+                <div className="flex justify-between gap-4 border-t border-brand-brown/10 pt-4 text-lg font-bold text-brand-brown">
                   <span>
                     Total
                   </span>
 
-                  <span className="text-brand-red whitespace-nowrap">
-                    {formatPrice(total)}
+                  <span className="whitespace-nowrap text-brand-red">
+                    {formatPrice(
+                      resolvedTotal,
+                    )}
                   </span>
                 </div>
-
               </div>
 
-              {/* Free Shipping Note */}
-
-              <div className="
-                mt-5
-                pt-4
-                border-t
-                border-brand-brown/5
-                flex
-                items-center
-                justify-center
-                gap-2
-                text-[10px]
-                sm:text-xs
-                text-brand-green
-                font-medium
-              ">
-                <ShoppingBag className="w-3.5 h-3.5" />
+              <div className="mt-5 flex items-center justify-center gap-2 border-t border-brand-brown/5 pt-4 text-[10px] font-medium text-brand-green sm:text-xs">
+                <ShoppingBag className="h-3.5 w-3.5" />
 
                 <span>
                   Free shipping included
                 </span>
               </div>
 
-              {/* Secure Payment Note */}
-
-              <div className="
-                mt-3
-                flex
-                items-center
-                justify-center
-                gap-2
-                text-[10px]
-                sm:text-xs
-                text-brand-brown/50
-              ">
-                <Lock className="w-3.5 h-3.5" />
+              <div className="mt-3 flex items-center justify-center gap-2 text-[10px] text-brand-brown/50 sm:text-xs">
+                <Lock className="h-3.5 w-3.5" />
 
                 <span>
                   Secure payment powered by Razorpay
                 </span>
               </div>
-
             </aside>
-
           </div>
         </div>
       </div>
