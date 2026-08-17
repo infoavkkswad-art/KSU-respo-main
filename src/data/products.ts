@@ -4,14 +4,20 @@ import {
 } from './sales-config';
 
 export type ProductCategory =
-  'moong' | 'chana' | 'urad' | 'combo';
+  | 'moong'
+  | 'chana'
+  | 'urad'
+  | 'combo';
 
 export type PackSize =
-  200 | 500 | 1000 | 235;
+  | 200
+  | 500
+  | 1000
+  | 235;
 
 export interface Sku {
   sku: string;
-  packSize: number;
+  packSize: PackSize;
   mrp: number | null;
   websitePrice: number | null;
   shipping: 0;
@@ -36,7 +42,10 @@ export interface ProductFamily {
   featured: boolean;
 }
 
-export const PACK_LABELS: Record<number, string> = {
+export const PACK_LABELS: Record<
+  number,
+  string
+> = {
   200: '200g',
   500: '500g',
   1000: '1kg',
@@ -53,32 +62,36 @@ export const CATEGORY_LABELS: Record<
   combo: 'Combo',
 };
 
-/**
- * ================================================================
+/* ============================================================================
  * SKU RESOLUTION
- * ================================================================
+ * ============================================================================
  *
- * Product information lives here.
+ * Product information lives in this file.
  *
- * All customer-facing sales values come from:
+ * Customer-facing sales values are resolved exclusively
+ * from:
+ *
  *   src/data/sales-config.ts
  *
- * Therefore this file does NOT contain:
+ * This file must NOT contain:
+ *
  * - Costing
  * - Factory price
  * - Dealer price
  * - Distributor price
  * - Shipping charges
- * - Offer calculations
+ * - Discount calculations
  * - Coupon calculations
+ * - Offer calculations
  *
- * websitePrice from Sales Config is the FINAL customer-facing price.
- */
+ * websitePrice is the final website customer price.
+ * ========================================================================== */
 
 function makeSku(
   skuCode: string,
 ): Sku {
-  const salesSku = getSalesSku(skuCode);
+  const salesSku =
+    getSalesSku(skuCode);
 
   if (!salesSku) {
     throw new Error(
@@ -86,22 +99,49 @@ function makeSku(
     );
   }
 
+  if (
+    !Number.isFinite(
+      salesSku.packSize,
+    ) ||
+    ![
+      200,
+      500,
+      1000,
+      235,
+    ].includes(
+      salesSku.packSize,
+    )
+  ) {
+    throw new Error(
+      `Invalid pack size in sales configuration for SKU: ${skuCode}`,
+    );
+  }
+
   return {
     sku: salesSku.sku,
-    packSize: salesSku.packSize,
+    packSize:
+      salesSku.packSize as PackSize,
     mrp: salesSku.mrp,
-    websitePrice: salesSku.sellingPrice,
+    websitePrice:
+      salesSku.sellingPrice,
     shipping: 0,
     freeShipping: true,
-    available: salesSku.available,
+    available:
+      salesSku.available,
   };
 }
 
 function makeSkus(
   skuCodes: string[],
 ): Sku[] {
-  return skuCodes.map(makeSku);
+  return skuCodes.map(
+    makeSku,
+  );
 }
+
+/* ============================================================================
+ * PRODUCT MASTER
+ * ========================================================================== */
 
 export const products: ProductFamily[] = [
   {
@@ -579,14 +619,28 @@ export const products: ProductFamily[] = [
   },
 ];
 
-/**
- * ================================================================
- * SALES CONFIGURATION CHECK
- * ================================================================
+/* ============================================================================
+ * SALES CONFIGURATION VALIDATION
+ * ============================================================================
  *
- * Ensures every product SKU has a corresponding entry
- * in the central sales configuration.
- */
+ * Every product SKU must exist in the central sales configuration.
+ *
+ * This keeps:
+ *
+ * products.ts
+ *       ↓
+ * sales-config.ts
+ *       ↓
+ * ProductService
+ *       ↓
+ * Cart
+ *       ↓
+ * Checkout
+ *       ↓
+ * Order
+ *
+ * synchronized.
+ * ========================================================================== */
 
 export function validateProductSalesMapping(): {
   valid: boolean;
@@ -594,10 +648,67 @@ export function validateProductSalesMapping(): {
 } {
   const errors: string[] = [];
 
+  const seenProductSkus =
+    new Set<string>();
+
   for (const product of products) {
+    if (
+      !product.id.trim()
+    ) {
+      errors.push(
+        'Product is missing an ID.',
+      );
+    }
+
+    if (
+      !product.slug.trim()
+    ) {
+      errors.push(
+        `${product.name || 'Unknown product'}: missing slug.`,
+      );
+    }
+
+    if (
+      product.skus.length === 0
+    ) {
+      errors.push(
+        `${product.name}: no SKUs configured.`,
+      );
+    }
+
     for (const sku of product.skus) {
-      const salesSku: SalesSkuConfig | undefined =
-        getSalesSku(sku.sku);
+      const normalizedSku =
+        sku.sku
+          .trim()
+          .toUpperCase();
+
+      if (!normalizedSku) {
+        errors.push(
+          `${product.name}: empty SKU.`,
+        );
+        continue;
+      }
+
+      if (
+        seenProductSkus.has(
+          normalizedSku,
+        )
+      ) {
+        errors.push(
+          `Duplicate product SKU: ${sku.sku}`,
+        );
+      }
+
+      seenProductSkus.add(
+        normalizedSku,
+      );
+
+      const salesSku:
+        | SalesSkuConfig
+        | undefined =
+        getSalesSku(
+          normalizedSku,
+        );
 
       if (!salesSku) {
         errors.push(
@@ -606,15 +717,21 @@ export function validateProductSalesMapping(): {
         continue;
       }
 
-      if (sku.packSize !== salesSku.packSize) {
+      if (
+        sku.packSize !==
+        salesSku.packSize
+      ) {
         errors.push(
-          `${sku.sku}: pack size mismatch`,
+          `${sku.sku}: pack size mismatch.`,
         );
       }
 
-      if (sku.mrp !== salesSku.mrp) {
+      if (
+        sku.mrp !==
+        salesSku.mrp
+      ) {
         errors.push(
-          `${sku.sku}: MRP mismatch`,
+          `${sku.sku}: MRP mismatch.`,
         );
       }
 
@@ -623,19 +740,23 @@ export function validateProductSalesMapping(): {
         salesSku.sellingPrice
       ) {
         errors.push(
-          `${sku.sku}: website price mismatch`,
+          `${sku.sku}: website price mismatch.`,
         );
       }
 
-      if (sku.shipping !== 0) {
+      if (
+        sku.shipping !== 0
+      ) {
         errors.push(
-          `${sku.sku}: shipping must remain 0`,
+          `${sku.sku}: shipping must remain 0.`,
         );
       }
 
-      if (!sku.freeShipping) {
+      if (
+        sku.freeShipping !== true
+      ) {
         errors.push(
-          `${sku.sku}: freeShipping must remain true`,
+          `${sku.sku}: freeShipping must remain true.`,
         );
       }
 
@@ -644,14 +765,68 @@ export function validateProductSalesMapping(): {
         salesSku.available
       ) {
         errors.push(
-          `${sku.sku}: availability mismatch`,
+          `${sku.sku}: availability mismatch.`,
+        );
+      }
+
+      if (
+        sku.mrp !== null &&
+        (
+          !Number.isFinite(
+            sku.mrp,
+          ) ||
+          sku.mrp < 0
+        )
+      ) {
+        errors.push(
+          `${sku.sku}: invalid MRP.`,
+        );
+      }
+
+      if (
+        sku.websitePrice !==
+          null &&
+        (
+          !Number.isFinite(
+            sku.websitePrice,
+          ) ||
+          sku.websitePrice < 0
+        )
+      ) {
+        errors.push(
+          `${sku.sku}: invalid website price.`,
+        );
+      }
+
+      if (
+        sku.available &&
+        (
+          sku.mrp === null ||
+          sku.websitePrice === null
+        )
+      ) {
+        errors.push(
+          `${sku.sku}: available SKU must have MRP and website price.`,
+        );
+      }
+
+      if (
+        sku.available &&
+        sku.mrp !== null &&
+        sku.websitePrice !== null &&
+        sku.websitePrice >
+          sku.mrp
+      ) {
+        errors.push(
+          `${sku.sku}: website price cannot exceed MRP.`,
         );
       }
     }
   }
 
   return {
-    valid: errors.length === 0,
+    valid:
+      errors.length === 0,
     errors,
   };
 }
