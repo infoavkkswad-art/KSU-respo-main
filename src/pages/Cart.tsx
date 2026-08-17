@@ -28,15 +28,40 @@ export default function Cart() {
     addItem,
   } = useCart();
 
-  const resolvedItems = items.map((item) => {
-    const res = ProductService.getProductBySku(item.sku);
+  /*
+   * Resolve cart items through ProductService.
+   *
+   * ProductService is the central authority for:
+   * - availability
+   * - MRP
+   * - final website selling price
+   * - free-shipping policy
+   *
+   * No shipping calculation is performed here.
+   */
+  const resolvedItems = items
+    .map((item) => {
+      const result =
+        ProductService.getPurchasableProductBySku(
+          item.sku,
+        );
 
-    return {
-      ...item,
-      product: res?.family,
-      skuObj: res?.skuObj,
-    };
-  });
+      if (!result) {
+        return null;
+      }
+
+      return {
+        ...item,
+        product: result.family,
+        skuObj: result.skuObj,
+      };
+    })
+    .filter(
+      (
+        item,
+      ): item is NonNullable<typeof item> =>
+        item !== null,
+    );
 
   return (
     <>
@@ -88,7 +113,7 @@ export default function Cart() {
       ================================================================= */}
 
       <section className="container-max container-px py-8 sm:py-10 lg:py-12">
-        {items.length === 0 ? (
+        {resolvedItems.length === 0 ? (
           <div
             className="
               card
@@ -159,20 +184,17 @@ export default function Cart() {
                   product,
                   skuObj,
                 }) => {
-                  if (!product || !skuObj) {
-                    return null;
-                  }
-
                   const packLabel =
-                    PACK_LABELS[skuObj.packSize] ||
+                    PACK_LABELS[
+                      skuObj.packSize
+                    ] ||
                     `${skuObj.packSize}g`;
 
-                  const isPurchasable =
-                    skuObj.available === true &&
-                    skuObj.websitePrice !== null &&
-                    Number.isFinite(
-                      skuObj.websitePrice,
-                    );
+                  const unitPrice =
+                    skuObj.websitePrice;
+
+                  const lineTotal =
+                    unitPrice * quantity;
 
                   return (
                     <div
@@ -269,25 +291,25 @@ export default function Cart() {
                               {packLabel}
                             </p>
 
-                            <p
-                              className={`
-                                mt-1.5
-                                text-sm
-                                font-bold
-                                sm:mt-2
-                                ${
-                                  isPurchasable
-                                    ? 'text-brand-red'
-                                    : 'text-brand-brown/60'
-                                }
-                              `}
-                            >
-                              {isPurchasable
-                                ? formatPrice(
-                                    skuObj.websitePrice!,
-                                  )
-                                : 'Price Coming Soon'}
-                            </p>
+                            <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1 sm:mt-2">
+                              <p
+                                className="
+                                  text-sm
+                                  font-bold
+                                  text-brand-red
+                                "
+                              >
+                                {formatPrice(
+                                  unitPrice,
+                                )}
+                              </p>
+
+                              {quantity > 1 && (
+                                <span className="text-[10px] text-brand-brown/45">
+                                  × {quantity}
+                                </span>
+                              )}
+                            </div>
 
                             <p
                               className="
@@ -299,17 +321,11 @@ export default function Cart() {
                             >
                               Free shipping
                             </p>
-
-                            {!isPurchasable && (
-                              <p className="mt-1 text-[10px] font-medium text-brand-brown/50">
-                                This item is currently unavailable.
-                              </p>
-                            )}
                           </div>
                         </div>
 
                         {/* =================================================
-                            QUANTITY + REMOVE
+                            QUANTITY + LINE TOTAL + REMOVE
                         ================================================== */}
 
                         <div
@@ -324,13 +340,13 @@ export default function Cart() {
                             pt-3
                             sm:w-auto
                             sm:justify-end
-                            sm:gap-6
+                            sm:gap-5
                             sm:border-t-0
                             sm:pt-0
                           "
                         >
                           <div
-                            className={`
+                            className="
                               flex
                               items-center
                               overflow-hidden
@@ -338,12 +354,7 @@ export default function Cart() {
                               border
                               border-brand-brown/15
                               bg-brand-cream/30
-                              ${
-                                !isPurchasable
-                                  ? 'opacity-50'
-                                  : ''
-                              }
-                            `}
+                            "
                           >
                             <button
                               type="button"
@@ -353,7 +364,6 @@ export default function Cart() {
                                   quantity - 1,
                                 )
                               }
-                              disabled={!isPurchasable}
                               className="
                                 flex
                                 min-h-[42px]
@@ -364,7 +374,6 @@ export default function Cart() {
                                 transition-colors
                                 hover:bg-brand-brown/5
                                 active:bg-brand-brown/10
-                                disabled:cursor-not-allowed
                               "
                               aria-label={`Decrease quantity of ${product.name}`}
                             >
@@ -387,9 +396,11 @@ export default function Cart() {
                             <button
                               type="button"
                               onClick={() =>
-                                addItem(sku, 1)
+                                addItem(
+                                  sku,
+                                  1,
+                                )
                               }
-                              disabled={!isPurchasable}
                               className="
                                 flex
                                 min-h-[42px]
@@ -400,12 +411,19 @@ export default function Cart() {
                                 transition-colors
                                 hover:bg-brand-brown/5
                                 active:bg-brand-brown/10
-                                disabled:cursor-not-allowed
                               "
                               aria-label={`Increase quantity of ${product.name}`}
                             >
                               <Plus className="h-3.5 w-3.5" />
                             </button>
+                          </div>
+
+                          <div className="hidden min-w-[82px] text-right sm:block">
+                            <p className="text-sm font-bold text-brand-brown">
+                              {formatPrice(
+                                lineTotal,
+                              )}
+                            </p>
                           </div>
 
                           <button
@@ -431,6 +449,18 @@ export default function Cart() {
                             <Trash2 className="h-5 w-5" />
                           </button>
                         </div>
+                      </div>
+
+                      <div className="mt-3 border-t border-brand-brown/5 pt-3 text-right sm:hidden">
+                        <span className="text-xs text-brand-brown/50">
+                          Item total
+                        </span>
+
+                        <span className="ml-2 text-sm font-bold text-brand-brown">
+                          {formatPrice(
+                            lineTotal,
+                          )}
+                        </span>
                       </div>
                     </div>
                   );
