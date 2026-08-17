@@ -16,15 +16,19 @@ import { FloatingCart } from '@/components/FloatingCart';
 import { CartProvider } from '@/context/CartContext';
 import { OrderProvider } from '@/context/OrderContext';
 
-// ProductDetail is imported directly because its current
-// module export must remain compatible with TypeScript's
-// React.lazy default-export contract.
-import ProductDetail from '@/pages/ProductDetail';
-
 // Lazy load pages for code splitting
 const Home = lazy(() => import('@/pages/Home'));
 const About = lazy(() => import('@/pages/About'));
 const Products = lazy(() => import('@/pages/Products'));
+
+const ProductDetail = lazy(() =>
+  import('@/pages/ProductDetail').then(
+    (module) => ({
+      default: module.ProductDetail,
+    }),
+  ),
+);
+
 const Shop = lazy(() => import('@/pages/Shop'));
 const Cart = lazy(() => import('@/pages/Cart'));
 const Checkout = lazy(() => import('@/pages/Checkout'));
