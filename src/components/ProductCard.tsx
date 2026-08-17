@@ -17,18 +17,38 @@ import {
   Zap,
 } from 'lucide-react';
 
-import type { ProductFamily } from '@/data/products';
-import { PACK_LABELS } from '@/data/products';
-import { ProductImage } from '@/components/ProductImage';
+import type {
+  ProductFamily,
+} from '@/data/products';
+
+import {
+  PACK_LABELS,
+} from '@/data/products';
+
+import {
+  ProductImage,
+} from '@/components/ProductImage';
+
 import {
   useCart,
   formatPrice,
 } from '@/context/CartContext';
-import { StarRating } from '@/components/StarRating';
-import { ReviewService } from '@/services/review-service';
-import { ProductService } from '@/services/product-service';
 
-import type { ReviewSummary } from '@/types/reviews';
+import {
+  StarRating,
+} from '@/components/StarRating';
+
+import {
+  ReviewService,
+} from '@/services/review-service';
+
+import {
+  ProductService,
+} from '@/services/product-service';
+
+import type {
+  ReviewSummary,
+} from '@/types/reviews';
 
 interface ProductCardProps {
   product: ProductFamily;
@@ -39,44 +59,80 @@ export function ProductCard({
   product,
   className = '',
 }: ProductCardProps) {
-  const { addItem } = useCart();
-  const navigate = useNavigate();
+  const { addItem } =
+    useCart();
 
-  const [selectedSkuIndex, setSelectedSkuIndex] =
-    useState(0);
+  const navigate =
+    useNavigate();
 
-  const [added, setAdded] = useState(false);
+  const [
+    selectedSkuIndex,
+    setSelectedSkuIndex,
+  ] = useState(0);
 
-  const [reviewSummary, setReviewSummary] =
-    useState<ReviewSummary | null>(null);
+  const [
+    added,
+    setAdded,
+  ] = useState(false);
 
-  const [reviewsLoading, setReviewsLoading] =
-    useState(true);
+  const [
+    reviewSummary,
+    setReviewSummary,
+  ] =
+    useState<ReviewSummary | null>(
+      null,
+    );
 
-  const selectId = useId();
+  const [
+    reviewsLoading,
+    setReviewsLoading,
+  ] = useState(true);
+
+  const selectId =
+    useId();
 
   /*
-   * IMPORTANT:
-   * ProductService is the single customer-facing
-   * pricing authority.
+   * ProductService receives the SKU data already
+   * resolved through the central sales configuration.
    *
-   * ProductCard never calculates or adds shipping.
-   * The returned websitePrice is already the final
-   * customer-facing price including shipping.
+   * ProductCard never calculates:
+   * - factory price
+   * - dealer price
+   * - distributor price
+   * - shipping
+   * - profit
+   * - discount
+   *
+   * websitePrice is the final customer-facing price.
    */
-  const purchasableSkus = useMemo(
-    () =>
-      ProductService.getAvailableSkus(
-        product,
-      ),
-    [product],
-  );
+  const purchasableSkus =
+    useMemo(
+      () =>
+        ProductService.getAvailableSkus(
+          product,
+        ),
+      [product],
+    );
 
   const selectedSku =
-    purchasableSkus[selectedSkuIndex] ??
+    purchasableSkus[
+      selectedSkuIndex
+    ] ??
     purchasableSkus[0];
 
+  /*
+   * Keep selected SKU valid if the available
+   * SKU list changes.
+   */
   useEffect(() => {
+    if (
+      purchasableSkus.length ===
+      0
+    ) {
+      setSelectedSkuIndex(0);
+      return;
+    }
+
     if (
       selectedSkuIndex >=
       purchasableSkus.length
@@ -88,35 +144,46 @@ export function ProductCard({
     purchasableSkus.length,
   ]);
 
+  /*
+   * Load review summary.
+   */
   useEffect(() => {
     let cancelled = false;
 
-    const loadReviewSummary = async () => {
-      setReviewsLoading(true);
+    const loadReviewSummary =
+      async () => {
+        setReviewsLoading(
+          true,
+        );
 
-      try {
-        const summary =
-          await ReviewService.getSummary(
-            product.id,
-          );
+        try {
+          const summary =
+            await ReviewService.getSummary(
+              product.id,
+            );
 
-        if (!cancelled) {
-          setReviewSummary(summary);
+          if (!cancelled) {
+            setReviewSummary(
+              summary,
+            );
+          }
+        } catch {
+          if (!cancelled) {
+            setReviewSummary({
+              productId:
+                product.id,
+              averageRating: 0,
+              reviewCount: 0,
+            });
+          }
+        } finally {
+          if (!cancelled) {
+            setReviewsLoading(
+              false,
+            );
+          }
         }
-      } catch {
-        if (!cancelled) {
-          setReviewSummary({
-            productId: product.id,
-            averageRating: 0,
-            reviewCount: 0,
-          });
-        }
-      } finally {
-        if (!cancelled) {
-          setReviewsLoading(false);
-        }
-      }
-    };
+      };
 
     loadReviewSummary();
 
@@ -126,40 +193,63 @@ export function ProductCard({
   }, [product.id]);
 
   /*
-   * If the product has no currently purchasable SKU,
-   * do not render a broken product card.
+   * A product without an available SKU must
+   * never render a broken purchase card.
    */
   if (!selectedSku) {
     return null;
   }
 
   const packLabel =
-    PACK_LABELS[selectedSku.packSize] ||
+    PACK_LABELS[
+      selectedSku.packSize
+    ] ||
     `${selectedSku.packSize}g`;
 
   const isPurchasable =
-    selectedSku.available === true &&
+    selectedSku.available ===
+      true &&
+    typeof selectedSku.websitePrice ===
+      'number' &&
     Number.isFinite(
       selectedSku.websitePrice,
     ) &&
-    Number.isFinite(selectedSku.mrp);
+    selectedSku.websitePrice >=
+      0 &&
+    typeof selectedSku.mrp ===
+      'number' &&
+    Number.isFinite(
+      selectedSku.mrp,
+    ) &&
+    selectedSku.mrp >= 0 &&
+    selectedSku.websitePrice <=
+      selectedSku.mrp;
 
   const hasReviews =
-    !!reviewSummary &&
-    reviewSummary.reviewCount > 0 &&
-    reviewSummary.averageRating > 0;
+    reviewSummary !== null &&
+    reviewSummary.reviewCount >
+      0 &&
+    reviewSummary.averageRating >
+      0;
 
   const handleAdd = () => {
     if (!isPurchasable) {
       return;
     }
 
-    addItem(selectedSku.sku, 1);
+    addItem(
+      selectedSku.sku,
+      1,
+    );
+
     setAdded(true);
 
-    window.setTimeout(() => {
-      setAdded(false);
-    }, 2000);
+    window.setTimeout(
+      () => {
+        setAdded(false);
+      },
+      2000,
+    );
   };
 
   const handleBuyNow = () => {
@@ -167,8 +257,14 @@ export function ProductCard({
       return;
     }
 
-    addItem(selectedSku.sku, 1);
-    navigate('/checkout');
+    addItem(
+      selectedSku.sku,
+      1,
+    );
+
+    navigate(
+      '/checkout',
+    );
   };
 
   return (
@@ -195,6 +291,10 @@ export function ProductCard({
         ${className}
       `}
     >
+      {/* ================================================================
+          PRODUCT IMAGE
+      ================================================================ */}
+
       <Link
         to={`/product/${product.slug}`}
         aria-label={`View details for ${product.name}`}
@@ -306,6 +406,10 @@ export function ProductCard({
         />
       </Link>
 
+      {/* ================================================================
+          PRODUCT INFORMATION
+      ================================================================ */}
+
       <div
         className="
           flex
@@ -317,6 +421,9 @@ export function ProductCard({
         "
       >
         <div className="min-w-0">
+
+          {/* PRODUCT NAME */}
+
           <Link
             to={`/product/${product.slug}`}
             className="
@@ -336,6 +443,8 @@ export function ProductCard({
             {product.name}
           </Link>
 
+          {/* VARIANT */}
+
           <p
             className="
               mb-2
@@ -350,6 +459,10 @@ export function ProductCard({
           >
             {product.variant}
           </p>
+
+          {/* ============================================================
+              REVIEWS
+          ============================================================ */}
 
           <Link
             to={`/product/${product.slug}#reviews`}
@@ -389,6 +502,7 @@ export function ProductCard({
                     sm:w-3
                   "
                 />
+
                 Loading reviews...
               </span>
             ) : hasReviews ? (
@@ -426,10 +540,16 @@ export function ProductCard({
                   ☆☆☆☆☆
                 </span>
 
-                <span>No reviews yet</span>
+                <span>
+                  No reviews yet
+                </span>
               </span>
             )}
           </Link>
+
+          {/* ============================================================
+              PACK SIZE
+          ============================================================ */}
 
           <div className="mb-3 sm:mb-4">
             {product.category ===
@@ -552,7 +672,11 @@ export function ProductCard({
             )}
           </div>
 
-          <div className="mb-1 flex flex-wrap items-baseline">
+          {/* ============================================================
+              PRICE
+          ============================================================ */}
+
+          <div className="mb-1 flex flex-wrap items-baseline gap-2">
             <span
               className="
                 text-lg
@@ -567,7 +691,26 @@ export function ProductCard({
                   )
                 : 'Price Coming Soon'}
             </span>
+
+            {isPurchasable &&
+              selectedSku.mrp >
+                selectedSku.websitePrice && (
+                <span
+                  className="
+                    text-xs
+                    text-brand-brown/40
+                    line-through
+                  "
+                  aria-label={`MRP ${formatPrice(selectedSku.mrp)}`}
+                >
+                  {formatPrice(
+                    selectedSku.mrp,
+                  )}
+                </span>
+              )}
           </div>
+
+          {/* SHIPPING */}
 
           <p
             className="
@@ -584,11 +727,22 @@ export function ProductCard({
           </p>
         </div>
 
+        {/* ================================================================
+            ACTIONS
+        ================================================================ */}
+
         <div className="mt-1 grid grid-cols-2 gap-2">
+
+          {/* ADD TO CART */}
+
           <button
             type="button"
-            onClick={handleAdd}
-            disabled={!isPurchasable}
+            onClick={
+              handleAdd
+            }
+            disabled={
+              !isPurchasable
+            }
             className={`
               group/cart
               relative
@@ -645,7 +799,10 @@ export function ProductCard({
                     sm:w-4
                   "
                 />
-                <span>Added</span>
+
+                <span>
+                  Added
+                </span>
               </>
             ) : (
               <>
@@ -658,15 +815,24 @@ export function ProductCard({
                     sm:w-4
                   "
                 />
-                <span>Cart</span>
+
+                <span>
+                  Cart
+                </span>
               </>
             )}
           </button>
 
+          {/* BUY NOW */}
+
           <button
             type="button"
-            onClick={handleBuyNow}
-            disabled={!isPurchasable}
+            onClick={
+              handleBuyNow
+            }
+            disabled={
+              !isPurchasable
+            }
             className="
               relative
               flex
@@ -707,7 +873,9 @@ export function ProductCard({
               "
             />
 
-            <span>Buy Now</span>
+            <span>
+              Buy Now
+            </span>
           </button>
         </div>
       </div>
