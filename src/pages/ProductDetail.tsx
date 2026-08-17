@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useId,
   useMemo,
   useState,
 } from 'react';
@@ -8,17 +7,41 @@ import {
 import {
   Link,
   useNavigate,
+  useParams,
 } from 'react-router-dom';
 
 import {
+  Minus,
   Plus,
+  ShoppingBag,
   Check,
-  ChevronDown,
+  Truck,
+  ShieldCheck,
+  Leaf,
   Zap,
+  Star,
 } from 'lucide-react';
+
+import {
+  SEO,
+  breadcrumbSchema,
+} from '@/components/SEO';
+
+import {
+  ProductCard,
+} from '@/components/ProductCard';
+
+import {
+  ProductImage,
+} from '@/components/ProductImage';
+
+import {
+  ProductService,
+} from '@/services/product-service';
 
 import type {
   ProductFamily,
+  Sku,
 } from '@/data/products';
 
 import {
@@ -26,44 +49,59 @@ import {
 } from '@/data/products';
 
 import {
-  ProductImage,
-} from '@/components/ProductImage';
-
-import {
   useCart,
   formatPrice,
 } from '@/context/CartContext';
 
 import {
-  StarRating,
-} from '@/components/StarRating';
+  ReviewSection,
+} from '@/components/ReviewSection';
 
-import {
-  ReviewService,
-} from '@/services/review-service';
+type PurchasableSku = Sku & {
+  mrp: number;
+  websitePrice: number;
+};
 
-import {
-  ProductService,
-} from '@/services/product-service';
-
-import type {
-  ReviewSummary,
-} from '@/types/reviews';
-
-interface ProductCardProps {
-  product: ProductFamily;
-  className?: string;
+function isPurchasableSku(
+  sku: Sku | undefined,
+): sku is PurchasableSku {
+  return (
+    !!sku &&
+    sku.available === true &&
+    typeof sku.websitePrice === 'number' &&
+    Number.isFinite(
+      sku.websitePrice,
+    ) &&
+    sku.websitePrice >= 0 &&
+    typeof sku.mrp === 'number' &&
+    Number.isFinite(sku.mrp) &&
+    sku.mrp >= 0 &&
+    sku.websitePrice <= sku.mrp
+  );
 }
 
-export function ProductCard({
-  product,
-  className = '',
-}: ProductCardProps) {
-  const { addItem } =
-    useCart();
+export default function ProductDetail() {
+  const {
+    slug,
+  } = useParams<{
+    slug: string;
+  }>();
 
   const navigate =
     useNavigate();
+
+  const {
+    addItem,
+  } = useCart();
+
+  const product:
+    | ProductFamily
+    | undefined =
+    slug
+      ? ProductService.getProductBySlug(
+          slug,
+        )
+      : undefined;
 
   const [
     selectedSkuIndex,
@@ -71,58 +109,68 @@ export function ProductCard({
   ] = useState(0);
 
   const [
+    quantity,
+    setQuantity,
+  ] = useState(1);
+
+  const [
     added,
     setAdded,
   ] = useState(false);
 
-  const [
-    reviewSummary,
-    setReviewSummary,
-  ] =
-    useState<ReviewSummary | null>(
-      null,
-    );
-
-  const [
-    reviewsLoading,
-    setReviewsLoading,
-  ] = useState(true);
-
-  const selectId =
-    useId();
-
   /*
-   * ProductService receives the SKU data already
-   * resolved through the central sales configuration.
-   *
-   * ProductCard never calculates:
-   * - factory price
-   * - dealer price
-   * - distributor price
-   * - shipping
-   * - profit
-   * - discount
-   *
-   * websitePrice is the final customer-facing price.
+   * Only available SKUs with valid customer
+   * pricing are exposed.
    */
   const purchasableSkus =
-    useMemo(
-      () =>
-        ProductService.getAvailableSkus(
-          product,
-        ),
+    useMemo<PurchasableSku[]>(
+      () => {
+        if (!product) {
+          return [];
+        }
+
+        return ProductService
+          .getAvailableSkus(
+            product,
+          )
+          .filter(
+            isPurchasableSku,
+          );
+      },
       [product],
     );
 
-  const selectedSku =
-    purchasableSkus[
-      selectedSkuIndex
-    ] ??
-    purchasableSkus[0];
+  /*
+   * Related products must also have at least
+   * one purchasable SKU.
+   */
+  const relatedProducts =
+    useMemo(() => {
+      if (!product) {
+        return [];
+      }
+
+      return ProductService
+        .getRelatedProducts(
+          product,
+          4,
+        )
+        .filter(
+          (item) =>
+            ProductService
+              .getAvailableSkus(
+                item,
+              )
+              .some(
+                isPurchasableSku,
+              ),
+        )
+        .slice(0, 4);
+    }, [product]);
 
   /*
-   * Keep selected SKU valid if the available
-   * SKU list changes.
+   * Keep selected SKU valid whenever
+   * the available catalog changes.
    */
   useEffect(() => {
     if (
@@ -130,6 +178,8 @@ export function ProductCard({
       0
     ) {
       setSelectedSkuIndex(0);
+      setQuantity(1);
+      setAdded(false);
       return;
     }
 
@@ -144,741 +194,698 @@ export function ProductCard({
     purchasableSkus.length,
   ]);
 
-  /*
-   * Load review summary.
-   */
-  useEffect(() => {
-    let cancelled = false;
+  if (!product) {
+    return (
+      <>
+        <SEO
+          title="Product Not Found"
+          description="The requested Kawad Swad product could not be found."
+          path="/product/not-found"
+          indexable={false}
+        />
 
-    const loadReviewSummary =
-      async () => {
-        setReviewsLoading(
-          true,
-        );
+        <section className="container-max container-px py-20 text-center">
+          <h1 className="mb-4 font-serif text-3xl font-bold text-brand-brown">
+            Product not found
+          </h1>
 
-        try {
-          const summary =
-            await ReviewService.getSummary(
-              product.id,
-            );
+          <p className="mx-auto mb-8 max-w-md text-sm text-brand-brown/60">
+            The product you are looking for may have
+            moved or is no longer available.
+          </p>
 
-          if (!cancelled) {
-            setReviewSummary(
-              summary,
-            );
-          }
-        } catch {
-          if (!cancelled) {
-            setReviewSummary({
-              productId:
-                product.id,
-              averageRating: 0,
-              reviewCount: 0,
-            });
-          }
-        } finally {
-          if (!cancelled) {
-            setReviewsLoading(
-              false,
-            );
-          }
-        }
-      };
-
-    loadReviewSummary();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [product.id]);
-
-  /*
-   * A product without an available SKU must
-   * never render a broken purchase card.
-   */
-  if (!selectedSku) {
-    return null;
+          <Link
+            to="/products"
+            className="btn-primary"
+          >
+            Browse All Products
+          </Link>
+        </section>
+      </>
+    );
   }
+
+  /*
+   * No purchasable SKU means the product exists
+   * in the catalog but is not currently for sale.
+   */
+  if (
+    purchasableSkus.length ===
+    0
+  ) {
+    return (
+      <>
+        <SEO
+          title={product.name}
+          description={product.description}
+          path={`/product/${product.slug}`}
+          structuredData={breadcrumbSchema([
+            {
+              name: 'Home',
+              path: '/',
+            },
+            {
+              name: 'Shop',
+              path: '/shop',
+            },
+            {
+              name: product.name,
+              path: `/product/${product.slug}`,
+            },
+          ])}
+        />
+
+        <section className="container-max container-px py-16 lg:py-24">
+          <div className="grid items-start gap-12 lg:grid-cols-2">
+            <div className="overflow-hidden rounded-4xl border border-brand-brown/5 bg-brand-cream-dark shadow-soft">
+              <ProductImage
+                productId={product.id}
+                product={product}
+                variant="detail"
+                className="h-full w-full"
+              />
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-brand-red">
+                {product.category}
+              </p>
+
+              <h1 className="mt-2 font-serif text-4xl font-bold text-brand-brown">
+                {product.name}
+              </h1>
+
+              <p className="mt-2 text-sm text-brand-brown/55">
+                {product.variant}
+              </p>
+
+              <p className="mt-5 text-lg leading-relaxed text-brand-brown/70">
+                {product.description}
+              </p>
+
+              <div className="mt-8 rounded-2xl border border-brand-brown/10 bg-brand-cream p-5">
+                <p className="font-semibold text-brand-brown">
+                  Currently unavailable
+                </p>
+
+                <p className="mt-1 text-sm text-brand-brown/60">
+                  This product is not currently available
+                  for online purchase.
+                </p>
+              </div>
+
+              <div className="mt-8">
+                <Link
+                  to="/shop"
+                  className="btn-outline"
+                >
+                  Continue Shopping
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  const selectedSku =
+    purchasableSkus[
+      selectedSkuIndex
+    ] ??
+    purchasableSkus[0];
 
   const packLabel =
     PACK_LABELS[
       selectedSku.packSize
-    ] ||
+    ] ??
     `${selectedSku.packSize}g`;
 
-  const isPurchasable =
-    selectedSku.available ===
-      true &&
-    typeof selectedSku.websitePrice ===
-      'number' &&
-    Number.isFinite(
-      selectedSku.websitePrice,
-    ) &&
-    selectedSku.websitePrice >=
-      0 &&
-    typeof selectedSku.mrp ===
-      'number' &&
-    Number.isFinite(
-      selectedSku.mrp,
-    ) &&
-    selectedSku.mrp >= 0 &&
-    selectedSku.websitePrice <=
-      selectedSku.mrp;
+  const discount =
+    selectedSku.mrp > 0
+      ? Math.max(
+          0,
+          Math.round(
+            (
+              (
+                selectedSku.mrp -
+                selectedSku.websitePrice
+              ) /
+              selectedSku.mrp
+            ) *
+              100,
+          ),
+        )
+      : 0;
 
-  const hasReviews =
-    reviewSummary !== null &&
-    reviewSummary.reviewCount >
-      0 &&
-    reviewSummary.averageRating >
-      0;
+  const handleAddToCart =
+    () => {
+      addItem(
+        selectedSku.sku,
+        quantity,
+      );
 
-  const handleAdd = () => {
-    if (!isPurchasable) {
-      return;
-    }
+      setAdded(true);
 
-    addItem(
-      selectedSku.sku,
-      1,
-    );
+      window.setTimeout(
+        () => {
+          setAdded(false);
+        },
+        2000,
+      );
+    };
 
-    setAdded(true);
+  const handleBuyNow =
+    () => {
+      addItem(
+        selectedSku.sku,
+        quantity,
+      );
 
-    window.setTimeout(
-      () => {
-        setAdded(false);
-      },
-      2000,
-    );
-  };
-
-  const handleBuyNow = () => {
-    if (!isPurchasable) {
-      return;
-    }
-
-    addItem(
-      selectedSku.sku,
-      1,
-    );
-
-    navigate(
-      '/checkout',
-    );
-  };
+      navigate(
+        '/checkout',
+      );
+    };
 
   return (
-    <article
-      className={`
-        group
-        relative
-        flex
-        h-full
-        min-w-0
-        flex-col
-        overflow-hidden
-        rounded-3xl
-        border
-        border-brand-brown/10
-        bg-white
-        shadow-[0_5px_0_rgba(62,39,35,0.06),0_14px_30px_rgba(62,39,35,0.10)]
-        transition-all
-        duration-500
-        ease-out
-        [transform-style:preserve-3d]
-        hover:-translate-y-2
-        hover:shadow-[0_8px_0_rgba(62,39,35,0.07),0_22px_42px_rgba(62,39,35,0.15)]
-        ${className}
-      `}
-    >
-      {/* ================================================================
-          PRODUCT IMAGE
-      ================================================================ */}
+    <>
+      <SEO
+        title={product.name}
+        description={product.description}
+        path={`/product/${product.slug}`}
+        structuredData={breadcrumbSchema([
+          {
+            name: 'Home',
+            path: '/',
+          },
+          {
+            name: 'Shop',
+            path: '/shop',
+          },
+          {
+            name: product.name,
+            path: `/product/${product.slug}`,
+          },
+        ])}
+      />
 
-      <Link
-        to={`/product/${product.slug}`}
-        aria-label={`View details for ${product.name}`}
-        className="
-          group/image
-          relative
-          block
-          aspect-square
-          overflow-hidden
-          bg-brand-cream-dark
-          [perspective:1200px]
-        "
-      >
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-2
-            z-0
-            rounded-2xl
-            bg-gradient-to-br
-            from-white
-            via-brand-cream
-            to-brand-brown/5
-            shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-10px_25px_rgba(62,39,35,0.05)]
-            transition-all
-            duration-500
-            group-hover/image:inset-1.5
-            group-hover/image:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-14px_30px_rgba(62,39,35,0.08)]
-          "
-          aria-hidden="true"
-        />
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            bottom-[9%]
-            left-1/2
-            z-0
-            h-[8%]
-            w-[48%]
-            -translate-x-1/2
-            rounded-[50%]
-            bg-brand-brown/15
-            blur-[9px]
-            transition-all
-            duration-500
-            group-hover/image:w-[54%]
-            group-hover/image:bg-brand-brown/20
-            group-hover/image:blur-[11px]
-          "
-          aria-hidden="true"
-        />
-
-        <div
-          className="
-            relative
-            z-10
-            h-full
-            w-full
-            transition-transform
-            duration-500
-            ease-out
-            [transform-style:preserve-3d]
-            group-hover/image:[transform:translateY(-5px)_rotateX(3deg)_rotateY(-2deg)_scale(1.015)]
-          "
-        >
-          <ProductImage
-            productId={product.id}
-            product={product}
-            variant="card"
-            className="h-full w-full"
-          />
-        </div>
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-0
-            z-20
-            bg-gradient-to-br
-            from-white/25
-            via-transparent
-            to-brand-brown/5
-            opacity-70
-            transition-opacity
-            duration-500
-            group-hover/image:opacity-100
-          "
-          aria-hidden="true"
-        />
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-2
-            z-30
-            rounded-2xl
-            border
-            border-white/50
-            transition-all
-            duration-500
-            group-hover/image:inset-1.5
-          "
-          aria-hidden="true"
-        />
-      </Link>
-
-      {/* ================================================================
-          PRODUCT INFORMATION
-      ================================================================ */}
-
-      <div
-        className="
-          flex
-          flex-1
-          flex-col
-          justify-between
-          p-4
-          sm:p-5
-        "
-      >
-        <div className="min-w-0">
-
-          {/* PRODUCT NAME */}
-
-          <Link
-            to={`/product/${product.slug}`}
-            className="
-              block
-              truncate
-              font-serif
-              text-sm
-              font-semibold
-              leading-tight
-              text-brand-brown
-              transition-colors
-              hover:text-brand-red
-              sm:text-base
-            "
-            title={product.name}
-          >
-            {product.name}
-          </Link>
-
-          {/* VARIANT */}
-
-          <p
-            className="
-              mb-2
-              mt-1
-              truncate
-              text-[10px]
-              text-brand-brown/55
-              sm:mb-3
-              sm:text-xs
-            "
-            title={product.variant}
-          >
-            {product.variant}
-          </p>
+      <section className="container-max container-px py-10 sm:py-12 lg:py-16">
+        <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
 
           {/* ============================================================
-              REVIEWS
+              PRODUCT IMAGE
           ============================================================ */}
 
-          <Link
-            to={`/product/${product.slug}#reviews`}
-            className="
-              mb-3
-              inline-flex
-              min-h-[30px]
-              max-w-full
-              items-center
-              rounded-md
-              focus:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-brand-red/40
-              sm:mb-4
-            "
-            aria-label={
-              reviewsLoading
-                ? `Loading reviews for ${product.name}`
-                : hasReviews
-                  ? `${reviewSummary!.averageRating.toFixed(1)} out of 5 stars from ${reviewSummary!.reviewCount} reviews`
-                  : `No reviews yet for ${product.name}`
-            }
-          >
-            {reviewsLoading ? (
-              <span className="inline-flex items-center gap-1.5 text-[9px] text-brand-brown/40 sm:text-xs">
-                <span
-                  className="
-                    inline-block
-                    h-2.5
-                    w-2.5
-                    animate-spin
-                    rounded-full
-                    border-2
-                    border-brand-brown/15
-                    border-t-brand-red
-                    sm:h-3
-                    sm:w-3
-                  "
-                />
-
-                Loading reviews...
-              </span>
-            ) : hasReviews ? (
-              <StarRating
-                rating={
-                  reviewSummary!.averageRating
-                }
-                reviewCount={
-                  reviewSummary!.reviewCount
-                }
-                size="sm"
-                showValue
-                showCount
+          <div className="lg:sticky lg:top-28">
+            <div
+              className="
+                overflow-hidden
+                rounded-4xl
+                border
+                border-brand-brown/5
+                bg-brand-cream-dark
+                shadow-soft
+              "
+            >
+              <ProductImage
+                productId={product.id}
+                product={product}
+                variant="detail"
+                className="aspect-square h-full w-full"
               />
-            ) : (
-              <span
-                className="
-                  inline-flex
-                  items-center
-                  gap-1
-                  text-[9px]
-                  text-brand-brown/45
-                  sm:gap-1.5
-                  sm:text-xs
-                "
-              >
-                <span
-                  className="
-                    shrink-0
-                    tracking-[1px]
-                    text-brand-brown/25
-                  "
-                  aria-hidden="true"
-                >
-                  ☆☆☆☆☆
-                </span>
-
-                <span>
-                  No reviews yet
-                </span>
-              </span>
-            )}
-          </Link>
-
-          {/* ============================================================
-              PACK SIZE
-          ============================================================ */}
-
-          <div className="mb-3 sm:mb-4">
-            {product.category ===
-            'combo' ? (
-              <div
-                className="
-                  inline-flex
-                  max-w-full
-                  items-center
-                  rounded-xl
-                  border
-                  border-brand-brown/10
-                  bg-brand-cream
-                  px-3
-                  py-1.5
-                  text-[9px]
-                  font-semibold
-                  text-brand-brown
-                  shadow-soft
-                  sm:text-xs
-                "
-              >
-                <span className="truncate">
-                  {packLabel}
-                </span>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                <label
-                  htmlFor={`pack-size-${selectId}`}
-                  className="
-                    block
-                    text-[9px]
-                    font-bold
-                    uppercase
-                    tracking-wider
-                    text-brand-brown/60
-                    sm:text-2xs
-                  "
-                >
-                  Pack Size
-                </label>
-
-                <div className="relative w-full">
-                  <select
-                    id={`pack-size-${selectId}`}
-                    value={
-                      selectedSkuIndex
-                    }
-                    onChange={(
-                      event,
-                    ) =>
-                      setSelectedSkuIndex(
-                        Number(
-                          event.target
-                            .value,
-                        ),
-                      )
-                    }
-                    className="
-                      min-h-[40px]
-                      w-full
-                      appearance-none
-                      cursor-pointer
-                      rounded-xl
-                      border
-                      border-brand-brown/15
-                      bg-brand-cream
-                      px-3
-                      py-2
-                      pr-8
-                      text-[10px]
-                      font-semibold
-                      text-brand-brown
-                      outline-none
-                      transition-all
-                      focus:border-brand-red
-                      focus:ring-2
-                      focus:ring-brand-red/10
-                      hover:border-brand-brown/25
-                      sm:text-xs
-                    "
-                    aria-label={`Select pack size for ${product.name}`}
-                  >
-                    {purchasableSkus.map(
-                      (
-                        skuObj,
-                        index,
-                      ) => (
-                        <option
-                          key={
-                            skuObj.sku
-                          }
-                          value={index}
-                        >
-                          {PACK_LABELS[
-                            skuObj.packSize
-                          ] ||
-                            `${skuObj.packSize}g`}
-                        </option>
-                      ),
-                    )}
-                  </select>
-
-                  <ChevronDown
-                    className="
-                      pointer-events-none
-                      absolute
-                      right-2.5
-                      top-1/2
-                      h-3.5
-                      w-3.5
-                      -translate-y-1/2
-                      text-brand-brown/45
-                    "
-                    aria-hidden="true"
-                  />
-                </div>
-              </div>
-            )}
+            </div>
           </div>
 
           {/* ============================================================
-              PRICE
+              BUY BOX
           ============================================================ */}
 
-          <div className="mb-1 flex flex-wrap items-baseline gap-2">
-            <span
-              className="
-                text-lg
-                font-bold
-                text-brand-brown
-                sm:text-xl
-              "
-            >
-              {isPurchasable
-                ? formatPrice(
-                    selectedSku.websitePrice,
-                  )
-                : 'Price Coming Soon'}
-            </span>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-red">
+              {product.category}
+            </p>
 
-            {isPurchasable &&
-              selectedSku.mrp >
+            <h1 className="mt-2 font-serif text-3xl font-bold text-brand-brown sm:text-4xl lg:text-5xl">
+              {product.name}
+            </h1>
+
+            <p className="mt-2 text-sm font-medium text-brand-brown/55">
+              {product.variant}
+            </p>
+
+            <p className="mt-5 text-base leading-relaxed text-brand-brown/70 sm:text-lg">
+              {product.description}
+            </p>
+
+            {/* Pack Size */}
+
+            <div className="mt-7">
+              <label
+                htmlFor="product-pack-size"
+                className="
+                  mb-2
+                  block
+                  text-xs
+                  font-bold
+                  uppercase
+                  tracking-wider
+                  text-brand-brown/60
+                "
+              >
+                Pack Size
+              </label>
+
+              <select
+                id="product-pack-size"
+                value={
+                  selectedSkuIndex
+                }
+                onChange={(
+                  event,
+                ) => {
+                  setSelectedSkuIndex(
+                    Number(
+                      event.target.value,
+                    ),
+                  );
+                  setQuantity(1);
+                }}
+                className="
+                  min-h-[48px]
+                  w-full
+                  rounded-xl
+                  border
+                  border-brand-brown/15
+                  bg-brand-cream
+                  px-4
+                  py-3
+                  font-semibold
+                  text-brand-brown
+                  outline-none
+                  transition
+                  focus:border-brand-red
+                  focus:ring-2
+                  focus:ring-brand-red/10
+                "
+              >
+                {purchasableSkus.map(
+                  (
+                    sku,
+                    index,
+                  ) => (
+                    <option
+                      key={
+                        sku.sku
+                      }
+                      value={index}
+                    >
+                      {PACK_LABELS[
+                        sku.packSize
+                      ] ??
+                        `${sku.packSize}g`}
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
+
+            {/* Price */}
+
+            <div className="mt-7 flex flex-wrap items-baseline gap-3">
+              <span className="text-3xl font-bold text-brand-red">
+                {formatPrice(
+                  selectedSku.websitePrice,
+                )}
+              </span>
+
+              {selectedSku.mrp >
                 selectedSku.websitePrice && (
-                <span
-                  className="
-                    text-xs
-                    text-brand-brown/40
-                    line-through
-                  "
-                  aria-label={`MRP ${formatPrice(selectedSku.mrp)}`}
-                >
+                <span className="text-base text-brand-brown/40 line-through">
                   {formatPrice(
                     selectedSku.mrp,
                   )}
                 </span>
               )}
+
+              {discount > 0 && (
+                <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
+                  {discount}% below MRP
+                </span>
+              )}
+            </div>
+
+            {/* Shipping */}
+
+            <div className="mt-3 flex items-center gap-2 text-sm">
+              <Truck className="h-4 w-4 text-green-700" />
+
+              <span className="font-semibold text-green-700">
+                Free shipping
+              </span>
+            </div>
+
+            {/* Quantity + Cart */}
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <div
+                className="
+                  inline-flex
+                  h-[52px]
+                  shrink-0
+                  items-center
+                  justify-between
+                  rounded-xl
+                  border
+                  border-brand-brown/15
+                  bg-white
+                "
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuantity(
+                      (current) =>
+                        Math.max(
+                          1,
+                          current - 1,
+                        ),
+                    )
+                  }
+                  className="flex h-full w-12 items-center justify-center text-brand-brown/70 transition hover:text-brand-red"
+                  aria-label="Decrease quantity"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+
+                <span className="w-10 text-center font-bold text-brand-brown">
+                  {quantity}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuantity(
+                      (current) =>
+                        current + 1,
+                    )
+                  }
+                  className="flex h-full w-12 items-center justify-center text-brand-brown/70 transition hover:text-brand-red"
+                  aria-label="Increase quantity"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  handleAddToCart
+                }
+                className="
+                  flex
+                  min-h-[52px]
+                  flex-1
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-xl
+                  border
+                  border-brand-brown/15
+                  bg-white
+                  px-5
+                  py-3
+                  font-semibold
+                  text-brand-brown
+                  shadow-soft
+                  transition-all
+                  hover:-translate-y-0.5
+                  hover:bg-brand-cream
+                "
+              >
+                {added ? (
+                  <>
+                    <Check className="h-5 w-5 text-green-700" />
+                    Added to Cart
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="h-5 w-5" />
+                    Add to Cart
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  handleBuyNow
+                }
+                className="
+                  flex
+                  min-h-[52px]
+                  flex-1
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-xl
+                  bg-brand-red
+                  px-5
+                  py-3
+                  font-bold
+                  text-white
+                  shadow-[0_5px_0_#b9230a]
+                  transition-all
+                  hover:-translate-y-0.5
+                  hover:bg-brand-red-dark
+                  active:translate-y-[2px]
+                  active:shadow-none
+                "
+              >
+                <Zap className="h-5 w-5" />
+                Buy Now
+              </button>
+            </div>
+
+            {/* Trust Features */}
+
+            <div className="mt-7 grid grid-cols-3 gap-3 border-t border-brand-brown/10 py-6 sm:gap-5">
+              {[
+                {
+                  icon: Leaf,
+                  label: '100% Vegetarian',
+                },
+                {
+                  icon: ShieldCheck,
+                  label: 'FSSAI Licensed',
+                },
+                {
+                  icon: Truck,
+                  label: 'Delivery available',
+                },
+              ].map(
+                (
+                  feature,
+                ) => {
+                  const Icon =
+                    feature.icon;
+
+                  return (
+                    <div
+                      key={
+                        feature.label
+                      }
+                      className="flex flex-col items-center gap-2 text-center"
+                    >
+                      <Icon className="h-6 w-6 text-brand-brown/35" />
+
+                      <span className="text-[10px] font-medium leading-tight text-brand-brown/70 sm:text-xs">
+                        {feature.label}
+                      </span>
+                    </div>
+                  );
+                },
+              )}
+            </div>
           </div>
+        </div>
+      </section>
 
-          {/* SHIPPING */}
+      {/* ================================================================
+          PRODUCT INFORMATION
+      ================================================================ */}
 
-          <p
-            className="
-              mb-4
-              text-[9px]
-              leading-relaxed
-              text-brand-brown/55
-              sm:text-2xs
-            "
-          >
-            <span className="font-semibold text-green-700">
-              Free shipping
-            </span>
-          </p>
+      <section className="bg-brand-cream-dark py-16 lg:py-20">
+        <div className="container-max container-px">
+          <div className="grid gap-6 lg:grid-cols-2">
+
+            {/* Ingredients */}
+
+            <div className="card p-6 sm:p-8">
+              <h2 className="font-serif text-2xl font-bold text-brand-brown">
+                Ingredients
+              </h2>
+
+              <ul className="mt-5 space-y-2">
+                {product.ingredients.map(
+                  (
+                    ingredient,
+                  ) => (
+                    <li
+                      key={
+                        ingredient
+                      }
+                      className="flex gap-3 text-sm text-brand-brown/70"
+                    >
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-red" />
+                      <span>
+                        {ingredient}
+                      </span>
+                    </li>
+                  ),
+                )}
+              </ul>
+            </div>
+
+            {/* Taste */}
+
+            <div className="card p-6 sm:p-8">
+              <h2 className="font-serif text-2xl font-bold text-brand-brown">
+                Taste Profile
+              </h2>
+
+              <p className="mt-5 text-sm leading-7 text-brand-brown/70">
+                {product.tasteProfile}
+              </p>
+            </div>
+
+            {/* Storage */}
+
+            <div className="card p-6 sm:p-8">
+              <h2 className="font-serif text-2xl font-bold text-brand-brown">
+                Storage
+              </h2>
+
+              <p className="mt-5 text-sm leading-7 text-brand-brown/70">
+                {product.storage}
+              </p>
+            </div>
+
+            {/* Serving */}
+
+            <div className="card p-6 sm:p-8">
+              <h2 className="font-serif text-2xl font-bold text-brand-brown">
+                Serving Information
+              </h2>
+
+              <p className="mt-5 text-sm leading-7 text-brand-brown/70">
+                {product.serving}
+              </p>
+            </div>
+
+            {/* Nutrition */}
+
+            <div className="card p-6 sm:p-8">
+              <h2 className="font-serif text-2xl font-bold text-brand-brown">
+                Nutrition
+              </h2>
+
+              <p className="mt-5 text-sm leading-7 text-brand-brown/70">
+                {product.nutritionNote}
+              </p>
+            </div>
+
+            {/* FSSAI */}
+
+            <div className="card p-6 sm:p-8">
+              <h2 className="font-serif text-2xl font-bold text-brand-brown">
+                Food Safety Information
+              </h2>
+
+              <div className="mt-5 space-y-3 text-sm text-brand-brown/70">
+                <p>
+                  <span className="font-semibold text-brand-brown">
+                    FSSAI Licence:
+                  </span>{' '}
+                  21425890001224
+                </p>
+
+                <p className="flex items-center gap-2">
+                  <Leaf className="h-4 w-4 text-green-700" />
+                  100% Vegetarian
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          REVIEWS
+      ================================================================ */}
+
+      <section
+        id="reviews"
+        className="container-max container-px py-16 lg:py-20"
+      >
+        <div className="mb-8 flex items-center gap-3">
+          <Star className="h-6 w-6 fill-current text-brand-red" />
+
+          <div>
+            <h2 className="font-serif text-3xl font-bold text-brand-brown">
+              Customer Reviews
+            </h2>
+
+            <p className="mt-1 text-sm text-brand-brown/55">
+              Genuine customer feedback for this product.
+            </p>
+          </div>
         </div>
 
-        {/* ================================================================
-            ACTIONS
-        ================================================================ */}
+        <ReviewSection
+          productId={product.id}
+          productName={product.name}
+          sku={selectedSku.sku}
+        />
+      </section>
 
-        <div className="mt-1 grid grid-cols-2 gap-2">
+      {/* ================================================================
+          RELATED PRODUCTS
+      ================================================================ */}
 
-          {/* ADD TO CART */}
+      {relatedProducts.length >
+        0 && (
+        <section className="bg-brand-cream-dark py-16 lg:py-20">
+          <div className="container-max container-px">
+            <div className="mb-10 text-center">
+              <p className="section-eyebrow">
+                Explore More
+              </p>
 
-          <button
-            type="button"
-            onClick={
-              handleAdd
-            }
-            disabled={
-              !isPurchasable
-            }
-            className={`
-              group/cart
-              relative
-              flex
-              min-h-[44px]
-              items-center
-              justify-center
-              gap-1.5
-              overflow-hidden
-              rounded-xl
-              px-2
-              py-2
-              text-[10px]
-              font-semibold
-              transition-all
-              duration-200
-              active:translate-y-[2px]
-              active:shadow-none
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-              sm:text-xs
-              md:text-sm
+              <h2 className="mt-2 font-serif text-3xl font-bold text-brand-brown">
+                More from{' '}
+                {product.category}
+              </h2>
+            </div>
 
-              ${
-                added
-                  ? `
-                    bg-green-700
-                    text-white
-                    shadow-[0_4px_0_#14532d]
-                  `
-                  : `
-                    border
-                    border-brand-brown/15
-                    bg-white
-                    text-brand-brown
-                    shadow-[0_4px_0_rgba(78,52,46,0.10)]
-                    hover:-translate-y-0.5
-                    hover:border-brand-brown/25
-                    hover:bg-brand-cream
-                    hover:shadow-[0_6px_0_rgba(78,52,46,0.12)]
-                  `
-              }
-            `}
-            aria-label={`Add ${product.name} (${packLabel}) to cart`}
-          >
-            {added ? (
-              <>
-                <Check
-                  className="
-                    h-3.5
-                    w-3.5
-                    shrink-0
-                    sm:h-4
-                    sm:w-4
-                  "
-                />
-
-                <span>
-                  Added
-                </span>
-              </>
-            ) : (
-              <>
-                <Plus
-                  className="
-                    h-3.5
-                    w-3.5
-                    shrink-0
-                    sm:h-4
-                    sm:w-4
-                  "
-                />
-
-                <span>
-                  Cart
-                </span>
-              </>
-            )}
-          </button>
-
-          {/* BUY NOW */}
-
-          <button
-            type="button"
-            onClick={
-              handleBuyNow
-            }
-            disabled={
-              !isPurchasable
-            }
-            className="
-              relative
-              flex
-              min-h-[44px]
-              items-center
-              justify-center
-              gap-1.5
-              overflow-hidden
-              rounded-xl
-              bg-brand-red
-              px-2
-              py-2
-              text-[10px]
-              font-bold
-              text-white
-              shadow-[0_4px_0_#b9230a]
-              transition-all
-              duration-200
-              hover:-translate-y-0.5
-              hover:bg-brand-red-dark
-              hover:shadow-[0_6px_0_#a51f08]
-              active:translate-y-[2px]
-              active:shadow-none
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-              sm:text-xs
-              md:text-sm
-            "
-            aria-label={`Buy ${product.name} (${packLabel}) now`}
-          >
-            <Zap
-              className="
-                h-3.5
-                w-3.5
-                shrink-0
-                sm:h-4
-                sm:w-4
-              "
-            />
-
-            <span>
-              Buy Now
-            </span>
-          </button>
-        </div>
-      </div>
-    </article>
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+              {relatedProducts.map(
+                (
+                  relatedProduct,
+                ) => (
+                  <ProductCard
+                    key={
+                      relatedProduct.id
+                    }
+                    product={
+                      relatedProduct
+                    }
+                  />
+                ),
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+    </>
   );
 }
