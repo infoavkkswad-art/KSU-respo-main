@@ -510,7 +510,7 @@ BACKEND_PRODUCTS = [
                 "sku": "KS-COMB-235",
                 "packSize": 235,
                 "mrp": 199,
-                "websitePrice": 199,
+                "websitePrice": 197,
                 "shipping": 0,
                 "freeShipping": True,
             },
