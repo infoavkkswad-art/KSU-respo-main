@@ -7,32 +7,6 @@
 /* ==========================================================================
    KAWAD SWAD 2.0
    CENTRAL DESIGN SYSTEM
-   ==========================================================================
-
-   Single visual source of truth.
-
-   Architecture:
-   01. Design Tokens
-   02. Base / Accessibility
-   03. Layout
-   04. Typography
-   05. Buttons
-   06. Surfaces / Cards
-   07. Forms
-   08. Commerce
-   09. Trust / Badges
-   10. Hero / Story
-   11. 3D System
-   12. Image System
-   13. Brand Decoration
-   14. Motion
-   15. Utility Helpers
-   16. Responsive Safety
-   17. Reduced Motion
-
-   IMPORTANT:
-   Components consume this system.
-   Pages should not create a separate visual language.
    ========================================================================== */
 
 
@@ -42,10 +16,6 @@
 
 @layer base {
   :root {
-    /* ----------------------------------------------------------------------
-       BRAND
-       ---------------------------------------------------------------------- */
-
     --ks-color-green: #173c32;
     --ks-color-green-dark: #102d25;
     --ks-color-green-soft: #285447;
@@ -61,10 +31,6 @@
     --ks-color-red: #a63b2f;
     --ks-color-red-dark: #822b22;
 
-    /* ----------------------------------------------------------------------
-       SURFACES
-       ---------------------------------------------------------------------- */
-
     --ks-surface-page: #fbf7ed;
     --ks-surface-page-dark: #f2eadb;
     --ks-surface-card: #ffffff;
@@ -72,10 +38,6 @@
     --ks-surface-soft: #f7f0e3;
     --ks-surface-green: #173c32;
     --ks-surface-brown: #5b3926;
-
-    /* ----------------------------------------------------------------------
-       TEXT
-       ---------------------------------------------------------------------- */
 
     --ks-text-primary: #3f291d;
     --ks-text-secondary: #674c3a;
@@ -85,18 +47,10 @@
     --ks-text-brand: #173c32;
     --ks-text-accent: #9f6918;
 
-    /* ----------------------------------------------------------------------
-       BORDERS
-       ---------------------------------------------------------------------- */
-
     --ks-border-soft: rgba(23, 60, 50, 0.10);
     --ks-border-default: rgba(23, 60, 50, 0.15);
     --ks-border-strong: rgba(23, 60, 50, 0.25);
     --ks-border-saffron: rgba(200, 138, 42, 0.25);
-
-    /* ----------------------------------------------------------------------
-       TYPOGRAPHY
-       ---------------------------------------------------------------------- */
 
     --ks-font-sans:
       'Poppins',
@@ -121,10 +75,6 @@
     --ks-letter-wide: 0.08em;
     --ks-letter-eyebrow: 0.20em;
 
-    /* ----------------------------------------------------------------------
-       SPACING
-       ---------------------------------------------------------------------- */
-
     --ks-space-1: 0.25rem;
     --ks-space-2: 0.5rem;
     --ks-space-3: 0.75rem;
@@ -139,10 +89,6 @@
     --ks-space-24: 6rem;
     --ks-space-32: 8rem;
 
-    /* ----------------------------------------------------------------------
-       RADIUS
-       ---------------------------------------------------------------------- */
-
     --ks-radius-sm: 0.5rem;
     --ks-radius-md: 0.75rem;
     --ks-radius-lg: 1rem;
@@ -151,10 +97,6 @@
     --ks-radius-3xl: 1.875rem;
     --ks-radius-4xl: 2.5rem;
     --ks-radius-pill: 9999px;
-
-    /* ----------------------------------------------------------------------
-       ELEVATION
-       ---------------------------------------------------------------------- */
 
     --ks-shadow-xs: 0 1px 3px rgba(63, 41, 29, 0.05);
     --ks-shadow-sm: 0 4px 12px rgba(63, 41, 29, 0.07);
@@ -167,10 +109,6 @@
     --ks-shadow-glow: 0 10px 35px rgba(200, 138, 42, 0.22);
     --ks-shadow-green: 0 12px 35px rgba(23, 60, 50, 0.20);
 
-    /* ----------------------------------------------------------------------
-       3D
-       ---------------------------------------------------------------------- */
-
     --ks-perspective-card: 1200px;
     --ks-perspective-product: 1400px;
     --ks-perspective-hero: 1800px;
@@ -179,10 +117,6 @@
     --ks-depth-card: 8px;
     --ks-depth-product: 16px;
     --ks-depth-hero: 24px;
-
-    /* ----------------------------------------------------------------------
-       MOTION
-       ---------------------------------------------------------------------- */
 
     --ks-duration-fast: 160ms;
     --ks-duration-normal: 280ms;
@@ -193,18 +127,10 @@
     --ks-ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
     --ks-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    /* ----------------------------------------------------------------------
-       CONTENT WIDTHS
-       ---------------------------------------------------------------------- */
-
     --ks-content-sm: 42rem;
     --ks-content-md: 56rem;
     --ks-content-lg: 72rem;
     --ks-content-xl: 80rem;
-
-    /* ----------------------------------------------------------------------
-       Z-INDEX
-       ---------------------------------------------------------------------- */
 
     --ks-z-base: 0;
     --ks-z-content: 10;
@@ -216,11 +142,6 @@
     --ks-z-toast: 700;
     --ks-z-max: 999;
   }
-
-
-  /* ==========================================================================
-     BASE / RESET
-     ========================================================================== */
 
   *,
   *::before,
@@ -359,8 +280,7 @@
 
 @layer components {
   .container-px {
-    @apply px-4 sm:px-6 lg:px-8;
-
+    @apply px-4;
     width: 100%;
   }
 
@@ -378,32 +298,31 @@
 
   .section {
     @apply relative w-full;
-
     isolation: isolate;
   }
 
   .section-sm {
-    @apply py-10 sm:py-12 lg:py-16;
+    @apply py-10;
   }
 
   .section-md {
-    @apply py-14 sm:py-16 lg:py-20;
+    @apply py-14;
   }
 
   .section-lg {
-    @apply py-16 sm:py-20 lg:py-28;
+    @apply py-16;
   }
 
   .section-xl {
-    @apply py-20 sm:py-24 lg:py-32;
+    @apply py-20;
   }
 
   .section-header {
-    @apply mx-auto mb-10 max-w-3xl text-center sm:mb-12 lg:mb-14;
+    @apply mx-auto mb-10 max-w-3xl text-center;
   }
 
   .section-header-left {
-    @apply mx-0 mb-8 max-w-3xl text-left sm:mb-10 lg:mb-12;
+    @apply mx-0 mb-8 max-w-3xl text-left;
   }
 }
 
@@ -414,41 +333,38 @@
 
 @layer components {
   .type-display {
-    @apply font-serif text-4xl font-semibold leading-[1.02] sm:text-5xl lg:text-6xl xl:text-7xl;
-
+    @apply font-serif text-4xl font-semibold leading-[1.02];
     letter-spacing: -0.035em;
   }
 
   .type-h1 {
-    @apply font-serif text-4xl font-semibold leading-[1.06] sm:text-5xl lg:text-6xl;
-
+    @apply font-serif text-4xl font-semibold leading-[1.06];
     letter-spacing: -0.03em;
   }
 
   .type-h2 {
-    @apply font-serif text-3xl font-semibold leading-[1.1] sm:text-4xl lg:text-5xl;
-
+    @apply font-serif text-3xl font-semibold leading-[1.1];
     letter-spacing: -0.025em;
   }
 
   .type-h3 {
-    @apply font-serif text-2xl font-semibold leading-[1.15] sm:text-3xl;
+    @apply font-serif text-2xl font-semibold leading-[1.15];
   }
 
   .type-h4 {
-    @apply font-serif text-xl font-semibold leading-[1.2] sm:text-2xl;
+    @apply font-serif text-xl font-semibold leading-[1.2];
   }
 
   .type-body-lg {
-    @apply text-base leading-7 sm:text-lg sm:leading-8;
+    @apply text-base leading-7;
   }
 
   .type-body {
-    @apply text-sm leading-6 sm:text-base sm:leading-7;
+    @apply text-sm leading-6;
   }
 
   .type-body-sm {
-    @apply text-xs leading-5 sm:text-sm sm:leading-6;
+    @apply text-xs leading-5;
   }
 
   .type-caption {
@@ -460,11 +376,11 @@
   }
 
   .type-price-large {
-    @apply text-2xl font-bold tracking-tight text-brand-brown sm:text-3xl;
+    @apply text-2xl font-bold tracking-tight text-brand-brown;
   }
 
   .type-eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.2em] text-brand-saffron sm:text-sm;
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-brand-saffron;
   }
 
   .text-balance {
@@ -526,26 +442,22 @@
 
   .btn-primary {
     @apply btn bg-brand-green px-6 py-3 text-white;
-
     box-shadow: var(--ks-shadow-sm);
   }
 
   .btn-primary:hover:not(:disabled) {
     @apply bg-brand-green-dark;
-
     transform: translateY(-2px);
     box-shadow: var(--ks-shadow-green);
   }
 
   .btn-secondary {
     @apply btn bg-brand-brown px-6 py-3 text-white;
-
     box-shadow: var(--ks-shadow-sm);
   }
 
   .btn-secondary:hover:not(:disabled) {
     @apply bg-brand-brown-dark;
-
     transform: translateY(-2px);
     box-shadow: var(--ks-shadow-card);
   }
@@ -556,7 +468,6 @@
 
   .btn-outline:hover:not(:disabled) {
     @apply border-brand-green bg-brand-green text-white;
-
     transform: translateY(-2px);
     box-shadow: var(--ks-shadow-sm);
   }
@@ -567,7 +478,6 @@
 
   .btn-yellow:hover:not(:disabled) {
     @apply bg-brand-saffron-dark;
-
     transform: translateY(-2px);
     box-shadow: var(--ks-shadow-glow);
   }
@@ -578,7 +488,6 @@
 
   .btn-ghost:hover:not(:disabled) {
     @apply bg-brand-green/5;
-
     transform: translateY(-1px);
   }
 
@@ -588,7 +497,6 @@
 
   .btn-buy:hover:not(:disabled) {
     @apply bg-brand-green-dark;
-
     transform: translateY(-2px);
     box-shadow: var(--ks-shadow-green);
   }
@@ -599,7 +507,6 @@
 
   .btn-cart:hover:not(:disabled) {
     @apply border-brand-green bg-brand-green/5;
-
     transform: translateY(-1px);
   }
 
@@ -616,7 +523,6 @@
 @layer components {
   .card {
     @apply rounded-2xl bg-white;
-
     min-width: 0;
     box-shadow: var(--ks-shadow-card);
 
@@ -632,14 +538,12 @@
 
   .card-flat {
     @apply rounded-2xl bg-white;
-
     min-width: 0;
     border: 1px solid var(--ks-border-soft);
   }
 
   .card-soft {
     @apply rounded-2xl;
-
     min-width: 0;
     background: var(--ks-surface-soft);
     border: 1px solid var(--ks-border-soft);
@@ -647,14 +551,12 @@
 
   .card-elevated {
     @apply rounded-3xl bg-white;
-
     min-width: 0;
     box-shadow: var(--ks-shadow-floating);
   }
 
   .card-interactive {
     @apply card;
-
     cursor: pointer;
   }
 
@@ -675,7 +577,6 @@
 @layer components {
   .input-field {
     @apply w-full rounded-xl border bg-white px-4 py-3 text-brand-brown transition-colors;
-
     min-width: 0;
     border-color: var(--ks-border-default);
   }
@@ -686,7 +587,6 @@
 
   .input-field:focus {
     @apply border-brand-green ring-0 outline-none;
-
     box-shadow: 0 0 0 3px rgba(23, 60, 50, 0.08);
   }
 
@@ -720,7 +620,6 @@
 @layer components {
   .product-stage {
     @apply relative flex items-center justify-center overflow-hidden;
-
     min-width: 0;
     perspective: var(--ks-perspective-product);
     isolation: isolate;
@@ -763,7 +662,6 @@
 
   .product-card {
     @apply card;
-
     overflow: hidden;
     perspective: var(--ks-perspective-card);
     transform-style: preserve-3d;
@@ -813,7 +711,6 @@
 
   .product-badge {
     @apply badge;
-
     position: relative;
     z-index: 2;
     box-shadow: var(--ks-shadow-xs);
@@ -856,7 +753,6 @@
 
   .price-emphasis {
     @apply font-bold tracking-tight text-brand-brown;
-
     font-variant-numeric: tabular-nums;
   }
 
@@ -975,15 +871,15 @@
   }
 
   .section-eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.2em] text-brand-saffron sm:text-sm;
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-brand-saffron;
   }
 
   .section-title {
-    @apply font-serif text-3xl font-semibold leading-tight text-brand-brown sm:text-4xl lg:text-5xl;
+    @apply font-serif text-3xl font-semibold leading-tight text-brand-brown;
   }
 
   .section-description {
-    @apply mt-4 max-w-2xl text-sm leading-6 text-brand-brown/65 sm:text-base sm:leading-7;
+    @apply mt-4 max-w-2xl text-sm leading-6 text-brand-brown/65;
   }
 }
 
@@ -995,7 +891,6 @@
 @layer components {
   .hero {
     @apply relative overflow-hidden;
-
     isolation: isolate;
   }
 
@@ -1015,7 +910,6 @@
   .hero-product {
     position: relative;
     z-index: 2;
-
     transform-style: preserve-3d;
 
     filter: drop-shadow(
@@ -1026,7 +920,6 @@
   .hero-mascot {
     position: relative;
     z-index: 3;
-
     transform-style: preserve-3d;
 
     filter: drop-shadow(
@@ -1036,7 +929,6 @@
 
   .page-hero {
     @apply relative overflow-hidden;
-
     isolation: isolate;
     min-height: clamp(18rem, 42vw, 30rem);
   }
@@ -1072,7 +964,7 @@
   }
 
   .story-panel {
-    @apply rounded-3xl p-6 sm:p-8 lg:p-10;
+    @apply rounded-3xl p-6;
 
     background: rgba(255, 255, 255, 0.82);
     border: 1px solid rgba(255, 255, 255, 0.75);
@@ -1160,15 +1052,6 @@
     animation: ks-float 7s ease-in-out infinite;
   }
 
-  /* ------------------------------------------------------------------------
-     CENTRAL COMPATIBILITY UTILITIES
-     ------------------------------------------------------------------------
-
-     These utilities are intentionally defined here because components such
-     as Footer and Reveal consume them directly. This prevents individual
-     components from inventing their own motion/elevation vocabulary.
-     ------------------------------------------------------------------------ */
-
   .ease-ks-standard {
     transition-timing-function: var(--ks-ease-standard);
   }
@@ -1230,7 +1113,6 @@
 @layer components {
   .image-premium {
     @apply overflow-hidden rounded-3xl;
-
     position: relative;
     isolation: isolate;
   }
@@ -1481,7 +1363,6 @@
 @layer utilities {
   .reveal {
     opacity: 0;
-
     transform: translateY(20px);
 
     transition:
@@ -1496,7 +1377,6 @@
 
   .reveal-scale {
     opacity: 0;
-
     transform: translateY(12px) scale(0.985);
 
     transition:
@@ -1556,7 +1436,167 @@
 
 
 /* ==========================================================================
-   16. MOBILE RESPONSIVE SAFETY
+   16. RESPONSIVE DESIGN SYSTEM
+   ========================================================================== */
+
+@media (min-width: 640px) {
+  @layer components {
+    .container-px {
+      @apply px-6;
+    }
+
+    .section-sm {
+      @apply py-12;
+    }
+
+    .section-md {
+      @apply py-16;
+    }
+
+    .section-lg {
+      @apply py-20;
+    }
+
+    .section-xl {
+      @apply py-24;
+    }
+
+    .section-header {
+      @apply mb-12;
+    }
+
+    .section-header-left {
+      @apply mb-10;
+    }
+
+    .type-display {
+      @apply text-5xl;
+    }
+
+    .type-h1 {
+      @apply text-5xl;
+    }
+
+    .type-h2 {
+      @apply text-4xl;
+    }
+
+    .type-h3 {
+      @apply text-3xl;
+    }
+
+    .type-h4 {
+      @apply text-2xl;
+    }
+
+    .type-body-lg {
+      @apply text-lg leading-8;
+    }
+
+    .type-body {
+      @apply text-base leading-7;
+    }
+
+    .type-body-sm {
+      @apply text-sm leading-6;
+    }
+
+    .type-price-large {
+      @apply text-3xl;
+    }
+
+    .type-eyebrow {
+      @apply text-sm;
+    }
+
+    .section-eyebrow {
+      @apply text-sm;
+    }
+
+    .section-title {
+      @apply text-4xl;
+    }
+
+    .section-description {
+      @apply text-base leading-7;
+    }
+
+    .story-panel {
+      @apply p-8;
+    }
+  }
+}
+
+
+@media (min-width: 768px) {
+  @layer components {
+    .container-px {
+      @apply px-6;
+    }
+  }
+}
+
+
+@media (min-width: 1024px) {
+  @layer components {
+    .container-px {
+      @apply px-8;
+    }
+
+    .section-sm {
+      @apply py-16;
+    }
+
+    .section-md {
+      @apply py-20;
+    }
+
+    .section-lg {
+      @apply py-28;
+    }
+
+    .section-xl {
+      @apply py-32;
+    }
+
+    .section-header {
+      @apply mb-14;
+    }
+
+    .section-header-left {
+      @apply mb-12;
+    }
+
+    .type-display {
+      @apply text-6xl;
+    }
+
+    .type-h1 {
+      @apply text-6xl;
+    }
+
+    .type-h2 {
+      @apply text-5xl;
+    }
+
+    .section-title {
+      @apply text-5xl;
+    }
+  }
+}
+
+
+@media (min-width: 1280px) {
+  @layer components {
+    .type-display {
+      @apply text-7xl;
+    }
+  }
+}
+
+
+/* ==========================================================================
+   17. MOBILE RESPONSIVE SAFETY
    ========================================================================== */
 
 @media (max-width: 639px) {
@@ -1626,7 +1666,7 @@
 
 
 /* ==========================================================================
-   17. ACCESSIBILITY / REDUCED MOTION
+   18. ACCESSIBILITY / REDUCED MOTION
    ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
