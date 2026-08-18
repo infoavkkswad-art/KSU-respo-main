@@ -15,14 +15,18 @@ import { brand } from '@/data/brand';
 
 /* ==========================================================================
    KAWAD SWAD 2.0
-   MANUFACTURING PAGE
+   CENTRAL MANUFACTURING EXPERIENCE
 
    Narrative:
-   HERO → PROCESS → PHILOSOPHY → QUALITY → B2B ACTION
+   HERO → PROCESS INTRO → PRODUCTION JOURNEY
+   → MANUFACTURING PHILOSOPHY → QUALITY SYSTEM
+   → B2B ACTION
 
-   Design-system rule:
-   This page uses existing central classes only.
-   No page-specific design tokens are introduced here.
+   Central design system:
+   - Green = trust / manufacturing confidence
+   - Saffron = process highlights / action
+   - Ivory = editorial canvas
+   - Brown = premium contrast
    ========================================================================== */
 
 
@@ -32,6 +36,10 @@ const FACTORY_HERO_IMAGE =
 const FACTORY_PRODUCTION_IMAGE =
   '/images/pages/manufacturing-production.png';
 
+
+/* ==========================================================================
+   PRODUCTION STEPS
+   ========================================================================== */
 
 const steps = [
   {
@@ -62,6 +70,26 @@ const steps = [
 ];
 
 
+/* ==========================================================================
+   QUALITY POINTS
+   ========================================================================== */
+
+const qualityPoints = [
+  'FSSAI Licence No. 21425890001224',
+  '100% vegetarian production line',
+  'Dedicated dietary variant options',
+  'Sealed food-grade packaging',
+  'Regular batch quality reviews',
+  'Authentic regional spice blends',
+  'Careful lentil flour sourcing',
+  'Standardized quality control steps',
+];
+
+
+/* ==========================================================================
+   PAGE
+   ========================================================================== */
+
 export default function Manufacturing() {
   return (
     <>
@@ -80,7 +108,10 @@ export default function Manufacturing() {
           HERO
           =================================================================== */}
 
-      <section className="relative overflow-hidden">
+      <section
+        className="relative overflow-hidden"
+        aria-labelledby="manufacturing-title"
+      >
         <div
           className="
             relative
@@ -93,7 +124,7 @@ export default function Manufacturing() {
         >
           <img
             src={FACTORY_HERO_IMAGE}
-            alt="Kawad Swad factory and manufacturing environment"
+            alt="Kawad Swad manufacturing environment"
             loading="eager"
             fetchPriority="high"
             decoding="async"
@@ -112,8 +143,8 @@ export default function Manufacturing() {
               absolute
               inset-0
               bg-gradient-to-r
-              from-brand-green/90
-              via-brand-green/60
+              from-brand-green/95
+              via-brand-green/65
               to-brand-green/10
             "
             aria-hidden="true"
@@ -125,9 +156,20 @@ export default function Manufacturing() {
               absolute
               inset-0
               bg-gradient-to-t
-              from-brand-green/30
+              from-brand-green/40
               via-transparent
               to-transparent
+            "
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              bg-dots
+              opacity-[0.06]
             "
             aria-hidden="true"
           />
@@ -145,7 +187,14 @@ export default function Manufacturing() {
             "
           >
             <Reveal>
-              <div className="max-w-3xl py-14 sm:py-16 lg:py-20">
+              <div
+                className="
+                  max-w-3xl
+                  py-14
+                  sm:py-16
+                  lg:py-20
+                "
+              >
                 <span
                   className="
                     section-eyebrow
@@ -158,6 +207,7 @@ export default function Manufacturing() {
                 </span>
 
                 <h1
+                  id="manufacturing-title"
                   className="
                     text-balance
                     font-serif
@@ -192,7 +242,15 @@ export default function Manufacturing() {
                   and hygiene practices.
                 </p>
 
-                <div className="mt-7 flex flex-wrap gap-3">
+                <div
+                  className="
+                    mt-7
+                    flex
+                    flex-wrap
+                    gap-2.5
+                    sm:gap-3
+                  "
+                >
                   <span className="badge bg-white/10 text-white">
                     Traditional Recipes
                   </span>
@@ -223,15 +281,23 @@ export default function Manufacturing() {
           sm:py-18
           lg:py-22
         "
+        aria-labelledby="process-overview-title"
       >
         <div className="container-max container-px">
           <Reveal>
-            <div className="mx-auto max-w-3xl text-center">
+            <div
+              className="
+                mx-auto
+                max-w-3xl
+                text-center
+              "
+            >
               <span className="section-eyebrow mb-3 block">
                 From Flour to Crisp
               </span>
 
               <h2
+                id="process-overview-title"
                 className="
                   text-balance
                   font-serif
@@ -267,7 +333,7 @@ export default function Manufacturing() {
 
 
       {/* ======================================================================
-          PROCESS STEPS
+          PROCESS TIMELINE
           =================================================================== */}
 
       <section
@@ -277,118 +343,201 @@ export default function Manufacturing() {
           sm:pb-20
           lg:pb-28
         "
+        aria-label="Manufacturing process"
       >
         <div className="container-max container-px">
-          <div className="space-y-14 sm:space-y-20 lg:space-y-24">
-            {steps.map((step, index) => (
-              <Reveal
-                key={step.num}
-                delay={Math.min(index * 70, 280)}
-              >
-                <div
-                  className={`
-                    grid
-                    items-center
-                    gap-8
-                    lg:grid-cols-12
-                    lg:gap-16
-                    ${
-                      index % 2 === 1
-                        ? 'lg:grid-flow-dense'
-                        : ''
-                    }
-                  `}
+
+          <div className="relative">
+
+            {/* Central desktop timeline */}
+            <div
+              className="
+                pointer-events-none
+                absolute
+                bottom-0
+                left-1/2
+                top-0
+                hidden
+                w-px
+                -translate-x-1/2
+                bg-brand-green/10
+                lg:block
+              "
+              aria-hidden="true"
+            />
+
+            <div className="space-y-14 sm:space-y-20 lg:space-y-24">
+
+              {steps.map((step, index) => (
+                <Reveal
+                  key={step.num}
+                  delay={Math.min(index * 70, 280)}
                 >
-                  {/* Image */}
-
-                  <div
-                    className={`
-                      lg:col-span-6
-                      ${
-                        index % 2 === 1
-                          ? 'lg:col-start-7'
-                          : ''
-                      }
-                    `}
+                  <article
+                    className="
+                      relative
+                      grid
+                      items-center
+                      gap-8
+                      lg:grid-cols-2
+                      lg:gap-20
+                    "
                   >
-                    <div className="image-premium shadow-lift">
-                      <PlaceholderImage
-                        label={`${step.title} — real process photography pending`}
-                        aspect="aspect-[4/3]"
-                      />
-                    </div>
-                  </div>
 
-
-                  {/* Content */}
-
-                  <div
-                    className={`
-                      lg:col-span-6
-                      ${
-                        index % 2 === 1
-                          ? 'lg:col-start-1 lg:row-start-1'
-                          : ''
-                      }
-                    `}
-                  >
-                    <span
-                      className="
-                        mb-3
-                        block
-                        font-serif
-                        text-5xl
-                        font-bold
-                        leading-none
-                        text-brand-saffron/30
-                        sm:text-6xl
-                      "
-                      aria-hidden="true"
-                    >
-                      {step.num}
-                    </span>
-
-                    <h2
-                      className="
-                        text-balance
-                        font-serif
-                        text-headline-sm
-                        font-bold
-                        text-brand-green
-                        sm:text-headline-md
-                      "
-                    >
-                      {step.title}
-                    </h2>
-
-                    <p
-                      className="
-                        text-pretty
-                        mt-4
-                        max-w-xl
-                        text-sm
-                        leading-relaxed
-                        text-brand-brown/70
-                        sm:text-base
-                        lg:text-lg
-                      "
-                    >
-                      {step.desc}
-                    </p>
+                    {/* ========================================================
+                        IMAGE
+                        ===================================================== */}
 
                     <div
-                      className="
-                        mt-5
-                        h-px
-                        w-16
-                        bg-brand-saffron/40
-                      "
-                      aria-hidden="true"
-                    />
-                  </div>
-                </div>
-              </Reveal>
-            ))}
+                      className={`
+                        ${
+                          index % 2 === 1
+                            ? 'lg:order-2'
+                            : 'lg:order-1'
+                        }
+                      `}
+                    >
+                      <div
+                        className="
+                          image-premium
+                          border
+                          border-brand-green/10
+                          bg-white
+                          shadow-card
+                        "
+                      >
+                        <PlaceholderImage
+                          label={`${step.title} — real process photography pending`}
+                          aspect="aspect-[4/3]"
+                          className="rounded-3xl"
+                        />
+                      </div>
+                    </div>
+
+
+                    {/* ========================================================
+                        CONTENT
+                        ===================================================== */}
+
+                    <div
+                      className={`
+                        ${
+                          index % 2 === 1
+                            ? 'lg:order-1 lg:text-right'
+                            : 'lg:order-2'
+                        }
+                      `}
+                    >
+                      <div
+                        className={`
+                          flex
+                          items-start
+                          gap-4
+                          ${
+                            index % 2 === 1
+                              ? 'lg:flex-row-reverse'
+                              : ''
+                          }
+                        `}
+                      >
+
+                        <div
+                          className="
+                            flex
+                            h-12
+                            w-12
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-full
+                            border
+                            border-brand-saffron/20
+                            bg-brand-ivory
+                            font-serif
+                            text-sm
+                            font-bold
+                            text-brand-saffron
+                            shadow-soft
+                            lg:h-14
+                            lg:w-14
+                          "
+                          aria-hidden="true"
+                        >
+                          {step.num}
+                        </div>
+
+                        <div className="min-w-0">
+                          <span
+                            className="
+                              block
+                              text-[10px]
+                              font-semibold
+                              uppercase
+                              tracking-[0.18em]
+                              text-brand-saffron
+                              sm:text-xs
+                            "
+                          >
+                            Production Stage
+                          </span>
+
+                          <h2
+                            className="
+                              text-balance
+                              mt-2
+                              font-serif
+                              text-headline-sm
+                              font-bold
+                              text-brand-green
+                              sm:text-headline-md
+                            "
+                          >
+                            {step.title}
+                          </h2>
+                        </div>
+                      </div>
+
+                      <p
+                        className={`
+                          text-pretty
+                          mt-5
+                          max-w-xl
+                          text-sm
+                          leading-relaxed
+                          text-brand-brown/70
+                          sm:text-base
+                          lg:text-lg
+                          ${
+                            index % 2 === 1
+                              ? 'lg:ml-auto'
+                              : ''
+                          }
+                        `}
+                      >
+                        {step.desc}
+                      </p>
+
+                      <div
+                        className={`
+                          mt-5
+                          h-px
+                          w-16
+                          bg-brand-saffron/40
+                          ${
+                            index % 2 === 1
+                              ? 'lg:ml-auto'
+                              : ''
+                          }
+                        `}
+                        aria-hidden="true"
+                      />
+                    </div>
+
+                  </article>
+                </Reveal>
+              ))}
+
+            </div>
           </div>
         </div>
       </section>
@@ -400,14 +549,43 @@ export default function Manufacturing() {
 
       <section
         className="
+          relative
+          overflow-hidden
           bg-brand-green
           py-16
           text-brand-ivory
           sm:py-20
           lg:py-24
         "
+        aria-labelledby="manufacturing-philosophy-title"
       >
-        <div className="container-max container-px">
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -right-24
+            -top-24
+            h-72
+            w-72
+            rounded-full
+            border
+            border-brand-saffron/10
+          "
+          aria-hidden="true"
+        />
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            bg-grid
+            opacity-[0.04]
+          "
+          aria-hidden="true"
+        />
+
+        <div className="container-max container-px relative">
           <div
             className="
               grid
@@ -417,9 +595,11 @@ export default function Manufacturing() {
               lg:gap-16
             "
           >
+
             <div className="lg:col-span-6">
               <Reveal>
                 <div>
+
                   <span
                     className="
                       section-eyebrow
@@ -432,6 +612,7 @@ export default function Manufacturing() {
                   </span>
 
                   <h2
+                    id="manufacturing-philosophy-title"
                     className="
                       text-balance
                       font-serif
@@ -543,6 +724,7 @@ export default function Manufacturing() {
                       );
                     })}
                   </div>
+
                 </div>
               </Reveal>
             </div>
@@ -561,7 +743,7 @@ export default function Manufacturing() {
                 >
                   <img
                     src={FACTORY_PRODUCTION_IMAGE}
-                    alt="Kawad Swad papad production line and factory environment"
+                    alt="Kawad Swad papad production environment"
                     loading="lazy"
                     decoding="async"
                     className="
@@ -572,9 +754,23 @@ export default function Manufacturing() {
                       object-cover
                     "
                   />
+
+                  <div
+                    className="
+                      pointer-events-none
+                      absolute
+                      inset-0
+                      bg-gradient-to-t
+                      from-brand-green/30
+                      via-transparent
+                      to-transparent
+                    "
+                    aria-hidden="true"
+                  />
                 </div>
               </Reveal>
             </div>
+
           </div>
         </div>
       </section>
@@ -591,15 +787,26 @@ export default function Manufacturing() {
           sm:py-20
           lg:py-24
         "
+        aria-labelledby="quality-title"
       >
         <div className="container-max container-px">
+
           <Reveal>
-            <div className="mx-auto mb-10 max-w-2xl text-center sm:mb-12">
+            <div
+              className="
+                mx-auto
+                mb-10
+                max-w-2xl
+                text-center
+                sm:mb-12
+              "
+            >
               <span className="section-eyebrow mb-3 block">
                 Quality Assurance
               </span>
 
               <h2
+                id="quality-title"
                 className="
                   text-balance
                   font-serif
@@ -613,6 +820,7 @@ export default function Manufacturing() {
 
               <p
                 className="
+                  text-pretty
                   mx-auto
                   mt-4
                   max-w-xl
@@ -639,81 +847,75 @@ export default function Manufacturing() {
               lg:gap-5
             "
           >
-            {[
-              'FSSAI Licence No. 21425890001224',
-              '100% vegetarian production line',
-              'Dedicated dietary variant options',
-              'Sealed food-grade packaging',
-              'Regular batch quality reviews',
-              'Authentic regional spice blends',
-              'Careful lentil flour sourcing',
-              'Standardized quality control steps',
-            ].map((point, index) => (
-              <Reveal
-                key={point}
-                delay={Math.min(index * 40, 240)}
-              >
-                <div
-                  className="
-                    card
-                    flex
-                    h-full
-                    items-start
-                    gap-3
-                    border
-                    border-brand-green/10
-                    bg-white
-                    p-5
-                    shadow-soft
-                    transition-all
-                    duration-300
-                    hover:-translate-y-1
-                    hover:shadow-lift
-                    sm:p-6
-                  "
+            {qualityPoints.map(
+              (point, index) => (
+                <Reveal
+                  key={point}
+                  delay={Math.min(index * 40, 240)}
                 >
-                  <span
+                  <div
                     className="
+                      card
                       flex
-                      h-6
-                      w-6
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-full
-                      bg-brand-green/10
+                      h-full
+                      items-start
+                      gap-3
+                      border
+                      border-brand-green/10
+                      bg-white
+                      p-5
+                      shadow-soft
+                      transition-all
+                      duration-300
+                      hover:-translate-y-1
+                      hover:shadow-lift
+                      sm:p-6
                     "
                   >
-                    <Check
+                    <span
                       className="
-                        h-3.5
-                        w-3.5
-                        text-brand-green
+                        flex
+                        h-6
+                        w-6
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-brand-green/10
                       "
-                      aria-hidden="true"
-                    />
-                  </span>
+                    >
+                      <Check
+                        className="
+                          h-3.5
+                          w-3.5
+                          text-brand-green
+                        "
+                        aria-hidden="true"
+                      />
+                    </span>
 
-                  <span
-                    className="
-                      text-sm
-                      font-medium
-                      leading-relaxed
-                      text-brand-brown/80
-                    "
-                  >
-                    {point}
-                  </span>
-                </div>
-              </Reveal>
-            ))}
+                    <span
+                      className="
+                        text-sm
+                        font-medium
+                        leading-relaxed
+                        text-brand-brown/80
+                      "
+                    >
+                      {point}
+                    </span>
+                  </div>
+                </Reveal>
+              ),
+            )}
           </div>
+
         </div>
       </section>
 
 
       {/* ======================================================================
-          B2B CTA
+          BUSINESS ACTION
           =================================================================== */}
 
       <section
@@ -724,15 +926,19 @@ export default function Manufacturing() {
           py-16
           sm:py-20
         "
+        aria-labelledby="manufacturing-business-title"
       >
-        <div className="container-max container-px text-center">
+        <div className="container-max container-px">
+
           <Reveal>
-            <div className="mx-auto max-w-2xl">
+            <div className="mx-auto max-w-2xl text-center">
+
               <span className="section-eyebrow mb-3 block">
                 Business Partnerships
               </span>
 
               <h2
+                id="manufacturing-business-title"
                 className="
                   text-balance
                   font-serif
@@ -742,7 +948,7 @@ export default function Manufacturing() {
                   sm:text-headline-md
                 "
               >
-                Ready to partner with Kawad Swad?
+                Looking for a reliable papad supply partner?
               </h2>
 
               <p
@@ -757,10 +963,8 @@ export default function Manufacturing() {
                   sm:text-base
                 "
               >
-                Whether you are looking for bulk supply
-                for your business or regional distribution
-                partnerships, our team is ready to assist
-                you.
+                Explore bulk supply and distribution
+                opportunities with Kawad Swad.
               </p>
 
               <div
@@ -804,8 +1008,10 @@ export default function Manufacturing() {
                   Become a Distributor
                 </Link>
               </div>
+
             </div>
           </Reveal>
+
         </div>
       </section>
 
