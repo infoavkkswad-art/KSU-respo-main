@@ -51,11 +51,33 @@ async def process_and_save_order(
     """
     Create and save a new order in MongoDB.
 
-    Important:
-    - Pricing comes from backend SKU data.
-    - Frontend prices are NOT trusted.
-    - Razorpay is created later by routes/orders.py.
-    - Google Sheets failure must NEVER prevent checkout.
+    IMPORTANT PRICING RULE:
+
+    Backend SKU websitePrice is the FINAL customer-facing price.
+
+    The commercial pricing master calculates:
+
+        sellingPrice + commercial shipping
+        --------------------------------
+        final websitePrice
+
+    Therefore this service MUST NOT add shipping again.
+
+    Frontend prices are NOT trusted.
+
+    Pricing authority:
+
+        Backend SKU catalogue
+              ↓
+        websitePrice
+              ↓
+        order subtotal
+              ↓
+        final total
+
+    Razorpay is created later by routes/orders.py.
+
+    Google Sheets failure must NEVER prevent checkout.
     """
 
     db = get_database()
@@ -104,6 +126,19 @@ async def process_and_save_order(
     # ==========================================================
 
     subtotal = 0.0
+
+    # ==========================================================
+    # CUSTOMER-FACING SHIPPING
+    #
+    # Shipping is already included in websitePrice.
+    #
+    # Therefore:
+    #
+    # shipping = 0
+    #
+    # NEVER add another shipping amount here.
+    # ==========================================================
+
     shipping = 0.0
 
     item_snapshots = []
@@ -124,6 +159,23 @@ async def process_and_save_order(
                 status_code=400,
                 detail=(
                     f"Invalid or unknown SKU: "
+                    f"{item.sku}"
+                ),
+            )
+
+        # ------------------------------------------------------
+        # Availability validation
+        # ------------------------------------------------------
+
+        if not sku_obj.get(
+            "available",
+            True,
+        ):
+
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Product is currently unavailable: "
                     f"{item.sku}"
                 ),
             )
@@ -158,7 +210,7 @@ async def process_and_save_order(
             )
 
         # ------------------------------------------------------
-        # Backend price
+        # Backend final customer price
         # ------------------------------------------------------
 
         try:
@@ -178,52 +230,57 @@ async def process_and_save_order(
             )
 
         # ------------------------------------------------------
-        # Shipping
+        # Validate backend price
         # ------------------------------------------------------
 
-        try:
-
-            is_free_shipping = bool(
-                sku_obj.get(
-                    "freeShipping",
-                    False,
-                )
+        if (
+            unit_price < 0
+            or not (
+                unit_price == unit_price
             )
+        ):
 
-            if is_free_shipping:
-
-                item_shipping = 0.0
-
-            else:
-
-                item_shipping = float(
-                    sku_obj.get(
-                        "shipping",
-                        49,
-                    )
-                )
-
-        except Exception:
-
-            item_shipping = 49.0
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"Backend price is invalid for SKU "
+                    f"{item.sku}."
+                ),
+            )
 
         # ------------------------------------------------------
         # Calculate item total
+        #
+        # websitePrice already includes the commercial
+        # shipping component.
+        #
+        # Therefore:
+        #
+        # item total = final website price × quantity
+        #
+        # NEVER add shipping here.
         # ------------------------------------------------------
 
         item_total = (
             unit_price * quantity
         )
 
+        if (
+            item_total < 0
+            or not (
+                item_total == item_total
+            )
+        ):
+
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"Invalid calculated total for SKU "
+                    f"{item.sku}."
+                ),
+            )
+
         subtotal += item_total
-
-        # Keep existing business rule:
-        # use the largest applicable shipping charge.
-
-        shipping = max(
-            shipping,
-            item_shipping * quantity,
-        )
 
         # ------------------------------------------------------
         # Snapshot item
@@ -238,6 +295,10 @@ async def process_and_save_order(
 
                 "quantity": quantity,
 
+                /*
+                 * This is the FINAL customer-facing
+                 * unit price, not the pre-shipping price.
+                 */
                 "unitPrice": unit_price,
 
                 "productNameSnapshot": family.get(
@@ -258,8 +319,16 @@ async def process_and_save_order(
     # 4. FINAL TOTAL
     # ==========================================================
 
+    /*
+     * Shipping is already included in each websitePrice.
+     *
+     * Therefore:
+     *
+     * final_total = subtotal
+     */
+
     final_total = round(
-        subtotal + shipping,
+        subtotal,
         2,
     )
 
@@ -327,7 +396,12 @@ async def process_and_save_order(
 
         "subtotal": subtotal,
 
-        "shipping": shipping,
+        /*
+         * Customer-facing shipping is FREE because
+         * commercial shipping is already included in
+         * websitePrice.
+         */
+        "shipping": 0.0,
 
         "total": final_total,
 
@@ -480,8 +554,12 @@ async def process_and_save_order(
                 "subtotal":
                     subtotal,
 
+                /*
+                 * Shipping is already included in
+                 * websitePrice.
+                 */
                 "shipping":
-                    shipping,
+                    0.0,
 
                 "total":
                     final_total,
