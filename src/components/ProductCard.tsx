@@ -19,7 +19,6 @@ import {
 
 import type {
   ProductFamily,
-  Sku,
 } from '@/data/products';
 
 import {
@@ -51,56 +50,54 @@ import {
   ProductService,
 } from '@/services/product-service';
 
+/* ============================================================================
+ * PROPS
+ * ========================================================================== */
+
 interface ProductCardProps {
   product: ProductFamily;
   className?: string;
 }
 
-type PurchasableCardSku = Sku & {
-  mrp: number;
-  websitePrice: number;
-};
-
-/**
- * Converts the nullable catalog SKU type into a
- * guaranteed purchasable SKU.
+/* ============================================================================
+ * PRODUCT CARD
  *
- * This is intentionally kept here rather than changing
- * Sku.mrp / Sku.websitePrice in products.ts.
- */
-function isPurchasableSku(
-  sku: Sku | undefined,
-): sku is PurchasableCardSku {
-  return (
-    sku !== undefined &&
-    sku.available === true &&
-    typeof sku.mrp === 'number' &&
-    Number.isFinite(sku.mrp) &&
-    sku.mrp >= 0 &&
-    typeof sku.websitePrice === 'number' &&
-    Number.isFinite(sku.websitePrice) &&
-    sku.websitePrice >= 0 &&
-    sku.websitePrice <= sku.mrp
-  );
-}
+ * ProductCard is PRESENTATION ONLY.
+ *
+ * Pricing / availability authority:
+ *
+ * sales-config.ts
+ *       ↓
+ * ProductService
+ *       ↓
+ * ProductCard
+ *
+ * ProductCard MUST NOT create its own commercial rules.
+ * ========================================================================== */
 
 export function ProductCard({
   product,
   className = '',
 }: ProductCardProps) {
-  const { addItem } = useCart();
+  const {
+    addItem,
+  } = useCart();
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const selectId = useId();
+  const selectId =
+    useId();
 
   const [
     selectedSkuIndex,
     setSelectedSkuIndex,
   ] = useState(0);
 
-  const [added, setAdded] =
-    useState(false);
+  const [
+    added,
+    setAdded,
+  ] = useState(false);
 
   const [
     reviewSummary,
@@ -115,36 +112,40 @@ export function ProductCard({
     setReviewsLoading,
   ] = useState(true);
 
-  /*
-   * ProductService is the customer-facing
-   * product authority.
+  /* ==========================================================================
+   * CENTRAL PRODUCT RESOLUTION
    *
-   * ProductCard does NOT calculate:
-   * - factory price
-   * - dealer price
-   * - distributor price
-   * - shipping
-   * - discounts
-   * - profit
-   */
+   * ProductService is the ONLY source used by the card
+   * to determine which SKUs are available for purchase.
+   *
+   * Do NOT add another price/availability filter here.
+   * ======================================================================== */
+
   const purchasableSkus =
     useMemo(() => {
-      return ProductService
-        .getAvailableSkus(product)
-        .filter(isPurchasableSku);
+      return ProductService.getAvailableSkus(
+        product,
+      );
     }, [product]);
+
+  /* ==========================================================================
+   * SELECTED SKU
+   * ======================================================================== */
 
   const selectedSku =
     purchasableSkus[
       selectedSkuIndex
-    ] ?? purchasableSkus[0];
+    ] ??
+    purchasableSkus[0];
 
-  /*
-   * Keep the selected index valid if the
-   * product catalog changes.
-   */
+  /* ==========================================================================
+   * KEEP SELECTION VALID
+   * ======================================================================== */
+
   useEffect(() => {
-    if (purchasableSkus.length === 0) {
+    if (
+      purchasableSkus.length === 0
+    ) {
       setSelectedSkuIndex(0);
       return;
     }
@@ -160,9 +161,10 @@ export function ProductCard({
     selectedSkuIndex,
   ]);
 
-  /*
-   * Load the approved review summary.
-   */
+  /* ==========================================================================
+   * REVIEW SUMMARY
+   * ======================================================================== */
+
   useEffect(() => {
     let cancelled = false;
 
@@ -176,12 +178,15 @@ export function ProductCard({
           );
 
         if (!cancelled) {
-          setReviewSummary(summary);
+          setReviewSummary(
+            summary,
+          );
         }
       } catch {
         if (!cancelled) {
           setReviewSummary({
-            productId: product.id,
+            productId:
+              product.id,
             averageRating: 0,
             reviewCount: 0,
           });
@@ -200,15 +205,24 @@ export function ProductCard({
     };
   }, [product.id]);
 
-  /*
-   * Do not display an incomplete product card.
-   */
+  /* ==========================================================================
+   * NO PURCHASABLE SKU
+   *
+   * Do not render an incomplete shopping card.
+   * ======================================================================== */
+
   if (!selectedSku) {
     return null;
   }
 
+  /* ==========================================================================
+   * DISPLAY VALUES
+   * ======================================================================== */
+
   const packLabel =
-    PACK_LABELS[selectedSku.packSize] ??
+    PACK_LABELS[
+      selectedSku.packSize
+    ] ??
     `${selectedSku.packSize}g`;
 
   const hasReviews =
@@ -216,8 +230,15 @@ export function ProductCard({
     reviewSummary.reviewCount > 0 &&
     reviewSummary.averageRating > 0;
 
+  /* ==========================================================================
+   * ADD TO CART
+   * ======================================================================== */
+
   const handleAdd = () => {
-    addItem(selectedSku.sku, 1);
+    addItem(
+      selectedSku.sku,
+      1,
+    );
 
     setAdded(true);
 
@@ -226,10 +247,22 @@ export function ProductCard({
     }, 2000);
   };
 
+  /* ==========================================================================
+   * BUY NOW
+   * ======================================================================== */
+
   const handleBuyNow = () => {
-    addItem(selectedSku.sku, 1);
+    addItem(
+      selectedSku.sku,
+      1,
+    );
+
     navigate('/checkout');
   };
+
+  /* ==========================================================================
+   * RENDER
+   * ======================================================================== */
 
   return (
     <article
@@ -255,6 +288,10 @@ export function ProductCard({
         ${className}
       `}
     >
+      {/* ======================================================================
+          PRODUCT IMAGE
+      ======================================================================= */}
+
       <Link
         to={`/product/${product.slug}`}
         aria-label={`View details for ${product.name}`}
@@ -322,8 +359,12 @@ export function ProductCard({
           "
         >
           <ProductImage
-            productId={product.id}
-            product={product}
+            productId={
+              product.id
+            }
+            product={
+              product
+            }
             variant="card"
             className="h-full w-full"
           />
@@ -364,6 +405,10 @@ export function ProductCard({
         />
       </Link>
 
+      {/* ======================================================================
+          PRODUCT INFORMATION
+      ======================================================================= */}
+
       <div
         className="
           flex
@@ -375,6 +420,9 @@ export function ProductCard({
         "
       >
         <div className="min-w-0">
+
+          {/* Product name */}
+
           <Link
             to={`/product/${product.slug}`}
             className="
@@ -389,10 +437,14 @@ export function ProductCard({
               hover:text-brand-red
               sm:text-base
             "
-            title={product.name}
+            title={
+              product.name
+            }
           >
             {product.name}
           </Link>
+
+          {/* Variant */}
 
           <p
             className="
@@ -404,10 +456,16 @@ export function ProductCard({
               sm:mb-3
               sm:text-xs
             "
-            title={product.variant}
+            title={
+              product.variant
+            }
           >
             {product.variant}
           </p>
+
+          {/* ==================================================================
+              REVIEWS
+          =================================================================== */}
 
           <Link
             to={`/product/${product.slug}#reviews`}
@@ -432,7 +490,16 @@ export function ProductCard({
             }
           >
             {reviewsLoading ? (
-              <span className="inline-flex items-center gap-1.5 text-[9px] text-brand-brown/40 sm:text-xs">
+              <span
+                className="
+                  inline-flex
+                  items-center
+                  gap-1.5
+                  text-[9px]
+                  text-brand-brown/40
+                  sm:text-xs
+                "
+              >
                 <span
                   className="
                     inline-block
@@ -447,6 +514,7 @@ export function ProductCard({
                     sm:w-3
                   "
                 />
+
                 Loading reviews...
               </span>
             ) : hasReviews ? (
@@ -483,6 +551,7 @@ export function ProductCard({
                 >
                   ☆☆☆☆☆
                 </span>
+
                 <span>
                   No reviews yet
                 </span>
@@ -490,7 +559,12 @@ export function ProductCard({
             )}
           </Link>
 
+          {/* ==================================================================
+              PACK SIZE
+          =================================================================== */}
+
           <div className="mb-3 sm:mb-4">
+
             {product.category ===
             'combo' ? (
               <div
@@ -517,6 +591,7 @@ export function ProductCard({
               </div>
             ) : (
               <div className="space-y-1.5">
+
                 <label
                   htmlFor={`pack-size-${selectId}`}
                   className="
@@ -533,20 +608,28 @@ export function ProductCard({
                 </label>
 
                 <div className="relative w-full">
+
                   <select
                     id={`pack-size-${selectId}`}
-                    value={selectedSkuIndex}
-                    onChange={(event) => {
+                    value={
+                      selectedSkuIndex
+                    }
+                    onChange={(
+                      event,
+                    ) => {
                       const nextIndex =
                         Number(
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                         );
 
                       if (
                         Number.isInteger(
                           nextIndex,
                         ) &&
-                        nextIndex >= 0 &&
+                        nextIndex >=
+                          0 &&
                         nextIndex <
                           purchasableSkus.length
                       ) {
@@ -580,10 +663,17 @@ export function ProductCard({
                     aria-label={`Select pack size for ${product.name}`}
                   >
                     {purchasableSkus.map(
-                      (sku, index) => (
+                      (
+                        sku,
+                        index,
+                      ) => (
                         <option
-                          key={sku.sku}
-                          value={index}
+                          key={
+                            sku.sku
+                          }
+                          value={
+                            index
+                          }
                         >
                           {PACK_LABELS[
                             sku.packSize
@@ -612,7 +702,12 @@ export function ProductCard({
             )}
           </div>
 
+          {/* ==================================================================
+              PRICE
+          =================================================================== */}
+
           <div className="mb-1 flex flex-wrap items-baseline gap-2">
+
             <span
               className="
                 text-lg
@@ -642,6 +737,8 @@ export function ProductCard({
             )}
           </div>
 
+          {/* Shipping */}
+
           <p
             className="
               mb-4
@@ -657,10 +754,19 @@ export function ProductCard({
           </p>
         </div>
 
+        {/* ====================================================================
+            ACTIONS
+        ===================================================================== */}
+
         <div className="mt-1 grid grid-cols-2 gap-2">
+
+          {/* Add to cart */}
+
           <button
             type="button"
-            onClick={handleAdd}
+            onClick={
+              handleAdd
+            }
             className={`
               group/cart
               relative
@@ -702,19 +808,27 @@ export function ProductCard({
             {added ? (
               <>
                 <Check className="h-3.5 w-3.5" />
-                <span>Added</span>
+                <span>
+                  Added
+                </span>
               </>
             ) : (
               <>
                 <Plus className="h-3.5 w-3.5" />
-                <span>Cart</span>
+                <span>
+                  Cart
+                </span>
               </>
             )}
           </button>
 
+          {/* Buy now */}
+
           <button
             type="button"
-            onClick={handleBuyNow}
+            onClick={
+              handleBuyNow
+            }
             className="
               relative
               flex
@@ -742,8 +856,12 @@ export function ProductCard({
             "
           >
             <Zap className="h-3.5 w-3.5" />
-            <span>Buy Now</span>
+
+            <span>
+              Buy Now
+            </span>
           </button>
+
         </div>
       </div>
     </article>
