@@ -1,21 +1,37 @@
+import { Link } from 'react-router-dom';
+import {
+  ArrowRight,
+  Check,
+  Factory,
+  Leaf,
+  Shield,
+} from 'lucide-react';
+
 import { SEO, breadcrumbSchema } from '@/components/SEO';
 import { PlaceholderImage } from '@/components/Section';
 import { Reveal, CTABanner } from '@/components/Reveal';
 import { brand } from '@/data/brand';
-import {
-  Leaf,
-  Shield,
-  Factory,
-  Check,
-  ArrowRight,
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
+
+
+/* ==========================================================================
+   KAWAD SWAD 2.0
+   MANUFACTURING PAGE
+
+   Narrative:
+   HERO → PROCESS → PHILOSOPHY → QUALITY → B2B ACTION
+
+   Design-system rule:
+   This page uses existing central classes only.
+   No page-specific design tokens are introduced here.
+   ========================================================================== */
+
 
 const FACTORY_HERO_IMAGE =
   '/images/pages/manufacturing-hero.png';
 
 const FACTORY_PRODUCTION_IMAGE =
   '/images/pages/manufacturing-production.png';
+
 
 const steps = [
   {
@@ -45,6 +61,7 @@ const steps = [
   },
 ];
 
+
 export default function Manufacturing() {
   return (
     <>
@@ -58,19 +75,20 @@ export default function Manufacturing() {
         ])}
       />
 
-      {/* ================================================================
-          MANUFACTURING HERO
-      ================================================================= */}
+
+      {/* ======================================================================
+          HERO
+          =================================================================== */}
 
       <section className="relative overflow-hidden">
         <div
           className="
             relative
-            min-h-[360px]
+            min-h-[380px]
             w-full
-            bg-brand-brown
-            sm:min-h-[440px]
-            lg:min-h-[560px]
+            bg-brand-green
+            sm:min-h-[460px]
+            lg:min-h-[580px]
           "
         >
           <img
@@ -90,13 +108,28 @@ export default function Manufacturing() {
 
           <div
             className="
+              pointer-events-none
               absolute
               inset-0
               bg-gradient-to-r
-              from-brand-brown/85
-              via-brand-brown/55
-              to-brand-brown/15
+              from-brand-green/90
+              via-brand-green/60
+              to-brand-green/10
             "
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              bg-gradient-to-t
+              from-brand-green/30
+              via-transparent
+              to-transparent
+            "
+            aria-hidden="true"
           />
 
           <div
@@ -105,194 +138,294 @@ export default function Manufacturing() {
               container-px
               relative
               flex
-              min-h-[360px]
+              min-h-[380px]
               items-center
-              sm:min-h-[440px]
-              lg:min-h-[560px]
+              sm:min-h-[460px]
+              lg:min-h-[580px]
             "
           >
-            <div className="max-w-3xl py-14 sm:py-16 lg:py-20">
-              <span
-                className="
-                  mb-4
-                  block
-                  text-xs
-                  font-semibold
-                  uppercase
-                  tracking-[0.2em]
-                  text-brand-yellow
-                  sm:text-sm
-                "
-              >
-                Our Process
-              </span>
-
-              <h1
-                className="
-                  font-serif
-                  text-4xl
-                  font-bold
-                  leading-[1.05]
-                  tracking-tight
-                  text-white
-                  sm:text-5xl
-                  lg:text-7xl
-                "
-              >
-                Crafted with precision,
-                <br />
-                <span className="text-brand-yellow">
-                  grounded in tradition.
+            <Reveal>
+              <div className="max-w-3xl py-14 sm:py-16 lg:py-20">
+                <span
+                  className="
+                    section-eyebrow
+                    mb-4
+                    block
+                    text-brand-saffron
+                  "
+                >
+                  Our Process
                 </span>
-              </h1>
 
-              <p
-                className="
-                  mt-5
-                  max-w-2xl
-                  text-sm
-                  leading-relaxed
-                  text-white/80
-                  sm:text-base
-                  lg:text-lg
-                "
-              >
-                A structured manufacturing workflow
-                designed to preserve authentic Nimar papad
-                recipes while maintaining careful quality
-                and hygiene practices.
-              </p>
-            </div>
+                <h1
+                  className="
+                    text-balance
+                    font-serif
+                    text-display-sm
+                    font-bold
+                    leading-[1.02]
+                    text-white
+                  "
+                >
+                  Crafted with precision,
+                  <br />
+                  <span className="text-brand-saffron">
+                    grounded in tradition.
+                  </span>
+                </h1>
+
+                <p
+                  className="
+                    text-pretty
+                    mt-5
+                    max-w-2xl
+                    text-sm
+                    leading-relaxed
+                    text-white/80
+                    sm:text-base
+                    lg:text-lg
+                  "
+                >
+                  A structured manufacturing workflow
+                  designed to preserve authentic Nimar papad
+                  recipes while maintaining careful quality
+                  and hygiene practices.
+                </p>
+
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <span className="badge bg-white/10 text-white">
+                    Traditional Recipes
+                  </span>
+
+                  <span className="badge bg-white/10 text-white">
+                    Quality Focused
+                  </span>
+
+                  <span className="badge bg-white/10 text-white">
+                    FSSAI Licensed
+                  </span>
+                </div>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>
 
-      {/* ================================================================
-          EDITORIAL PROCESS STEPS
-      ================================================================= */}
 
-      <section className="container-max container-px py-16 sm:py-20 lg:py-28">
-        <div className="space-y-16 lg:space-y-24">
-          {steps.map((step, index) => (
-            <Reveal key={step.num}>
-              <div
-                className={`
-                  grid
-                  items-center
-                  gap-8
-                  lg:grid-cols-12
-                  lg:gap-16
-                  ${
-                    index % 2 === 1
-                      ? 'lg:grid-flow-dense'
-                      : ''
-                  }
-                `}
+      {/* ======================================================================
+          PROCESS INTRO
+          =================================================================== */}
+
+      <section
+        className="
+          bg-brand-ivory
+          py-14
+          sm:py-18
+          lg:py-22
+        "
+      >
+        <div className="container-max container-px">
+          <Reveal>
+            <div className="mx-auto max-w-3xl text-center">
+              <span className="section-eyebrow mb-3 block">
+                From Flour to Crisp
+              </span>
+
+              <h2
+                className="
+                  text-balance
+                  font-serif
+                  text-headline-md
+                  font-bold
+                  text-brand-green
+                "
               >
-                <div
-                  className={`
-                    lg:col-span-6
-                    ${
-                      index % 2 === 1
-                        ? 'lg:col-start-7'
-                        : ''
-                    }
-                  `}
-                >
-                  <div
-                    className="
-                      overflow-hidden
-                      rounded-2xl
-                      border
-                      border-brand-brown/10
-                      bg-brand-cream-dark
-                      shadow-lift
-                      sm:rounded-3xl
-                    "
-                  >
-                    <PlaceholderImage
-                      label={`${step.title} — real process photography pending`}
-                      aspect="aspect-[4/3]"
-                    />
-                  </div>
-                </div>
+                Five stages. One consistent standard.
+              </h2>
 
-                <div
-                  className={`
-                    lg:col-span-6
-                    ${
-                      index % 2 === 1
-                        ? 'lg:col-start-1 lg:row-start-1'
-                        : ''
-                    }
-                  `}
-                >
-                  <span
-                    className="
-                      mb-3
-                      block
-                      font-serif
-                      text-5xl
-                      font-bold
-                      leading-none
-                      text-brand-red/20
-                      sm:text-6xl
-                    "
-                  >
-                    {step.num}
-                  </span>
-
-                  <h2
-                    className="
-                      mb-4
-                      font-serif
-                      text-2xl
-                      font-bold
-                      text-brand-brown
-                      sm:text-3xl
-                      lg:text-4xl
-                    "
-                  >
-                    {step.title}
-                  </h2>
-
-                  <p
-                    className="
-                      text-sm
-                      leading-relaxed
-                      text-brand-brown/70
-                      sm:text-base
-                      lg:text-lg
-                    "
-                  >
-                    {step.desc}
-                  </p>
-                </div>
-              </div>
-            </Reveal>
-          ))}
+              <p
+                className="
+                  text-pretty
+                  mx-auto
+                  mt-4
+                  max-w-2xl
+                  text-sm
+                  leading-relaxed
+                  text-brand-brown/65
+                  sm:text-base
+                "
+              >
+                Each stage of our workflow has a clear
+                purpose, from selecting the ingredients to
+                protecting the finished papad inside its
+                final package.
+              </p>
+            </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* ================================================================
-          MANUFACTURING PHILOSOPHY + REAL FACTORY IMAGE
-      ================================================================= */}
 
-      <section className="bg-brand-brown py-16 text-brand-cream sm:py-20 lg:py-24">
+      {/* ======================================================================
+          PROCESS STEPS
+          =================================================================== */}
+
+      <section
+        className="
+          bg-brand-ivory
+          pb-16
+          sm:pb-20
+          lg:pb-28
+        "
+      >
         <div className="container-max container-px">
-          <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-16">
+          <div className="space-y-14 sm:space-y-20 lg:space-y-24">
+            {steps.map((step, index) => (
+              <Reveal
+                key={step.num}
+                delay={Math.min(index * 70, 280)}
+              >
+                <div
+                  className={`
+                    grid
+                    items-center
+                    gap-8
+                    lg:grid-cols-12
+                    lg:gap-16
+                    ${
+                      index % 2 === 1
+                        ? 'lg:grid-flow-dense'
+                        : ''
+                    }
+                  `}
+                >
+                  {/* Image */}
+
+                  <div
+                    className={`
+                      lg:col-span-6
+                      ${
+                        index % 2 === 1
+                          ? 'lg:col-start-7'
+                          : ''
+                      }
+                    `}
+                  >
+                    <div className="image-premium shadow-lift">
+                      <PlaceholderImage
+                        label={`${step.title} — real process photography pending`}
+                        aspect="aspect-[4/3]"
+                      />
+                    </div>
+                  </div>
+
+
+                  {/* Content */}
+
+                  <div
+                    className={`
+                      lg:col-span-6
+                      ${
+                        index % 2 === 1
+                          ? 'lg:col-start-1 lg:row-start-1'
+                          : ''
+                      }
+                    `}
+                  >
+                    <span
+                      className="
+                        mb-3
+                        block
+                        font-serif
+                        text-5xl
+                        font-bold
+                        leading-none
+                        text-brand-saffron/30
+                        sm:text-6xl
+                      "
+                      aria-hidden="true"
+                    >
+                      {step.num}
+                    </span>
+
+                    <h2
+                      className="
+                        text-balance
+                        font-serif
+                        text-headline-sm
+                        font-bold
+                        text-brand-green
+                        sm:text-headline-md
+                      "
+                    >
+                      {step.title}
+                    </h2>
+
+                    <p
+                      className="
+                        text-pretty
+                        mt-4
+                        max-w-xl
+                        text-sm
+                        leading-relaxed
+                        text-brand-brown/70
+                        sm:text-base
+                        lg:text-lg
+                      "
+                    >
+                      {step.desc}
+                    </p>
+
+                    <div
+                      className="
+                        mt-5
+                        h-px
+                        w-16
+                        bg-brand-saffron/40
+                      "
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* ======================================================================
+          MANUFACTURING PHILOSOPHY
+          =================================================================== */}
+
+      <section
+        className="
+          bg-brand-green
+          py-16
+          text-brand-ivory
+          sm:py-20
+          lg:py-24
+        "
+      >
+        <div className="container-max container-px">
+          <div
+            className="
+              grid
+              items-center
+              gap-10
+              lg:grid-cols-12
+              lg:gap-16
+            "
+          >
             <div className="lg:col-span-6">
               <Reveal>
                 <div>
                   <span
                     className="
+                      section-eyebrow
                       mb-3
                       block
-                      text-sm
-                      font-semibold
-                      uppercase
-                      tracking-[0.2em]
-                      text-brand-yellow
+                      text-brand-saffron
                     "
                   >
                     Manufacturing Philosophy
@@ -300,12 +433,11 @@ export default function Manufacturing() {
 
                   <h2
                     className="
-                      mb-6
+                      text-balance
                       font-serif
-                      text-3xl
+                      text-headline-md
                       font-bold
                       text-white
-                      sm:text-4xl
                     "
                   >
                     Honoring tradition through
@@ -314,10 +446,12 @@ export default function Manufacturing() {
 
                   <p
                     className="
-                      mb-10
+                      text-pretty
+                      mt-5
+                      max-w-xl
                       text-sm
                       leading-relaxed
-                      text-brand-cream/80
+                      text-brand-ivory/75
                       sm:text-base
                       lg:text-lg
                     "
@@ -329,15 +463,14 @@ export default function Manufacturing() {
                     careful ingredient sourcing.
                   </p>
 
+
                   <div
                     className="
+                      mt-8
                       grid
-                      gap-4
-                      border-t
-                      border-brand-cream/15
-                      pt-6
+                      gap-3
                       sm:grid-cols-3
-                      sm:gap-6
+                      sm:gap-4
                     "
                   >
                     {[
@@ -356,56 +489,74 @@ export default function Manufacturing() {
                         title: 'Commercial Supply',
                         desc: 'Consistent production capacity',
                       },
-                    ].map((item) => (
-                      <div
-                        key={item.title}
-                        className="
-                          rounded-2xl
-                          border
-                          border-white/10
-                          bg-white/5
-                          p-4
-                          sm:p-5
-                        "
-                      >
-                        <item.icon
-                          className="mb-3 h-6 w-6 text-brand-yellow"
-                          aria-hidden="true"
-                        />
+                    ].map((item) => {
+                      const Icon = item.icon;
 
-                        <h3
+                      return (
+                        <div
+                          key={item.title}
                           className="
-                            mb-1
-                            font-serif
-                            text-sm
-                            font-semibold
-                            text-white
+                            rounded-2xl
+                            border
+                            border-white/10
+                            bg-white/5
+                            p-4
+                            transition-all
+                            duration-300
+                            hover:-translate-y-1
+                            hover:bg-white/10
+                            sm:p-5
                           "
                         >
-                          {item.title}
-                        </h3>
+                          <Icon
+                            className="
+                              mb-3
+                              h-6
+                              w-6
+                              text-brand-saffron
+                            "
+                            aria-hidden="true"
+                          />
 
-                        <p className="text-xs text-brand-cream/60">
-                          {item.desc}
-                        </p>
-                      </div>
-                    ))}
+                          <h3
+                            className="
+                              mb-1
+                              font-serif
+                              text-sm
+                              font-semibold
+                              text-white
+                            "
+                          >
+                            {item.title}
+                          </h3>
+
+                          <p
+                            className="
+                              text-xs
+                              leading-relaxed
+                              text-brand-ivory/60
+                            "
+                          >
+                            {item.desc}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </Reveal>
             </div>
 
+
             <div className="lg:col-span-6">
               <Reveal delay={150}>
                 <div
                   className="
-                    overflow-hidden
-                    rounded-2xl
+                    image-premium
                     border
                     border-white/10
-                    bg-brand-brown-dark
+                    bg-brand-green-dark
                     shadow-lift
-                    sm:rounded-3xl
                   "
                 >
                   <img
@@ -428,128 +579,227 @@ export default function Manufacturing() {
         </div>
       </section>
 
-      {/* ================================================================
-          OPERATIONAL STANDARDS
-      ================================================================= */}
 
-      <section className="container-max container-px py-16 sm:py-20 lg:py-24">
-        <Reveal>
-          <div className="mx-auto mb-10 max-w-2xl text-center sm:mb-12">
-            <span className="section-eyebrow mb-3 block">
-              Quality Assurance
-            </span>
+      {/* ======================================================================
+          QUALITY ASSURANCE
+          =================================================================== */}
 
-            <h2
-              className="
-                font-serif
-                text-3xl
-                font-bold
-                text-brand-brown
-                sm:text-4xl
-              "
-            >
-              Standards built into every batch
-            </h2>
-          </div>
-        </Reveal>
+      <section
+        className="
+          bg-brand-ivory-light
+          py-16
+          sm:py-20
+          lg:py-24
+        "
+      >
+        <div className="container-max container-px">
+          <Reveal>
+            <div className="mx-auto mb-10 max-w-2xl text-center sm:mb-12">
+              <span className="section-eyebrow mb-3 block">
+                Quality Assurance
+              </span>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-          {[
-            'FSSAI Licence No. 21425890001224',
-            '100% vegetarian production line',
-            'Dedicated dietary variant options',
-            'Sealed food-grade packaging',
-            'Regular batch quality reviews',
-            'Authentic regional spice blends',
-            'Careful lentil flour sourcing',
-            'Standardized quality control steps',
-          ].map((point, index) => (
-            <Reveal
-              key={point}
-              delay={index * 40}
-            >
-              <div
+              <h2
                 className="
-                  card
-                  flex
-                  h-full
-                  items-start
-                  gap-3
-                  border
-                  border-brand-brown/5
-                  bg-white
-                  p-5
-                  shadow-soft
-                  sm:p-6
+                  text-balance
+                  font-serif
+                  text-headline-md
+                  font-bold
+                  text-brand-green
                 "
               >
-                <Check
-                  className="
-                    mt-0.5
-                    h-5
-                    w-5
-                    shrink-0
-                    text-brand-red
-                  "
-                  aria-hidden="true"
-                />
+                Standards built into every batch.
+              </h2>
 
-                <span
+              <p
+                className="
+                  mx-auto
+                  mt-4
+                  max-w-xl
+                  text-sm
+                  leading-relaxed
+                  text-brand-brown/65
+                  sm:text-base
+                "
+              >
+                Clear standards help us keep the finished
+                product consistent from production through
+                packaging.
+              </p>
+            </div>
+          </Reveal>
+
+
+          <div
+            className="
+              grid
+              gap-3
+              sm:grid-cols-2
+              lg:grid-cols-4
+              lg:gap-5
+            "
+          >
+            {[
+              'FSSAI Licence No. 21425890001224',
+              '100% vegetarian production line',
+              'Dedicated dietary variant options',
+              'Sealed food-grade packaging',
+              'Regular batch quality reviews',
+              'Authentic regional spice blends',
+              'Careful lentil flour sourcing',
+              'Standardized quality control steps',
+            ].map((point, index) => (
+              <Reveal
+                key={point}
+                delay={Math.min(index * 40, 240)}
+              >
+                <div
                   className="
-                    text-sm
-                    font-medium
-                    leading-relaxed
-                    text-brand-brown/80
+                    card
+                    flex
+                    h-full
+                    items-start
+                    gap-3
+                    border
+                    border-brand-green/10
+                    bg-white
+                    p-5
+                    shadow-soft
+                    transition-all
+                    duration-300
+                    hover:-translate-y-1
+                    hover:shadow-lift
+                    sm:p-6
                   "
                 >
-                  {point}
-                </span>
-              </div>
-            </Reveal>
-          ))}
+                  <span
+                    className="
+                      flex
+                      h-6
+                      w-6
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-brand-green/10
+                    "
+                  >
+                    <Check
+                      className="
+                        h-3.5
+                        w-3.5
+                        text-brand-green
+                      "
+                      aria-hidden="true"
+                    />
+                  </span>
+
+                  <span
+                    className="
+                      text-sm
+                      font-medium
+                      leading-relaxed
+                      text-brand-brown/80
+                    "
+                  >
+                    {point}
+                  </span>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ================================================================
-          B2B CTA
-      ================================================================= */}
 
-      <section className="border-t border-brand-brown/5 bg-brand-cream-dark py-16 sm:py-20">
+      {/* ======================================================================
+          B2B CTA
+          =================================================================== */}
+
+      <section
+        className="
+          border-t
+          border-brand-green/10
+          bg-brand-ivory-dark
+          py-16
+          sm:py-20
+        "
+      >
         <div className="container-max container-px text-center">
           <Reveal>
             <div className="mx-auto max-w-2xl">
+              <span className="section-eyebrow mb-3 block">
+                Business Partnerships
+              </span>
+
               <h2
                 className="
-                  mb-4
+                  text-balance
                   font-serif
-                  text-2xl
+                  text-headline-sm
                   font-bold
-                  text-brand-brown
-                  sm:text-3xl
+                  text-brand-green
+                  sm:text-headline-md
                 "
               >
                 Ready to partner with Kawad Swad?
               </h2>
 
-              <p className="mb-8 text-sm leading-relaxed text-brand-brown/70 sm:text-base">
+              <p
+                className="
+                  text-pretty
+                  mx-auto
+                  mt-4
+                  max-w-xl
+                  text-sm
+                  leading-relaxed
+                  text-brand-brown/70
+                  sm:text-base
+                "
+              >
                 Whether you are looking for bulk supply
                 for your business or regional distribution
                 partnerships, our team is ready to assist
                 you.
               </p>
 
-              <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+              <div
+                className="
+                  mt-8
+                  flex
+                  flex-col
+                  justify-center
+                  gap-3
+                  sm:flex-row
+                  sm:flex-wrap
+                  sm:gap-4
+                "
+              >
                 <Link
                   to="/bulk-orders"
-                  className="btn-primary justify-center px-8 py-3"
+                  className="
+                    btn-primary
+                    min-h-[46px]
+                    justify-center
+                    px-8
+                  "
                 >
                   Request Bulk Supply
-                  <ArrowRight className="ml-1 h-4 w-4" />
+
+                  <ArrowRight
+                    className="h-4 w-4"
+                    aria-hidden="true"
+                  />
                 </Link>
 
                 <Link
                   to="/distributor"
-                  className="btn-outline justify-center px-8 py-3"
+                  className="
+                    btn-outline
+                    min-h-[46px]
+                    justify-center
+                    px-8
+                  "
                 >
                   Become a Distributor
                 </Link>
@@ -558,6 +808,11 @@ export default function Manufacturing() {
           </Reveal>
         </div>
       </section>
+
+
+      {/* ======================================================================
+          FINAL CTA
+          =================================================================== */}
 
       <CTABanner
         title="Questions about our manufacturing?"
