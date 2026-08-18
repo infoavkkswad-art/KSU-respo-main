@@ -295,10 +295,8 @@ async def process_and_save_order(
 
                 "quantity": quantity,
 
-                /*
-                 * This is the FINAL customer-facing
-                 * unit price, not the pre-shipping price.
-                 */
+                # * This is the FINAL customer-facing
+# * unit price, not the pre-shipping price.
                 "unitPrice": unit_price,
 
                 "productNameSnapshot": family.get(
@@ -319,13 +317,11 @@ async def process_and_save_order(
     # 4. FINAL TOTAL
     # ==========================================================
 
-    /*
-     * Shipping is already included in each websitePrice.
-     *
-     * Therefore:
-     *
-     * final_total = subtotal
-     */
+    # * Shipping is already included in each websitePrice.
+# *
+# * Therefore:
+# *
+# * final_total = subtotal
 
     final_total = round(
         subtotal,
@@ -396,11 +392,9 @@ async def process_and_save_order(
 
         "subtotal": subtotal,
 
-        /*
-         * Customer-facing shipping is FREE because
-         * commercial shipping is already included in
-         * websitePrice.
-         */
+        # * Customer-facing shipping is FREE because
+# * commercial shipping is already included in
+# * websitePrice.
         "shipping": 0.0,
 
         "total": final_total,
@@ -554,10 +548,8 @@ async def process_and_save_order(
                 "subtotal":
                     subtotal,
 
-                /*
-                 * Shipping is already included in
-                 * websitePrice.
-                 */
+                # * Shipping is already included in
+# * websitePrice.
                 "shipping":
                     0.0,
 
