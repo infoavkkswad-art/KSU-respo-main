@@ -270,17 +270,17 @@ export default function Home() {
                 className="
                   relative
                   mx-auto
-                  max-w-[560px]
+                  max-w-[430px]
                 "
               >
                 <div
                   className="
                     image-premium
                     relative
-                    aspect-[4/5]
+                    aspect-[9/16]
+                    overflow-hidden
                     bg-brand-ivory-dark
                     shadow-lift
-                    sm:aspect-[5/6]
                   "
                 >
                   <video
@@ -294,8 +294,7 @@ export default function Home() {
                     loop
                     playsInline
                     preload="auto"
-                    poster="/images/pages/product-showcase.png"
-                    aria-label="Kawad Swad premium papad hero video"
+                    aria-label="Kawad Swad welcoming papad mascot hero video"
                   >
                     <source
                       src="/videos/home-hero.mp4"
