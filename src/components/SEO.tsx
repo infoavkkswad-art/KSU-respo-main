@@ -231,16 +231,14 @@ export function SEO({
        ====================================================================== */
 
     const existingScript =
-      document.getElementById(
-        STRUCTURED_DATA_ID,
+      document.querySelector<HTMLScriptElement>(
+        `#${STRUCTURED_DATA_ID}`,
       );
 
     if (structuredData) {
       const script =
         existingScript ||
-        document.createElement(
-          'script',
-        );
+        document.createElement('script');
 
       script.id =
         STRUCTURED_DATA_ID;
