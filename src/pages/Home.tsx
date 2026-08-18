@@ -34,6 +34,21 @@ export default function Home() {
   const featured =
     ProductService.getFeaturedProducts();
 
+  /*
+   * Compute a base URL that works when the site is served from a subpath
+   * (GitHub Pages /<repo>/) and when served from root. Prefer the
+   * bundler/runtime-provided BASE_URL / PUBLIC_URL when available.
+   */
+  const base =
+    (typeof (import.meta as any) !== 'undefined' &&
+      (import.meta as any).env &&
+      (import.meta as any).env.BASE_URL) ||
+    process.env.PUBLIC_URL ||
+    '/';
+
+  const videoSrc = `${base.replace(/\/$/, '')}/videos/home-hero.mp4`;
+  // poster fallback (uploaded to public/images/pages/home-hero-poster.png)
+  const posterSrc = `${base.replace(/\/$/, '')}/images/pages/home-hero-poster.png`;
 
   /* ==========================================================================
      TRUST DATA
@@ -270,7 +285,6 @@ export default function Home() {
                 className="
                   relative
                   mx-auto
-                  w-full
                   max-w-[430px]
                 "
               >
@@ -280,31 +294,35 @@ export default function Home() {
                     relative
                     aspect-[9/16]
                     overflow-hidden
-                    rounded-3xl
                     bg-brand-ivory-dark
                     shadow-lift
                   "
                 >
+                  {/*
+                    Use the computed videoSrc so the path works on subpath hosts
+                    (GitHub Pages) and when served from root. Poster provides a
+                    fallback image when the video isn't playing.
+                  */}
+
                   <video
                     className="
-                      absolute
-                      inset-0
                       h-full
                       w-full
-                      object-contain
+                      object-cover
                     "
                     autoPlay
                     muted
                     loop
                     playsInline
                     preload="auto"
+                    poster={posterSrc}
                     aria-label="Kawad Swad welcoming papad mascot hero video"
+                    onError={(e) => {
+                      // hide the broken video element so the poster/fallback remains visible
+                      (e.currentTarget as HTMLVideoElement).style.display = 'none';
+                    }}
                   >
-                    <source
-                      src="/videos/home-hero.mp4"
-                      type="video/mp4"
-                    />
-
+                    <source src={videoSrc} type="video/mp4" />
                     Your browser does not support the hero video.
                   </video>
 
@@ -360,6 +378,7 @@ export default function Home() {
                     sm:px-6
                     sm:py-5
                   "
+                  aria-hidden="true"
                 >
                   <p
                     className="
@@ -573,9 +592,9 @@ export default function Home() {
               Explore All Papads
 
               <ArrowRight
-                className="h-4 w-4"
-                aria-hidden="true"
-              />
+                    className="h-4 w-4"
+                    aria-hidden="true"
+                  />
             </Link>
           </div>
         </div>
@@ -606,7 +625,7 @@ export default function Home() {
             top-1/2
             h-72
             w-72
-            -translate-y-1/2
+          -translate-y-1/2
             rounded-full
             border
             border-brand-saffron/20
@@ -696,7 +715,6 @@ export default function Home() {
                 />
               </Link>
             </Reveal>
-
 
             <Reveal
               delay={100}
@@ -905,7 +923,6 @@ export default function Home() {
               </p>
             </div>
           </Reveal>
-
 
           <div
             className="
