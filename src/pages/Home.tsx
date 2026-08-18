@@ -270,6 +270,7 @@ export default function Home() {
                 className="
                   relative
                   mx-auto
+                  w-full
                   max-w-[430px]
                 "
               >
@@ -279,15 +280,18 @@ export default function Home() {
                     relative
                     aspect-[9/16]
                     overflow-hidden
+                    rounded-3xl
                     bg-brand-ivory-dark
                     shadow-lift
                   "
                 >
                   <video
                     className="
+                      absolute
+                      inset-0
                       h-full
                       w-full
-                      object-cover
+                      object-contain
                     "
                     autoPlay
                     muted
@@ -300,6 +304,7 @@ export default function Home() {
                       src="/videos/home-hero.mp4"
                       type="video/mp4"
                     />
+
                     Your browser does not support the hero video.
                   </video>
 
