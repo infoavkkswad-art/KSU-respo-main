@@ -1,10 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
 import {
   Link,
   NavLink,
   useLocation,
   useNavigate,
 } from 'react-router-dom';
+
 import {
   Menu,
   X,
@@ -13,31 +19,51 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
-import { brand, navLinks } from '@/data/brand';
+import {
+  brand,
+  navLinks,
+} from '@/data/brand';
+
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
+
 
 /* ==========================================================================
    KAWAD SWAD 2.0
    CENTRAL HEADER / NAVIGATION SYSTEM
 
-   Behavioral hierarchy:
+   Hierarchy:
    BRAND → DISCOVER → SEARCH → CART → SHOP
 
-   The header should:
-   - establish brand immediately
-   - keep navigation calm
-   - make Shop the primary commerce action
-   - keep Cart permanently discoverable
-   - make Search easy to access
-   - provide a focused mobile experience
+   Design system:
+   - Central spacing
+   - Central elevation
+   - Central motion
+   - Central 3D language
+   - Mobile-first interaction
+   - Conversion-focused Shop CTA
    ========================================================================== */
 
 export function Header() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [scrolled, setScrolled] = useState(false);
+  const [
+    mobileOpen,
+    setMobileOpen,
+  ] = useState(false);
+
+  const [
+    searchOpen,
+    setSearchOpen,
+  ] = useState(false);
+
+  const [
+    searchQuery,
+    setSearchQuery,
+  ] = useState('');
+
+  const [
+    scrolled,
+    setScrolled,
+  ] = useState(false);
 
   const searchInputRef =
     useRef<HTMLInputElement>(null);
@@ -46,6 +72,7 @@ export function Header() {
   const navigate = useNavigate();
 
   const { itemCount } = useCart();
+
 
   /* ==========================================================================
      ROUTE CHANGE
@@ -64,7 +91,9 @@ export function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 24);
+      setScrolled(
+        window.scrollY > 24,
+      );
     };
 
     handleScroll();
@@ -89,11 +118,17 @@ export function Header() {
      ======================================================================== */
 
   useEffect(() => {
-    document.body.style.overflow =
-      mobileOpen ? 'hidden' : '';
+    if (mobileOpen) {
+      document.body.style.overflow =
+        'hidden';
+    } else {
+      document.body.style.overflow =
+        '';
+    }
 
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow =
+        '';
     };
   }, [mobileOpen]);
 
@@ -103,7 +138,10 @@ export function Header() {
      ======================================================================== */
 
   useEffect(() => {
-    if (!mobileOpen && !searchOpen) {
+    if (
+      !mobileOpen &&
+      !searchOpen
+    ) {
       return;
     }
 
@@ -127,7 +165,10 @@ export function Header() {
         handleKeyDown,
       );
     };
-  }, [mobileOpen, searchOpen]);
+  }, [
+    mobileOpen,
+    searchOpen,
+  ]);
 
 
   /* ==========================================================================
@@ -139,14 +180,17 @@ export function Header() {
       return;
     }
 
-    const frame = window.requestAnimationFrame(
-      () => {
-        searchInputRef.current?.focus();
-      },
-    );
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          searchInputRef.current?.focus();
+        },
+      );
 
     return () => {
-      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(
+        frame,
+      );
     };
   }, [searchOpen]);
 
@@ -169,7 +213,9 @@ export function Header() {
     }
 
     navigate(
-      `/shop?q=${encodeURIComponent(query)}`,
+      `/shop?q=${encodeURIComponent(
+        query,
+      )}`,
     );
 
     setSearchQuery('');
@@ -187,12 +233,18 @@ export function Header() {
   };
 
   const toggleSearch = () => {
-    setSearchOpen((open) => !open);
+    setSearchOpen(
+      (open) => !open,
+    );
+
     setMobileOpen(false);
   };
 
   const toggleMobile = () => {
-    setMobileOpen((open) => !open);
+    setMobileOpen(
+      (open) => !open,
+    );
+
     setSearchOpen(false);
   };
 
@@ -200,18 +252,24 @@ export function Header() {
   return (
     <>
       {/* ======================================================================
-          BRAND TRUST BAR
-
-          Small persistent trust signal.
-          Not designed to compete with the brand/navigation layer.
+          TRUST BAR
           =================================================================== */}
 
-      <div className="w-full bg-brand-green text-brand-ivory">
+      <div
+        className="
+          w-full
+          bg-brand-green
+          text-brand-ivory
+        "
+      >
         <div
           className="
-            container-max container-px
-            flex min-h-[30px]
-            items-center justify-center
+            container-max
+            container-px
+            flex
+            min-h-[30px]
+            items-center
+            justify-center
             text-center
             sm:min-h-[32px]
           "
@@ -227,13 +285,18 @@ export function Header() {
               sm:tracking-widest
             "
           >
-            Nimar's Own Papad
+            Nimad's Own Papad
+
             <span
-              className="mx-1.5 text-brand-saffron/70"
+              className="
+                mx-1.5
+                text-brand-saffron/70
+              "
               aria-hidden="true"
             >
               ·
             </span>
+
             FSSAI {brand.fssai}
           </span>
         </div>
@@ -246,10 +309,15 @@ export function Header() {
 
       <header
         className={`
-          sticky top-0 z-header w-full
+          sticky
+          top-0
+          z-header
+          w-full
           border-b
           transition-all
           duration-300
+          ease-ks-standard
+
           ${
             scrolled
               ? `
@@ -265,7 +333,12 @@ export function Header() {
           }
         `}
       >
-        <div className="container-max container-px">
+        <div
+          className="
+            container-max
+            container-px
+          "
+        >
           <div
             className="
               flex
@@ -275,57 +348,43 @@ export function Header() {
               justify-between
               gap-2
               sm:min-h-[76px]
-              lg:min-h-[82px]
+              lg:min-h-[84px]
             "
           >
 
-            {/* ==================================================================
+            {/* ================================================================
                 BRAND
-                ================================================================= */}
 
-            <Link
-              to="/"
+                Logo already contains its own Link.
+                Avoid nested anchors.
+                ============================================================= */}
+
+            <div
               className="
-                group
                 min-w-0
                 shrink-0
-                rounded-lg
-                focus:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-brand-saffron
               "
-              aria-label={`${brand.name} home`}
             >
-              <div
-                className="
-                  relative
-                  transition-transform
+              <Logo
+                imgClassName="
+                  h-12
+                  w-auto
+                  object-contain
+                  drop-shadow-[0_5px_4px_rgba(62,39,35,0.12)]
+                  transition-all
                   duration-300
-                  ease-ks-standard
-                  group-hover:-translate-y-0.5
+                  group-hover:drop-shadow-[0_8px_8px_rgba(62,39,35,0.18)]
+                  group-hover:scale-[1.025]
+                  sm:h-14
+                  lg:h-[72px]
                 "
-              >
-                <Logo
-                  imgClassName="
-                    h-12
-                    w-auto
-                    object-contain
-                    drop-shadow-[0_5px_4px_rgba(62,39,35,0.12)]
-                    transition-all
-                    duration-300
-                    group-hover:drop-shadow-[0_8px_8px_rgba(62,39,35,0.18)]
-                    group-hover:scale-[1.025]
-                    sm:h-14
-                    lg:h-[68px]
-                  "
-                />
-              </div>
-            </Link>
+              />
+            </div>
 
 
-            {/* ==================================================================
+            {/* ================================================================
                 DESKTOP NAVIGATION
-                ================================================================= */}
+                ============================================================= */}
 
             <nav
               className="
@@ -338,73 +397,87 @@ export function Header() {
               "
               aria-label="Main navigation"
             >
-              {navLinks.map((link) => (
-                <NavLink
-                  key={link.path}
-                  to={link.path}
-                  className={({ isActive }) =>
-                    `
-                      group
-                      relative
-                      whitespace-nowrap
-                      rounded-full
-                      px-3
-                      py-2.5
-                      text-sm
-                      font-medium
-                      transition-all
-                      duration-200
-                      ease-ks-standard
-                      xl:px-4
-                      ${
-                        isActive
-                          ? `
-                            text-brand-green
-                            font-semibold
-                          `
-                          : `
-                            text-brand-brown/75
-                            hover:-translate-y-0.5
-                            hover:text-brand-green
-                          `
-                      }
-                    `
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {link.label}
+              {navLinks.map(
+                (link) => (
+                  <NavLink
+                    key={link.path}
+                    to={link.path}
+                    className={({
+                      isActive,
+                    }) =>
+                      `
+                        group
+                        relative
+                        whitespace-nowrap
+                        rounded-full
+                        px-3
+                        py-2.5
+                        text-sm
+                        font-medium
+                        transition-all
+                        duration-200
+                        ease-ks-standard
+                        xl:px-4
 
-                      <span
-                        aria-hidden="true"
-                        className={`
-                          absolute
-                          bottom-0.5
-                          left-1/2
-                          h-1
-                          w-1
-                          -translate-x-1/2
-                          rounded-full
-                          bg-brand-saffron
-                          transition-all
-                          duration-200
-                          ${
-                            isActive
-                              ? 'scale-100 opacity-100'
-                              : 'scale-0 opacity-0'
-                          }
-                        `}
-                      />
-                    </>
-                  )}
-                </NavLink>
-              ))}
+                        ${
+                          isActive
+                            ? `
+                              font-semibold
+                              text-brand-green
+                            `
+                            : `
+                              text-brand-brown/75
+                              hover:-translate-y-0.5
+                              hover:text-brand-green
+                            `
+                        }
+                      `
+                    }
+                  >
+                    {({
+                      isActive,
+                    }) => (
+                      <>
+                        {link.label}
+
+                        <span
+                          aria-hidden="true"
+                          className={`
+                            absolute
+                            bottom-0.5
+                            left-1/2
+                            h-1
+                            w-1
+                            -translate-x-1/2
+                            rounded-full
+                            bg-brand-saffron
+                            transition-all
+                            duration-200
+
+                            ${
+                              isActive
+                                ? `
+                                  scale-100
+                                  opacity-100
+                                `
+                                : `
+                                  scale-0
+                                  opacity-0
+                                `
+                            }
+                          `}
+                        />
+                      </>
+                    )}
+                  </NavLink>
+                ),
+              )}
             </nav>
 
 
-            {/* ==================================================================
+            {/* ================================================================
                 HEADER ACTIONS
-                ================================================================= */}
+                ============================================================= */}
 
             <div
               className="
@@ -449,17 +522,25 @@ export function Header() {
                     ? 'Close search'
                     : 'Search products'
                 }
-                aria-expanded={searchOpen}
+                aria-expanded={
+                  searchOpen
+                }
                 aria-controls="header-search"
               >
                 {searchOpen ? (
                   <X
-                    className="h-5 w-5"
+                    className="
+                      h-5
+                      w-5
+                    "
                     aria-hidden="true"
                   />
                 ) : (
                   <Search
-                    className="h-5 w-5"
+                    className="
+                      h-5
+                      w-5
+                    "
                     aria-hidden="true"
                   />
                 )}
@@ -486,14 +567,14 @@ export function Header() {
                   bg-white
                   p-2.5
                   text-brand-green
-                  shadow-[0_3px_0_rgba(62,39,35,0.10),0_5px_12px_rgba(62,39,35,0.08)]
+                  shadow-soft
                   transition-all
                   duration-200
                   ease-ks-standard
                   hover:-translate-y-1
-                  hover:border-brand-saffron/25
+                  hover:border-brand-saffron/30
                   hover:text-brand-saffron
-                  hover:shadow-[0_5px_0_rgba(62,39,35,0.10),0_9px_18px_rgba(62,39,35,0.12)]
+                  hover:shadow-card
                   active:translate-y-[1px]
                   focus:outline-none
                   focus-visible:ring-2
@@ -529,7 +610,7 @@ export function Header() {
                       text-[9px]
                       font-bold
                       text-white
-                      shadow-glow
+                      shadow-gold-glow
                     "
                     aria-hidden="true"
                   >
@@ -542,13 +623,14 @@ export function Header() {
 
 
               {/* --------------------------------------------------------------
-                  PRIMARY SHOP CTA
+                  SHOP CTA
                   -------------------------------------------------------------- */}
 
               <Link
                 to="/shop"
                 className="
                   btn-primary
+                  group
                   ml-1
                   hidden
                   min-h-[44px]
@@ -560,14 +642,17 @@ export function Header() {
                   lg:px-5
                 "
               >
-                Shop Papads
+                <span>
+                  Shop Papads
+                </span>
+
                 <ArrowRight
                   className="
                     h-4
                     w-4
                     transition-transform
                     duration-200
-                    group-hover:translate-x-0.5
+                    group-hover:translate-x-1
                   "
                   aria-hidden="true"
                 />
@@ -604,17 +689,25 @@ export function Header() {
                     ? 'Close menu'
                     : 'Open menu'
                 }
-                aria-expanded={mobileOpen}
+                aria-expanded={
+                  mobileOpen
+                }
                 aria-controls="mobile-navigation"
               >
                 {mobileOpen ? (
                   <X
-                    className="h-6 w-6"
+                    className="
+                      h-6
+                      w-6
+                    "
                     aria-hidden="true"
                   />
                 ) : (
                   <Menu
-                    className="h-6 w-6"
+                    className="
+                      h-6
+                      w-6
+                    "
                     aria-hidden="true"
                   />
                 )}
@@ -639,15 +732,30 @@ export function Header() {
             transition-all
             duration-300
             ease-ks-standard
+
             ${
               searchOpen
-                ? 'max-h-40 opacity-100'
-                : 'pointer-events-none max-h-0 opacity-0'
+                ? `
+                  max-h-40
+                  opacity-100
+                `
+                : `
+                  pointer-events-none
+                  max-h-0
+                  opacity-0
+                `
             }
           `}
           aria-hidden={!searchOpen}
         >
-          <div className="container-max container-px py-3 sm:py-4">
+          <div
+            className="
+              container-max
+              container-px
+              py-3
+              sm:py-4
+            "
+          >
             <form
               onSubmit={handleSearch}
               className="
@@ -764,9 +872,9 @@ export function Header() {
             "
           >
 
-            {/* --------------------------------------------------------------
+            {/* ================================================================
                 DRAWER HEADER
-                -------------------------------------------------------------- */}
+                ============================================================= */}
 
             <div
               className="
@@ -781,28 +889,16 @@ export function Header() {
                 sm:mb-7
               "
             >
-              <Link
-                to="/"
-                onClick={closeMobileMenu}
-                className="
-                  min-w-0
-                  rounded-lg
-                  focus:outline-none
-                  focus-visible:ring-2
-                  focus-visible:ring-brand-saffron
-                "
-                aria-label={`${brand.name} home`}
-              >
+              <div className="min-w-0">
                 <Logo
                   imgClassName="
                     h-12
                     w-auto
                     object-contain
-                    drop-shadow-[0_5px_4px_rgba(62,39,35,0.12)]
                     sm:h-14
                   "
                 />
-              </Link>
+              </div>
 
               <button
                 type="button"
@@ -827,82 +923,99 @@ export function Header() {
                 aria-label="Close menu"
               >
                 <X
-                  className="h-6 w-6"
+                  className="
+                    h-6
+                    w-6
+                  "
                   aria-hidden="true"
                 />
               </button>
             </div>
 
 
-            {/* --------------------------------------------------------------
+            {/* ================================================================
                 MOBILE NAV LINKS
-                -------------------------------------------------------------- */}
+                ============================================================= */}
 
-            <div className="flex-1 space-y-1.5">
-              {navLinks.map((link) => (
-                <NavLink
-                  key={link.path}
-                  to={link.path}
-                  onClick={closeMobileMenu}
-                  className={({ isActive }) =>
-                    `
-                      flex
-                      min-h-[50px]
-                      w-full
-                      items-center
-                      justify-between
-                      rounded-xl
-                      px-4
-                      py-3
-                      text-base
-                      font-medium
-                      transition-all
-                      duration-200
-                      sm:text-lg
-                      ${
-                        isActive
-                          ? `
-                            bg-brand-green/10
-                            font-semibold
-                            text-brand-green
-                            shadow-[inset_3px_0_0_#C88A2A]
-                          `
-                          : `
-                            text-brand-brown
-                            hover:bg-brand-green/5
-                            hover:text-brand-green
-                          `
-                      }
-                    `
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <span>
-                        {link.label}
-                      </span>
+            <div
+              className="
+                flex-1
+                space-y-1.5
+              "
+            >
+              {navLinks.map(
+                (link) => (
+                  <NavLink
+                    key={link.path}
+                    to={link.path}
+                    onClick={
+                      closeMobileMenu
+                    }
+                    className={({
+                      isActive,
+                    }) =>
+                      `
+                        flex
+                        min-h-[50px]
+                        w-full
+                        items-center
+                        justify-between
+                        rounded-xl
+                        px-4
+                        py-3
+                        text-base
+                        font-medium
+                        transition-all
+                        duration-200
+                        sm:text-lg
 
-                      {isActive && (
-                        <span
-                          className="
-                            h-2
-                            w-2
-                            rounded-full
-                            bg-brand-saffron
-                          "
-                          aria-hidden="true"
-                        />
-                      )}
-                    </>
-                  )}
-                </NavLink>
-              ))}
+                        ${
+                          isActive
+                            ? `
+                              bg-brand-green/10
+                              font-semibold
+                              text-brand-green
+                              shadow-[inset_3px_0_0_#C88A2A]
+                            `
+                            : `
+                              text-brand-brown
+                              hover:bg-brand-green/5
+                              hover:text-brand-green
+                            `
+                        }
+                      `
+                    }
+                  >
+                    {({
+                      isActive,
+                    }) => (
+                      <>
+                        <span>
+                          {link.label}
+                        </span>
+
+                        {isActive && (
+                          <span
+                            className="
+                              h-2
+                              w-2
+                              rounded-full
+                              bg-brand-saffron
+                            "
+                            aria-hidden="true"
+                          />
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                ),
+              )}
             </div>
 
 
-            {/* --------------------------------------------------------------
-                MOBILE COMMERCE ACTIONS
-                -------------------------------------------------------------- */}
+            {/* ================================================================
+                MOBILE COMMERCE
+                ============================================================= */}
 
             <div
               className="
@@ -916,25 +1029,38 @@ export function Header() {
             >
               <Link
                 to="/shop"
-                onClick={closeMobileMenu}
+                onClick={
+                  closeMobileMenu
+                }
                 className="
                   btn-primary
+                  group
                   min-h-[52px]
                   w-full
                   shadow-green-glow
                 "
               >
-                Shop Papads
+                <span>
+                  Shop Papads
+                </span>
 
                 <ArrowRight
-                  className="h-4 w-4"
+                  className="
+                    h-4
+                    w-4
+                    transition-transform
+                    duration-200
+                    group-hover:translate-x-1
+                  "
                   aria-hidden="true"
                 />
               </Link>
 
               <Link
                 to="/cart"
-                onClick={closeMobileMenu}
+                onClick={
+                  closeMobileMenu
+                }
                 className="
                   mt-3
                   inline-flex
@@ -952,20 +1078,30 @@ export function Header() {
                   text-brand-green
                   shadow-soft
                   transition-all
+                  duration-200
+                  ease-ks-standard
                   hover:-translate-y-0.5
                   hover:bg-brand-green/5
                   active:translate-y-[1px]
                 "
               >
                 <ShoppingBag
-                  className="h-4 w-4"
+                  className="
+                    h-4
+                    w-4
+                  "
                   aria-hidden="true"
                 />
 
                 Cart
 
                 {itemCount > 0 && (
-                  <span className="font-semibold text-brand-saffron">
+                  <span
+                    className="
+                      font-semibold
+                      text-brand-saffron
+                    "
+                  >
                     ({itemCount})
                   </span>
                 )}
