@@ -18,43 +18,57 @@ import { brand } from '@/data/brand';
    KAWAD SWAD 2.0
    ABOUT PAGE
 
-   Narrative flow:
+   Narrative:
    ORIGIN → REGION → VALUES → HERITAGE → CREDIBILITY → ACTION
 
-   Visual authority:
-   - Central typography
-   - Central cards
-   - Central buttons
-   - Central elevation
-   - Central motion
+   Central design system:
+   - Green = trust / brand authority
+   - Saffron = appetite / highlights / action
+   - Ivory = editorial canvas
+   - Brown = heritage / contrast
    ========================================================================== */
 
 
+const ABOUT_HERO_IMAGE =
+  '/images/pages/about-hero.png';
+
+const ABOUT_POSTER_IMAGE =
+  '/images/pages/about-poster.png';
+
+
+/* ==========================================================================
+   BRAND VALUES
+   ========================================================================== */
+
+const values = [
+  {
+    icon: Leaf,
+    title: 'Traditional Taste',
+    desc: 'Authentic regional recipes and time-tested spice formulations that preserve genuine Indian flavors.',
+  },
+  {
+    icon: Shield,
+    title: 'Consistent Quality',
+    desc: 'Rigorous ingredient selection and structured manufacturing standards in every batch we produce.',
+  },
+  {
+    icon: Award,
+    title: 'Food Craft',
+    desc: 'Expertise in lentil processing, dough mixing, rolling, and traditional drying techniques.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Customer Trust',
+    desc: 'Transparent business operations, dependable fulfillment, and clear labeling for retail and B2B partners.',
+  },
+];
+
+
+/* ==========================================================================
+   PAGE
+   ========================================================================== */
+
 export default function About() {
-  const values = [
-    {
-      icon: Leaf,
-      title: 'Traditional Taste',
-      desc: 'Authentic regional recipes and time-tested spice formulations that preserve genuine Indian flavors.',
-    },
-    {
-      icon: Shield,
-      title: 'Consistent Quality',
-      desc: 'Rigorous ingredient selection and structured manufacturing standards in every batch we produce.',
-    },
-    {
-      icon: Award,
-      title: 'Food Craft',
-      desc: 'Expertise in lentil processing, dough mixing, rolling, and sun-drying techniques.',
-    },
-    {
-      icon: Sparkles,
-      title: 'Customer Trust',
-      desc: 'Transparent business operations, dependable fulfillment, and clear labeling for retail and B2B partners.',
-    },
-  ];
-
-
   return (
     <>
       <SEO
@@ -62,8 +76,14 @@ export default function About() {
         description="Kawad Swad is a premium papad brand from Nimar, Madhya Pradesh, crafting authentic traditional papads with dependable quality standards."
         path="/about"
         structuredData={breadcrumbSchema([
-          { name: 'Home', path: '/' },
-          { name: 'About', path: '/about' },
+          {
+            name: 'Home',
+            path: '/',
+          },
+          {
+            name: 'About',
+            path: '/about',
+          },
         ])}
       />
 
@@ -76,87 +96,141 @@ export default function About() {
         className="
           relative
           overflow-hidden
-          border-b
-          border-brand-green/10
-          bg-brand-ivory
-          py-16
-          sm:py-20
-          lg:py-28
+          bg-brand-green
         "
+        aria-labelledby="about-page-title"
       >
         <div
           className="
-            pointer-events-none
-            absolute
-            inset-0
-            bg-grid
-            opacity-25
+            relative
+            min-h-[380px]
+            sm:min-h-[460px]
+            lg:min-h-[560px]
           "
-          aria-hidden="true"
-        />
+        >
+          <img
+            src={ABOUT_HERO_IMAGE}
+            alt="Kawad Swad and the Nimar region"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            className="
+              absolute
+              inset-0
+              h-full
+              w-full
+              object-cover
+            "
+          />
 
-        <div
-          className="
-            pointer-events-none
-            absolute
-            -right-24
-            -top-24
-            h-64
-            w-64
-            rounded-full
-            border
-            border-brand-saffron/20
-            sm:h-96
-            sm:w-96
-          "
-          aria-hidden="true"
-        />
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              bg-gradient-to-r
+              from-brand-green/95
+              via-brand-green/65
+              to-brand-green/10
+            "
+            aria-hidden="true"
+          />
 
-        <div className="container-max container-px relative">
-          <Reveal>
-            <div className="max-w-4xl">
-              <span className="section-eyebrow mb-4 block">
-                Our Brand Story
-              </span>
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              bg-gradient-to-t
+              from-brand-green/40
+              via-transparent
+              to-transparent
+            "
+            aria-hidden="true"
+          />
 
-              <h1
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              bg-dots
+              opacity-[0.05]
+            "
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              container-max
+              container-px
+              relative
+              flex
+              min-h-[380px]
+              items-center
+              sm:min-h-[460px]
+              lg:min-h-[560px]
+            "
+          >
+            <Reveal>
+              <div
                 className="
-                  text-balance
-                  mb-6
                   max-w-4xl
-                  font-serif
-                  text-headline-lg
-                  font-bold
-                  leading-[1.05]
-                  text-brand-green
-                  sm:text-display-sm
+                  py-14
+                  sm:py-16
+                  lg:py-20
                 "
               >
-                From Nimar, with{' '}
-                <span className="text-brand-saffron">
-                  tradition.
+                <span
+                  className="
+                    section-eyebrow
+                    mb-4
+                    block
+                    text-brand-saffron
+                  "
+                >
+                  Our Brand Story
                 </span>
-              </h1>
 
-              <p
-                className="
-                  text-pretty
-                  max-w-3xl
-                  text-base
-                  leading-relaxed
-                  text-brand-brown/70
-                  sm:text-lg
-                  lg:text-xl
-                "
-              >
-                Kawad Swad brings the authentic taste of
-                Nimar’s papad-making heritage to kitchens
-                across India, uniting time-honored recipes
-                with the reliability of modern food
-                manufacturing.
-              </p>
-            </div>
-          </Reveal>
+                <h1
+                  id="about-page-title"
+                  className="
+                    text-balance
+                    font-serif
+                    text-display-sm
+                    font-bold
+                    leading-[1.02]
+                    text-white
+                  "
+                >
+                  From Nimar,
+                  <br />
+                  <span className="text-brand-saffron">
+                    with tradition.
+                  </span>
+                </h1>
+
+                <p
+                  className="
+                    text-pretty
+                    mt-5
+                    max-w-2xl
+                    text-sm
+                    leading-relaxed
+                    text-white/80
+                    sm:text-base
+                    lg:text-lg
+                  "
+                >
+                  Kawad Swad brings the authentic taste of
+                  Nimar&apos;s papad-making heritage to
+                  kitchens across India, uniting
+                  time-honored recipes with the reliability
+                  of modern food manufacturing.
+                </p>
+              </div>
+            </Reveal>
+          </div>
         </div>
       </section>
 
@@ -168,12 +242,14 @@ export default function About() {
       <section
         className="
           bg-brand-ivory
-          py-16
-          sm:py-20
-          lg:py-28
+          py-14
+          sm:py-18
+          lg:py-24
         "
+        aria-labelledby="region-title"
       >
         <div className="container-max container-px">
+
           <div
             className="
               grid
@@ -183,18 +259,28 @@ export default function About() {
               lg:gap-16
             "
           >
+
+            {/* ================================================================
+                TEXT
+                ============================================================= */}
+
             <div className="lg:col-span-6">
               <Reveal>
                 <div>
+
                   <span className="section-eyebrow mb-3 block">
                     The Region
                   </span>
 
                   <h2
+                    id="region-title"
                     className="
-                      type-h2
-                      mb-6
+                      text-balance
                       max-w-xl
+                      font-serif
+                      text-headline-lg
+                      font-bold
+                      leading-tight
                       text-brand-green
                     "
                   >
@@ -204,10 +290,12 @@ export default function About() {
 
                   <div
                     className="
+                      mt-6
                       space-y-4
-                      text-base
+                      text-sm
                       leading-relaxed
                       text-brand-brown/70
+                      sm:text-base
                     "
                   >
                     <p>
@@ -215,9 +303,11 @@ export default function About() {
                       for its deep agricultural roots and rich
                       culinary craftsmanship. It is the home
                       of Kawad Swad, established by{' '}
-                      {brand.manufacturer} to give traditional
-                      Indian papads a dependable, professional
-                      platform.
+                      <strong className="font-semibold text-brand-brown">
+                        {brand.manufacturer}
+                      </strong>{' '}
+                      to give traditional Indian papads a
+                      dependable, professional platform.
                     </p>
 
                     <p>
@@ -228,31 +318,64 @@ export default function About() {
                       that taste the way traditional papad
                       should.
                     </p>
-
-                    <blockquote
-                      className="
-                        my-6
-                        rounded-r-xl
-                        border-l-2
-                        border-brand-saffron
-                        bg-brand-ivory-dark
-                        p-4
-                        font-devanagari
-                        text-lg
-                        text-brand-brown/90
-                        shadow-soft
-                      "
-                    >
-                      {brand.tagline}
-                    </blockquote>
                   </div>
+
+
+                  <blockquote
+                    className="
+                      my-7
+                      rounded-r-2xl
+                      border-l-2
+                      border-brand-saffron
+                      bg-brand-ivory-dark
+                      p-5
+                      font-devanagari
+                      text-lg
+                      text-brand-brown/90
+                      shadow-soft
+                    "
+                  >
+                    {brand.tagline}
+                  </blockquote>
+
+
+                  <div
+                    className="
+                      inline-flex
+                      items-center
+                      gap-2
+                      rounded-full
+                      bg-brand-green/5
+                      px-3
+                      py-2
+                      text-xs
+                      font-medium
+                      text-brand-green
+                    "
+                  >
+                    <MapPin
+                      className="
+                        h-4
+                        w-4
+                        text-brand-saffron
+                      "
+                      aria-hidden="true"
+                    />
+
+                    Nimar, Madhya Pradesh
+                  </div>
+
                 </div>
               </Reveal>
             </div>
 
 
+            {/* ================================================================
+                IMAGE
+                ============================================================= */}
+
             <div className="lg:col-span-6">
-              <Reveal delay={150}>
+              <Reveal delay={120}>
                 <div
                   className="
                     image-premium
@@ -263,7 +386,7 @@ export default function About() {
                   "
                 >
                   <img
-                    src="/images/pages/about-hero.png"
+                    src={ABOUT_HERO_IMAGE}
                     alt="Kawad Swad and the Nimar region"
                     loading="lazy"
                     decoding="async"
@@ -278,6 +401,7 @@ export default function About() {
                 </div>
               </Reveal>
             </div>
+
           </div>
         </div>
       </section>
@@ -294,23 +418,55 @@ export default function About() {
           bg-brand-ivory-dark
           py-16
           sm:py-20
+          lg:py-24
         "
+        aria-labelledby="values-title"
       >
         <div className="container-max container-px">
+
           <Reveal>
-            <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-16">
+            <div
+              className="
+                mx-auto
+                mb-10
+                max-w-2xl
+                text-center
+                sm:mb-14
+              "
+            >
               <span className="section-eyebrow mb-3 block">
                 What We Stand For
               </span>
 
               <h2
+                id="values-title"
                 className="
-                  type-h2
+                  text-balance
+                  font-serif
+                  text-headline-md
+                  font-bold
                   text-brand-green
                 "
               >
                 Built on uncompromising principles.
               </h2>
+
+              <p
+                className="
+                  text-pretty
+                  mx-auto
+                  mt-4
+                  max-w-xl
+                  text-sm
+                  leading-relaxed
+                  text-brand-brown/65
+                  sm:text-base
+                "
+              >
+                The principles behind the way we make,
+                package, and present every Kawad Swad
+                product.
+              </p>
             </div>
           </Reveal>
 
@@ -326,26 +482,28 @@ export default function About() {
           >
             {values.map(
               (item, index) => {
-                const Icon =
-                  item.icon;
+                const Icon = item.icon;
 
                 return (
                   <Reveal
                     key={item.title}
-                    delay={index * 80}
+                    delay={index * 70}
                   >
-                    <div
+                    <article
                       className="
-                        card-flat
+                        card
                         flex
                         h-full
                         flex-col
+                        border
+                        border-brand-green/10
+                        bg-white
                         p-6
+                        shadow-card
                         transition-all
                         duration-300
-                        ease-ks-standard
                         hover:-translate-y-1
-                        hover:shadow-card
+                        hover:shadow-lift
                         sm:p-7
                       "
                     >
@@ -358,17 +516,12 @@ export default function About() {
                           items-center
                           justify-center
                           rounded-2xl
-                          bg-brand-green/8
+                          bg-brand-saffron/10
+                          text-brand-saffron
                         "
+                        aria-hidden="true"
                       >
-                        <Icon
-                          className="
-                            h-6
-                            w-6
-                            text-brand-green
-                          "
-                          aria-hidden="true"
-                        />
+                        <Icon className="h-6 w-6" />
                       </div>
 
                       <h3
@@ -392,12 +545,13 @@ export default function About() {
                       >
                         {item.desc}
                       </p>
-                    </div>
+                    </article>
                   </Reveal>
                 );
               },
             )}
           </div>
+
         </div>
       </section>
 
@@ -413,8 +567,10 @@ export default function About() {
           sm:py-20
           lg:py-28
         "
+        aria-labelledby="heritage-title"
       >
         <div className="container-max container-px">
+
           <div
             className="
               grid
@@ -424,6 +580,11 @@ export default function About() {
               lg:gap-16
             "
           >
+
+            {/* ================================================================
+                IMAGE
+                ============================================================= */}
+
             <div
               className="
                 order-2
@@ -442,7 +603,7 @@ export default function About() {
                   "
                 >
                   <img
-                    src="/images/pages/about-poster.png"
+                    src={ABOUT_POSTER_IMAGE}
                     alt="Kawad Swad traditional preparation and culinary heritage"
                     loading="lazy"
                     decoding="async"
@@ -459,6 +620,10 @@ export default function About() {
             </div>
 
 
+            {/* ================================================================
+                TEXT
+                ============================================================= */}
+
             <div
               className="
                 order-1
@@ -466,17 +631,22 @@ export default function About() {
                 lg:col-span-6
               "
             >
-              <Reveal delay={150}>
+              <Reveal delay={120}>
                 <div>
+
                   <span className="section-eyebrow mb-3 block">
                     Heritage & Dietary Choices
                   </span>
 
                   <h2
+                    id="heritage-title"
                     className="
-                      type-h2
-                      mb-6
+                      text-balance
                       max-w-xl
+                      font-serif
+                      text-headline-lg
+                      font-bold
+                      leading-tight
                       text-brand-green
                     "
                   >
@@ -485,10 +655,12 @@ export default function About() {
 
                   <div
                     className="
+                      mt-6
                       space-y-4
-                      text-base
+                      text-sm
                       leading-relaxed
                       text-brand-brown/70
+                      sm:text-base
                     "
                   >
                     <p>
@@ -509,9 +681,105 @@ export default function About() {
                       matches their requirements.
                     </p>
                   </div>
+
+
+                  <div
+                    className="
+                      mt-7
+                      grid
+                      gap-3
+                      sm:grid-cols-2
+                    "
+                  >
+                    <div
+                      className="
+                        rounded-2xl
+                        border
+                        border-brand-green/10
+                        bg-brand-ivory-dark
+                        p-4
+                      "
+                    >
+                      <Leaf
+                        className="
+                          mb-3
+                          h-5
+                          w-5
+                          text-brand-green
+                        "
+                        aria-hidden="true"
+                      />
+
+                      <p
+                        className="
+                          text-sm
+                          font-semibold
+                          text-brand-green
+                        "
+                      >
+                        Traditional Roots
+                      </p>
+
+                      <p
+                        className="
+                          mt-1
+                          text-xs
+                          leading-relaxed
+                          text-brand-brown/55
+                        "
+                      >
+                        Recipes inspired by regional
+                        culinary heritage.
+                      </p>
+                    </div>
+
+                    <div
+                      className="
+                        rounded-2xl
+                        border
+                        border-brand-green/10
+                        bg-brand-ivory-dark
+                        p-4
+                      "
+                    >
+                      <Shield
+                        className="
+                          mb-3
+                          h-5
+                          w-5
+                          text-brand-saffron
+                        "
+                        aria-hidden="true"
+                      />
+
+                      <p
+                        className="
+                          text-sm
+                          font-semibold
+                          text-brand-green
+                        "
+                      >
+                        Clear Choices
+                      </p>
+
+                      <p
+                        className="
+                          mt-1
+                          text-xs
+                          leading-relaxed
+                          text-brand-brown/55
+                        "
+                      >
+                        Clear product labeling for informed
+                        selection.
+                      </p>
+                    </div>
+                  </div>
+
                 </div>
               </Reveal>
             </div>
+
           </div>
         </div>
       </section>
@@ -523,23 +791,66 @@ export default function About() {
 
       <section
         className="
+          relative
+          overflow-hidden
           bg-brand-green
           py-16
           text-brand-ivory
           sm:py-20
+          lg:py-24
         "
+        aria-labelledby="manufacturer-title"
       >
-        <div className="container-max container-px">
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -right-24
+            -top-24
+            h-72
+            w-72
+            rounded-full
+            border
+            border-brand-saffron/15
+          "
+          aria-hidden="true"
+        />
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            bg-grid
+            opacity-[0.04]
+          "
+          aria-hidden="true"
+        />
+
+        <div className="container-max container-px relative">
+
           <Reveal>
-            <div className="max-w-3xl">
-              <span className="section-eyebrow mb-3 block">
+            <div className="max-w-4xl">
+
+              <span
+                className="
+                  section-eyebrow
+                  mb-3
+                  block
+                  text-brand-saffron
+                "
+              >
                 Manufacturer Credibility
               </span>
 
               <h2
+                id="manufacturer-title"
                 className="
-                  type-h2
-                  mb-6
+                  text-balance
+                  font-serif
+                  text-headline-lg
+                  font-bold
+                  leading-tight
                   text-white
                 "
               >
@@ -548,12 +859,14 @@ export default function About() {
 
               <p
                 className="
-                  mb-10
+                  text-pretty
+                  mt-5
                   max-w-2xl
-                  text-base
+                  text-sm
                   leading-relaxed
                   text-brand-ivory/75
-                  sm:text-lg
+                  sm:text-base
+                  lg:text-lg
                 "
               >
                 Every packet of Kawad Swad papad reflects
@@ -563,64 +876,163 @@ export default function About() {
                 or get in touch for commercial partnerships.
               </p>
 
+
+              {/* ==============================================================
+                  CREDENTIAL STRIP
+                  =========================================================== */}
+
               <div
                 className="
-                  flex
-                  flex-col
-                  gap-4
+                  mt-8
+                  grid
+                  gap-3
                   border-t
                   border-brand-ivory/15
                   pt-6
-                  text-sm
-                  text-brand-ivory/70
-                  sm:flex-row
-                  sm:flex-wrap
-                  sm:gap-6
+                  sm:grid-cols-3
+                  sm:gap-5
                 "
               >
-                <span className="flex items-center gap-2">
+
+                <div
+                  className="
+                    flex
+                    min-w-0
+                    items-start
+                    gap-3
+                  "
+                >
                   <Factory
                     className="
-                      h-4
-                      w-4
+                      mt-0.5
+                      h-5
+                      w-5
                       shrink-0
                       text-brand-saffron
                     "
                     aria-hidden="true"
                   />
 
-                  {brand.manufacturer}
-                </span>
+                  <div className="min-w-0">
+                    <p
+                      className="
+                        text-xs
+                        font-semibold
+                        text-white
+                      "
+                    >
+                      Manufacturer
+                    </p>
 
-                <span className="flex items-center gap-2">
+                    <p
+                      className="
+                        mt-1
+                        break-words
+                        text-xs
+                        leading-relaxed
+                        text-brand-ivory/60
+                      "
+                    >
+                      {brand.manufacturer}
+                    </p>
+                  </div>
+                </div>
+
+
+                <div
+                  className="
+                    flex
+                    min-w-0
+                    items-start
+                    gap-3
+                  "
+                >
                   <MapPin
                     className="
-                      h-4
-                      w-4
+                      mt-0.5
+                      h-5
+                      w-5
                       shrink-0
                       text-brand-saffron
                     "
                     aria-hidden="true"
                   />
 
-                  {brand.region}
-                </span>
+                  <div className="min-w-0">
+                    <p
+                      className="
+                        text-xs
+                        font-semibold
+                        text-white
+                      "
+                    >
+                      Region
+                    </p>
 
-                <span className="flex items-center gap-2">
+                    <p
+                      className="
+                        mt-1
+                        text-xs
+                        leading-relaxed
+                        text-brand-ivory/60
+                      "
+                    >
+                      {brand.region}
+                    </p>
+                  </div>
+                </div>
+
+
+                <div
+                  className="
+                    flex
+                    min-w-0
+                    items-start
+                    gap-3
+                  "
+                >
                   <Shield
                     className="
-                      h-4
-                      w-4
+                      mt-0.5
+                      h-5
+                      w-5
                       shrink-0
                       text-brand-saffron
                     "
                     aria-hidden="true"
                   />
 
-                  FSSAI Licence No. {brand.fssai}
-                </span>
+                  <div className="min-w-0">
+                    <p
+                      className="
+                        text-xs
+                        font-semibold
+                        text-white
+                      "
+                    >
+                      FSSAI Licensed
+                    </p>
+
+                    <p
+                      className="
+                        mt-1
+                        break-words
+                        text-xs
+                        leading-relaxed
+                        text-brand-ivory/60
+                      "
+                    >
+                      Licence No. {brand.fssai}
+                    </p>
+                  </div>
+                </div>
+
               </div>
 
+
+              {/* ==============================================================
+                  ACTIONS
+                  =========================================================== */}
 
               <div
                 className="
@@ -628,7 +1040,6 @@ export default function About() {
                   flex
                   flex-col
                   gap-3
-                  sm:mt-10
                   sm:flex-row
                   sm:flex-wrap
                   sm:gap-4
@@ -669,6 +1080,7 @@ export default function About() {
                   Explore Bulk Supply
                 </Link>
               </div>
+
             </div>
           </Reveal>
         </div>
@@ -676,7 +1088,7 @@ export default function About() {
 
 
       {/* ======================================================================
-          CTA
+          FINAL CTA
           =================================================================== */}
 
       <CTABanner
