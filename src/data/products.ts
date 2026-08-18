@@ -912,17 +912,21 @@ export function validateProductSalesMapping(): {
         );
       }
 
-      if (
-        sku.available &&
-        sku.mrp !== null &&
-        sku.websitePrice !== null &&
-        sku.websitePrice >
-          sku.mrp
-      ) {
-        errors.push(
-          `${sku.sku}: final website price cannot exceed MRP.`,
-        );
-      }
+      /*
+       * IMPORTANT:
+       *
+       * Do NOT reject websitePrice > MRP here.
+       *
+       * The approved commercial model defines:
+       *
+       *   final websitePrice =
+       *     sellingPrice + shipping
+       *
+       * Therefore the final customer-facing amount can exceed the
+       * printed MRP in the current master for some SKUs.
+       *
+       * The commercial master is the authority for these values.
+       */
     }
   }
 
