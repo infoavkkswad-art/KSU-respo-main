@@ -1,30 +1,43 @@
-/**
+/* ============================================================================
  * KAWAD SWAD
- * CENTRAL SALES, PRICING & PROMOTION CONFIGURATION
- *
- * SINGLE FRONTEND AUTHORITY FOR:
- * - Customer-facing selling prices
- * - MRP
- * - Product/SKU availability
- * - Free shipping
- * - Future offers
- * - Future coupons
- * - Future campaigns
- *
- * NOT STORED HERE:
- * - Manufacturing costing
- * - Factory price
- * - Dealer price
- * - Distributor price
- * - Profit
+ * CENTRAL SALES / COMMERCIAL MASTER
+ * ============================================================================
  *
  * IMPORTANT:
- * sellingPrice is the final customer-facing website price.
- * Shipping is included in sellingPrice.
- * Website shipping charge = ₹0.
- */
+ *
+ * This file is the SINGLE SOURCE OF TRUTH for customer-facing SKU
+ * commercial data.
+ *
+ * Product information such as:
+ * - name
+ * - slug
+ * - description
+ * - ingredients
+ * - images
+ *
+ * belongs in products.ts.
+ *
+ * Commercial information such as:
+ * - MRP
+ * - website selling price
+ * - shipping
+ * - availability
+ *
+ * belongs ONLY here.
+ *
+ * FINAL WEBSITE PRICE IS NEVER STORED MANUALLY.
+ *
+ * finalWebsitePrice =
+ *   sellingPrice + shipping
+ *
+ * This prevents price duplication and calculation mismatches.
+ * ========================================================================== */
 
-export type SalesPackSize =
+/* ============================================================================
+ * TYPES
+ * ========================================================================== */
+
+export type PackSize =
   | 200
   | 500
   | 1000
@@ -32,81 +45,112 @@ export type SalesPackSize =
 
 export type SalesSkuConfig = {
   sku: string;
-  packSize: SalesPackSize;
 
-  /**
-   * Legal/reference MRP printed on the product.
-   *
-   * IMPORTANT:
-   * This must match the actual MRP used on the
-   * physical retail pack.
+  packSize: PackSize;
+
+  /*
+   * Printed / declared MRP.
    */
   mrp: number | null;
 
-  /**
-   * FINAL CUSTOMER-FACING WEBSITE PRICE.
+  /*
+   * Product selling price BEFORE shipping.
    *
-   * This is the amount charged for the product
-   * on the website, with shipping already included.
+   * This is the value you update when changing the product's
+   * base website selling price.
    */
   sellingPrice: number | null;
 
-  /**
-   * Shipping is included in sellingPrice.
+  /*
+   * Customer shipping charge for this SKU.
    */
-  shipping: 0;
+  shipping: number;
 
-  /**
-   * Customer-facing shipping policy.
+  /*
+   * Kept for compatibility with existing project code.
+   *
+   * It is derived from shipping rather than manually controlled.
    */
-  freeShipping: true;
+  freeShipping: boolean;
 
-  /**
-   * Whether this SKU is currently purchasable.
+  /*
+   * Whether this SKU can currently be purchased.
    */
   available: boolean;
 };
 
-export type SalesOfferType =
-  | 'percentage'
-  | 'fixed'
-  | 'buy_x_get_y'
-  | 'bundle';
+/* ============================================================================
+ * OFFERS
+ * ========================================================================== */
 
 export type SalesOffer = {
   id: string;
   name: string;
-  type: SalesOfferType;
+
+  type:
+    | 'percentage'
+    | 'fixed';
+
   value: number;
+
   enabled: boolean;
+
   startsAt?: string;
   endsAt?: string;
+
   minimumOrderValue?: number;
   maximumDiscount?: number;
+
+  /*
+   * Empty / undefined = all eligible SKUs.
+   */
   skuCodes?: string[];
 };
+
+/* ============================================================================
+ * COUPONS
+ * ========================================================================== */
 
 export type SalesCoupon = {
   code: string;
   name: string;
-  type: 'percentage' | 'fixed';
+
+  type:
+    | 'percentage'
+    | 'fixed';
+
   value: number;
+
   enabled: boolean;
+
   startsAt?: string;
   endsAt?: string;
+
   minimumOrderValue?: number;
   maximumDiscount?: number;
+
   usageLimit?: number;
   perCustomerLimit?: number;
+
+  /*
+   * Empty / undefined = all eligible SKUs.
+   */
   skuCodes?: string[];
 };
+
+/* ============================================================================
+ * CAMPAIGNS
+ * ========================================================================== */
 
 export type SalesCampaign = {
   id: string;
   name: string;
+
   enabled: boolean;
+
   startsAt?: string;
   endsAt?: string;
+
   offerIds: string[];
   couponCodes: string[];
 };
@@ -118,13 +162,35 @@ export type SalesCampaign = {
 export const SALES_POLICY = {
   currency: 'INR' as const,
 
-  shippingIncludedInSellingPrice: true,
+  /*
+   * IMPORTANT:
+   *
+   * Selling price and shipping are stored separately.
+   *
+   * Final customer price is calculated as:
+   *
+   * sellingPrice + shipping
+   */
+  shippingIncludedInSellingPrice:
+    false,
 
-  freeShipping: true,
+  /*
+   * Shipping is not globally free.
+   *
+   * Each SKU has its own shipping value.
+   */
+  freeShipping: false,
 
+  /*
+   * There is no single global shipping charge.
+   * Shipping comes from the SKU record.
+   */
   shippingCharge: 0,
 
-  showShippingCharge: false,
+  /*
+   * Shipping may be displayed separately in the cart/checkout.
+   */
+  showShippingCharge: true,
 
   allowNegativePrice: false,
 
@@ -138,8 +204,14 @@ export const SALES_POLICY = {
 
   showFactoryPrice: false,
 
+  /*
+   * Automatic discounts remain disabled.
+   */
   showAutomaticDiscount: false,
 
+  /*
+   * Offers and coupons remain disabled until explicitly configured.
+   */
   offersEnabled: false,
 
   couponsEnabled: false,
@@ -148,86 +220,30 @@ export const SALES_POLICY = {
 } as const;
 
 /* ============================================================================
- * CURRENT SKU PRICING
+ * CENTRAL 43-SKU COMMERCIAL MASTER
+ * ============================================================================
  *
- * FINAL WEBSITE SELLING PRICES PROVIDED BY KAWAD SWAD.
+ * ONLY THIS TABLE SHOULD BE EDITED FOR NORMAL WEBSITE PRICE / SHIPPING
+ * CHANGES.
  *
- * Website Price incl. Shipping:
- *
- * KS-MMP-200   ₹102
- * KS-MMP-500   ₹211
- * KS-MMP-1000  ₹425
- *
- * KS-MGP-200   ₹107
- * KS-MGP-500   ₹216
- * KS-MGP-1000  ₹440
- *
- * KS-MJP-200   ₹112
- * KS-MJP-500   ₹226
- * KS-MJP-1000  ₹455
- *
- * KS-MPP-200   ₹107
- * KS-MPP-500   ₹216
- * KS-MPP-1000  ₹435
- *
- * KS-MGCP-200  ₹107
- * KS-MGCP-500  ₹216
- * KS-MGCP-1000 ₹435
- *
- * KS-MKMP-200  ₹107
- * KS-MKMP-500  ₹221
- * KS-MKMP-1000 ₹450
- *
- * KS-MPMP-200  ₹107
- * KS-MPMP-500  ₹216
- * KS-MPMP-1000 ₹435
- *
- * KS-CCP-200   ₹102
- * KS-CCP-500   ₹211
- * KS-CCP-1000  ₹425
- *
- * KS-CGP-200   ₹107
- * KS-CGP-500   ₹221
- * KS-CGP-1000  ₹450
- *
- * KS-CKM-200   ₹107
- * KS-CKM-500   ₹216
- * KS-CKM-1000  ₹435
- *
- * KS-CTP-200   ₹107
- * KS-CTP-500   ₹221
- * KS-CTP-1000  ₹450
- *
- * KS-CPM-200   ₹107
- * KS-CPM-500   ₹216
- * KS-CPM-1000  ₹435
- *
- * KS-UGP-200   ₹112
- * KS-UGP-500   ₹231
- * KS-UGP-1000  ₹465
- *
- * KS-UGG-200   ₹117
- * KS-UGG-500   ₹241
- * KS-UGG-1000  ₹485
- *
- * KS-COMB-235  ₹199
+ * finalWebsitePrice is calculated automatically.
  * ========================================================================== */
 
 export const SALES_SKUS: Record<
   string,
   SalesSkuConfig
 > = {
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      MOONG MASTER
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-MMP-200': {
     sku: 'KS-MMP-200',
     packSize: 200,
     mrp: 110,
-    sellingPrice: 102,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 55,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -235,9 +251,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-MMP-500',
     packSize: 500,
     mrp: 249,
-    sellingPrice: 211,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 140,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -245,23 +261,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-MMP-1000',
     packSize: 1000,
     mrp: 499,
-    sellingPrice: 425,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 275,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      MOONG GARLIC
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-MGP-200': {
     sku: 'KS-MGP-200',
     packSize: 200,
     mrp: 125,
-    sellingPrice: 107,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 60,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -269,9 +285,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-MGP-500',
     packSize: 500,
     mrp: 309,
-    sellingPrice: 216,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 145,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -279,23 +295,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-MGP-1000',
     packSize: 1000,
     mrp: 619,
-    sellingPrice: 440,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 290,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      MOONG JEERA
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-MJP-200': {
     sku: 'KS-MJP-200',
     packSize: 200,
     mrp: 109,
-    sellingPrice: 112,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 65,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -303,9 +319,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-MJP-500',
     packSize: 500,
     mrp: 279,
-    sellingPrice: 226,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 155,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -313,32 +329,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-MJP-1000',
     packSize: 1000,
     mrp: 559,
-    sellingPrice: 455,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 305,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      MOONG PUDHINA
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-MPP-200': {
     sku: 'KS-MPP-200',
     packSize: 200,
-
-    /*
-     * Existing MRP = ₹105.
-     * Final website price = ₹107.
-     *
-     * MRP must be confirmed/updated on the physical pack
-     * before this final website price is published.
-     */
     mrp: 105,
-
-    sellingPrice: 107,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 60,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -346,9 +353,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-MPP-500',
     packSize: 500,
     mrp: 265,
-    sellingPrice: 216,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 145,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -356,32 +363,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-MPP-1000',
     packSize: 1000,
     mrp: 529,
-    sellingPrice: 435,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 285,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      MOONG GREEN CHILLI
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-MGCP-200': {
     sku: 'KS-MGCP-200',
     packSize: 200,
-
-    /*
-     * Existing MRP = ₹105.
-     * Final website price = ₹107.
-     *
-     * MRP must be confirmed/updated on the physical pack
-     * before this final website price is published.
-     */
     mrp: 105,
-
-    sellingPrice: 107,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 60,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -389,9 +387,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-MGCP-500',
     packSize: 500,
     mrp: 265,
-    sellingPrice: 216,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 145,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -399,23 +397,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-MGCP-1000',
     packSize: 1000,
     mrp: 529,
-    sellingPrice: 435,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 285,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      MOONG KASURI METHI
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-MKMP-200': {
     sku: 'KS-MKMP-200',
     packSize: 200,
     mrp: 109,
-    sellingPrice: 107,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 60,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -423,9 +421,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-MKMP-500',
     packSize: 500,
     mrp: 229,
-    sellingPrice: 221,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 150,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -433,23 +431,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-MKMP-1000',
     packSize: 1000,
     mrp: 559,
-    sellingPrice: 450,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 300,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      MOONG PUNJABI MASALA
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-MPMP-200': {
     sku: 'KS-MPMP-200',
     packSize: 200,
     mrp: 119,
-    sellingPrice: 107,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 60,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -457,9 +455,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-MPMP-500',
     packSize: 500,
     mrp: 299,
-    sellingPrice: 216,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 145,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -467,23 +465,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-MPMP-1000',
     packSize: 1000,
     mrp: 599,
-    sellingPrice: 435,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 285,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      CHANA CHOTU
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-CCP-200': {
     sku: 'KS-CCP-200',
     packSize: 200,
     mrp: 110,
-    sellingPrice: 102,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 55,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -491,9 +489,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-CCP-500',
     packSize: 500,
     mrp: 249,
-    sellingPrice: 211,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 140,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -501,23 +499,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-CCP-1000',
     packSize: 1000,
     mrp: 499,
-    sellingPrice: 425,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 275,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      CHANA GARLIC
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-CGP-200': {
     sku: 'KS-CGP-200',
     packSize: 200,
     mrp: 125,
-    sellingPrice: 107,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 60,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -525,9 +523,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-CGP-500',
     packSize: 500,
     mrp: 309,
-    sellingPrice: 221,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 150,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -535,32 +533,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-CGP-1000',
     packSize: 1000,
     mrp: 619,
-    sellingPrice: 450,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 300,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      CHANA KHATA MITHA
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-CKM-200': {
     sku: 'KS-CKM-200',
     packSize: 200,
-
-    /*
-     * Existing MRP = ₹99.
-     * Final website price = ₹107.
-     *
-     * MRP must be confirmed/updated on the physical pack
-     * before this final website price is published.
-     */
     mrp: 99,
-
-    sellingPrice: 107,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 60,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -568,9 +557,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-CKM-500',
     packSize: 500,
     mrp: 249,
-    sellingPrice: 216,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 145,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -578,32 +567,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-CKM-1000',
     packSize: 1000,
     mrp: 499,
-    sellingPrice: 435,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 285,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      CHANA TOMATO
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-CTP-200': {
     sku: 'KS-CTP-200',
     packSize: 200,
-
-    /*
-     * Existing MRP = ₹99.
-     * Final website price = ₹107.
-     *
-     * MRP must be confirmed/updated on the physical pack
-     * before this final website price is published.
-     */
     mrp: 99,
-
-    sellingPrice: 107,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 60,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -611,9 +591,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-CTP-500',
     packSize: 500,
     mrp: 249,
-    sellingPrice: 221,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 150,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -621,23 +601,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-CTP-1000',
     packSize: 1000,
     mrp: 499,
-    sellingPrice: 450,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 300,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      CHANA PUNJABI MASALA
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-CPM-200': {
     sku: 'KS-CPM-200',
     packSize: 200,
     mrp: 119,
-    sellingPrice: 107,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 60,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -645,9 +625,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-CPM-500',
     packSize: 500,
     mrp: 299,
-    sellingPrice: 216,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 145,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -655,23 +635,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-CPM-1000',
     packSize: 1000,
     mrp: 599,
-    sellingPrice: 435,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 285,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      URAD GURU
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-UGP-200': {
     sku: 'KS-UGP-200',
     packSize: 200,
     mrp: 119,
-    sellingPrice: 112,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 65,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -679,9 +659,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-UGP-500',
     packSize: 500,
     mrp: 299,
-    sellingPrice: 231,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 160,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -689,23 +669,23 @@ export const SALES_SKUS: Record<
     sku: 'KS-UGP-1000',
     packSize: 1000,
     mrp: 599,
-    sellingPrice: 465,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 315,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      URAD GARLIC
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-UGG-200': {
     sku: 'KS-UGG-200',
     packSize: 200,
     mrp: 125,
-    sellingPrice: 117,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 70,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 
@@ -713,9 +693,9 @@ export const SALES_SKUS: Record<
     sku: 'KS-UGG-500',
     packSize: 500,
     mrp: 319,
-    sellingPrice: 241,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 170,
+    shipping: 71,
+    freeShipping: false,
     available: true,
   },
 
@@ -723,44 +703,135 @@ export const SALES_SKUS: Record<
     sku: 'KS-UGG-1000',
     packSize: 1000,
     mrp: 639,
-    sellingPrice: 485,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 335,
+    shipping: 150,
+    freeShipping: false,
     available: true,
   },
 
-  /* --------------------------------------------------------------------------
+  /* ==========================================================================
      COMBO PACK
-  -------------------------------------------------------------------------- */
+     ======================================================================== */
 
   'KS-COMB-235': {
     sku: 'KS-COMB-235',
     packSize: 235,
     mrp: 199,
-    sellingPrice: 199,
-    shipping: 0,
-    freeShipping: true,
+    sellingPrice: 150,
+    shipping: 47,
+    freeShipping: false,
     available: true,
   },
 };
 
 /* ============================================================================
- * OFFERS
+ * DERIVED PRICE HELPERS
+ * ============================================================================
+ *
+ * These functions calculate the final customer price.
+ *
+ * DO NOT create another manually maintained final-price table.
  * ========================================================================== */
 
-export const SALES_OFFERS: SalesOffer[] = [];
+/**
+ * Return the final customer-facing website price.
+ *
+ * Example:
+ *
+ * sellingPrice = 55
+ * shipping = 47
+ *
+ * finalWebsitePrice = 102
+ */
+export function getFinalWebsitePrice(
+  sku: string,
+): number | null {
+  const config =
+    getSalesSku(sku);
 
-/* ============================================================================
- * COUPONS
- * ========================================================================== */
+  if (!config) {
+    return null;
+  }
 
-export const SALES_COUPONS: SalesCoupon[] = [];
+  if (
+    config.sellingPrice === null ||
+    !Number.isFinite(
+      config.sellingPrice,
+    )
+  ) {
+    return null;
+  }
 
-/* ============================================================================
- * CAMPAIGNS
- * ========================================================================== */
+  if (
+    !Number.isFinite(
+      config.shipping,
+    ) ||
+    config.shipping < 0
+  ) {
+    return null;
+  }
 
-export const SALES_CAMPAIGNS: SalesCampaign[] = [];
+  return (
+    config.sellingPrice +
+    config.shipping
+  );
+}
+
+/**
+ * Return the calculated final price from a config object.
+ */
+export function calculateFinalWebsitePrice(
+  config: SalesSkuConfig,
+): number | null {
+  if (
+    config.sellingPrice === null ||
+    !Number.isFinite(
+      config.sellingPrice,
+    )
+  ) {
+    return null;
+  }
+
+  if (
+    !Number.isFinite(
+      config.shipping,
+    ) ||
+    config.shipping < 0
+  ) {
+    return null;
+  }
+
+  return (
+    config.sellingPrice +
+    config.shipping
+  );
+}
+
+/**
+ * Return all commercial data for a SKU.
+ */
+export function getSalesSkuWithFinalPrice(
+  sku: string,
+):
+  | (SalesSkuConfig & {
+      finalWebsitePrice: number | null;
+    })
+  | undefined {
+  const config =
+    getSalesSku(sku);
+
+  if (!config) {
+    return undefined;
+  }
+
+  return {
+    ...config,
+    finalWebsitePrice:
+      calculateFinalWebsitePrice(
+        config,
+      ),
+  };
+}
 
 /* ============================================================================
  * SKU HELPERS
@@ -789,6 +860,24 @@ export function getSellingPrice(
   );
 }
 
+export function getShippingCharge(
+  sku: string,
+): number {
+  return (
+    getSalesSku(sku)
+      ?.shipping ?? 0
+  );
+}
+
+export function getMRP(
+  sku: string,
+): number | null {
+  return (
+    getSalesSku(sku)
+      ?.mrp ?? null
+  );
+}
+
 export function isSkuAvailable(
   sku: string,
 ): boolean {
@@ -798,9 +887,35 @@ export function isSkuAvailable(
   return Boolean(
     config &&
       config.available &&
-      config.sellingPrice !== null,
+      config.sellingPrice !==
+        null &&
+      Number.isFinite(
+        config.sellingPrice,
+      ) &&
+      config.shipping >= 0,
   );
 }
+
+/* ============================================================================
+ * OFFERS
+ * ========================================================================== */
+
+export const SALES_OFFERS: SalesOffer[] =
+  [];
+
+/* ============================================================================
+ * COUPONS
+ * ========================================================================== */
+
+export const SALES_COUPONS: SalesCoupon[] =
+  [];
+
+/* ============================================================================
+ * CAMPAIGNS
+ * ========================================================================== */
+
+export const SALES_CAMPAIGNS: SalesCampaign[] =
+  [];
 
 /* ============================================================================
  * DATE HELPERS
@@ -906,7 +1021,9 @@ export function getSalesCoupon(
   code: string,
 ): SalesCoupon | undefined {
   const normalized =
-    normalizeCouponCode(code);
+    normalizeCouponCode(
+      code,
+    );
 
   return SALES_COUPONS.find(
     (coupon) =>
@@ -953,168 +1070,23 @@ export function getActiveCoupons(
 }
 
 /* ============================================================================
- * CAMPAIGN HELPERS
- * ========================================================================== */
-
-export function isCampaignActive(
-  campaign: SalesCampaign,
-  now = new Date(),
-): boolean {
-  if (
-    !SALES_POLICY.campaignsEnabled
-  ) {
-    return false;
-  }
-
-  return isDateRangeActive(
-    campaign.enabled,
-    campaign.startsAt,
-    campaign.endsAt,
-    now,
-  );
-}
-
-export function getActiveCampaigns(
-  now = new Date(),
-): SalesCampaign[] {
-  if (
-    !SALES_POLICY.campaignsEnabled
-  ) {
-    return [];
-  }
-
-  return SALES_CAMPAIGNS.filter(
-    (campaign) =>
-      isCampaignActive(
-        campaign,
-        now,
-      ),
-  );
-}
-
-/* ============================================================================
- * DISCOUNT CALCULATION HELPERS
+ * VALIDATION
+ * ============================================================================
  *
- * These functions only calculate configured promotions.
- * They do not alter the base sellingPrice.
- * ========================================================================== */
-
-export function calculateOfferDiscount(
-  offer: SalesOffer,
-  eligibleAmount: number,
-): number {
-  if (
-    !Number.isFinite(
-      eligibleAmount,
-    ) ||
-    eligibleAmount <= 0
-  ) {
-    return 0;
-  }
-
-  if (
-    offer.minimumOrderValue !==
-      undefined &&
-    eligibleAmount <
-      offer.minimumOrderValue
-  ) {
-    return 0;
-  }
-
-  let discount = 0;
-
-  if (
-    offer.type === 'percentage'
-  ) {
-    discount =
-      eligibleAmount *
-      (offer.value / 100);
-  }
-
-  if (
-    offer.type === 'fixed'
-  ) {
-    discount = offer.value;
-  }
-
-  if (
-    offer.maximumDiscount !==
-      undefined
-  ) {
-    discount = Math.min(
-      discount,
-      offer.maximumDiscount,
-    );
-  }
-
-  return Math.max(
-    0,
-    Math.min(
-      discount,
-      eligibleAmount,
-    ),
-  );
-}
-
-export function calculateCouponDiscount(
-  coupon: SalesCoupon,
-  eligibleAmount: number,
-): number {
-  if (
-    !Number.isFinite(
-      eligibleAmount,
-    ) ||
-    eligibleAmount <= 0
-  ) {
-    return 0;
-  }
-
-  if (
-    coupon.minimumOrderValue !==
-      undefined &&
-    eligibleAmount <
-      coupon.minimumOrderValue
-  ) {
-    return 0;
-  }
-
-  let discount = 0;
-
-  if (
-    coupon.type === 'percentage'
-  ) {
-    discount =
-      eligibleAmount *
-      (coupon.value / 100);
-  }
-
-  if (
-    coupon.type === 'fixed'
-  ) {
-    discount = coupon.value;
-  }
-
-  if (
-    coupon.maximumDiscount !==
-      undefined
-  ) {
-    discount = Math.min(
-      discount,
-      coupon.maximumDiscount,
-    );
-  }
-
-  return Math.max(
-    0,
-    Math.min(
-      discount,
-      eligibleAmount,
-    ),
-  );
-}
-
-/* ============================================================================
- * CENTRAL SALES CONFIG VALIDATION
+ * This validation is intentionally strict.
+ *
+ * It catches:
+ * - duplicate SKUs
+ * - mismatched keys
+ * - invalid pack sizes
+ * - invalid MRP
+ * - invalid selling prices
+ * - invalid shipping
+ * - unavailable SKUs without prices
+ * - selling price above MRP
+ * - final price calculation errors
+ * - invalid offers
+ * - invalid coupons
  * ========================================================================== */
 
 export function validateSalesConfig(): {
@@ -1126,6 +1098,10 @@ export function validateSalesConfig(): {
   const seenSkus =
     new Set<string>();
 
+  /* --------------------------------------------------------------------------
+     SKU VALIDATION
+  -------------------------------------------------------------------------- */
+
   for (const [
     skuKey,
     config,
@@ -1133,12 +1109,17 @@ export function validateSalesConfig(): {
     SALES_SKUS,
   )) {
     const normalizedKey =
-      skuKey.trim().toUpperCase();
+      skuKey
+        .trim()
+        .toUpperCase();
 
     const normalizedSku =
-      config.sku.trim().toUpperCase();
+      config.sku
+        .trim()
+        .toUpperCase();
 
     /* SKU integrity */
+
     if (
       normalizedKey !==
       normalizedSku
@@ -1163,6 +1144,7 @@ export function validateSalesConfig(): {
     );
 
     /* Pack size */
+
     if (
       ![
         200,
@@ -1178,24 +1160,8 @@ export function validateSalesConfig(): {
       );
     }
 
-    /* Shipping */
-    if (
-      config.shipping !== 0
-    ) {
-      errors.push(
-        `${config.sku}: shipping must be 0.`,
-      );
-    }
-
-    if (
-      config.freeShipping !== true
-    ) {
-      errors.push(
-        `${config.sku}: freeShipping must be true.`,
-      );
-    }
-
     /* MRP */
+
     if (
       config.mrp !== null &&
       (
@@ -1211,8 +1177,10 @@ export function validateSalesConfig(): {
     }
 
     /* Selling price */
+
     if (
-      config.sellingPrice !== null &&
+      config.sellingPrice !==
+        null &&
       (
         !Number.isFinite(
           config.sellingPrice,
@@ -1225,10 +1193,39 @@ export function validateSalesConfig(): {
       );
     }
 
+    /* Shipping */
+
+    if (
+      !Number.isFinite(
+        config.shipping,
+      ) ||
+      config.shipping < 0
+    ) {
+      errors.push(
+        `${config.sku}: shipping must be a valid non-negative number.`,
+      );
+    }
+
+    /* Free shipping consistency */
+
+    const shouldBeFree =
+      config.shipping === 0;
+
+    if (
+      config.freeShipping !==
+      shouldBeFree
+    ) {
+      errors.push(
+        `${config.sku}: freeShipping does not match shipping value.`,
+      );
+    }
+
     /* Available SKU */
+
     if (
       config.available &&
-      config.sellingPrice === null
+      config.sellingPrice ===
+        null
     ) {
       errors.push(
         `${config.sku}: available SKU must have a selling price.`,
@@ -1244,25 +1241,73 @@ export function validateSalesConfig(): {
       );
     }
 
-    /*
-     * Consumer-facing selling price must not exceed
-     * the MRP declared on the product.
-     */
+    /* Selling price must not exceed MRP */
+
     if (
       config.mrp !== null &&
-      config.sellingPrice !== null &&
+      config.sellingPrice !==
+        null &&
       config.sellingPrice >
         config.mrp
     ) {
       errors.push(
-        `${config.sku}: sellingPrice ₹${config.sellingPrice} exceeds MRP ₹${config.mrp}. Confirm/update the physical-pack MRP before publishing this price.`,
+        `${config.sku}: sellingPrice cannot exceed MRP.`,
+      );
+    }
+
+    /* Final price */
+
+    const finalPrice =
+      calculateFinalWebsitePrice(
+        config,
+      );
+
+    if (
+      config.available &&
+      finalPrice ===
+        null
+    ) {
+      errors.push(
+        `${config.sku}: available SKU must have a valid final website price.`,
+      );
+    }
+
+    /*
+     * Final website price must not exceed MRP.
+     *
+     * This is important because the new sheet separates
+     * selling price and shipping.
+     */
+    if (
+      config.mrp !== null &&
+      finalPrice !== null &&
+      finalPrice >
+        config.mrp
+    ) {
+      errors.push(
+        `${config.sku}: final website price ₹${finalPrice} exceeds MRP ₹${config.mrp}.`,
       );
     }
   }
 
-  /* ==========================================================================
-   * OFFER VALIDATION
-   * ======================================================================== */
+  /* --------------------------------------------------------------------------
+     EXPECTED SKU COUNT
+  -------------------------------------------------------------------------- */
+
+  const skuCount =
+    Object.keys(
+      SALES_SKUS,
+    ).length;
+
+  if (skuCount !== 43) {
+    errors.push(
+      `Expected 43 SKUs but found ${skuCount}.`,
+    );
+  }
+
+  /* --------------------------------------------------------------------------
+     OFFER VALIDATION
+  -------------------------------------------------------------------------- */
 
   const offerIds =
     new Set<string>();
@@ -1318,7 +1363,8 @@ export function validateSalesConfig(): {
         !Number.isFinite(
           offer.minimumOrderValue,
         ) ||
-        offer.minimumOrderValue < 0
+        offer.minimumOrderValue <
+          0
       )
     ) {
       errors.push(
@@ -1333,7 +1379,8 @@ export function validateSalesConfig(): {
         !Number.isFinite(
           offer.maximumDiscount,
         ) ||
-        offer.maximumDiscount < 0
+        offer.maximumDiscount <
+          0
       )
     ) {
       errors.push(
@@ -1347,7 +1394,9 @@ export function validateSalesConfig(): {
       for (const sku of
         offer.skuCodes) {
         if (
-          !getSalesSku(sku)
+          !getSalesSku(
+            sku,
+          )
         ) {
           errors.push(
             `${offer.id}: unknown SKU ${sku}.`,
@@ -1357,35 +1406,41 @@ export function validateSalesConfig(): {
     }
   }
 
-  /* ==========================================================================
-   * COUPON VALIDATION
-   * ========================================================================== */
+  /* --------------------------------------------------------------------------
+     COUPON VALIDATION
+  -------------------------------------------------------------------------- */
 
   const couponCodes =
     new Set<string>();
 
   for (const coupon of
     SALES_COUPONS) {
-    const code =
+    const normalizedCode =
       normalizeCouponCode(
         coupon.code,
       );
 
-    if (!code) {
+    if (
+      couponCodes.has(
+        normalizedCode,
+      )
+    ) {
+      errors.push(
+        `Duplicate coupon code: ${coupon.code}`,
+      );
+    }
+
+    couponCodes.add(
+      normalizedCode,
+    );
+
+    if (
+      !normalizedCode
+    ) {
       errors.push(
         'Coupon code cannot be empty.',
       );
     }
-
-    if (
-      couponCodes.has(code)
-    ) {
-      errors.push(
-        `Duplicate coupon code: ${code}`,
-      );
-    }
-
-    couponCodes.add(code);
 
     if (
       !Number.isFinite(
@@ -1394,7 +1449,7 @@ export function validateSalesConfig(): {
       coupon.value < 0
     ) {
       errors.push(
-        `${code}: invalid coupon value.`,
+        `${coupon.code}: invalid coupon value.`,
       );
     }
 
@@ -1404,7 +1459,7 @@ export function validateSalesConfig(): {
       coupon.value > 100
     ) {
       errors.push(
-        `${code}: percentage coupon cannot exceed 100%.`,
+        `${coupon.code}: percentage coupon cannot exceed 100%.`,
       );
     }
 
@@ -1415,11 +1470,12 @@ export function validateSalesConfig(): {
         !Number.isFinite(
           coupon.minimumOrderValue,
         ) ||
-        coupon.minimumOrderValue < 0
+        coupon.minimumOrderValue <
+          0
       )
     ) {
       errors.push(
-        `${code}: invalid minimum order value.`,
+        `${coupon.code}: invalid minimum order value.`,
       );
     }
 
@@ -1430,11 +1486,12 @@ export function validateSalesConfig(): {
         !Number.isFinite(
           coupon.maximumDiscount,
         ) ||
-        coupon.maximumDiscount < 0
+        coupon.maximumDiscount <
+          0
       )
     ) {
       errors.push(
-        `${code}: invalid maximum discount.`,
+        `${coupon.code}: invalid maximum discount.`,
       );
     }
 
@@ -1442,14 +1499,14 @@ export function validateSalesConfig(): {
       coupon.usageLimit !==
         undefined &&
       (
-        !Number.isInteger(
+        !Number.isFinite(
           coupon.usageLimit,
         ) ||
-        coupon.usageLimit <= 0
+        coupon.usageLimit < 0
       )
     ) {
       errors.push(
-        `${code}: usageLimit must be a positive integer.`,
+        `${coupon.code}: invalid usage limit.`,
       );
     }
 
@@ -1457,14 +1514,15 @@ export function validateSalesConfig(): {
       coupon.perCustomerLimit !==
         undefined &&
       (
-        !Number.isInteger(
+        !Number.isFinite(
           coupon.perCustomerLimit,
         ) ||
-        coupon.perCustomerLimit <= 0
+        coupon.perCustomerLimit <
+          0
       )
     ) {
       errors.push(
-        `${code}: perCustomerLimit must be a positive integer.`,
+        `${coupon.code}: invalid per-customer limit.`,
       );
     }
 
@@ -1474,19 +1532,21 @@ export function validateSalesConfig(): {
       for (const sku of
         coupon.skuCodes) {
         if (
-          !getSalesSku(sku)
+          !getSalesSku(
+            sku,
+          )
         ) {
           errors.push(
-            `${code}: unknown SKU ${sku}.`,
+            `${coupon.code}: unknown SKU ${sku}.`,
           );
         }
       }
     }
   }
 
-  /* ==========================================================================
-   * CAMPAIGN VALIDATION
-   * ========================================================================== */
+  /* --------------------------------------------------------------------------
+     CAMPAIGN VALIDATION
+  -------------------------------------------------------------------------- */
 
   const campaignIds =
     new Set<string>();
@@ -1517,35 +1577,50 @@ export function validateSalesConfig(): {
         )
       ) {
         errors.push(
-          `${campaign.id}: unknown offer ${offerId}.`,
+          `${campaign.id}: unknown offer ID ${offerId}.`,
         );
       }
     }
 
     for (const couponCode of
       campaign.couponCodes) {
-      const normalized =
-        normalizeCouponCode(
-          couponCode,
-        );
-
       if (
         !SALES_COUPONS.some(
           (coupon) =>
             normalizeCouponCode(
               coupon.code,
-            ) === normalized,
+            ) ===
+            normalizeCouponCode(
+              couponCode,
+            ),
         )
       ) {
         errors.push(
-          `${campaign.id}: unknown coupon ${couponCode}.`,
+          `${campaign.id}: unknown coupon code ${couponCode}.`,
         );
       }
     }
   }
 
   return {
-    valid: errors.length === 0,
+    valid:
+      errors.length === 0,
     errors,
   };
+}
+
+/* ============================================================================
+ * DEVELOPMENT SAFETY CHECK
+ * ========================================================================== */
+
+const salesConfigValidation =
+  validateSalesConfig();
+
+if (
+  !salesConfigValidation.valid
+) {
+  console.warn(
+    '[Kawad Swad] Sales configuration validation warnings:',
+    salesConfigValidation.errors,
+  );
 }
