@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Zap,
   ShoppingBag,
+  ArrowRight,
 } from 'lucide-react';
 
 import type {
@@ -52,41 +53,46 @@ import {
 } from '@/services/product-service';
 
 
-/* ============================================================================
- * KAWAD SWAD 2.0
- * CENTRAL PRODUCT CARD
- *
- * Responsibilities:
- * - Product presentation
- * - Product discovery
- * - Pack-size selection
- * - Review proof
- * - Cart action
- * - Buy-now action
- *
- * Commercial authority:
- *
- * sales-config.ts
- *       ↓
- * ProductService
- *       ↓
- * ProductCard
- *
- * This component MUST NOT invent:
- * - prices
- * - discounts
- * - availability
- * - SKU rules
- *
- * Behavioral goal:
- *
- * NOTICE → UNDERSTAND → TRUST → CHOOSE → BUY
- * ========================================================================== */
+/* ==========================================================================
+   KAWAD SWAD 2.0
+   CENTRAL PRODUCT CARD
+
+   Behavioral hierarchy:
+
+   NOTICE
+      ↓
+   UNDERSTAND
+      ↓
+   TRUST
+      ↓
+   CHOOSE
+      ↓
+   BUY
+
+   Commercial authority:
+
+   sales-config.ts
+        ↓
+   ProductService
+        ↓
+   ProductCard
+
+   This component does NOT invent:
+   - prices
+   - discounts
+   - availability
+   - SKU rules
+
+   Visual authority:
+   - index.css
+   - ProductImage
+   - StarRating
+   ========================================================================== */
 
 
-/* ============================================================================
- * PROPS
- * ========================================================================== */
+/* ==========================================================================
+   PROPS
+   ========================================================================== */
 
 interface ProductCardProps {
   product: ProductFamily;
@@ -94,17 +100,15 @@ interface ProductCardProps {
 }
 
 
-/* ============================================================================
- * PRODUCT CARD
- * ========================================================================== */
+/* ==========================================================================
+   PRODUCT CARD
+   ========================================================================== */
 
 export function ProductCard({
   product,
   className = '',
 }: ProductCardProps) {
-  const {
-    addItem,
-  } = useCart();
+  const { addItem } = useCart();
 
   const navigate = useNavigate();
 
@@ -132,31 +136,37 @@ export function ProductCard({
 
 
   /* ==========================================================================
-   * CENTRAL PRODUCT RESOLUTION
-   * ======================================================================== */
+     CENTRAL PRODUCT RESOLUTION
+     ======================================================================== */
 
-  const purchasableSkus = useMemo(() => {
-    return ProductService.getAvailableSkus(
-      product,
-    );
-  }, [product]);
+  const purchasableSkus = useMemo(
+    () =>
+      ProductService.getAvailableSkus(
+        product,
+      ),
+    [product],
+  );
 
 
   /* ==========================================================================
-   * SELECTED SKU
-   * ======================================================================== */
+     SELECTED SKU
+     ======================================================================== */
 
   const selectedSku =
-    purchasableSkus[selectedSkuIndex] ??
+    purchasableSkus[
+      selectedSkuIndex
+    ] ??
     purchasableSkus[0];
 
 
   /* ==========================================================================
-   * KEEP SKU SELECTION VALID
-   * ======================================================================== */
+     KEEP SKU SELECTION VALID
+     ======================================================================== */
 
   useEffect(() => {
-    if (purchasableSkus.length === 0) {
+    if (
+      purchasableSkus.length === 0
+    ) {
       setSelectedSkuIndex(0);
       return;
     }
@@ -174,10 +184,8 @@ export function ProductCard({
 
 
   /* ==========================================================================
-   * REVIEW SUMMARY
-   *
-   * Reviews are proof, not decoration.
-   * ======================================================================== */
+     REVIEW SUMMARY
+     ======================================================================== */
 
   useEffect(() => {
     let cancelled = false;
@@ -218,8 +226,8 @@ export function ProductCard({
 
 
   /* ==========================================================================
-   * NO PURCHASABLE SKU
-   * ======================================================================== */
+     NO PURCHASABLE SKU
+     ======================================================================== */
 
   if (!selectedSku) {
     return null;
@@ -227,11 +235,13 @@ export function ProductCard({
 
 
   /* ==========================================================================
-   * DISPLAY VALUES
-   * ======================================================================== */
+     DISPLAY VALUES
+     ======================================================================== */
 
   const packLabel =
-    PACK_LABELS[selectedSku.packSize] ??
+    PACK_LABELS[
+      selectedSku.packSize
+    ] ??
     `${selectedSku.packSize}g`;
 
   const hasReviews =
@@ -241,8 +251,8 @@ export function ProductCard({
 
 
   /* ==========================================================================
-   * ADD TO CART
-   * ======================================================================== */
+     ADD TO CART
+     ======================================================================== */
 
   const handleAdd = () => {
     addItem(
@@ -259,8 +269,8 @@ export function ProductCard({
 
 
   /* ==========================================================================
-   * BUY NOW
-   * ======================================================================== */
+     BUY NOW
+     ======================================================================== */
 
   const handleBuyNow = () => {
     addItem(
@@ -273,8 +283,31 @@ export function ProductCard({
 
 
   /* ==========================================================================
-   * RENDER
-   * ======================================================================== */
+     PACK SELECTION
+     ======================================================================== */
+
+  const handlePackChange = (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const nextIndex =
+      Number(event.target.value);
+
+    if (
+      Number.isInteger(nextIndex) &&
+      nextIndex >= 0 &&
+      nextIndex <
+        purchasableSkus.length
+    ) {
+      setSelectedSkuIndex(
+        nextIndex,
+      );
+    }
+  };
+
+
+  /* ==========================================================================
+     RENDER
+     ======================================================================== */
 
   return (
     <article
@@ -310,7 +343,7 @@ export function ProductCard({
         "
       >
 
-        {/* Adaptive product surface */}
+        {/* Adaptive image surface */}
 
         <div
           className="
@@ -321,6 +354,7 @@ export function ProductCard({
             shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-10px_25px_rgba(62,39,35,0.05)]
             transition-all
             duration-500
+            ease-ks-standard
             group-hover/image:inset-1.5
           "
           aria-hidden="true"
@@ -332,7 +366,7 @@ export function ProductCard({
           className="
             pointer-events-none
             absolute
-            bottom-[9%]
+            bottom-[8%]
             left-1/2
             z-0
             h-[8%]
@@ -340,16 +374,17 @@ export function ProductCard({
             -translate-x-1/2
             rounded-[50%]
             bg-brand-brown/15
-            blur-[9px]
+            blur-[10px]
             transition-all
             duration-500
-            group-hover/image:w-[54%]
+            ease-ks-standard
+            group-hover/image:w-[55%]
             group-hover/image:bg-brand-brown/20
           "
           aria-hidden="true"
         />
 
-        {/* Product */}
+        {/* Product visual */}
 
         <div
           className="
@@ -372,7 +407,7 @@ export function ProductCard({
           />
         </div>
 
-        {/* Soft lighting layer */}
+        {/* Soft lighting */}
 
         <div
           className="
@@ -387,12 +422,13 @@ export function ProductCard({
             opacity-70
             transition-opacity
             duration-500
+            ease-ks-standard
             group-hover/image:opacity-100
           "
           aria-hidden="true"
         />
 
-        {/* Inner physical frame */}
+        {/* Physical frame */}
 
         <div
           className="
@@ -405,12 +441,13 @@ export function ProductCard({
             border-white/50
             transition-all
             duration-500
+            ease-ks-standard
             group-hover/image:inset-1.5
           "
           aria-hidden="true"
         />
 
-        {/* Product discovery hint */}
+        {/* Discovery hint */}
 
         <span
           className="
@@ -428,11 +465,13 @@ export function ProductCard({
             font-semibold
             text-brand-green
             opacity-0
-            shadow-sm
+            shadow-soft
             backdrop-blur-sm
-            transition-opacity
+            transition-all
             duration-300
+            ease-ks-standard
             sm:block
+            group-hover/image:-translate-y-0.5
             group-hover/image:opacity-100
           "
         >
@@ -475,6 +514,7 @@ export function ProductCard({
               text-brand-brown
               transition-colors
               duration-200
+              ease-ks-standard
               hover:text-brand-green
               sm:text-base
             "
@@ -513,6 +553,7 @@ export function ProductCard({
               items-center
               rounded-md
               transition-opacity
+              duration-200
               hover:opacity-80
               focus:outline-none
               focus-visible:ring-2
@@ -605,7 +646,8 @@ export function ProductCard({
 
           <div className="mb-3 sm:mb-4">
 
-            {product.category === 'combo' ? (
+            {product.category ===
+            'combo' ? (
 
               <div
                 className="
@@ -627,7 +669,11 @@ export function ProductCard({
                 "
               >
                 <ShoppingBag
-                  className="h-3 w-3 shrink-0"
+                  className="
+                    h-3
+                    w-3
+                    shrink-0
+                  "
                   aria-hidden="true"
                 />
 
@@ -660,27 +706,11 @@ export function ProductCard({
                   <select
                     id={`pack-size-${selectId}`}
                     value={selectedSkuIndex}
-                    onChange={(event) => {
-                      const nextIndex =
-                        Number(
-                          event.target.value,
-                        );
-
-                      if (
-                        Number.isInteger(
-                          nextIndex,
-                        ) &&
-                        nextIndex >= 0 &&
-                        nextIndex <
-                          purchasableSkus.length
-                      ) {
-                        setSelectedSkuIndex(
-                          nextIndex,
-                        );
-                      }
-                    }}
+                    onChange={
+                      handlePackChange
+                    }
                     className="
-                      min-h-[40px]
+                      min-h-[42px]
                       w-full
                       appearance-none
                       cursor-pointer
@@ -690,12 +720,15 @@ export function ProductCard({
                       bg-brand-cream
                       px-3
                       py-2
-                      pr-8
+                      pr-9
                       text-[10px]
                       font-semibold
                       text-brand-brown
                       outline-none
                       transition-all
+                      duration-200
+                      ease-ks-standard
+                      hover:border-brand-brown/25
                       focus:border-brand-green
                       focus:ring-2
                       focus:ring-brand-green/10
@@ -742,9 +775,22 @@ export function ProductCard({
               PRICE
               ============================================================= */}
 
-          <div className="mb-1 flex flex-wrap items-baseline gap-2">
-
-            <span className="price-emphasis text-lg sm:text-xl">
+          <div
+            className="
+              mb-1
+              flex
+              flex-wrap
+              items-baseline
+              gap-2
+            "
+          >
+            <span
+              className="
+                price-emphasis
+                text-lg
+                sm:text-xl
+              "
+            >
               {formatPrice(
                 selectedSku.websitePrice,
               )}
@@ -758,12 +804,11 @@ export function ProductCard({
                 )}
               </span>
             )}
-
           </div>
 
 
           {/* ================================================================
-              TRUST / SHIPPING
+              SHIPPING TRUST
               ============================================================= */}
 
           <p
@@ -789,7 +834,12 @@ export function ProductCard({
             />
 
             <span>
-              <strong className="font-semibold text-brand-green">
+              <strong
+                className="
+                  font-semibold
+                  text-brand-green
+                "
+              >
                 Free shipping
               </strong>
             </span>
@@ -801,12 +851,18 @@ export function ProductCard({
         {/* ====================================================================
             PRIMARY ACTION AREA
 
-            Behavioral hierarchy:
-            Cart = secondary commitment
-            Buy Now = primary conversion
+            Cart = lower commitment
+            Buy Now = highest conversion action
             ================================================================= */}
 
-        <div className="mt-1 grid grid-cols-2 gap-2">
+        <div
+          className="
+            mt-1
+            grid
+            grid-cols-2
+            gap-2
+          "
+        >
 
           {/* Add to Cart */}
 
@@ -817,7 +873,7 @@ export function ProductCard({
             className={`
               relative
               flex
-              min-h-[44px]
+              min-h-[46px]
               items-center
               justify-center
               gap-1.5
@@ -829,22 +885,24 @@ export function ProductCard({
               font-semibold
               transition-all
               duration-200
+              ease-ks-standard
               active:translate-y-[1px]
               sm:text-xs
               md:text-sm
+
               ${
                 added
                   ? `
                     bg-brand-green
                     text-white
-                    shadow-[0_4px_0_#14532d]
+                    shadow-green-glow
                   `
                   : `
                     border
                     border-brand-green/15
                     bg-white
                     text-brand-green
-                    shadow-[0_4px_0_rgba(23,60,50,0.08)]
+                    shadow-soft
                     hover:-translate-y-0.5
                     hover:border-brand-green/30
                     hover:bg-brand-green/5
@@ -855,7 +913,10 @@ export function ProductCard({
             {added ? (
               <>
                 <Check
-                  className="h-3.5 w-3.5"
+                  className="
+                    h-3.5
+                    w-3.5
+                  "
                   aria-hidden="true"
                 />
 
@@ -866,7 +927,10 @@ export function ProductCard({
             ) : (
               <>
                 <Plus
-                  className="h-3.5 w-3.5"
+                  className="
+                    h-3.5
+                    w-3.5
+                  "
                   aria-hidden="true"
                 />
 
@@ -885,7 +949,8 @@ export function ProductCard({
             onClick={handleBuyNow}
             className="
               btn-buy
-              min-h-[44px]
+              group/buy
+              min-h-[46px]
               rounded-xl
               px-2
               py-2
@@ -895,13 +960,29 @@ export function ProductCard({
             "
           >
             <Zap
-              className="h-3.5 w-3.5"
+              className="
+                h-3.5
+                w-3.5
+              "
               aria-hidden="true"
             />
 
             <span>
               Buy Now
             </span>
+
+            <ArrowRight
+              className="
+                hidden
+                h-3.5
+                w-3.5
+                transition-transform
+                duration-200
+                group-hover/buy:translate-x-0.5
+                sm:block
+              "
+              aria-hidden="true"
+            />
           </button>
 
         </div>
