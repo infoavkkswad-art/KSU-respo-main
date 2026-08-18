@@ -3,7 +3,10 @@ import {
   ArrowRight,
   Check,
   Factory,
+  Mail,
+  MessageCircle,
   Package,
+  Phone,
   Store,
   Utensils,
   Users,
@@ -1208,9 +1211,7 @@ export default function Business() {
                           "
                           aria-hidden="true"
                         >
-                          <span className="text-sm">
-                            ☎
-                          </span>
+                          <Phone className="h-4 w-4" />
                         </span>
 
                         <span className="break-all">
@@ -1259,9 +1260,7 @@ export default function Business() {
                           "
                           aria-hidden="true"
                         >
-                          <span className="text-sm">
-                            💬
-                          </span>
+                          <MessageCircle className="h-4 w-4" />
                         </span>
 
                         <span>
@@ -1308,9 +1307,7 @@ export default function Business() {
                           "
                           aria-hidden="true"
                         >
-                          <span className="text-sm">
-                            ✉
-                          </span>
+                          <Mail className="h-4 w-4" />
                         </span>
 
                         <span className="break-all">
