@@ -525,7 +525,7 @@
   }
 
   .btn-primary {
-    @apply btn bg-brand-green px-6 py-3 text-white;
+    @apply inline-flex items-center justify-center gap-2 select-none font-semibold bg-brand-green px-6 py-3 text-white;
 
     box-shadow: var(--ks-shadow-sm);
   }
@@ -538,7 +538,7 @@
   }
 
   .btn-secondary {
-    @apply btn bg-brand-brown px-6 py-3 text-white;
+    @apply inline-flex items-center justify-center gap-2 select-none font-semibold bg-brand-brown px-6 py-3 text-white;
 
     box-shadow: var(--ks-shadow-sm);
   }
@@ -551,7 +551,7 @@
   }
 
   .btn-outline {
-    @apply btn border border-brand-green/30 px-6 py-3 text-brand-green;
+    @apply inline-flex items-center justify-center gap-2 select-none font-semibold border border-brand-green/30 px-6 py-3 text-brand-green;
   }
 
   .btn-outline:hover:not(:disabled) {
@@ -562,7 +562,7 @@
   }
 
   .btn-yellow {
-    @apply btn bg-brand-saffron px-6 py-3 text-white;
+    @apply inline-flex items-center justify-center gap-2 select-none font-semibold bg-brand-saffron px-6 py-3 text-white;
   }
 
   .btn-yellow:hover:not(:disabled) {
@@ -573,7 +573,7 @@
   }
 
   .btn-ghost {
-    @apply btn px-4 py-2 text-brand-green;
+    @apply inline-flex items-center justify-center gap-2 select-none font-semibold px-4 py-2 text-brand-green;
   }
 
   .btn-ghost:hover:not(:disabled) {
@@ -583,7 +583,7 @@
   }
 
   .btn-buy {
-    @apply btn bg-brand-green px-5 py-3 text-white;
+    @apply inline-flex items-center justify-center gap-2 select-none font-semibold bg-brand-green px-5 py-3 text-white;
   }
 
   .btn-buy:hover:not(:disabled) {
@@ -594,7 +594,7 @@
   }
 
   .btn-cart {
-    @apply btn border border-brand-green/20 bg-white px-5 py-3 text-brand-green;
+    @apply inline-flex items-center justify-center gap-2 select-none font-semibold border border-brand-green/20 bg-white px-5 py-3 text-brand-green;
   }
 
   .btn-cart:hover:not(:disabled) {
@@ -653,7 +653,7 @@
   }
 
   .card-interactive {
-    @apply card;
+    @apply rounded-2xl bg-white;
 
     cursor: pointer;
   }
@@ -762,7 +762,7 @@
   }
 
   .product-card {
-    @apply card;
+    @apply rounded-2xl bg-white;
 
     overflow: hidden;
     perspective: var(--ks-perspective-card);
@@ -812,7 +812,7 @@
   }
 
   .product-badge {
-    @apply badge;
+    @apply inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-semibold uppercase tracking-wide;
 
     position: relative;
     z-index: 2;
@@ -904,35 +904,35 @@
   }
 
   .badge-red {
-    @apply badge bg-brand-red/10 text-brand-red;
+    @apply inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-semibold uppercase tracking-wide bg-brand-red/10 text-brand-red;
   }
 
   .badge-yellow {
-    @apply badge bg-brand-saffron/15 text-brand-saffron-dark;
+    @apply inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-semibold uppercase tracking-wide bg-brand-saffron/15 text-brand-saffron-dark;
   }
 
   .badge-green {
-    @apply badge bg-brand-green/10 text-brand-green;
+    @apply inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-semibold uppercase tracking-wide bg-brand-green/10 text-brand-green;
   }
 
   .badge-brown {
-    @apply badge bg-brand-brown/10 text-brand-brown;
+    @apply inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-semibold uppercase tracking-wide bg-brand-brown/10 text-brand-brown;
   }
 
   .badge-neutral {
-    @apply badge bg-black/5 text-brand-brown;
+    @apply inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-semibold uppercase tracking-wide bg-black/5 text-brand-brown;
   }
 
   .badge-bestseller {
-    @apply badge bg-brand-green text-white;
+    @apply inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-semibold uppercase tracking-wide bg-brand-green text-white;
   }
 
   .badge-new {
-    @apply badge bg-brand-saffron text-white;
+    @apply inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-semibold uppercase tracking-wide bg-brand-saffron text-white;
   }
 
   .badge-popular {
-    @apply badge bg-brand-brown text-white;
+    @apply inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-semibold uppercase tracking-wide bg-brand-brown text-white;
   }
 
   .taste-chip {
@@ -1665,7 +1665,6 @@
    ===================================================================== */
 
 @media (min-width: 640px) {
-  @layer components {
     .container-px {
       @apply px-6;
     }
@@ -1749,12 +1748,9 @@
     .story-panel {
       @apply p-8;
     }
-
-  }
 }
 
 @media (min-width: 1024px) {
-  @layer components {
     .container-px {
       @apply px-8;
     }
@@ -1802,15 +1798,10 @@
     .story-panel {
       @apply p-10;
     }
-
-  }
 }
 
 @media (min-width: 1280px) {
-  @layer components {
     .type-display {
       @apply text-7xl;
     }
-
-  }
 }
