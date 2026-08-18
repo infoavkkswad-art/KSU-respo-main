@@ -1,31 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+  ],
 
   theme: {
     extend: {
-      /*
-       * =========================================================================
-       * KAWAD SWAD 2.0
-       * CENTRAL TAILWIND DESIGN SYSTEM
-       * =========================================================================
-       *
-       * This configuration is the Tailwind-side foundation of the central
-       * design system.
-       *
-       * index.css = semantic/component system
-       * tailwind.config.js = Tailwind utility system
-       *
-       * Both must use the same visual language.
-       */
-
-      /* =======================================================================
-         BRAND COLOR SYSTEM
-         ======================================================================= */
-
       colors: {
         brand: {
-          /* Primary brand palette */
           ivory: '#F7F2E8',
           'ivory-light': '#FCFAF5',
           'ivory-dark': '#EDE3D2',
@@ -38,17 +21,14 @@ export default {
           'saffron-light': '#DDA84B',
           'saffron-dark': '#A96F18',
 
-          /* Appetite / attention accent */
           red: '#A93624',
           'red-dark': '#842719',
           'red-light': '#C95742',
 
-          /* Heritage / editorial accent */
           brown: '#5A4035',
           'brown-light': '#765B4E',
           'brown-dark': '#3D2A23',
 
-          /* Compatibility aliases */
           cream: '#F7F2E8',
           'cream-dark': '#EDE3D2',
 
@@ -59,56 +39,39 @@ export default {
           white: '#FFFFFF',
           black: '#11110F',
         },
-
-        /*
-         * Semantic aliases.
-         *
-         * These allow future pages/components to express intent rather than
-         * repeatedly choosing raw brand colors.
-         */
-        surface: {
-          page: '#F7F2E8',
-          soft: '#F2EADB',
-          card: '#FFFFFF',
-          elevated: '#FFFDF8',
-          dark: '#173C32',
-          brown: '#5A4035',
-        },
-
-        text: {
-          primary: '#3F291D',
-          secondary: '#674C3A',
-          muted: '#846F5F',
-          subtle: '#A18F80',
-          inverse: '#FFFFFF',
-          brand: '#173C32',
-          accent: '#9F6918',
-        },
-
-        border: {
-          soft: 'rgba(23, 60, 50, 0.10)',
-          DEFAULT: 'rgba(23, 60, 50, 0.15)',
-          strong: 'rgba(23, 60, 50, 0.25)',
-          saffron: 'rgba(200, 138, 42, 0.25)',
-        },
       },
 
-      /* =======================================================================
-         TYPOGRAPHY SYSTEM
-         ======================================================================= */
-
       fontFamily: {
-        sans: ['Poppins', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        sans: [
+          'Poppins',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'sans-serif',
+        ],
 
-        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        serif: [
+          '"Playfair Display"',
+          'Georgia',
+          'serif',
+        ],
 
-        devanagari: ['"Noto Sans Devanagari"', '"Noto Sans"', 'sans-serif'],
+        devanagari: [
+          '"Noto Sans Devanagari"',
+          '"Noto Sans"',
+          'sans-serif',
+        ],
       },
 
       fontSize: {
-        '2xs': ['0.625rem', { lineHeight: '0.875rem' }],
+        '2xs': [
+          '0.625rem',
+          {
+            lineHeight: '0.875rem',
+          },
+        ],
 
-        /* Large editorial / brand hierarchy */
         display: [
           'clamp(3rem, 7vw, 6.5rem)',
           {
@@ -149,7 +112,6 @@ export default {
           },
         ],
 
-        /* Behavioral hierarchy */
         'body-lg': [
           '1.125rem',
           {
@@ -172,11 +134,6 @@ export default {
         ],
       },
 
-      /* =======================================================================
-         SPACING SYSTEM
-         8-point rhythm + extended editorial spacing
-         ======================================================================= */
-
       spacing: {
         18: '4.5rem',
         22: '5.5rem',
@@ -191,15 +148,10 @@ export default {
         104: '26rem',
         120: '30rem',
 
-        /* Named design-system values */
         section: 'clamp(4rem, 8vw, 8rem)',
         'section-sm': 'clamp(2.5rem, 5vw, 4rem)',
         'section-lg': 'clamp(5rem, 10vw, 10rem)',
       },
-
-      /* =======================================================================
-         RADIUS SYSTEM
-         ======================================================================= */
 
       borderRadius: {
         '4xl': '2rem',
@@ -215,45 +167,27 @@ export default {
         'ks-pill': '9999px',
       },
 
-      /* =======================================================================
-         SHADOW / ELEVATION SYSTEM
-         ======================================================================= */
-
       boxShadow: {
-        soft:
-          '0 2px 10px -3px rgba(23, 60, 50, 0.08), 0 8px 24px -8px rgba(23, 60, 50, 0.08)',
+        soft: '0 2px 10px -3px rgba(23, 60, 50, 0.08), 0 8px 24px -8px rgba(23, 60, 50, 0.08)',
 
-        card:
-          '0 10px 30px rgba(63, 41, 29, 0.08)',
+        card: '0 10px 30px rgba(63, 41, 29, 0.08)',
 
-        'card-hover':
-          '0 18px 45px rgba(63, 41, 29, 0.13)',
+        'card-hover': '0 18px 45px rgba(63, 41, 29, 0.13)',
 
-        lift:
-          '0 18px 48px -12px rgba(23, 60, 50, 0.20), 0 6px 16px -6px rgba(23, 60, 50, 0.10)',
+        lift: '0 18px 48px -12px rgba(23, 60, 50, 0.20), 0 6px 16px -6px rgba(23, 60, 50, 0.10)',
 
-        product:
-          '0 22px 38px rgba(63, 41, 29, 0.17)',
+        product: '0 22px 38px rgba(63, 41, 29, 0.17)',
 
-        floating:
-          '0 24px 60px rgba(23, 60, 50, 0.15)',
+        floating: '0 24px 60px rgba(23, 60, 50, 0.15)',
 
-        modal:
-          '0 30px 90px rgba(23, 60, 50, 0.20)',
+        modal: '0 30px 90px rgba(23, 60, 50, 0.20)',
 
-        glow:
-          '0 0 28px -6px rgba(200, 138, 42, 0.28)',
+        glow: '0 0 28px -6px rgba(200, 138, 42, 0.28)',
 
-        'green-glow':
-          '0 12px 35px rgba(23, 60, 50, 0.20)',
+        'green-glow': '0 12px 35px rgba(23, 60, 50, 0.20)',
 
-        'inner-soft':
-          'inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(23,60,50,0.04)',
+        'inner-soft': 'inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(23,60,50,0.04)',
       },
-
-      /* =======================================================================
-         3D SYSTEM
-         ======================================================================= */
 
       perspective: {
         1000: '1000px',
@@ -262,20 +196,12 @@ export default {
         1800: '1800px',
       },
 
-      /* =======================================================================
-         TRANSFORM / 3D DEPTH
-         ======================================================================= */
-
       translate: {
         'z-1': '4px',
         'z-2': '8px',
         'z-3': '16px',
         'z-4': '24px',
       },
-
-      /* =======================================================================
-         Z-INDEX SYSTEM
-         ======================================================================= */
 
       zIndex: {
         content: '10',
@@ -288,17 +214,12 @@ export default {
         max: '999',
       },
 
-      /* =======================================================================
-         KEYFRAMES
-         ======================================================================= */
-
       keyframes: {
         'fade-up': {
           '0%': {
             opacity: '0',
             transform: 'translateY(20px)',
           },
-
           '100%': {
             opacity: '1',
             transform: 'translateY(0)',
@@ -309,7 +230,6 @@ export default {
           '0%': {
             opacity: '0',
           },
-
           '100%': {
             opacity: '1',
           },
@@ -320,7 +240,6 @@ export default {
             opacity: '0',
             transform: 'scale(0.97)',
           },
-
           '100%': {
             opacity: '1',
             transform: 'scale(1)',
@@ -332,7 +251,6 @@ export default {
             opacity: '0',
             transform: 'translateY(-8px)',
           },
-
           '100%': {
             opacity: '1',
             transform: 'translateY(0)',
@@ -344,7 +262,6 @@ export default {
             opacity: '0',
             transform: 'translateY(12px)',
           },
-
           '100%': {
             opacity: '1',
             transform: 'translateY(0)',
@@ -355,7 +272,6 @@ export default {
           '0%, 100%': {
             transform: 'translate3d(0, 0, 0) rotate(0deg)',
           },
-
           '50%': {
             transform: 'translate3d(0, -6px, 0) rotate(1deg)',
           },
@@ -365,7 +281,6 @@ export default {
           '0%, 100%': {
             transform: 'translate3d(0, 0, 0)',
           },
-
           '50%': {
             transform: 'translate3d(0, -8px, 0)',
           },
@@ -376,7 +291,6 @@ export default {
             opacity: '1',
             transform: 'scale(1)',
           },
-
           '50%': {
             opacity: '0.94',
             transform: 'scale(1.015)',
@@ -387,52 +301,24 @@ export default {
           '0%': {
             transform: 'translateX(0)',
           },
-
           '100%': {
             transform: 'translateX(-50%)',
           },
         },
       },
 
-      /* =======================================================================
-         ANIMATION SYSTEM
-         ======================================================================= */
-
       animation: {
-        'fade-up':
-          'fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-
-        'fade-in':
-          'fade-in 0.5s ease-out forwards',
-
-        'scale-in':
-          'scale-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-
-        'slide-down':
-          'slide-down 0.35s ease-out forwards',
-
-        'soft-rise':
-          'soft-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-
-        'arc-drift':
-          'arc-drift 6s ease-in-out infinite',
-
-        'ks-float':
-          'ks-float 5s ease-in-out infinite',
-
-        'ks-float-slow':
-          'ks-float 7s ease-in-out infinite',
-
-        'ks-pulse-soft':
-          'ks-pulse-soft 3s ease-in-out infinite',
-
-        marquee:
-          'marquee 30s linear infinite',
+        'fade-up': 'fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'fade-in': 'fade-in 0.5s ease-out forwards',
+        'scale-in': 'scale-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'slide-down': 'slide-down 0.35s ease-out forwards',
+        'soft-rise': 'soft-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'arc-drift': 'arc-drift 6s ease-in-out infinite',
+        'ks-float': 'ks-float 5s ease-in-out infinite',
+        'ks-float-slow': 'ks-float 7s ease-in-out infinite',
+        'ks-pulse-soft': 'ks-pulse-soft 3s ease-in-out infinite',
+        marquee: 'marquee 30s linear infinite',
       },
-
-      /* =======================================================================
-         TRANSITION SYSTEM
-         ======================================================================= */
 
       transitionTimingFunction: {
         'ks-standard': 'cubic-bezier(0.22, 1, 0.36, 1)',
@@ -441,15 +327,11 @@ export default {
       },
 
       transitionDuration: {
-        ks-fast: '160ms',
-        ks-normal: '280ms',
-        ks-slow: '500ms',
-        ks-reveal: '700ms',
+        'ks-fast': '160ms',
+        'ks-normal': '280ms',
+        'ks-slow': '500ms',
+        'ks-reveal': '700ms',
       },
-
-      /* =======================================================================
-         CONTENT WIDTH SYSTEM
-         ======================================================================= */
 
       maxWidth: {
         'content-sm': '42rem',
