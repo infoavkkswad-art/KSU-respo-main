@@ -14,10 +14,10 @@ export interface CalculatedCartItem {
   mrp: number;
 
   /*
-   * Shipping is permanently FREE at checkout.
+   * Customer-facing shipping is FREE.
    *
-   * The websitePrice supplied by the central product
-   * service is the final customer-facing product price.
+   * The final websitePrice already includes the
+   * commercial shipping component from sales-config.
    */
   shipping: 0;
   freeShipping: true;
@@ -62,7 +62,15 @@ function normalizeSku(
  *      ↓
  * Checkout
  *
- * This file MUST NOT contain product prices.
+ * THIS FILE MUST NOT CONTAIN PRODUCT PRICES.
+ *
+ * IMPORTANT:
+ *
+ * ProductService.websitePrice is already:
+ *
+ * selling price + commercial shipping
+ *
+ * Therefore this file NEVER adds shipping again.
  * ========================================================================== */
 
 export function calculateCartTotals(
@@ -74,6 +82,10 @@ export function calculateCartTotals(
   const resolvedItems: CalculatedCartItem[] =
     [];
 
+  /* --------------------------------------------------------------------------
+   * INVALID CART INPUT
+   * ------------------------------------------------------------------------ */
+
   if (!Array.isArray(items)) {
     return {
       subtotal: 0,
@@ -84,9 +96,13 @@ export function calculateCartTotals(
     };
   }
 
+  /* --------------------------------------------------------------------------
+   * RESOLVE EACH CART ITEM
+   * ------------------------------------------------------------------------ */
+
   for (const item of items) {
     /* ------------------------------------------------------------------------
-     * BASIC CART ITEM VALIDATION
+     * BASIC VALIDATION
      * ---------------------------------------------------------------------- */
 
     if (
@@ -122,8 +138,13 @@ export function calculateCartTotals(
     /* ------------------------------------------------------------------------
      * CENTRAL PRODUCT RESOLUTION
      *
-     * ProductService decides whether the SKU is currently purchasable
-     * and supplies its authoritative product data.
+     * ProductService is the authority for:
+     *
+     * - SKU validity
+     * - availability
+     * - MRP
+     * - final website price
+     * - product identity
      * ---------------------------------------------------------------------- */
 
     const result =
@@ -134,7 +155,7 @@ export function calculateCartTotals(
     if (!result) {
       /*
        * SKU is no longer purchasable.
-       * Do not include it in totals.
+       * Ignore it instead of calculating with stale data.
        */
       continue;
     }
@@ -176,9 +197,21 @@ export function calculateCartTotals(
     /* ------------------------------------------------------------------------
      * LINE TOTAL
      *
-     * websitePrice is already the final customer-facing price.
+     * websitePrice is already the FINAL customer-facing price.
      *
-     * DO NOT add shipping here.
+     * Example:
+     *
+     * Selling Price = ₹55
+     * Shipping       = ₹47
+     * Final Price    = ₹102
+     *
+     * Cart calculation:
+     *
+     * ₹102 × quantity
+     *
+     * NEVER:
+     *
+     * ₹102 + ₹47
      * ---------------------------------------------------------------------- */
 
     const itemSubtotal =
@@ -193,28 +226,60 @@ export function calculateCartTotals(
       continue;
     }
 
-    subtotal += itemSubtotal;
-    itemCount += quantity;
+    /* ------------------------------------------------------------------------
+     * SAFE ACCUMULATION
+     *
+     * Calculate the next values BEFORE changing the accumulators.
+     * This prevents partially updated totals if malformed/extreme input
+     * produces unsafe numbers.
+     * ---------------------------------------------------------------------- */
 
-    /*
-     * Protect the accumulator from malformed/extreme input.
-     */
+    const nextSubtotal =
+      subtotal + itemSubtotal;
+
+    const nextItemCount =
+      itemCount + quantity;
+
     if (
-      !Number.isFinite(subtotal) ||
-      !Number.isSafeInteger(itemCount)
+      !Number.isFinite(
+        nextSubtotal,
+      ) ||
+      nextSubtotal < 0
+    ) {
+      continue;
+    }
+
+    if (
+      !Number.isSafeInteger(
+        nextItemCount,
+      ) ||
+      nextItemCount < 0
     ) {
       continue;
     }
 
     /* ------------------------------------------------------------------------
-     * RESOLVED ITEM
+     * COMMIT ACCUMULATORS
+     * ---------------------------------------------------------------------- */
+
+    subtotal =
+      nextSubtotal;
+
+    itemCount =
+      nextItemCount;
+
+    /* ------------------------------------------------------------------------
+     * RESOLVED CUSTOMER-FACING ITEM
      * ---------------------------------------------------------------------- */
 
     resolvedItems.push({
-      sku: skuObj.sku,
+      sku:
+        skuObj.sku,
+
       quantity,
 
-      name: family.name,
+      name:
+        family.name,
 
       packSize:
         skuObj.packSize,
@@ -224,9 +289,11 @@ export function calculateCartTotals(
       mrp,
 
       /*
-       * FINAL WEBSITE RULE:
+       * Shipping is already included in websitePrice.
        *
-       * Customer-facing shipping = FREE
+       * Customer-facing checkout therefore shows:
+       *
+       * Shipping = FREE
        */
       shipping: 0,
 
@@ -235,20 +302,24 @@ export function calculateCartTotals(
   }
 
   /* ==========================================================================
-   * FINAL TOTALS
+   * FINAL CART TOTALS
    *
-   * Shipping is NOT added to the product price.
+   * CENTRAL WEBSITE RULE:
    *
-   * Customer sees:
+   * Final Website Price
+   * already includes the commercial shipping component.
    *
-   *   Product price → final website price
-   *   Shipping      → FREE
-   *   Total         → product prices × quantities
+   * Therefore:
+   *
+   * subtotal      = final website prices × quantities
+   * shippingTotal = ₹0
+   * total         = subtotal
    * ======================================================================== */
 
   const shippingTotal = 0;
 
-  const total = subtotal;
+  const total =
+    subtotal;
 
   return {
     subtotal,
