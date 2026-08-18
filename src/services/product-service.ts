@@ -7,6 +7,7 @@ import {
 
 import {
   getSalesSku,
+  getFinalWebsitePrice,
   type SalesSkuConfig,
 } from '../data/sales-config';
 
@@ -25,10 +26,9 @@ export interface FlatProductItem {
   packSize: number | string;
   mrp: number;
   websitePrice: number;
-  shipping: 0;
-  freeShipping: true;
+  shipping: number;
+  freeShipping: boolean;
   available: true;
-  featured?: boolean;
 }
 
 /* ============================================================================
@@ -40,14 +40,28 @@ export interface ProductSkuResult {
   skuObj: Sku;
 }
 
+/*
+ * Purchasable SKU contains fully resolved commercial data.
+ *
+ * IMPORTANT:
+ *
+ * websitePrice = FINAL customer-facing price
+ * shipping = actual shipping component
+ *
+ * Example:
+ *
+ * sellingPrice = ₹55
+ * shipping     = ₹47
+ * websitePrice = ₹102
+ */
 export type PurchasableSku = Omit<
   Sku,
   'mrp' | 'websitePrice' | 'available'
 > & {
   mrp: number;
   websitePrice: number;
-  shipping: 0;
-  freeShipping: true;
+  shipping: number;
+  freeShipping: boolean;
   available: true;
 };
 
@@ -74,10 +88,10 @@ function normalizeSkuCode(
  * sales-config.ts is the SINGLE authority for:
  *
  * - MRP
- * - final website price
+ * - website selling price
+ * - shipping
  * - availability
  * - pack size
- * - shipping policy
  *
  * products.ts remains responsible for:
  *
@@ -102,11 +116,9 @@ function getSalesConfig(
 /* ============================================================================
  * RESOLVE SKU
  *
- * This function deliberately keeps the nullable base Sku type.
+ * General catalog lookup.
  *
- * It is used for general catalog lookup.
- *
- * Purchasable operations MUST use toPurchasableSku().
+ * The commercial values always come from sales-config.ts.
  * ========================================================================== */
 
 function resolveSku(
@@ -117,6 +129,41 @@ function resolveSku(
 
   if (!sales) {
     return undefined;
+  }
+
+  const finalWebsitePrice =
+    getFinalWebsitePrice(
+      sales.sku,
+    );
+
+  if (
+    sales.mrp === null ||
+    sales.sellingPrice === null ||
+    finalWebsitePrice === null
+  ) {
+    return {
+      ...sku,
+
+      sku: sales.sku,
+
+      packSize:
+        sales.packSize,
+
+      mrp:
+        sales.mrp,
+
+      websitePrice:
+        null,
+
+      shipping:
+        sales.shipping,
+
+      freeShipping:
+        sales.shipping === 0,
+
+      available:
+        sales.available,
+    };
   }
 
   return {
@@ -130,12 +177,19 @@ function resolveSku(
     mrp:
       sales.mrp,
 
+    /*
+     * FINAL customer-facing website price.
+     *
+     * sellingPrice + shipping
+     */
     websitePrice:
-      sales.sellingPrice,
+      finalWebsitePrice,
 
-    shipping: 0,
+    shipping:
+      sales.shipping,
 
-    freeShipping: true,
+    freeShipping:
+      sales.shipping === 0,
 
     available:
       sales.available,
@@ -150,18 +204,11 @@ function resolveSku(
  * 1. It exists in sales-config.
  * 2. It is marked available.
  * 3. It has a numeric MRP.
- * 4. It has a numeric website selling price.
- * 5. Price values are non-negative.
+ * 4. It has a numeric selling price.
+ * 5. It has valid shipping.
+ * 6. Its final website price can be calculated.
  *
- * IMPORTANT:
- *
- * We intentionally DO NOT reject a SKU here merely because
- * websitePrice > MRP.
- *
- * That relationship is a product/legal-master issue that must
- * be resolved in the sales master and physical packaging.
- *
- * The service must not silently make a configured SKU disappear.
+ * We do NOT silently reject a SKU because final price > MRP here.
  * ========================================================================== */
 
 function isPurchasableSku(
@@ -203,6 +250,30 @@ function isPurchasableSku(
     return false;
   }
 
+  if (
+    !Number.isFinite(
+      sales.shipping,
+    ) ||
+    sales.shipping < 0
+  ) {
+    return false;
+  }
+
+  const finalWebsitePrice =
+    getFinalWebsitePrice(
+      sales.sku,
+    );
+
+  if (
+    finalWebsitePrice === null ||
+    !Number.isFinite(
+      finalWebsitePrice,
+    ) ||
+    finalWebsitePrice < 0
+  ) {
+    return false;
+  }
+
   return true;
 }
 
@@ -230,6 +301,17 @@ function toPurchasableSku(
     return undefined;
   }
 
+  const finalWebsitePrice =
+    getFinalWebsitePrice(
+      sales.sku,
+    );
+
+  if (
+    finalWebsitePrice === null
+  ) {
+    return undefined;
+  }
+
   return {
     ...sku,
 
@@ -242,12 +324,20 @@ function toPurchasableSku(
     mrp:
       sales.mrp,
 
+    /*
+     * Final customer-facing price.
+     */
     websitePrice:
-      sales.sellingPrice,
+      finalWebsitePrice,
 
-    shipping: 0,
+    /*
+     * Actual shipping component.
+     */
+    shipping:
+      sales.shipping,
 
-    freeShipping: true,
+    freeShipping:
+      sales.shipping === 0,
 
     available: true,
   };
@@ -453,7 +543,7 @@ export const ProductService = {
   },
 
   /* --------------------------------------------------------------------------
-     WEBSITE PRICE
+     FINAL WEBSITE PRICE
   -------------------------------------------------------------------------- */
 
   getWebsitePrice(
@@ -470,6 +560,47 @@ export const ProductService = {
     return result
       ?.skuObj
       .websitePrice;
+  },
+
+  /* --------------------------------------------------------------------------
+     SHIPPING
+  -------------------------------------------------------------------------- */
+
+  getShipping(
+    skuCode: string,
+  ): number {
+    const result =
+      ProductService
+        .getPurchasableProductBySku(
+          skuCode,
+        );
+
+    return (
+      result?.skuObj
+        .shipping ?? 0
+    );
+  },
+
+  /* --------------------------------------------------------------------------
+     SELLING PRICE BEFORE SHIPPING
+  -------------------------------------------------------------------------- */
+
+  getSellingPrice(
+    skuCode: string,
+  ):
+    | number
+    | undefined {
+    const sales =
+      getSalesSku(
+        normalizeSkuCode(
+          skuCode,
+        ),
+      );
+
+    return (
+      sales?.sellingPrice ??
+      undefined
+    );
   },
 
   /* --------------------------------------------------------------------------
@@ -632,12 +763,20 @@ export const ProductService = {
           mrp:
             sku.mrp,
 
+          /*
+           * Final customer-facing price.
+           */
           websitePrice:
             sku.websitePrice,
 
-          shipping: 0,
+          /*
+           * Actual shipping component.
+           */
+          shipping:
+            sku.shipping,
 
-          freeShipping: true,
+          freeShipping:
+            sku.freeShipping,
 
           available: true,
 
@@ -706,6 +845,7 @@ export const ProductService = {
           );
 
         /* Duplicate SKU */
+
         if (
           seenSkus.has(
             normalizedSku,
@@ -721,6 +861,7 @@ export const ProductService = {
         );
 
         /* Sales configuration */
+
         const sales =
           getSalesConfig(
             sku,
@@ -734,6 +875,7 @@ export const ProductService = {
         }
 
         /* SKU identity */
+
         if (
           sales.sku !==
           normalizedSku
@@ -743,40 +885,50 @@ export const ProductService = {
           );
         }
 
-        /* Pack size */
+        /*
+         * Pack size:
+         *
+         * sales-config is authoritative.
+         */
+
         if (
           sales.packSize !==
           sku.packSize
         ) {
-          /*
-           * The sales master is authoritative,
-           * therefore this is reported rather than
-           * allowing stale product data to win.
-           */
           errors.push(
             `${sku.sku}: product pack size does not match sales configuration`,
           );
         }
 
-        /* Shipping policy */
+        /* Shipping */
+
         if (
-          sales.shipping !== 0
+          !Number.isFinite(
+            sales.shipping,
+          ) ||
+          sales.shipping < 0
         ) {
           errors.push(
-            `${sku.sku}: shipping must be 0`,
+            `${sku.sku}: shipping must be a valid non-negative number`,
           );
         }
 
+        /*
+         * Free shipping must be derived from the actual
+         * shipping value.
+         */
+
         if (
           sales.freeShipping !==
-          true
+          (sales.shipping === 0)
         ) {
           errors.push(
-            `${sku.sku}: freeShipping must be true`,
+            `${sku.sku}: freeShipping does not match shipping`,
           );
         }
 
         /* Available SKU must have values */
+
         if (
           sales.available &&
           sales.sellingPrice ===
@@ -797,6 +949,7 @@ export const ProductService = {
         }
 
         /* Numeric MRP */
+
         if (
           sales.mrp !== null &&
           (
@@ -812,6 +965,7 @@ export const ProductService = {
         }
 
         /* Numeric selling price */
+
         if (
           sales.sellingPrice !==
             null &&
@@ -826,7 +980,42 @@ export const ProductService = {
             `${sku.sku}: sellingPrice must be a valid non-negative number`,
           );
         }
+
+        /*
+         * Final website price must be calculable.
+         */
+
+        const finalPrice =
+          getFinalWebsitePrice(
+            sales.sku,
+          );
+
+        if (
+          sales.available &&
+          finalPrice === null
+        ) {
+          errors.push(
+            `${sku.sku}: final website price could not be calculated`,
+          );
+        }
       }
+    }
+
+    /*
+     * The central commercial master currently contains 43 SKUs.
+     */
+
+    const salesSkuCount =
+      Object.keys(
+        requireSalesSkuKeys(),
+      ).length;
+
+    if (
+      salesSkuCount !== 43
+    ) {
+      errors.push(
+        `Central sales configuration should contain 43 SKUs, found ${salesSkuCount}`,
+      );
     }
 
     return {
@@ -836,3 +1025,49 @@ export const ProductService = {
     };
   },
 };
+
+/* ============================================================================
+ * INTERNAL SALES SKU COUNT HELPER
+ * ============================================================================
+ *
+ * Kept here to avoid exposing the complete SALES_SKUS object through the
+ * service API.
+ * ========================================================================== */
+
+function requireSalesSkuKeys(): Record<
+  string,
+  unknown
+> {
+  /*
+   * We already know getSalesSku is the central resolver.
+   *
+   * This helper intentionally checks the expected SKU list through the
+   * product catalogue rather than maintaining a second SKU list here.
+   */
+
+  const keys: Record<
+    string,
+    unknown
+  > = {};
+
+  for (const product of
+    products) {
+    for (const sku of
+      product.skus) {
+      const normalized =
+        normalizeSkuCode(
+          sku.sku,
+        );
+
+      if (
+        getSalesSku(
+          normalized,
+        )
+      ) {
+        keys[normalized] = true;
+      }
+    }
+  }
+
+  return keys;
+}
