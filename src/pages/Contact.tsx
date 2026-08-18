@@ -1,17 +1,5 @@
-import { useState } from 'react';
-import { SEO, breadcrumbSchema } from '@/components/SEO';
-import {
-  FormField,
-  FormStatusMessage,
-  SubmitButton,
-  useFormState,
-  validators,
-  FormContainer,
-} from '@/components/Form';
-import { Reveal } from '@/components/Reveal';
-import { brand } from '@/data/brand';
-import { apiClient } from '@/services/api-client';
-
+import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Instagram,
@@ -22,16 +10,39 @@ import {
   Youtube,
 } from 'lucide-react';
 
+import { SEO, breadcrumbSchema } from '@/components/SEO';
+import {
+  FormContainer,
+  FormField,
+  FormStatusMessage,
+  SubmitButton,
+  useFormState,
+  validators,
+} from '@/components/Form';
+import { Reveal } from '@/components/Reveal';
+import { brand } from '@/data/brand';
+import { apiClient } from '@/services/api-client';
+
 
 /* ==========================================================================
    KAWAD SWAD 2.0
    CONTACT PAGE
 
-   Flow:
+   Conversion flow:
    HERO → ENQUIRY → DIRECT CONTACT → SOCIAL → BUSINESS
 
-   Important:
-   The enquiry/API workflow remains unchanged.
+   Central design system:
+   - Green   = trust / primary authority
+   - Saffron = action / appetite
+   - Ivory   = editorial canvas
+   - Brown   = heritage / premium contrast
+
+   FUNCTIONALITY PRESERVED:
+   - Existing enquiry API
+   - Existing validation
+   - Existing enquiry ID
+   - Existing contact information
+   - Existing SEO
    ========================================================================== */
 
 
@@ -63,9 +74,7 @@ export default function Contact() {
      FORM SUBMISSION
      ====================================================================== */
 
-  const submit = async (
-    e: React.FormEvent,
-  ) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
 
     setErrorMessage(null);
@@ -94,8 +103,7 @@ export default function Contact() {
       const res =
         await apiClient.createEnquiry({
           type: 'general',
-          contactPerson:
-            form.values.name,
+          contactPerson: form.values.name,
           phone: form.values.phone
             ? form.values.phone
             : undefined,
@@ -108,9 +116,7 @@ export default function Contact() {
           idempotencyKey,
         });
 
-      setEnquiryId(
-        res.enquiryId,
-      );
+      setEnquiryId(res.enquiryId);
 
       form.setStatus('success');
       form.reset();
@@ -126,10 +132,9 @@ export default function Contact() {
   };
 
 
-  const whatsappMsg =
-    encodeURIComponent(
-      'Hello Kawad Swad, I have a question.',
-    );
+  const whatsappMsg = encodeURIComponent(
+    'Hello Kawad Swad, I have a question.',
+  );
 
 
   return (
@@ -162,11 +167,11 @@ export default function Contact() {
         <div
           className="
             relative
-            min-h-[340px]
+            min-h-[380px]
             w-full
             bg-brand-green
-            sm:min-h-[420px]
-            lg:min-h-[500px]
+            sm:min-h-[460px]
+            lg:min-h-[540px]
           "
         >
           <img
@@ -184,30 +189,56 @@ export default function Contact() {
             "
           />
 
-          {/* Primary readable overlay */}
           <div
             className="
               pointer-events-none
               absolute
               inset-0
               bg-gradient-to-r
-              from-brand-green/90
-              via-brand-green/60
-              to-brand-green/15
+              from-brand-green/95
+              via-brand-green/65
+              to-brand-green/10
             "
             aria-hidden="true"
           />
 
-          {/* Bottom depth */}
           <div
             className="
               pointer-events-none
               absolute
               inset-0
               bg-gradient-to-t
-              from-brand-green/35
+              from-brand-green/45
               via-transparent
               to-transparent
+            "
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              bg-dots
+              opacity-[0.05]
+            "
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              -right-24
+              -top-24
+              h-64
+              w-64
+              rounded-full
+              border
+              border-brand-saffron/15
+              sm:h-80
+              sm:w-80
             "
             aria-hidden="true"
           />
@@ -218,16 +249,16 @@ export default function Contact() {
               container-px
               relative
               flex
-              min-h-[340px]
+              min-h-[380px]
               items-center
-              sm:min-h-[420px]
-              lg:min-h-[500px]
+              sm:min-h-[460px]
+              lg:min-h-[540px]
             "
           >
             <Reveal>
               <div
                 className="
-                  max-w-3xl
+                  max-w-4xl
                   py-14
                   sm:py-16
                   lg:py-20
@@ -236,7 +267,7 @@ export default function Contact() {
                 <span
                   className="
                     section-eyebrow
-                    mb-3
+                    mb-4
                     block
                     text-brand-saffron
                   "
@@ -266,7 +297,7 @@ export default function Contact() {
                   className="
                     text-pretty
                     mt-5
-                    max-w-xl
+                    max-w-2xl
                     text-sm
                     leading-relaxed
                     text-white/80
@@ -278,6 +309,27 @@ export default function Contact() {
                   order support request, or business enquiry,
                   reach out and our team will be happy to help.
                 </p>
+
+                <div
+                  className="
+                    mt-6
+                    flex
+                    flex-wrap
+                    gap-2.5
+                  "
+                >
+                  <span className="badge bg-white/10 text-white">
+                    Questions
+                  </span>
+
+                  <span className="badge bg-white/10 text-white">
+                    Order Support
+                  </span>
+
+                  <span className="badge bg-white/10 text-white">
+                    Business Enquiries
+                  </span>
+                </div>
               </div>
             </Reveal>
           </div>
@@ -291,13 +343,27 @@ export default function Contact() {
 
       <section
         className="
+          relative
+          overflow-hidden
           bg-brand-ivory
-          py-12
-          sm:py-16
-          lg:py-20
+          py-14
+          sm:py-18
+          lg:py-24
         "
+        aria-labelledby="contact-form-title"
       >
-        <div className="container-max container-px">
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            bg-warm-glow
+            opacity-50
+          "
+          aria-hidden="true"
+        />
+
+        <div className="container-max container-px relative">
 
           <div
             className="
@@ -323,15 +389,26 @@ export default function Contact() {
                   p-5
                   shadow-card
                   sm:p-8
-                  lg:p-9
+                  lg:p-10
                 "
               >
-                <div className="mb-7">
+
+                <div
+                  className="
+                    mb-7
+                    border-b
+                    border-brand-green/10
+                    pb-6
+                    sm:mb-8
+                    sm:pb-7
+                  "
+                >
                   <span className="section-eyebrow mb-2 block">
                     Send an Enquiry
                   </span>
 
                   <h2
+                    id="contact-form-title"
                     className="
                       text-balance
                       font-serif
@@ -347,11 +424,12 @@ export default function Contact() {
                   <p
                     className="
                       text-pretty
-                      mt-2
+                      mt-3
                       max-w-xl
                       text-sm
                       leading-relaxed
                       text-brand-brown/60
+                      sm:text-base
                     "
                   >
                     Fill in the form and we will get back
@@ -360,9 +438,9 @@ export default function Contact() {
                 </div>
 
 
-                {/* --------------------------------------------------------------
+                {/* ==============================================================
                     SUCCESS
-                    ----------------------------------------------------------- */}
+                    =========================================================== */}
 
                 {form.status === 'success' && (
                   <div
@@ -373,7 +451,7 @@ export default function Contact() {
                       border-green-200
                       bg-green-50
                       p-4
-                      text-green-800
+                      shadow-soft
                     "
                     role="status"
                   >
@@ -381,6 +459,7 @@ export default function Contact() {
                       className="
                         text-sm
                         font-semibold
+                        text-green-800
                       "
                     >
                       Your message has been received.
@@ -390,7 +469,7 @@ export default function Contact() {
                     {enquiryId && (
                       <p
                         className="
-                          mt-1
+                          mt-2
                           break-all
                           font-mono
                           text-xs
@@ -404,9 +483,9 @@ export default function Contact() {
                 )}
 
 
-                {/* --------------------------------------------------------------
+                {/* ==============================================================
                     ERROR
-                    ----------------------------------------------------------- */}
+                    =========================================================== */}
 
                 {form.status === 'error' &&
                   errorMessage && (
@@ -419,9 +498,9 @@ export default function Contact() {
                   )}
 
 
-                {/* --------------------------------------------------------------
+                {/* ==============================================================
                     FORM
-                    ----------------------------------------------------------- */}
+                    =========================================================== */}
 
                 <form
                   onSubmit={submit}
@@ -439,40 +518,34 @@ export default function Contact() {
                       <FormField
                         label="Name"
                         name="name"
-                        value={
-                          form.values.name
-                        }
+                        value={form.values.name}
                         onChange={(value) =>
                           form.setValue(
                             'name',
                             value,
                           )
                         }
-                        error={
-                          form.errors.name
-                        }
+                        error={form.errors.name}
                         required
                         placeholder="Your name"
+                        autoComplete="name"
                       />
 
                       <FormField
                         label="Email"
                         name="email"
                         type="email"
-                        value={
-                          form.values.email
-                        }
+                        value={form.values.email}
                         onChange={(value) =>
                           form.setValue(
                             'email',
                             value,
                           )
                         }
-                        error={
-                          form.errors.email
-                        }
+                        error={form.errors.email}
                         required
                         placeholder="you@domain.com"
+                        autoComplete="email"
                       />
                     </div>
 
@@ -488,9 +561,7 @@ export default function Contact() {
                         label="Phone (optional)"
                         name="phone"
                         type="tel"
-                        value={
-                          form.values.phone
-                        }
+                        value={form.values.phone}
                         onChange={(value) =>
                           form.setValue(
                             'phone',
@@ -498,15 +569,14 @@ export default function Contact() {
                           )
                         }
                         placeholder="10-digit phone"
+                        autoComplete="tel"
                       />
 
                       <FormField
                         label="Subject"
                         name="subject"
                         type="select"
-                        value={
-                          form.values.subject
-                        }
+                        value={form.values.subject}
                         onChange={(value) =>
                           form.setValue(
                             'subject',
@@ -529,18 +599,14 @@ export default function Contact() {
                       label="Message"
                       name="message"
                       type="textarea"
-                      value={
-                        form.values.message
-                      }
+                      value={form.values.message}
                       onChange={(value) =>
                         form.setValue(
                           'message',
                           value,
                         )
                       }
-                      error={
-                        form.errors.message
-                      }
+                      error={form.errors.message}
                       required
                       rows={5}
                       placeholder="How can we help?"
@@ -549,13 +615,39 @@ export default function Contact() {
                   </FormContainer>
 
 
-                  <div className="mt-6">
+                  <div
+                    className="
+                      mt-6
+                      flex
+                      flex-col
+                      gap-3
+                      border-t
+                      border-brand-green/10
+                      pt-6
+                      sm:mt-7
+                      sm:pt-7
+                    "
+                  >
                     <SubmitButton
                       status={form.status}
                       label="Send Message"
                     />
+
+                    <p
+                      className="
+                        text-center
+                        text-[11px]
+                        leading-relaxed
+                        text-brand-brown/40
+                        sm:text-left
+                      "
+                    >
+                      Your enquiry will be securely sent to
+                      the Kawad Swad team.
+                    </p>
                   </div>
                 </form>
+
               </div>
             </Reveal>
 
@@ -573,9 +665,9 @@ export default function Contact() {
               aria-label="Contact information"
             >
 
-              {/* --------------------------------------------------------------
+              {/* ================================================================
                   DIRECT CONTACT
-                  ----------------------------------------------------------- */}
+                  ============================================================= */}
 
               <Reveal delay={100}>
                 <div
@@ -608,6 +700,7 @@ export default function Contact() {
                   <div className="space-y-3">
 
                     {/* Phone */}
+
                     <a
                       href={`tel:${brand.phoneRaw}`}
                       className="
@@ -624,7 +717,7 @@ export default function Contact() {
                         transition-all
                         duration-300
                         hover:-translate-y-0.5
-                        hover:border-brand-green/10
+                        hover:border-brand-saffron/20
                         hover:shadow-soft
                         focus:outline-none
                         focus-visible:ring-2
@@ -670,10 +763,25 @@ export default function Contact() {
                           {brand.phone}
                         </p>
                       </div>
+
+                      <ArrowRight
+                        className="
+                          ml-auto
+                          h-4
+                          w-4
+                          shrink-0
+                          text-brand-brown/20
+                          transition-transform
+                          group-hover:translate-x-0.5
+                          group-hover:text-brand-saffron
+                        "
+                        aria-hidden="true"
+                      />
                     </a>
 
 
                     {/* WhatsApp */}
+
                     <a
                       href={`https://wa.me/${brand.phoneRaw}?text=${whatsappMsg}`}
                       target="_blank"
@@ -738,10 +846,24 @@ export default function Contact() {
                           {brand.phone}
                         </p>
                       </div>
+
+                      <ArrowRight
+                        className="
+                          ml-auto
+                          h-4
+                          w-4
+                          shrink-0
+                          text-green-600/40
+                          transition-transform
+                          group-hover:translate-x-0.5
+                        "
+                        aria-hidden="true"
+                      />
                     </a>
 
 
                     {/* Email */}
+
                     <a
                       href={`mailto:${brand.email}`}
                       className="
@@ -758,7 +880,7 @@ export default function Contact() {
                         transition-all
                         duration-300
                         hover:-translate-y-0.5
-                        hover:border-brand-green/10
+                        hover:border-brand-saffron/20
                         hover:shadow-soft
                         focus:outline-none
                         focus-visible:ring-2
@@ -804,10 +926,25 @@ export default function Contact() {
                           {brand.email}
                         </p>
                       </div>
+
+                      <ArrowRight
+                        className="
+                          ml-auto
+                          h-4
+                          w-4
+                          shrink-0
+                          text-brand-brown/20
+                          transition-transform
+                          group-hover:translate-x-0.5
+                          group-hover:text-brand-saffron
+                        "
+                        aria-hidden="true"
+                      />
                     </a>
 
 
                     {/* Location */}
+
                     <div
                       className="
                         flex
@@ -865,9 +1002,9 @@ export default function Contact() {
               </Reveal>
 
 
-              {/* --------------------------------------------------------------
+              {/* ================================================================
                   SOCIAL
-                  ----------------------------------------------------------- */}
+                  ============================================================= */}
 
               <Reveal delay={150}>
                 <div
@@ -909,7 +1046,7 @@ export default function Contact() {
                         min-h-[68px]
                         min-w-0
                         items-center
-                        gap-2
+                        gap-2.5
                         rounded-2xl
                         border
                         border-brand-green/5
@@ -918,6 +1055,7 @@ export default function Contact() {
                         transition-all
                         duration-300
                         hover:-translate-y-0.5
+                        hover:border-brand-saffron/15
                         hover:shadow-soft
                         focus:outline-none
                         focus-visible:ring-2
@@ -969,7 +1107,7 @@ export default function Contact() {
                         min-h-[68px]
                         min-w-0
                         items-center
-                        gap-2
+                        gap-2.5
                         rounded-2xl
                         border
                         border-brand-green/5
@@ -978,6 +1116,7 @@ export default function Contact() {
                         transition-all
                         duration-300
                         hover:-translate-y-0.5
+                        hover:border-brand-saffron/15
                         hover:shadow-soft
                         focus:outline-none
                         focus-visible:ring-2
@@ -1023,9 +1162,9 @@ export default function Contact() {
               </Reveal>
 
 
-              {/* --------------------------------------------------------------
+              {/* ================================================================
                   BUSINESS ENQUIRY
-                  ----------------------------------------------------------- */}
+                  ============================================================= */}
 
               <Reveal delay={200}>
                 <div
@@ -1034,19 +1173,19 @@ export default function Contact() {
                     overflow-hidden
                     rounded-3xl
                     bg-brand-brown
-                    p-5
-                    shadow-card
-                    sm:p-6
+                    p-6
+                    shadow-lift
+                    sm:p-7
                   "
                 >
                   <div
                     className="
                       pointer-events-none
                       absolute
-                      -right-12
-                      -top-12
-                      h-32
-                      w-32
+                      -right-16
+                      -top-16
+                      h-44
+                      w-44
                       rounded-full
                       border
                       border-brand-saffron/20
@@ -1066,6 +1205,7 @@ export default function Contact() {
                   />
 
                   <div className="relative">
+
                     <span
                       className="
                         mb-2
@@ -1082,7 +1222,6 @@ export default function Contact() {
 
                     <h2
                       className="
-                        mb-2
                         font-serif
                         text-xl
                         font-bold
@@ -1094,7 +1233,7 @@ export default function Contact() {
 
                     <p
                       className="
-                        mb-4
+                        mt-2
                         text-sm
                         leading-relaxed
                         text-brand-cream/70
@@ -1104,39 +1243,23 @@ export default function Contact() {
                       Visit our Business Hub.
                     </p>
 
-                    <a
-                      href="/business"
+                    <Link
+                      to="/business"
                       className="
-                        inline-flex
-                        min-h-[38px]
-                        items-center
-                        gap-1
-                        rounded-full
-                        bg-brand-saffron
-                        px-4
-                        py-2
-                        text-xs
-                        font-semibold
-                        text-white
-                        transition-all
-                        duration-300
-                        hover:bg-brand-saffron-dark
-                        hover:gap-2
-                        hover:shadow-glow
-                        focus:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-brand-saffron
-                        focus-visible:ring-offset-2
-                        focus-visible:ring-offset-brand-brown
+                        btn-yellow
+                        mt-5
+                        min-h-[44px]
+                        px-5
                       "
                     >
                       Visit Business Hub
 
                       <ArrowRight
-                        className="h-3.5 w-3.5"
+                        className="h-4 w-4"
                         aria-hidden="true"
                       />
-                    </a>
+                    </Link>
+
                   </div>
                 </div>
               </Reveal>
