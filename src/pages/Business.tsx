@@ -22,13 +22,21 @@ import { brand } from '@/data/brand';
    HERO → BUSINESS PATHWAYS → WHO WE SERVE
    → WHY PARTNER → DIRECT SUPPORT → CTA
 
-   Design system:
-   - Green = trust / primary navigation
+   CENTRAL DESIGN SYSTEM
+   - Green   = trust / primary authority
    - Saffron = commercial action / appetite
-   - Ivory = editorial canvas
-   - Brown = premium contrast surface
+   - Ivory   = editorial canvas
+   - Brown   = heritage / premium contrast
+
+   IMPORTANT
+   This page intentionally uses the shared design tokens already established
+   across the Kawad Swad 2.0 system. No new page-specific design classes.
    ========================================================================== */
 
+
+/* ==========================================================================
+   ASSETS
+   ========================================================================== */
 
 const BUSINESS_HERO_IMAGE =
   '/images/pages/business-hero.png';
@@ -128,11 +136,11 @@ export default function Business() {
         <div
           className="
             relative
-            min-h-[360px]
+            min-h-[400px]
             w-full
             bg-brand-green
-            sm:min-h-[430px]
-            lg:min-h-[520px]
+            sm:min-h-[480px]
+            lg:min-h-[580px]
           "
         >
           <img
@@ -156,8 +164,8 @@ export default function Business() {
               absolute
               inset-0
               bg-gradient-to-r
-              from-brand-green/90
-              via-brand-green/60
+              from-brand-green/95
+              via-brand-green/65
               to-brand-green/10
             "
             aria-hidden="true"
@@ -169,9 +177,37 @@ export default function Business() {
               absolute
               inset-0
               bg-gradient-to-t
-              from-brand-green/30
+              from-brand-green/45
               via-transparent
               to-transparent
+            "
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              bg-dots
+              opacity-[0.05]
+            "
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              -right-28
+              -top-28
+              h-72
+              w-72
+              rounded-full
+              border
+              border-brand-saffron/15
+              sm:h-96
+              sm:w-96
             "
             aria-hidden="true"
           />
@@ -182,16 +218,16 @@ export default function Business() {
               container-px
               relative
               flex
-              min-h-[360px]
+              min-h-[400px]
               items-center
-              sm:min-h-[430px]
-              lg:min-h-[520px]
+              sm:min-h-[480px]
+              lg:min-h-[580px]
             "
           >
             <Reveal>
               <div
                 className="
-                  max-w-3xl
+                  max-w-4xl
                   py-14
                   sm:py-16
                   lg:py-20
@@ -200,7 +236,7 @@ export default function Business() {
                 <span
                   className="
                     section-eyebrow
-                    mb-3
+                    mb-4
                     block
                     text-brand-saffron
                   "
@@ -230,7 +266,7 @@ export default function Business() {
                   className="
                     text-pretty
                     mt-5
-                    max-w-xl
+                    max-w-2xl
                     text-sm
                     leading-relaxed
                     text-white/80
@@ -243,6 +279,28 @@ export default function Business() {
                   businesses. Find the right commercial
                   pathway for your needs.
                 </p>
+
+                <div
+                  className="
+                    mt-7
+                    flex
+                    flex-wrap
+                    gap-2.5
+                    sm:gap-3
+                  "
+                >
+                  <span className="badge bg-white/10 text-white">
+                    Bulk Supply
+                  </span>
+
+                  <span className="badge bg-white/10 text-white">
+                    Distribution
+                  </span>
+
+                  <span className="badge bg-white/10 text-white">
+                    Commercial Support
+                  </span>
+                </div>
               </div>
             </Reveal>
           </div>
@@ -257,8 +315,8 @@ export default function Business() {
       <section
         className="
           bg-brand-ivory
-          py-12
-          sm:py-16
+          py-14
+          sm:py-18
           lg:py-24
         "
         aria-labelledby="business-pathways-title"
@@ -270,12 +328,12 @@ export default function Business() {
               className="
                 mx-auto
                 mb-10
-                max-w-2xl
+                max-w-3xl
                 text-center
-                sm:mb-12
+                sm:mb-14
               "
             >
-              <span className="section-eyebrow mb-2 block">
+              <span className="section-eyebrow mb-3 block">
                 Business Hub
               </span>
 
@@ -296,8 +354,8 @@ export default function Business() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-3
-                  max-w-xl
+                  mt-4
+                  max-w-2xl
                   text-sm
                   leading-relaxed
                   text-brand-brown/65
@@ -312,7 +370,7 @@ export default function Business() {
           </Reveal>
 
 
-          <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
+          <div className="grid gap-5 lg:grid-cols-12 lg:gap-6">
 
             {/* ==================================================================
                 PRIMARY PATHWAY
@@ -320,11 +378,12 @@ export default function Business() {
 
             <div className="lg:col-span-8">
               <Reveal className="h-full">
-                <div
+                <article
                   className="
                     relative
                     flex
                     h-full
+                    min-h-[360px]
                     flex-col
                     justify-between
                     overflow-hidden
@@ -334,7 +393,7 @@ export default function Business() {
                     text-brand-cream
                     shadow-lift
                     sm:p-8
-                    lg:p-12
+                    lg:p-10
                   "
                 >
                   <div
@@ -397,6 +456,7 @@ export default function Business() {
                         border-white/10
                         bg-white/10
                         text-brand-saffron
+                        shadow-soft
                       "
                       aria-hidden="true"
                     >
@@ -405,7 +465,6 @@ export default function Business() {
 
                     <h3
                       className="
-                        mb-4
                         text-balance
                         font-serif
                         text-2xl
@@ -419,9 +478,9 @@ export default function Business() {
 
                     <p
                       className="
-                        mb-8
-                        max-w-xl
                         text-pretty
+                        mt-4
+                        max-w-xl
                         text-sm
                         leading-relaxed
                         text-brand-cream/80
@@ -436,7 +495,7 @@ export default function Business() {
                     </p>
                   </div>
 
-                  <div className="relative">
+                  <div className="relative mt-8">
                     <Link
                       to="/bulk-orders"
                       className="
@@ -449,10 +508,14 @@ export default function Business() {
                       "
                     >
                       Request Bulk Supply
-                      <ArrowRight className="h-4 w-4" />
+
+                      <ArrowRight
+                        className="h-4 w-4"
+                        aria-hidden="true"
+                      />
                     </Link>
                   </div>
-                </div>
+                </article>
               </Reveal>
             </div>
 
@@ -466,11 +529,12 @@ export default function Business() {
                 delay={100}
                 className="h-full"
               >
-                <div
+                <article
                   className="
                     card
                     flex
                     h-full
+                    min-h-[360px]
                     flex-col
                     justify-between
                     border
@@ -524,7 +588,6 @@ export default function Business() {
 
                     <h3
                       className="
-                        mb-3
                         text-balance
                         font-serif
                         text-xl
@@ -537,8 +600,8 @@ export default function Business() {
 
                     <p
                       className="
-                        mb-6
                         text-pretty
+                        mt-3
                         text-sm
                         leading-relaxed
                         text-brand-brown/70
@@ -554,6 +617,7 @@ export default function Business() {
                     to="/distributor"
                     className="
                       group
+                      mt-8
                       inline-flex
                       min-h-[44px]
                       items-center
@@ -575,12 +639,13 @@ export default function Business() {
                     "
                   >
                     Explore Distribution
+
                     <ArrowRight
                       className="h-4 w-4"
                       aria-hidden="true"
                     />
                   </Link>
-                </div>
+                </article>
               </Reveal>
             </div>
 
@@ -599,17 +664,15 @@ export default function Business() {
                     className="lg:col-span-4"
                   >
                     <Reveal
-                      delay={
-                        150 +
-                        index * 50
-                      }
+                      delay={150 + index * 50}
                       className="h-full"
                     >
-                      <div
+                      <article
                         className="
                           card
                           flex
                           h-full
+                          min-h-[290px]
                           flex-col
                           justify-between
                           border
@@ -647,7 +710,6 @@ export default function Business() {
 
                           <h3
                             className="
-                              mb-3
                               text-balance
                               font-serif
                               text-xl
@@ -660,8 +722,8 @@ export default function Business() {
 
                           <p
                             className="
-                              mb-6
                               text-pretty
+                              mt-3
                               text-sm
                               leading-relaxed
                               text-brand-brown/70
@@ -701,7 +763,7 @@ export default function Business() {
                             aria-hidden="true"
                           />
                         </Link>
-                      </div>
+                      </article>
                     </Reveal>
                   </div>
                 );
@@ -755,6 +817,23 @@ export default function Business() {
               >
                 Partners across the food ecosystem
               </h2>
+
+              <p
+                className="
+                  text-pretty
+                  mx-auto
+                  mt-4
+                  max-w-xl
+                  text-sm
+                  leading-relaxed
+                  text-brand-brown/65
+                  sm:text-base
+                "
+              >
+                From retail shelves to professional kitchens,
+                our commercial model is designed around
+                dependable product supply.
+              </p>
             </div>
           </Reveal>
 
@@ -775,9 +854,14 @@ export default function Business() {
                   key={target}
                   delay={index * 50}
                 >
-                  <div
+                  <article
                     className="
                       card
+                      flex
+                      h-full
+                      flex-col
+                      items-center
+                      justify-center
                       border
                       border-brand-green/10
                       bg-white
@@ -793,7 +877,6 @@ export default function Business() {
                   >
                     <div
                       className="
-                        mx-auto
                         mb-3
                         flex
                         h-10
@@ -819,7 +902,7 @@ export default function Business() {
                     >
                       {target}
                     </p>
-                  </div>
+                  </article>
                 </Reveal>
               ),
             )}
@@ -847,353 +930,419 @@ export default function Business() {
           <div
             className="
               grid
-              items-center
-              gap-10
-              lg:grid-cols-2
-              lg:gap-16
+              items-stretch
+              gap-8
+              lg:grid-cols-12
+              lg:gap-12
             "
           >
 
-            <Reveal>
-              <div>
+            {/* ================================================================
+                BENEFITS
+                ============================================================= */}
 
-                <span className="section-eyebrow mb-3 block">
-                  Why Partner With Us
-                </span>
+            <div className="lg:col-span-7">
+              <Reveal>
+                <div className="h-full">
 
-                <h2
-                  id="why-partner-title"
+                  <span className="section-eyebrow mb-3 block">
+                    Why Partner With Us
+                  </span>
+
+                  <h2
+                    id="why-partner-title"
+                    className="
+                      text-balance
+                      max-w-2xl
+                      font-serif
+                      text-headline-lg
+                      font-bold
+                      leading-tight
+                      text-brand-green
+                    "
+                  >
+                    A brand built for lasting partnerships.
+                  </h2>
+
+                  <p
+                    className="
+                      text-pretty
+                      mt-5
+                      max-w-xl
+                      text-sm
+                      leading-relaxed
+                      text-brand-brown/65
+                      sm:text-base
+                    "
+                  >
+                    We combine traditional Nimar taste with
+                    practical commercial support, giving
+                    business partners a clear and dependable
+                    route to market.
+                  </p>
+
+                  <ul
+                    className="
+                      mt-7
+                      grid
+                      gap-3
+                      sm:grid-cols-2
+                    "
+                  >
+                    {partnershipBenefits.map(
+                      (point) => (
+                        <li
+                          key={point}
+                          className="
+                            flex
+                            items-start
+                            gap-3
+                            rounded-2xl
+                            border
+                            border-brand-green/10
+                            bg-white
+                            p-4
+                            text-sm
+                            leading-relaxed
+                            text-brand-brown/75
+                            shadow-soft
+                          "
+                        >
+                          <span
+                            className="
+                              mt-0.5
+                              flex
+                              h-5
+                              w-5
+                              shrink-0
+                              items-center
+                              justify-center
+                              rounded-full
+                              bg-brand-green/10
+                              text-brand-green
+                            "
+                            aria-hidden="true"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </span>
+
+                          <span>{point}</span>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+
+                  <div
+                    className="
+                      mt-8
+                      flex
+                      flex-col
+                      gap-3
+                      sm:flex-row
+                      sm:flex-wrap
+                      sm:gap-4
+                    "
+                  >
+                    <Link
+                      to="/bulk-orders"
+                      className="
+                        btn-primary
+                        justify-center
+                        px-8
+                      "
+                    >
+                      Request Bulk Supply
+                    </Link>
+
+                    <Link
+                      to="/distributor"
+                      className="
+                        btn-outline
+                        justify-center
+                        px-8
+                      "
+                    >
+                      Become a Distributor
+                    </Link>
+                  </div>
+
+                </div>
+              </Reveal>
+            </div>
+
+
+            {/* ================================================================
+                DIRECT SUPPORT
+                ============================================================= */}
+
+            <div className="lg:col-span-5">
+              <Reveal
+                delay={150}
+                className="h-full"
+              >
+                <aside
                   className="
-                    text-balance
-                    mb-6
-                    font-serif
-                    text-headline-lg
-                    font-bold
-                    leading-tight
-                    text-brand-green
+                    relative
+                    flex
+                    h-full
+                    flex-col
+                    justify-between
+                    overflow-hidden
+                    rounded-3xl
+                    bg-brand-brown
+                    p-6
+                    text-brand-cream
+                    shadow-lift
+                    sm:p-8
+                    lg:p-10
                   "
+                  aria-labelledby="commercial-support-title"
                 >
-                  A brand built for lasting partnerships.
-                </h2>
+                  <div
+                    className="
+                      pointer-events-none
+                      absolute
+                      -right-16
+                      -top-16
+                      h-44
+                      w-44
+                      rounded-full
+                      border
+                      border-brand-saffron/15
+                    "
+                    aria-hidden="true"
+                  />
 
-                <ul className="mb-8 space-y-4">
-                  {partnershipBenefits.map(
-                    (point) => (
-                      <li
-                        key={point}
+                  <div
+                    className="
+                      pointer-events-none
+                      absolute
+                      inset-0
+                      bg-dots
+                      opacity-10
+                    "
+                    aria-hidden="true"
+                  />
+
+                  <div className="relative">
+
+                    <span
+                      className="
+                        mb-2
+                        block
+                        text-[10px]
+                        font-semibold
+                        uppercase
+                        tracking-[0.18em]
+                        text-brand-saffron
+                      "
+                    >
+                      Commercial Support
+                    </span>
+
+                    <h3
+                      id="commercial-support-title"
+                      className="
+                        font-serif
+                        text-2xl
+                        font-bold
+                        text-white
+                      "
+                    >
+                      Direct Commercial Support
+                    </h3>
+
+                    <p
+                      className="
+                        text-pretty
+                        mt-4
+                        text-sm
+                        leading-relaxed
+                        text-brand-cream/80
+                      "
+                    >
+                      Tell us about your business requirements.
+                      Our commercial team will connect with you
+                      to discuss pricing, logistics, and
+                      partnership terms.
+                    </p>
+
+
+                    <div className="mt-8 space-y-3">
+
+                      <a
+                        href={`tel:${brand.phoneRaw}`}
                         className="
                           flex
-                          items-start
+                          min-h-[52px]
+                          items-center
                           gap-3
+                          rounded-xl
+                          bg-white/5
+                          p-3
                           text-sm
-                          leading-relaxed
-                          text-brand-brown/75
+                          font-medium
+                          text-brand-cream
+                          transition-all
+                          duration-200
+                          hover:bg-white/10
+                          hover:text-brand-saffron
+                          focus:outline-none
+                          focus-visible:ring-2
+                          focus-visible:ring-brand-saffron
+                          focus-visible:ring-offset-2
+                          focus-visible:ring-offset-brand-brown
                         "
                       >
                         <span
                           className="
-                            mt-0.5
                             flex
-                            h-5
-                            w-5
+                            h-8
+                            w-8
                             shrink-0
                             items-center
                             justify-center
                             rounded-full
-                            bg-brand-saffron/10
-                            text-brand-saffron
+                            bg-brand-saffron
+                            text-white
                           "
                           aria-hidden="true"
                         >
-                          <Check className="h-3.5 w-3.5" />
+                          <span className="text-sm">
+                            ☎
+                          </span>
                         </span>
 
-                        <span>{point}</span>
-                      </li>
-                    ),
-                  )}
-                </ul>
-
-                <div
-                  className="
-                    flex
-                    flex-col
-                    gap-3
-                    sm:flex-row
-                    sm:flex-wrap
-                    sm:gap-4
-                  "
-                >
-                  <Link
-                    to="/bulk-orders"
-                    className="
-                      btn-primary
-                      justify-center
-                      px-8
-                    "
-                  >
-                    Request Bulk Supply
-                  </Link>
-
-                  <Link
-                    to="/distributor"
-                    className="
-                      btn-outline
-                      justify-center
-                      px-8
-                    "
-                  >
-                    Become a Distributor
-                  </Link>
-                </div>
-
-              </div>
-            </Reveal>
+                        <span className="break-all">
+                          {brand.phone}
+                        </span>
+                      </a>
 
 
-            {/* ==================================================================
-                DIRECT SUPPORT
-                =============================================================== */}
-
-            <Reveal delay={150}>
-              <div
-                className="
-                  relative
-                  overflow-hidden
-                  rounded-3xl
-                  bg-brand-brown
-                  p-6
-                  text-brand-cream
-                  shadow-lift
-                  sm:p-8
-                  lg:p-10
-                "
-              >
-                <div
-                  className="
-                    pointer-events-none
-                    absolute
-                    -right-16
-                    -top-16
-                    h-44
-                    w-44
-                    rounded-full
-                    border
-                    border-brand-saffron/15
-                  "
-                  aria-hidden="true"
-                />
-
-                <div
-                  className="
-                    pointer-events-none
-                    absolute
-                    inset-0
-                    bg-dots
-                    opacity-10
-                  "
-                  aria-hidden="true"
-                />
-
-                <div className="relative">
-
-                  <span
-                    className="
-                      mb-2
-                      block
-                      text-[10px]
-                      font-semibold
-                      uppercase
-                      tracking-[0.18em]
-                      text-brand-saffron
-                    "
-                  >
-                    Commercial Support
-                  </span>
-
-                  <h3
-                    className="
-                      mb-4
-                      font-serif
-                      text-2xl
-                      font-bold
-                      text-white
-                    "
-                  >
-                    Direct Commercial Support
-                  </h3>
-
-                  <p
-                    className="
-                      mb-8
-                      text-pretty
-                      text-sm
-                      leading-relaxed
-                      text-brand-cream/80
-                    "
-                  >
-                    Tell us about your business requirements.
-                    Our commercial team will connect with you
-                    to discuss pricing, logistics, and
-                    partnership terms.
-                  </p>
-
-
-                  <div className="space-y-3">
-
-                    <a
-                      href={`tel:${brand.phoneRaw}`}
-                      className="
-                        flex
-                        min-h-[52px]
-                        items-center
-                        gap-3
-                        rounded-xl
-                        bg-white/5
-                        p-3
-                        text-sm
-                        font-medium
-                        text-brand-cream
-                        transition-all
-                        duration-200
-                        hover:bg-white/10
-                        hover:text-brand-saffron
-                        focus:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-brand-saffron
-                        focus-visible:ring-offset-2
-                        focus-visible:ring-offset-brand-brown
-                      "
-                    >
-                      <span
+                      <a
+                        href={brand.whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="
                           flex
-                          h-8
-                          w-8
-                          shrink-0
+                          min-h-[52px]
                           items-center
-                          justify-center
-                          rounded-full
-                          bg-brand-saffron
-                          text-white
+                          gap-3
+                          rounded-xl
+                          bg-white/5
+                          p-3
+                          text-sm
+                          font-medium
+                          text-brand-cream
+                          transition-all
+                          duration-200
+                          hover:bg-white/10
+                          hover:text-brand-saffron
+                          focus:outline-none
+                          focus-visible:ring-2
+                          focus-visible:ring-brand-saffron
+                          focus-visible:ring-offset-2
+                          focus-visible:ring-offset-brand-brown
                         "
-                        aria-hidden="true"
                       >
-                        <span className="text-sm">
-                          ☎
+                        <span
+                          className="
+                            flex
+                            h-8
+                            w-8
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-full
+                            bg-emerald-600
+                            text-white
+                          "
+                          aria-hidden="true"
+                        >
+                          <span className="text-sm">
+                            💬
+                          </span>
                         </span>
-                      </span>
 
-                      <span className="break-all">
-                        {brand.phone}
-                      </span>
-                    </a>
+                        <span>
+                          WhatsApp Commercial Desk
+                        </span>
+                      </a>
 
 
-                    <a
-                      href={brand.whatsappUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="
-                        flex
-                        min-h-[52px]
-                        items-center
-                        gap-3
-                        rounded-xl
-                        bg-white/5
-                        p-3
-                        text-sm
-                        font-medium
-                        text-brand-cream
-                        transition-all
-                        duration-200
-                        hover:bg-white/10
-                        hover:text-brand-saffron
-                        focus:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-brand-saffron
-                        focus-visible:ring-offset-2
-                        focus-visible:ring-offset-brand-brown
-                      "
-                    >
-                      <span
+                      <a
+                        href={`mailto:${brand.email}`}
                         className="
                           flex
-                          h-8
-                          w-8
-                          shrink-0
+                          min-h-[52px]
                           items-center
-                          justify-center
-                          rounded-full
-                          bg-emerald-600
-                          text-white
+                          gap-3
+                          rounded-xl
+                          bg-white/5
+                          p-3
+                          text-sm
+                          font-medium
+                          text-brand-cream
+                          transition-all
+                          duration-200
+                          hover:bg-white/10
+                          hover:text-brand-saffron
+                          focus:outline-none
+                          focus-visible:ring-2
+                          focus-visible:ring-brand-saffron
+                          focus-visible:ring-offset-2
+                          focus-visible:ring-offset-brand-brown
                         "
-                        aria-hidden="true"
                       >
-                        <span className="text-sm">
-                          💬
+                        <span
+                          className="
+                            flex
+                            h-8
+                            w-8
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-full
+                            bg-brand-saffron
+                            text-brand-brown
+                          "
+                          aria-hidden="true"
+                        >
+                          <span className="text-sm">
+                            ✉
+                          </span>
                         </span>
-                      </span>
 
-                      <span>
-                        WhatsApp Commercial Desk
-                      </span>
-                    </a>
-
-
-                    <a
-                      href={`mailto:${brand.email}`}
-                      className="
-                        flex
-                        min-h-[52px]
-                        items-center
-                        gap-3
-                        rounded-xl
-                        bg-white/5
-                        p-3
-                        text-sm
-                        font-medium
-                        text-brand-cream
-                        transition-all
-                        duration-200
-                        hover:bg-white/10
-                        hover:text-brand-saffron
-                        focus:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-brand-saffron
-                        focus-visible:ring-offset-2
-                        focus-visible:ring-offset-brand-brown
-                      "
-                    >
-                      <span
-                        className="
-                          flex
-                          h-8
-                          w-8
-                          shrink-0
-                          items-center
-                          justify-center
-                          rounded-full
-                          bg-brand-saffron
-                          text-brand-brown
-                        "
-                        aria-hidden="true"
-                      >
-                        <span className="text-sm">
-                          ✉
+                        <span className="break-all">
+                          {brand.email}
                         </span>
-                      </span>
+                      </a>
 
-                      <span className="break-all">
-                        {brand.email}
-                      </span>
-                    </a>
-
+                    </div>
                   </div>
 
-                </div>
-              </div>
-            </Reveal>
+
+                  <div className="relative mt-8">
+                    <Link
+                      to="/contact"
+                      className="
+                        btn-yellow
+                        min-h-[46px]
+                        w-full
+                        justify-center
+                      "
+                    >
+                      Send Business Enquiry
+
+                      <ArrowRight
+                        className="h-4 w-4"
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  </div>
+                </aside>
+              </Reveal>
+            </div>
 
           </div>
         </div>
