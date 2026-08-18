@@ -8,7 +8,6 @@ import {
 
 import { SEO, breadcrumbSchema } from '@/components/SEO';
 import { Reveal } from '@/components/Reveal';
-import { PageHero } from '@/components/Section';
 import {
   blogCategories,
   blogService,
@@ -19,15 +18,12 @@ import {
    KAWAD SWAD 2.0
    BLOG / JOURNAL
 
-   Flow:
-   DISCOVER → FILTER → FEATURE → EXPLORE → READ
-
-   Design authority:
-   - Central typography
-   - Central surfaces
-   - Central buttons
-   - Central motion
-   - Central spacing
+   Central design-system rules:
+   - Typography comes from Tailwind brand tokens
+   - Surfaces come from central card/shadow tokens
+   - Buttons/actions use central interaction patterns
+   - Motion uses the central Reveal component
+   - Spacing follows the central rhythm
    ========================================================================== */
 
 
@@ -49,9 +45,7 @@ export default function Blog() {
 
   const filteredPosts = useMemo(
     () =>
-      blogService.getByCategory(
-        category,
-      ),
+      blogService.getByCategory(category),
     [category],
   );
 
@@ -94,6 +88,7 @@ export default function Blog() {
           relative
           overflow-hidden
         "
+        aria-labelledby="blog-page-title"
       >
         <div
           className="
@@ -178,6 +173,7 @@ export default function Blog() {
                 </span>
 
                 <h1
+                  id="blog-page-title"
                   className="
                     text-balance
                     font-serif
@@ -190,7 +186,7 @@ export default function Blog() {
                   Stories, Recipes
                   <br />
                   <span className="text-brand-saffron">
-                    & Tradition
+                    &amp; Tradition
                   </span>
                 </h1>
 
@@ -228,6 +224,7 @@ export default function Blog() {
           sm:py-16
           lg:py-24
         "
+        aria-label="Kawad Swad journal articles"
       >
         <div className="container-max container-px">
 
@@ -250,66 +247,63 @@ export default function Blog() {
               role="group"
               aria-label="Filter articles by category"
             >
-              {blogCategories.map(
-                (cat) => {
-                  const isActive =
-                    category === cat;
+              {blogCategories.map((cat) => {
+                const isActive =
+                  category === cat;
 
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() =>
-                        setCategory(cat)
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() =>
+                      setCategory(cat)
+                    }
+                    aria-pressed={isActive}
+                    className={`
+                      min-h-[40px]
+                      rounded-full
+                      border
+                      px-4
+                      py-2
+                      text-[10px]
+                      font-semibold
+                      uppercase
+                      tracking-wider
+                      transition-all
+                      duration-200
+                      focus:outline-none
+                      focus-visible:ring-2
+                      focus-visible:ring-brand-saffron
+                      focus-visible:ring-offset-2
+                      focus-visible:ring-offset-brand-ivory
+
+                      sm:px-5
+                      sm:text-xs
+
+                      ${
+                        isActive
+                          ? `
+                            border-brand-green
+                            bg-brand-green
+                            text-white
+                            shadow-soft
+                          `
+                          : `
+                            border-brand-green/10
+                            bg-white
+                            text-brand-brown/70
+                            hover:-translate-y-0.5
+                            hover:border-brand-green/20
+                            hover:bg-brand-green/5
+                            hover:text-brand-green
+                          `
                       }
-                      aria-pressed={isActive}
-                      className={`
-                        min-h-[40px]
-                        rounded-full
-                        border
-                        px-4
-                        py-2
-                        text-[10px]
-                        font-semibold
-                        uppercase
-                        tracking-wider
-                        transition-all
-                        duration-200
-                        ease-ks-standard
-                        focus:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-brand-saffron
-                        focus-visible:ring-offset-2
-                        focus-visible:ring-offset-brand-ivory
-
-                        sm:px-5
-                        sm:text-xs
-
-                        ${
-                          isActive
-                            ? `
-                              border-brand-green
-                              bg-brand-green
-                              text-white
-                              shadow-soft
-                            `
-                            : `
-                              border-brand-green/10
-                              bg-white
-                              text-brand-brown/70
-                              hover:-translate-y-0.5
-                              hover:border-brand-green/20
-                              hover:bg-brand-green/5
-                              hover:text-brand-green
-                            `
-                        }
-                      `}
-                    >
-                      {cat}
-                    </button>
-                  );
-                },
-              )}
+                    `}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
             </div>
           </Reveal>
 
@@ -322,6 +316,7 @@ export default function Blog() {
             <Reveal className="mb-12 sm:mb-16">
               <Link
                 to={`/blog/${featuredPost.slug}`}
+                aria-label={`Read featured article: ${featuredPost.title}`}
                 className="
                   group
                   grid
@@ -336,7 +331,6 @@ export default function Blog() {
                   shadow-card
                   transition-all
                   duration-300
-                  ease-ks-standard
                   hover:-translate-y-1
                   hover:shadow-lift
                   focus:outline-none
@@ -349,10 +343,6 @@ export default function Blog() {
                   lg:p-10
                 "
               >
-                {/* ----------------------------------------------------------
-                    IMAGE
-                    ------------------------------------------------------- */}
-
                 <div
                   className="
                     image-premium
@@ -374,11 +364,6 @@ export default function Blog() {
                     "
                   />
                 </div>
-
-
-                {/* ----------------------------------------------------------
-                    CONTENT
-                    ------------------------------------------------------- */}
 
                 <div
                   className="
@@ -416,7 +401,6 @@ export default function Blog() {
                         className="h-3.5 w-3.5"
                         aria-hidden="true"
                       />
-
                       {featuredPost.readTime}
                     </span>
                   </div>
@@ -479,7 +463,6 @@ export default function Blog() {
                         className="h-3.5 w-3.5"
                         aria-hidden="true"
                       />
-
                       {featuredPost.date}
                     </span>
 
@@ -554,197 +537,183 @@ export default function Blog() {
                 lg:gap-8
               "
             >
-              {standardPosts.map(
-                (post, index) => (
-                  <Reveal
-                    key={post.slug}
-                    delay={Math.min(
-                      index * 60,
-                      300,
-                    )}
+              {standardPosts.map((post, index) => (
+                <Reveal
+                  key={post.slug}
+                  delay={Math.min(
+                    index * 60,
+                    300,
+                  )}
+                >
+                  <Link
+                    to={`/blog/${post.slug}`}
+                    aria-label={`Read article: ${post.title}`}
+                    className="
+                      group
+                      flex
+                      h-full
+                      flex-col
+                      overflow-hidden
+                      rounded-2xl
+                      border
+                      border-brand-green/10
+                      bg-white
+                      shadow-card
+                      transition-all
+                      duration-300
+                      hover:-translate-y-1
+                      hover:shadow-lift
+                      focus:outline-none
+                      focus-visible:ring-2
+                      focus-visible:ring-brand-saffron
+                      focus-visible:ring-offset-2
+                    "
                   >
-                    <Link
-                      to={`/blog/${post.slug}`}
+                    <div
                       className="
-                        group
-                        flex
-                        h-full
-                        flex-col
                         overflow-hidden
-                        rounded-2xl
-                        border
-                        border-brand-green/10
-                        bg-white
-                        shadow-card
-                        transition-all
-                        duration-300
-                        ease-ks-standard
-                        hover:-translate-y-1
-                        hover:shadow-lift
-                        focus:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-brand-saffron
-                        focus-visible:ring-offset-2
+                        bg-brand-ivory-dark
                       "
                     >
-
-                      {/* ----------------------------------------------------
-                          ARTICLE VISUAL
-                          ------------------------------------------------- */}
-
                       <div
                         className="
-                          overflow-hidden
-                          bg-brand-ivory-dark
+                          flex
+                          aspect-video
+                          items-center
+                          justify-center
+                          bg-gradient-to-br
+                          from-brand-ivory-dark
+                          via-brand-ivory
+                          to-brand-saffron/10
+                          p-5
+                          transition-transform
+                          duration-500
+                          group-hover:scale-[1.015]
                         "
                       >
-                        <div
+                        <span
                           className="
-                            flex
-                            aspect-video
-                            items-center
-                            justify-center
-                            bg-gradient-to-br
-                            from-brand-ivory-dark
-                            via-brand-ivory
-                            to-brand-saffron/10
-                            p-5
-                            transition-transform
-                            duration-500
-                            ease-ks-standard
-                            group-hover:scale-[1.015]
+                            max-w-[80%]
+                            text-center
+                            font-serif
+                            text-sm
+                            font-semibold
+                            text-brand-brown/40
                           "
                         >
-                          <span
-                            className="
-                              max-w-[80%]
-                              text-center
-                              font-serif
-                              text-sm
-                              font-semibold
-                              text-brand-brown/40
-                            "
-                          >
+                          {post.category}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div
+                      className="
+                        flex
+                        flex-1
+                        flex-col
+                        justify-between
+                        p-5
+                        sm:p-6
+                      "
+                    >
+                      <div>
+                        <div
+                          className="
+                            mb-3
+                            flex
+                            items-center
+                            justify-between
+                            gap-2
+                          "
+                        >
+                          <span className="badge-brown">
                             {post.category}
                           </span>
+
+                          <span
+                            className="
+                              shrink-0
+                              text-[9px]
+                              text-brand-brown/50
+                            "
+                          >
+                            {post.readTime}
+                          </span>
                         </div>
+
+                        <h3
+                          className="
+                            text-balance
+                            mb-3
+                            font-serif
+                            text-lg
+                            font-semibold
+                            leading-snug
+                            text-brand-green
+                            transition-colors
+                            duration-200
+                            group-hover:text-brand-saffron
+                            sm:text-xl
+                          "
+                        >
+                          {post.title}
+                        </h3>
+
+                        <p
+                          className="
+                            mb-6
+                            line-clamp-2
+                            text-pretty
+                            text-sm
+                            leading-relaxed
+                            text-brand-brown/65
+                          "
+                        >
+                          {post.excerpt}
+                        </p>
                       </div>
-
-
-                      {/* ----------------------------------------------------
-                          ARTICLE CONTENT
-                          ------------------------------------------------- */}
 
                       <div
                         className="
                           flex
-                          flex-1
-                          flex-col
+                          items-center
                           justify-between
-                          p-5
-                          sm:p-6
+                          border-t
+                          border-brand-green/10
+                          pt-4
+                          text-[10px]
+                          text-brand-brown/50
                         "
                       >
-                        <div>
-                          <div
-                            className="
-                              mb-3
-                              flex
-                              items-center
-                              justify-between
-                              gap-2
-                            "
-                          >
-                            <span className="badge-brown">
-                              {post.category}
-                            </span>
+                        <span>
+                          {post.date}
+                        </span>
 
-                            <span
-                              className="
-                                shrink-0
-                                text-[9px]
-                                text-brand-brown/50
-                              "
-                            >
-                              {post.readTime}
-                            </span>
-                          </div>
-
-                          <h3
-                            className="
-                              text-balance
-                              mb-3
-                              font-serif
-                              text-lg
-                              font-semibold
-                              leading-snug
-                              text-brand-green
-                              transition-colors
-                              duration-200
-                              group-hover:text-brand-saffron
-                              sm:text-xl
-                            "
-                          >
-                            {post.title}
-                          </h3>
-
-                          <p
-                            className="
-                              mb-6
-                              line-clamp-2
-                              text-pretty
-                              text-sm
-                              leading-relaxed
-                              text-brand-brown/65
-                            "
-                          >
-                            {post.excerpt}
-                          </p>
-                        </div>
-
-
-                        <div
+                        <span
                           className="
-                            flex
+                            inline-flex
+                            min-h-[30px]
                             items-center
-                            justify-between
-                            border-t
-                            border-brand-green/10
-                            pt-4
-                            text-[10px]
-                            text-brand-brown/50
+                            gap-1
+                            font-semibold
+                            text-brand-green
+                            transition-all
+                            duration-200
+                            group-hover:gap-1.5
                           "
                         >
-                          <span>
-                            {post.date}
-                          </span>
+                          Read
 
-                          <span
-                            className="
-                              inline-flex
-                              min-h-[30px]
-                              items-center
-                              gap-1
-                              font-semibold
-                              text-brand-green
-                              transition-all
-                              duration-200
-                              group-hover:gap-1.5
-                            "
-                          >
-                            Read
-
-                            <ArrowRight
-                              className="h-3.5 w-3.5"
-                              aria-hidden="true"
-                            />
-                          </span>
-                        </div>
+                          <ArrowRight
+                            className="h-3.5 w-3.5"
+                            aria-hidden="true"
+                          />
+                        </span>
                       </div>
-                    </Link>
-                  </Reveal>
-                ),
-              )}
+                    </div>
+                  </Link>
+                </Reveal>
+              ))}
             </div>
           )}
 
