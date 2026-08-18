@@ -1,5 +1,6 @@
 import {
   getSalesSku,
+  getFinalWebsitePrice,
   type SalesSkuConfig,
 } from './sales-config';
 
@@ -15,13 +16,57 @@ export type PackSize =
   | 1000
   | 235;
 
+/* ============================================================================
+ * PRODUCT SKU VIEW
+ * ============================================================================
+ *
+ * IMPORTANT:
+ *
+ * sales-config.ts is the commercial master.
+ *
+ * It stores:
+ *   MRP
+ *   sellingPrice
+ *   shipping
+ *   availability
+ *
+ * This product layer exposes:
+ *   websitePrice = sellingPrice + shipping
+ *
+ * Therefore the rest of the website can continue to use ONE customer-facing
+ * number called websitePrice.
+ *
+ * Shipping is intentionally represented here as 0/free because the current
+ * cart and product UI treat websitePrice as the FINAL customer-facing amount.
+ *
+ * Example:
+ *
+ *   sellingPrice = ₹55
+ *   shipping     = ₹47
+ *   websitePrice = ₹102
+ *
+ * This avoids making every UI component understand the internal pricing model.
+ * ========================================================================== */
+
 export interface Sku {
   sku: string;
   packSize: PackSize;
   mrp: number | null;
+
+  /*
+   * FINAL customer-facing website price.
+   *
+   * This is calculated from sales-config.ts.
+   */
   websitePrice: number | null;
+
+  /*
+   * The final website price already includes the configured shipping amount.
+   * Customer-facing UI therefore treats shipping as free/included.
+   */
   shipping: 0;
   freeShipping: true;
+
   available: boolean;
 }
 
@@ -68,23 +113,26 @@ export const CATEGORY_LABELS: Record<
  *
  * Product information lives in this file.
  *
- * Customer-facing sales values are resolved exclusively
- * from:
+ * Customer-facing commercial values come exclusively from:
  *
  *   src/data/sales-config.ts
  *
- * This file must NOT contain:
+ * This file does NOT contain:
  *
  * - Costing
  * - Factory price
  * - Dealer price
  * - Distributor price
- * - Shipping charges
+ * - Shipping master values
  * - Discount calculations
  * - Coupon calculations
  * - Offer calculations
  *
- * websitePrice is the final website customer price.
+ * IMPORTANT:
+ *
+ * sales-config.ts stores the components of the price.
+ *
+ * products.ts exposes the calculated FINAL customer-facing websitePrice.
  * ========================================================================== */
 
 function makeSku(
@@ -117,15 +165,56 @@ function makeSku(
     );
   }
 
+  const finalWebsitePrice =
+    getFinalWebsitePrice(
+      skuCode,
+    );
+
+  /*
+   * An available SKU must have a valid final customer price.
+   */
+  if (
+    salesSku.available &&
+    (
+      finalWebsitePrice === null ||
+      !Number.isFinite(
+        finalWebsitePrice,
+      ) ||
+      finalWebsitePrice < 0
+    )
+  ) {
+    throw new Error(
+      `Invalid final website price for SKU: ${skuCode}`,
+    );
+  }
+
   return {
     sku: salesSku.sku,
     packSize:
       salesSku.packSize as PackSize,
     mrp: salesSku.mrp,
+
+    /*
+     * IMPORTANT:
+     *
+     * Do NOT use:
+     *
+     *   salesSku.sellingPrice
+     *
+     * here.
+     *
+     * websitePrice is the FINAL price including shipping.
+     */
     websitePrice:
-      salesSku.sellingPrice,
+      finalWebsitePrice,
+
+    /*
+     * The website displays the calculated final price as the product price.
+     * Existing cart/UI code therefore continues to treat shipping as included.
+     */
     shipping: 0,
     freeShipping: true,
+
     available:
       salesSku.available,
   };
@@ -625,21 +714,16 @@ export const products: ProductFamily[] = [
  *
  * Every product SKU must exist in the central sales configuration.
  *
- * This keeps:
+ * The important distinction is:
  *
- * products.ts
- *       ↓
  * sales-config.ts
- *       ↓
- * ProductService
- *       ↓
- * Cart
- *       ↓
- * Checkout
- *       ↓
- * Order
+ *   sellingPrice + shipping
+ *             ↓
+ * products.ts
+ *   websitePrice (FINAL)
  *
- * synchronized.
+ * This validation checks that the product layer is correctly reflecting the
+ * central commercial master.
  * ========================================================================== */
 
 export function validateProductSalesMapping(): {
@@ -735,20 +819,38 @@ export function validateProductSalesMapping(): {
         );
       }
 
+      /*
+       * websitePrice must equal the CALCULATED FINAL PRICE:
+       *
+       * sellingPrice + shipping
+       *
+       * NOT sellingPrice alone.
+       */
+      const expectedFinalPrice =
+        getFinalWebsitePrice(
+          normalizedSku,
+        );
+
       if (
         sku.websitePrice !==
-        salesSku.sellingPrice
+        expectedFinalPrice
       ) {
         errors.push(
-          `${sku.sku}: website price mismatch.`,
+          `${sku.sku}: final website price mismatch. Expected ₹${expectedFinalPrice ?? 'invalid'}, got ₹${sku.websitePrice ?? 'invalid'}.`,
         );
       }
 
+      /*
+       * The current customer-facing product model treats websitePrice as the
+       * final amount and therefore exposes shipping as included/free.
+       *
+       * The actual shipping master value remains in sales-config.ts.
+       */
       if (
         sku.shipping !== 0
       ) {
         errors.push(
-          `${sku.sku}: shipping must remain 0.`,
+          `${sku.sku}: product-layer shipping must remain 0 because shipping is included in websitePrice.`,
         );
       }
 
@@ -756,7 +858,7 @@ export function validateProductSalesMapping(): {
         sku.freeShipping !== true
       ) {
         errors.push(
-          `${sku.sku}: freeShipping must remain true.`,
+          `${sku.sku}: product-layer freeShipping must remain true because shipping is included in websitePrice.`,
         );
       }
 
@@ -794,7 +896,7 @@ export function validateProductSalesMapping(): {
         )
       ) {
         errors.push(
-          `${sku.sku}: invalid website price.`,
+          `${sku.sku}: invalid final website price.`,
         );
       }
 
@@ -806,7 +908,7 @@ export function validateProductSalesMapping(): {
         )
       ) {
         errors.push(
-          `${sku.sku}: available SKU must have MRP and website price.`,
+          `${sku.sku}: available SKU must have MRP and final website price.`,
         );
       }
 
@@ -818,10 +920,21 @@ export function validateProductSalesMapping(): {
           sku.mrp
       ) {
         errors.push(
-          `${sku.sku}: website price cannot exceed MRP.`,
+          `${sku.sku}: final website price cannot exceed MRP.`,
         );
       }
     }
+  }
+
+  /*
+   * The current master contains 43 active SKUs across 15 product families.
+   */
+  if (
+    seenProductSkus.size !== 43
+  ) {
+    errors.push(
+      `Expected 43 product SKUs but found ${seenProductSkus.size}.`,
+    );
   }
 
   return {
