@@ -8,10 +8,22 @@ import {
   MessageCircle,
   MapPin,
   Send,
+  ArrowUpRight,
 } from 'lucide-react';
 
 import { brand, footerLinks } from '@/data/brand';
 import { Logo } from '@/components/Logo';
+
+/* ==========================================================================
+   KAWAD SWAD 2.0
+   CENTRAL FOOTER SYSTEM
+
+   Behavioral hierarchy:
+   TRUST → DISCOVER → SHOP → CONNECT → CONTACT
+
+   The footer is intentionally treated as a final brand experience rather
+   than simply a collection of links.
+   ========================================================================== */
 
 export function Footer() {
   const [email, setEmail] = useState('');
@@ -34,9 +46,30 @@ export function Footer() {
     }, 4000);
   };
 
+  const linkClass = `
+    group
+    inline-flex
+    items-center
+    gap-1
+    py-0.5
+    text-xs
+    leading-relaxed
+    text-brand-cream/65
+    transition-all
+    duration-200
+    ease-ks-standard
+    hover:translate-x-0.5
+    hover:text-brand-saffron-light
+    focus:outline-none
+    focus-visible:ring-2
+    focus-visible:ring-brand-saffron
+    sm:text-sm
+  `;
+
   return (
     <footer
       className="
+        relative
         mt-12
         overflow-hidden
         bg-brand-brown
@@ -45,40 +78,78 @@ export function Footer() {
         lg:mt-20
       "
     >
-      {/* ================================================================
-          NEWSLETTER
-      ================================================================= */}
+      {/* ======================================================================
+          DECORATIVE BRAND ATMOSPHERE
+          =================================================================== */}
 
-      <div className="border-b border-brand-cream/10">
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -right-32
+          -top-32
+          h-80
+          w-80
+          rounded-full
+          border
+          border-brand-saffron/10
+        "
+        aria-hidden="true"
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -bottom-40
+          -left-32
+          h-96
+          w-96
+          rounded-full
+          border
+          border-brand-cream/5
+        "
+        aria-hidden="true"
+      />
+
+
+      {/* ======================================================================
+          NEWSLETTER / RETENTION
+          =================================================================== */}
+
+      <div
+        className="
+          relative
+          border-b
+          border-brand-cream/10
+        "
+      >
         <div
           className="
             container-max
             container-px
-            py-9
+            py-10
             sm:py-12
-            lg:py-14
+            lg:py-16
           "
         >
           <div
             className="
               grid
               items-center
-              gap-6
+              gap-7
               md:grid-cols-2
-              md:gap-10
+              md:gap-12
             "
           >
+
             <div className="min-w-0">
               <span
                 className="
+                  section-eyebrow
                   mb-2
                   block
-                  text-[10px]
-                  font-semibold
-                  uppercase
-                  tracking-[0.18em]
-                  text-brand-yellow
-                  sm:text-xs
+                  text-brand-saffron-light
                 "
               >
                 Stay Connected
@@ -86,20 +157,16 @@ export function Footer() {
 
               <h3
                 className="
-                  font-serif
-                  text-2xl
-                  font-bold
-                  leading-tight
+                  type-h3
                   text-white
-                  sm:text-3xl
                 "
               >
-                Stay in the loop
+                Keep the Swad coming.
               </h3>
 
               <p
                 className="
-                  mt-2
+                  mt-3
                   max-w-lg
                   text-sm
                   leading-relaxed
@@ -111,6 +178,7 @@ export function Footer() {
                 offers from Kawad Swad.
               </p>
             </div>
+
 
             <div className="min-w-0">
               <form
@@ -141,7 +209,7 @@ export function Footer() {
                   required
                   autoComplete="email"
                   className="
-                    min-h-[48px]
+                    min-h-[50px]
                     min-w-0
                     flex-1
                     rounded-full
@@ -154,9 +222,12 @@ export function Footer() {
                     text-white
                     outline-none
                     placeholder:text-brand-cream/40
-                    focus:border-brand-yellow
+                    transition-all
+                    duration-200
+                    focus:border-brand-saffron
+                    focus:bg-brand-cream/15
                     focus:ring-2
-                    focus:ring-brand-yellow/20
+                    focus:ring-brand-saffron/20
                   "
                 />
 
@@ -164,14 +235,17 @@ export function Footer() {
                   type="submit"
                   className="
                     btn-yellow
-                    min-h-[48px]
+                    min-h-[50px]
                     w-full
                     shrink-0
                     px-5
                     sm:w-auto
                   "
                 >
-                  <Send className="h-4 w-4" />
+                  <Send
+                    className="h-4 w-4"
+                    aria-hidden="true"
+                  />
 
                   <span>
                     Subscribe
@@ -185,7 +259,7 @@ export function Footer() {
                     mt-3
                     text-xs
                     font-medium
-                    text-brand-yellow
+                    text-brand-saffron-light
                     animate-fade-in
                   "
                   role="status"
@@ -198,17 +272,19 @@ export function Footer() {
         </div>
       </div>
 
-      {/* ================================================================
+
+      {/* ======================================================================
           MAIN FOOTER
-      ================================================================= */}
+          =================================================================== */}
 
       <div
         className="
+          relative
           container-max
           container-px
-          py-10
-          sm:py-12
-          lg:py-14
+          py-11
+          sm:py-14
+          lg:py-16
         "
       >
         <div
@@ -223,7 +299,11 @@ export function Footer() {
             lg:gap-10
           "
         >
-          {/* Brand */}
+
+          {/* ==================================================================
+              BRAND
+              ================================================================= */}
+
           <div
             className="
               col-span-2
@@ -233,7 +313,13 @@ export function Footer() {
             "
           >
             <div className="mb-4">
-              <Logo />
+              <Logo
+                imgClassName="
+                  h-14
+                  sm:h-16
+                  lg:h-[72px]
+                "
+              />
             </div>
 
             <p
@@ -250,351 +336,132 @@ export function Footer() {
               {brand.tagline}
             </p>
 
+
             {/* Social links */}
+
             <div className="flex flex-wrap gap-2.5">
-              <a
+              <SocialLink
                 href={brand.instagramUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="
-                  flex
-                  h-10
-                  w-10
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-brand-cream/10
-                  transition-colors
-                  hover:bg-brand-red
-                  focus-visible:ring-2
-                  focus-visible:ring-brand-yellow
-                "
-                aria-label="Instagram"
+                label="Instagram"
               >
-                <Instagram className="h-4 w-4" />
-              </a>
+                <Instagram
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                />
+              </SocialLink>
 
-              <a
+              <SocialLink
                 href={brand.youtubeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="
-                  flex
-                  h-10
-                  w-10
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-brand-cream/10
-                  transition-colors
-                  hover:bg-brand-red
-                  focus-visible:ring-2
-                  focus-visible:ring-brand-yellow
-                "
-                aria-label="YouTube"
+                label="YouTube"
               >
-                <Youtube className="h-4 w-4" />
-              </a>
+                <Youtube
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                />
+              </SocialLink>
 
-              <a
+              <SocialLink
                 href={brand.whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="
-                  flex
-                  h-10
-                  w-10
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-brand-cream/10
-                  transition-colors
-                  hover:bg-brand-red
-                  focus-visible:ring-2
-                  focus-visible:ring-brand-yellow
-                "
-                aria-label="WhatsApp"
+                label="WhatsApp"
               >
-                <MessageCircle className="h-4 w-4" />
-              </a>
+                <MessageCircle
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                />
+              </SocialLink>
             </div>
           </div>
 
-          {/* Brand links */}
-          <div className="min-w-0">
-            <h4
-              className="
-                mb-4
-                text-[11px]
-                font-semibold
-                uppercase
-                tracking-[0.14em]
-                text-white
-                sm:text-xs
-              "
-            >
-              Brand
-            </h4>
 
-            <ul className="space-y-2.5">
-              {footerLinks.brand.map((link) => (
-                <li key={link.path}>
-                  <Link
-                    to={link.path}
-                    className="
-                      inline-block
-                      py-0.5
-                      text-xs
-                      leading-relaxed
-                      text-brand-cream/65
-                      transition-colors
-                      hover:text-brand-yellow
-                      sm:text-sm
-                    "
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* ==================================================================
+              LINK GROUPS
+              ================================================================= */}
 
-          {/* Shop links */}
-          <div className="min-w-0">
-            <h4
-              className="
-                mb-4
-                text-[11px]
-                font-semibold
-                uppercase
-                tracking-[0.14em]
-                text-white
-                sm:text-xs
-              "
-            >
-              Shop
-            </h4>
+          <FooterLinkGroup
+            title="Brand"
+            links={footerLinks.brand}
+            linkClass={linkClass}
+          />
 
-            <ul className="space-y-2.5">
-              {footerLinks.shop.map((link) => (
-                <li key={link.path}>
-                  <Link
-                    to={link.path}
-                    className="
-                      inline-block
-                      py-0.5
-                      text-xs
-                      leading-relaxed
-                      text-brand-cream/65
-                      transition-colors
-                      hover:text-brand-yellow
-                      sm:text-sm
-                    "
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FooterLinkGroup
+            title="Shop"
+            links={footerLinks.shop}
+            linkClass={linkClass}
+          />
 
-          {/* Business links */}
-          <div className="min-w-0">
-            <h4
-              className="
-                mb-4
-                text-[11px]
-                font-semibold
-                uppercase
-                tracking-[0.14em]
-                text-white
-                sm:text-xs
-              "
-            >
-              Business
-            </h4>
+          <FooterLinkGroup
+            title="Business"
+            links={footerLinks.business}
+            linkClass={linkClass}
+          />
 
-            <ul className="space-y-2.5">
-              {footerLinks.business.map((link) => (
-                <li key={link.path}>
-                  <Link
-                    to={link.path}
-                    className="
-                      inline-block
-                      py-0.5
-                      text-xs
-                      leading-relaxed
-                      text-brand-cream/65
-                      transition-colors
-                      hover:text-brand-yellow
-                      sm:text-sm
-                    "
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Support */}
-          <div className="min-w-0">
-            <h4
-              className="
-                mb-4
-                text-[11px]
-                font-semibold
-                uppercase
-                tracking-[0.14em]
-                text-white
-                sm:text-xs
-              "
-            >
-              Support
-            </h4>
-
-            <ul className="space-y-2.5">
-              {footerLinks.support.map((link) => (
-                <li key={link.path}>
-                  <Link
-                    to={link.path}
-                    className="
-                      inline-block
-                      py-0.5
-                      text-xs
-                      leading-relaxed
-                      text-brand-cream/65
-                      transition-colors
-                      hover:text-brand-yellow
-                      sm:text-sm
-                    "
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FooterLinkGroup
+            title="Support"
+            links={footerLinks.support}
+            linkClass={linkClass}
+          />
         </div>
 
-        {/* ==============================================================
+
+        {/* ======================================================================
             CONTACT INFORMATION
-        ============================================================== */}
+            =================================================================== */}
 
         <div
           className="
             mt-10
             grid
-            gap-3
+            gap-2
             border-t
             border-brand-cream/10
             pt-8
+            sm:mt-12
             sm:grid-cols-2
-            lg:mt-12
+            sm:gap-3
             lg:grid-cols-4
             lg:gap-4
           "
         >
-          <a
+          <ContactItem
             href={`tel:${brand.phoneRaw}`}
-            className="
-              flex
-              min-w-0
-              min-h-[42px]
-              items-center
-              gap-3
-              rounded-lg
-              text-xs
-              leading-relaxed
-              text-brand-cream/65
-              transition-colors
-              hover:text-brand-yellow
-              sm:text-sm
-            "
-          >
-            <Phone className="h-4 w-4 shrink-0" />
-            <span className="min-w-0 break-words">
-              {brand.phone}
-            </span>
-          </a>
+            icon={<Phone className="h-4 w-4" />}
+            label={brand.phone}
+          />
 
-          <a
+          <ContactItem
             href={`mailto:${brand.email}`}
-            className="
-              flex
-              min-w-0
-              min-h-[42px]
-              items-center
-              gap-3
-              rounded-lg
-              text-xs
-              leading-relaxed
-              text-brand-cream/65
-              transition-colors
-              hover:text-brand-yellow
-              sm:text-sm
-            "
-          >
-            <Mail className="h-4 w-4 shrink-0" />
-            <span className="min-w-0 break-words">
-              {brand.email}
-            </span>
-          </a>
+            icon={<Mail className="h-4 w-4" />}
+            label={brand.email}
+          />
 
-          <a
+          <ContactItem
             href={brand.whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="
-              flex
-              min-w-0
-              min-h-[42px]
-              items-center
-              gap-3
-              rounded-lg
-              text-xs
-              leading-relaxed
-              text-brand-cream/65
-              transition-colors
-              hover:text-brand-yellow
-              sm:text-sm
-            "
-          >
-            <MessageCircle className="h-4 w-4 shrink-0" />
+            icon={
+              <MessageCircle className="h-4 w-4" />
+            }
+            label={`WhatsApp: ${brand.phone}`}
+            external
+          />
 
-            <span className="min-w-0 break-words">
-              WhatsApp: {brand.phone}
-            </span>
-          </a>
-
-          <div
-            className="
-              flex
-              min-w-0
-              min-h-[42px]
-              items-center
-              gap-3
-              rounded-lg
-              text-xs
-              leading-relaxed
-              text-brand-cream/65
-              sm:text-sm
-            "
-          >
-            <MapPin className="h-4 w-4 shrink-0" />
-
-            <span className="min-w-0 break-words">
-              {brand.region}
-            </span>
-          </div>
+          <ContactItem
+            icon={<MapPin className="h-4 w-4" />}
+            label={brand.region}
+          />
         </div>
       </div>
 
-      {/* ================================================================
-          BOTTOM BAR
-      ================================================================= */}
 
-      <div className="border-t border-brand-cream/10">
+      {/* ======================================================================
+          BOTTOM BAR
+          =================================================================== */}
+
+      <div
+        className="
+          relative
+          border-t
+          border-brand-cream/10
+        "
+      >
         <div
           className="
             container-max
@@ -627,5 +494,226 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+
+/* ============================================================================
+   SOCIAL LINK
+   ========================================================================== */
+
+interface SocialLinkProps {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+}
+
+function SocialLink({
+  href,
+  label,
+  children,
+}: SocialLinkProps) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="
+        flex
+        h-10
+        w-10
+        items-center
+        justify-center
+        rounded-full
+        border
+        border-brand-cream/10
+        bg-brand-cream/10
+        text-brand-cream
+        transition-all
+        duration-200
+        ease-ks-standard
+        hover:-translate-y-1
+        hover:border-brand-saffron/30
+        hover:bg-brand-saffron
+        hover:text-white
+        hover:shadow-glow
+        focus:outline-none
+        focus-visible:ring-2
+        focus-visible:ring-brand-saffron
+        focus-visible:ring-offset-2
+        focus-visible:ring-offset-brand-brown
+      "
+      aria-label={label}
+    >
+      {children}
+    </a>
+  );
+}
+
+
+/* ============================================================================
+   FOOTER LINK GROUP
+   ========================================================================== */
+
+interface FooterLink {
+  label: string;
+  path: string;
+}
+
+interface FooterLinkGroupProps {
+  title: string;
+  links: FooterLink[];
+  linkClass: string;
+}
+
+function FooterLinkGroup({
+  title,
+  links,
+  linkClass,
+}: FooterLinkGroupProps) {
+  return (
+    <div className="min-w-0">
+      <h4
+        className="
+          mb-4
+          text-[11px]
+          font-semibold
+          uppercase
+          tracking-[0.14em]
+          text-white
+          sm:text-xs
+        "
+      >
+        {title}
+      </h4>
+
+      <ul className="space-y-2.5">
+        {links.map((link) => (
+          <li key={link.path}>
+            <Link
+              to={link.path}
+              className={linkClass}
+            >
+              <span>
+                {link.label}
+              </span>
+
+              <ArrowUpRight
+                className="
+                  h-3
+                  w-3
+                  shrink-0
+                  opacity-0
+                  transition-all
+                  duration-200
+                  group-hover:translate-x-0.5
+                  group-hover:-translate-y-0.5
+                  group-hover:opacity-70
+                "
+                aria-hidden="true"
+              />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+
+/* ============================================================================
+   CONTACT ITEM
+   ========================================================================== */
+
+interface ContactItemProps {
+  href?: string;
+  icon: React.ReactNode;
+  label: string;
+  external?: boolean;
+}
+
+function ContactItem({
+  href,
+  icon,
+  label,
+  external = false,
+}: ContactItemProps) {
+  const content = (
+    <>
+      <span
+        className="
+          flex
+          h-9
+          w-9
+          shrink-0
+          items-center
+          justify-center
+          rounded-full
+          bg-brand-cream/8
+          text-brand-saffron-light
+          transition-all
+          duration-200
+          group-hover:bg-brand-saffron/15
+        "
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
+
+      <span className="min-w-0 break-words">
+        {label}
+      </span>
+    </>
+  );
+
+  if (!href) {
+    return (
+      <div
+        className="
+          flex
+          min-w-0
+          min-h-[42px]
+          items-center
+          gap-3
+          text-xs
+          leading-relaxed
+          text-brand-cream/65
+          sm:text-sm
+        "
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      target={external ? '_blank' : undefined}
+      rel={
+        external
+          ? 'noopener noreferrer'
+          : undefined
+      }
+      className="
+        group
+        flex
+        min-w-0
+        min-h-[42px]
+        items-center
+        gap-3
+        rounded-xl
+        text-xs
+        leading-relaxed
+        text-brand-cream/65
+        transition-all
+        duration-200
+        hover:bg-brand-cream/5
+        hover:text-brand-saffron-light
+        sm:text-sm
+      "
+    >
+      {content}
+    </a>
   );
 }
