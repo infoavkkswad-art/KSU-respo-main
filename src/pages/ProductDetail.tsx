@@ -39,11 +39,6 @@ import {
   ProductService,
 } from '@/services/product-service';
 
-import type {
-  ProductFamily,
-  Sku,
-} from '@/data/products';
-
 import {
   PACK_LABELS,
 } from '@/data/products';
@@ -57,28 +52,19 @@ import {
   ReviewSection,
 } from '@/components/ReviewSection';
 
-type PurchasableSku = Sku & {
-  mrp: number;
-  websitePrice: number;
-};
-
-function isPurchasableSku(
-  sku: Sku | undefined,
-): sku is PurchasableSku {
-  return (
-    !!sku &&
-    sku.available === true &&
-    typeof sku.websitePrice === 'number' &&
-    Number.isFinite(
-      sku.websitePrice,
-    ) &&
-    sku.websitePrice >= 0 &&
-    typeof sku.mrp === 'number' &&
-    Number.isFinite(sku.mrp) &&
-    sku.mrp >= 0 &&
-    sku.websitePrice <= sku.mrp
-  );
-}
+/* ============================================================================
+ * PRODUCT DETAIL
+ *
+ * COMMERCIAL AUTHORITY
+ *
+ * sales-config
+ *      ↓
+ * ProductService
+ *      ↓
+ * ProductDetail
+ *
+ * ProductDetail does NOT create its own pricing or availability rules.
+ * ========================================================================== */
 
 export default function ProductDetail() {
   const {
@@ -94,14 +80,20 @@ export default function ProductDetail() {
     addItem,
   } = useCart();
 
-  const product:
-    | ProductFamily
-    | undefined =
+  /* ==========================================================================
+   * PRODUCT
+   * ======================================================================== */
+
+  const product =
     slug
       ? ProductService.getProductBySlug(
           slug,
         )
       : undefined;
+
+  /* ==========================================================================
+   * LOCAL STATE
+   * ======================================================================== */
 
   const [
     selectedSkuIndex,
@@ -118,32 +110,37 @@ export default function ProductDetail() {
     setAdded,
   ] = useState(false);
 
-  /*
-   * Only available SKUs with valid customer
-   * pricing are exposed.
-   */
+  /* ==========================================================================
+   * AUTHORITATIVE PURCHASABLE SKUS
+   *
+   * ProductService owns this decision.
+   *
+   * DO NOT add another:
+   *
+   * sku.available === true
+   * websitePrice <= mrp
+   *
+   * filter here.
+   * ======================================================================== */
+
   const purchasableSkus =
-    useMemo<PurchasableSku[]>(
-      () => {
-        if (!product) {
-          return [];
-        }
+    useMemo(() => {
+      if (!product) {
+        return [];
+      }
 
-        return ProductService
-          .getAvailableSkus(
-            product,
-          )
-          .filter(
-            isPurchasableSku,
-          );
-      },
-      [product],
-    );
+      return ProductService.getAvailableSkus(
+        product,
+      );
+    }, [product]);
 
-  /*
-   * Related products must also have at least
-   * one purchasable SKU.
-   */
+  /* ==========================================================================
+   * RELATED PRODUCTS
+   *
+   * ProductService decides which products are related.
+   * ProductCard handles their purchasability.
+   * ======================================================================== */
+
   const relatedProducts =
     useMemo(() => {
       if (!product) {
@@ -155,23 +152,13 @@ export default function ProductDetail() {
           product,
           4,
         )
-        .filter(
-          (item) =>
-            ProductService
-              .getAvailableSkus(
-                item,
-              )
-              .some(
-                isPurchasableSku,
-              ),
-        )
         .slice(0, 4);
     }, [product]);
 
-  /*
-   * Keep selected SKU valid whenever
-   * the available catalog changes.
-   */
+  /* ==========================================================================
+   * KEEP SELECTED SKU VALID
+   * ======================================================================== */
+
   useEffect(() => {
     if (
       purchasableSkus.length ===
@@ -190,9 +177,13 @@ export default function ProductDetail() {
       setSelectedSkuIndex(0);
     }
   }, [
-    selectedSkuIndex,
     purchasableSkus.length,
+    selectedSkuIndex,
   ]);
+
+  /* ==========================================================================
+   * PRODUCT NOT FOUND
+   * ======================================================================== */
 
   if (!product) {
     return (
@@ -225,10 +216,10 @@ export default function ProductDetail() {
     );
   }
 
-  /*
-   * No purchasable SKU means the product exists
-   * in the catalog but is not currently for sale.
-   */
+  /* ==========================================================================
+   * PRODUCT EXISTS BUT HAS NO PURCHASABLE SKU
+   * ======================================================================== */
+
   if (
     purchasableSkus.length ===
     0
@@ -257,10 +248,15 @@ export default function ProductDetail() {
 
         <section className="container-max container-px py-16 lg:py-24">
           <div className="grid items-start gap-12 lg:grid-cols-2">
+
             <div className="overflow-hidden rounded-4xl border border-brand-brown/5 bg-brand-cream-dark shadow-soft">
               <ProductImage
-                productId={product.id}
-                product={product}
+                productId={
+                  product.id
+                }
+                product={
+                  product
+                }
                 variant="detail"
                 className="h-full w-full"
               />
@@ -309,11 +305,19 @@ export default function ProductDetail() {
     );
   }
 
+  /* ==========================================================================
+   * SELECTED SKU
+   * ======================================================================== */
+
   const selectedSku =
     purchasableSkus[
       selectedSkuIndex
     ] ??
     purchasableSkus[0];
+
+  /* ==========================================================================
+   * DISPLAY VALUES
+   * ======================================================================== */
 
   const packLabel =
     PACK_LABELS[
@@ -322,21 +326,24 @@ export default function ProductDetail() {
     `${selectedSku.packSize}g`;
 
   const discount =
+    selectedSku.mrp >
+      selectedSku.websitePrice &&
     selectedSku.mrp > 0
-      ? Math.max(
-          0,
-          Math.round(
+      ? Math.round(
+          (
             (
-              (
-                selectedSku.mrp -
-                selectedSku.websitePrice
-              ) /
-              selectedSku.mrp
-            ) *
-              100,
-          ),
+              selectedSku.mrp -
+              selectedSku.websitePrice
+            ) /
+            selectedSku.mrp
+          ) *
+            100,
         )
       : 0;
+
+  /* ==========================================================================
+   * ADD TO CART
+   * ======================================================================== */
 
   const handleAddToCart =
     () => {
@@ -355,6 +362,10 @@ export default function ProductDetail() {
       );
     };
 
+  /* ==========================================================================
+   * BUY NOW
+   * ======================================================================== */
+
   const handleBuyNow =
     () => {
       addItem(
@@ -366,6 +377,10 @@ export default function ProductDetail() {
         '/checkout',
       );
     };
+
+  /* ==========================================================================
+   * RENDER
+   * ======================================================================== */
 
   return (
     <>
@@ -389,12 +404,16 @@ export default function ProductDetail() {
         ])}
       />
 
+      {/* ======================================================================
+          MAIN PRODUCT SECTION
+      ======================================================================= */}
+
       <section className="container-max container-px py-10 sm:py-12 lg:py-16">
         <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
 
-          {/* ============================================================
+          {/* ==================================================================
               PRODUCT IMAGE
-          ============================================================ */}
+          =================================================================== */}
 
           <div className="lg:sticky lg:top-28">
             <div
@@ -408,19 +427,24 @@ export default function ProductDetail() {
               "
             >
               <ProductImage
-                productId={product.id}
-                product={product}
+                productId={
+                  product.id
+                }
+                product={
+                  product
+                }
                 variant="detail"
                 className="aspect-square h-full w-full"
               />
             </div>
           </div>
 
-          {/* ============================================================
+          {/* ==================================================================
               BUY BOX
-          ============================================================ */}
+          =================================================================== */}
 
           <div>
+
             <p className="text-xs font-semibold uppercase tracking-widest text-brand-red">
               {product.category}
             </p>
@@ -437,9 +461,12 @@ export default function ProductDetail() {
               {product.description}
             </p>
 
-            {/* Pack Size */}
+            {/* ================================================================
+                PACK SIZE
+            ================================================================= */}
 
             <div className="mt-7">
+
               <label
                 htmlFor="product-pack-size"
                 className="
@@ -463,12 +490,25 @@ export default function ProductDetail() {
                 onChange={(
                   event,
                 ) => {
-                  setSelectedSkuIndex(
+                  const nextIndex =
                     Number(
                       event.target.value,
-                    ),
-                  );
-                  setQuantity(1);
+                    );
+
+                  if (
+                    Number.isInteger(
+                      nextIndex,
+                    ) &&
+                    nextIndex >= 0 &&
+                    nextIndex <
+                      purchasableSkus.length
+                  ) {
+                    setSelectedSkuIndex(
+                      nextIndex,
+                    );
+
+                    setQuantity(1);
+                  }
                 }}
                 className="
                   min-h-[48px]
@@ -497,7 +537,9 @@ export default function ProductDetail() {
                       key={
                         sku.sku
                       }
-                      value={index}
+                      value={
+                        index
+                      }
                     >
                       {PACK_LABELS[
                         sku.packSize
@@ -507,11 +549,18 @@ export default function ProductDetail() {
                   ),
                 )}
               </select>
+
+              <p className="mt-2 text-xs text-brand-brown/45">
+                Selected pack: {packLabel}
+              </p>
             </div>
 
-            {/* Price */}
+            {/* ================================================================
+                PRICE
+            ================================================================= */}
 
             <div className="mt-7 flex flex-wrap items-baseline gap-3">
+
               <span className="text-3xl font-bold text-brand-red">
                 {formatPrice(
                   selectedSku.websitePrice,
@@ -527,14 +576,17 @@ export default function ProductDetail() {
                 </span>
               )}
 
-              {discount > 0 && (
+              {discount >
+                0 && (
                 <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
                   {discount}% below MRP
                 </span>
               )}
             </div>
 
-            {/* Shipping */}
+            {/* ================================================================
+                SHIPPING
+            ================================================================= */}
 
             <div className="mt-3 flex items-center gap-2 text-sm">
               <Truck className="h-4 w-4 text-green-700" />
@@ -544,9 +596,14 @@ export default function ProductDetail() {
               </span>
             </div>
 
-            {/* Quantity + Cart */}
+            {/* ================================================================
+                QUANTITY + ACTIONS
+            ================================================================= */}
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+
+              {/* Quantity */}
+
               <div
                 className="
                   inline-flex
@@ -596,6 +653,8 @@ export default function ProductDetail() {
                 </button>
               </div>
 
+              {/* Add to Cart */}
+
               <button
                 type="button"
                 onClick={
@@ -635,6 +694,8 @@ export default function ProductDetail() {
                 )}
               </button>
 
+              {/* Buy Now */}
+
               <button
                 type="button"
                 onClick={
@@ -666,9 +727,12 @@ export default function ProductDetail() {
               </button>
             </div>
 
-            {/* Trust Features */}
+            {/* ================================================================
+                TRUST FEATURES
+            ================================================================= */}
 
             <div className="mt-7 grid grid-cols-3 gap-3 border-t border-brand-brown/10 py-6 sm:gap-5">
+
               {[
                 {
                   icon: Leaf,
@@ -680,7 +744,7 @@ export default function ProductDetail() {
                 },
                 {
                   icon: Truck,
-                  label: 'Delivery available',
+                  label: 'Free Shipping',
                 },
               ].map(
                 (
@@ -710,12 +774,13 @@ export default function ProductDetail() {
         </div>
       </section>
 
-      {/* ================================================================
+      {/* ======================================================================
           PRODUCT INFORMATION
-      ================================================================ */}
+      ======================================================================= */}
 
       <section className="bg-brand-cream-dark py-16 lg:py-20">
         <div className="container-max container-px">
+
           <div className="grid gap-6 lg:grid-cols-2">
 
             {/* Ingredients */}
@@ -737,6 +802,7 @@ export default function ProductDetail() {
                       className="flex gap-3 text-sm text-brand-brown/70"
                     >
                       <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-red" />
+
                       <span>
                         {ingredient}
                       </span>
@@ -802,6 +868,7 @@ export default function ProductDetail() {
               </h2>
 
               <div className="mt-5 space-y-3 text-sm text-brand-brown/70">
+
                 <p>
                   <span className="font-semibold text-brand-brown">
                     FSSAI Licence:
@@ -813,21 +880,23 @@ export default function ProductDetail() {
                   <Leaf className="h-4 w-4 text-green-700" />
                   100% Vegetarian
                 </p>
+
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ================================================================
+      {/* ======================================================================
           REVIEWS
-      ================================================================ */}
+      ======================================================================= */}
 
       <section
         id="reviews"
         className="container-max container-px py-16 lg:py-20"
       >
         <div className="mb-8 flex items-center gap-3">
+
           <Star className="h-6 w-6 fill-current text-brand-red" />
 
           <div>
@@ -839,23 +908,31 @@ export default function ProductDetail() {
               Genuine customer feedback for this product.
             </p>
           </div>
+
         </div>
 
         <ReviewSection
-          productId={product.id}
-          productName={product.name}
-          sku={selectedSku.sku}
+          productId={
+            product.id
+          }
+          productName={
+            product.name
+          }
+          sku={
+            selectedSku.sku
+          }
         />
       </section>
 
-      {/* ================================================================
+      {/* ======================================================================
           RELATED PRODUCTS
-      ================================================================ */}
+      ======================================================================= */}
 
       {relatedProducts.length >
         0 && (
         <section className="bg-brand-cream-dark py-16 lg:py-20">
           <div className="container-max container-px">
+
             <div className="mb-10 text-center">
               <p className="section-eyebrow">
                 Explore More
@@ -883,6 +960,7 @@ export default function ProductDetail() {
                 ),
               )}
             </div>
+
           </div>
         </section>
       )}
