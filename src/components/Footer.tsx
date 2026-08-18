@@ -562,7 +562,7 @@ interface FooterLink {
 
 interface FooterLinkGroupProps {
   title: string;
-  links: FooterLink[];
+  links: readonly FooterLink[];
   linkClass: string;
 }
 
