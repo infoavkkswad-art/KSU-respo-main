@@ -11,13 +11,18 @@ import { Reveal } from '@/components/Reveal';
 
 /* ==========================================================================
    KAWAD SWAD 2.0
-   GALLERY
+   CENTRAL GALLERY EXPERIENCE
 
-   Design flow:
-   HERO → SOCIAL PROOF → DISCOVERY → FOLLOW
+   Flow:
+   HERO → SOCIAL PROOF → INSTAGRAM DISCOVERY → FOLLOW CTA
+
+   Design system:
+   - Ivory   = canvas
+   - Green   = trust / structure
+   - Saffron = social / action accent
+   - Brown   = heritage / supporting text
 
    Instagram remains the source of truth.
-   The surrounding experience follows the central design system.
    ========================================================================== */
 
 
@@ -63,7 +68,7 @@ declare global {
 
 
 /* ==========================================================================
-   INSTAGRAM EMBED SYSTEM
+   INSTAGRAM EMBED ENGINE
    ========================================================================== */
 
 function processInstagramEmbeds() {
@@ -82,16 +87,11 @@ function loadInstagramEmbeds() {
     return;
   }
 
-  const script =
-    document.createElement('script');
+  const script = document.createElement('script');
 
-  script.src =
-    INSTAGRAM_EMBED_SCRIPT;
-
+  script.src = INSTAGRAM_EMBED_SCRIPT;
   script.async = true;
-
-  script.onload =
-    processInstagramEmbeds;
+  script.onload = processInstagramEmbeds;
 
   document.body.appendChild(script);
 }
@@ -106,17 +106,19 @@ export default function Gallery() {
     loadInstagramEmbeds();
 
     /*
-     * Instagram's embed processor can finish before React has
-     * completely painted all cards. A second processing pass makes
-     * navigation back to this page more reliable.
+     * Instagram may process before React finishes painting
+     * every embed. A delayed second pass improves SPA navigation
+     * reliability without repeatedly loading the external script.
      */
-    const retryId = window.setTimeout(
-      processInstagramEmbeds,
-      600,
-    );
+    const retryIds = [
+      window.setTimeout(processInstagramEmbeds, 500),
+      window.setTimeout(processInstagramEmbeds, 1400),
+    ];
 
     return () => {
-      window.clearTimeout(retryId);
+      retryIds.forEach((id) => {
+        window.clearTimeout(id);
+      });
     };
   }, []);
 
@@ -152,20 +154,49 @@ export default function Gallery() {
 
 
       {/* ======================================================================
-          GALLERY CONTENT
+          GALLERY
           =================================================================== */}
 
       <section
         className="
+          relative
+          overflow-hidden
           bg-brand-ivory
-          py-12
-          sm:py-16
+          py-14
+          sm:py-18
           lg:py-24
         "
         aria-labelledby="gallery-intro-title"
       >
-        <div className="container-max container-px">
 
+        {/* Quiet background structure */}
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            bg-warm-glow
+            opacity-60
+          "
+          aria-hidden="true"
+        />
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            right-[-8rem]
+            top-24
+            h-72
+            w-72
+            rounded-full
+            border
+            border-brand-saffron/10
+          "
+          aria-hidden="true"
+        />
+
+        <div className="container-max container-px relative">
 
           {/* ==================================================================
               INTRO
@@ -176,22 +207,25 @@ export default function Gallery() {
               className="
                 mx-auto
                 mb-10
-                max-w-2xl
+                max-w-3xl
                 text-center
                 sm:mb-14
               "
             >
+
               <div
                 className="
                   mx-auto
-                  mb-4
+                  mb-5
                   flex
-                  h-12
-                  w-12
+                  h-14
+                  w-14
                   items-center
                   justify-center
                   rounded-2xl
-                  bg-brand-saffron/10
+                  border
+                  border-brand-saffron/15
+                  bg-white
                   text-brand-saffron
                   shadow-soft
                 "
@@ -200,7 +234,7 @@ export default function Gallery() {
                 <Instagram className="h-6 w-6" />
               </div>
 
-              <span className="section-eyebrow mb-2 block">
+              <span className="section-eyebrow mb-3 block">
                 Real Social Proof
               </span>
 
@@ -209,10 +243,9 @@ export default function Gallery() {
                 className="
                   text-balance
                   font-serif
-                  text-headline-sm
+                  text-headline-md
                   font-bold
                   text-brand-green
-                  sm:text-headline-md
                 "
               >
                 From our real Instagram journey
@@ -222,8 +255,8 @@ export default function Gallery() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-3
-                  max-w-xl
+                  mt-4
+                  max-w-2xl
                   text-sm
                   leading-relaxed
                   text-brand-brown/65
@@ -232,7 +265,19 @@ export default function Gallery() {
               >
                 Products, people, moments and stories
                 directly from Kawad Swad&apos;s Instagram.
+                No stock gallery. Just the real journey.
               </p>
+
+              <div
+                className="
+                  mx-auto
+                  mt-5
+                  h-px
+                  w-16
+                  bg-brand-saffron/40
+                "
+                aria-hidden="true"
+              />
             </div>
           </Reveal>
 
@@ -251,176 +296,234 @@ export default function Gallery() {
               lg:gap-6
             "
           >
-            {instagramPosts.map(
-              (url, index) => (
-                <Reveal
-                  key={url}
-                  delay={Math.min(
-                    index * 40,
-                    300,
-                  )}
+            {instagramPosts.map((url, index) => (
+              <Reveal
+                key={url}
+                delay={Math.min(index * 35, 280)}
+                className="h-full"
+              >
+                <article
+                  className="
+                    group
+                    flex
+                    h-full
+                    flex-col
+                    overflow-hidden
+                    rounded-3xl
+                    border
+                    border-brand-green/10
+                    bg-white
+                    p-3
+                    shadow-card
+                    transition-all
+                    duration-300
+                    hover:-translate-y-1
+                    hover:border-brand-saffron/20
+                    hover:shadow-lift
+                  "
                 >
-                  <article
+
+                  {/* ==========================================================
+                      EMBED
+                      ======================================================= */}
+
+                  <div
                     className="
-                      group
                       relative
                       overflow-hidden
-                      rounded-3xl
-                      border
-                      border-brand-green/10
-                      bg-white
-                      p-3
-                      shadow-card
-                      transition-all
-                      duration-300
-                      hover:-translate-y-1
-                      hover:shadow-lift
+                      rounded-2xl
+                      bg-brand-ivory
                     "
                   >
-                    {/* ========================================================
-                        INSTAGRAM EMBED
-                        ===================================================== */}
-
                     <div
                       className="
-                        overflow-hidden
-                        rounded-2xl
-                        bg-brand-ivory
+                        pointer-events-none
+                        absolute
+                        inset-x-0
+                        top-0
+                        z-10
+                        h-1
+                        bg-brand-saffron/30
                       "
-                    >
-                      <blockquote
-                        className="instagram-media"
-                        data-instgrm-permalink={url}
-                        data-instgrm-version="14"
-                        style={{
-                          background: '#FFFDF7',
-                          border: 0,
-                          borderRadius: '16px',
-                          boxShadow: 'none',
-                          margin: 0,
-                          maxWidth: '100%',
-                          minWidth: '100%',
-                          padding: 0,
-                          width: '100%',
-                        }}
-                      >
-                        <div
-                          className="
-                            flex
-                            min-h-[280px]
-                            items-center
-                            justify-center
-                            p-6
-                            text-center
-                          "
-                        >
-                          <div>
-                            <Instagram
-                              className="
-                                mx-auto
-                                mb-3
-                                h-8
-                                w-8
-                                text-brand-saffron
-                              "
-                              aria-hidden="true"
-                            />
+                      aria-hidden="true"
+                    />
 
-                            <p
-                              className="
-                                text-xs
-                                font-medium
-                                text-brand-brown/50
-                              "
-                            >
-                              Loading Instagram post…
-                            </p>
-                          </div>
+                    <blockquote
+                      className="instagram-media"
+                      data-instgrm-permalink={url}
+                      data-instgrm-version="14"
+                      style={{
+                        background: '#FFFDF7',
+                        border: 0,
+                        borderRadius: '16px',
+                        boxShadow: 'none',
+                        margin: 0,
+                        maxWidth: '100%',
+                        minWidth: '100%',
+                        padding: 0,
+                        width: '100%',
+                      }}
+                    >
+                      <div
+                        className="
+                          flex
+                          min-h-[300px]
+                          items-center
+                          justify-center
+                          p-6
+                          text-center
+                        "
+                      >
+                        <div>
+                          <Instagram
+                            className="
+                              mx-auto
+                              mb-3
+                              h-8
+                              w-8
+                              text-brand-saffron
+                            "
+                            aria-hidden="true"
+                          />
+
+                          <p
+                            className="
+                              text-xs
+                              font-medium
+                              text-brand-brown/50
+                            "
+                          >
+                            Loading Instagram post…
+                          </p>
                         </div>
-                      </blockquote>
-                    </div>
+                      </div>
+                    </blockquote>
+                  </div>
 
 
-                    {/* ========================================================
-                        CARD ACTION
-                        ===================================================== */}
+                  {/* ==========================================================
+                      CARD FOOTER
+                      ======================================================= */}
 
-                    <div
+                  <div
+                    className="
+                      mt-auto
+                      flex
+                      items-center
+                      justify-between
+                      gap-3
+                      border-t
+                      border-brand-green/10
+                      px-2
+                      pb-1
+                      pt-3
+                    "
+                  >
+                    <span
                       className="
-                        flex
+                        inline-flex
+                        min-w-0
                         items-center
-                        justify-between
-                        gap-3
-                        px-2
-                        pb-1
-                        pt-3
+                        gap-1.5
+                        truncate
+                        text-[10px]
+                        font-semibold
+                        uppercase
+                        tracking-[0.14em]
+                        text-brand-brown/45
                       "
                     >
-                      <span
+                      <Instagram
                         className="
-                          inline-flex
-                          min-w-0
-                          items-center
-                          gap-1.5
-                          truncate
-                          text-[10px]
-                          font-semibold
-                          uppercase
-                          tracking-wider
-                          text-brand-brown/45
-                        "
-                      >
-                        <Instagram
-                          className="
-                            h-3.5
-                            w-3.5
-                            shrink-0
-                          "
-                          aria-hidden="true"
-                        />
-
-                        Kawad Swad
-                      </span>
-
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`Open Instagram post ${index + 1}`}
-                        className="
-                          inline-flex
-                          min-h-[36px]
+                          h-3.5
+                          w-3.5
                           shrink-0
-                          items-center
-                          gap-1
-                          rounded-full
-                          px-3
-                          py-1.5
-                          text-[10px]
-                          font-semibold
-                          text-brand-saffron
-                          transition-all
-                          duration-200
-                          hover:bg-brand-saffron/10
-                          focus:outline-none
-                          focus-visible:ring-2
-                          focus-visible:ring-brand-saffron
-                          focus-visible:ring-offset-2
                         "
-                      >
-                        Open
+                        aria-hidden="true"
+                      />
 
-                        <ExternalLink
-                          className="h-3 w-3"
-                          aria-hidden="true"
-                        />
-                      </a>
-                    </div>
-                  </article>
-                </Reveal>
-              ),
-            )}
+                      Kawad Swad
+                    </span>
+
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Open Instagram post ${index + 1}`}
+                      className="
+                        inline-flex
+                        min-h-[36px]
+                        shrink-0
+                        items-center
+                        gap-1
+                        rounded-full
+                        px-3
+                        py-1.5
+                        text-[10px]
+                        font-semibold
+                        text-brand-green
+                        transition-all
+                        duration-200
+                        hover:bg-brand-green/5
+                        hover:text-brand-saffron
+                        focus:outline-none
+                        focus-visible:ring-2
+                        focus-visible:ring-brand-saffron
+                        focus-visible:ring-offset-2
+                      "
+                    >
+                      Open
+
+                      <ExternalLink
+                        className="h-3 w-3"
+                        aria-hidden="true"
+                      />
+                    </a>
+                  </div>
+
+                </article>
+              </Reveal>
+            ))}
           </div>
+
+
+          {/* ==================================================================
+              DISCOVERY NOTE
+              =================================================================== */}
+
+          <Reveal>
+            <div
+              className="
+                mx-auto
+                mt-12
+                max-w-3xl
+                rounded-2xl
+                border
+                border-brand-green/10
+                bg-white/70
+                px-5
+                py-4
+                text-center
+                shadow-soft
+                sm:mt-16
+                sm:px-7
+                sm:py-5
+              "
+            >
+              <p
+                className="
+                  text-xs
+                  leading-relaxed
+                  text-brand-brown/60
+                  sm:text-sm
+                "
+              >
+                New moments are added through our Instagram
+                journey. Visit the original posts to explore
+                the complete story.
+              </p>
+            </div>
+          </Reveal>
 
 
           {/* ==================================================================
@@ -430,93 +533,133 @@ export default function Gallery() {
           <Reveal>
             <div
               className="
+                relative
                 mx-auto
-                mt-14
+                mt-10
                 max-w-2xl
+                overflow-hidden
                 rounded-3xl
-                border
-                border-brand-green/10
-                bg-brand-ivory-dark
+                bg-brand-brown
                 p-7
                 text-center
-                shadow-soft
-                sm:mt-20
-                sm:p-9
+                shadow-lift
+                sm:mt-14
+                sm:p-10
               "
             >
+
               <div
                 className="
-                  mx-auto
-                  mb-4
-                  flex
-                  h-11
-                  w-11
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-brand-saffron/10
-                  text-brand-saffron
+                  pointer-events-none
+                  absolute
+                  inset-0
+                  bg-dots
+                  opacity-10
                 "
                 aria-hidden="true"
-              >
-                <Instagram className="h-5 w-5" />
+              />
+
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  -right-20
+                  -top-20
+                  h-52
+                  w-52
+                  rounded-full
+                  border
+                  border-brand-saffron/15
+                "
+                aria-hidden="true"
+              />
+
+              <div className="relative">
+
+                <div
+                  className="
+                    mx-auto
+                    mb-5
+                    flex
+                    h-12
+                    w-12
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-brand-saffron
+                    text-white
+                    shadow-glow
+                  "
+                  aria-hidden="true"
+                >
+                  <Instagram className="h-5 w-5" />
+                </div>
+
+                <span
+                  className="
+                    section-eyebrow
+                    mb-2
+                    block
+                    text-brand-saffron
+                  "
+                >
+                  Stay Connected
+                </span>
+
+                <h2
+                  className="
+                    text-balance
+                    font-serif
+                    text-headline-sm
+                    font-bold
+                    text-white
+                  "
+                >
+                  Follow the journey
+                </h2>
+
+                <p
+                  className="
+                    text-pretty
+                    mx-auto
+                    mt-3
+                    max-w-lg
+                    text-sm
+                    leading-relaxed
+                    text-brand-cream/75
+                    sm:text-base
+                  "
+                >
+                  Follow Kawad Swad on Instagram for new
+                  products, Reels, behind-the-scenes moments
+                  and updates.
+                </p>
+
+                <a
+                  href="https://www.instagram.com/kawadswad"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="
+                    btn-yellow
+                    mt-6
+                    min-h-[48px]
+                    px-7
+                  "
+                >
+                  <Instagram
+                    className="h-4 w-4"
+                    aria-hidden="true"
+                  />
+
+                  Follow @kawadswad
+
+                  <ExternalLink
+                    className="h-3.5 w-3.5"
+                    aria-hidden="true"
+                  />
+                </a>
+
               </div>
-
-              <span className="section-eyebrow mb-2 block">
-                Stay Connected
-              </span>
-
-              <h2
-                className="
-                  text-balance
-                  font-serif
-                  text-headline-sm
-                  font-bold
-                  text-brand-green
-                "
-              >
-                Follow the journey
-              </h2>
-
-              <p
-                className="
-                  text-pretty
-                  mx-auto
-                  mt-2
-                  max-w-lg
-                  text-sm
-                  leading-relaxed
-                  text-brand-brown/65
-                "
-              >
-                Follow Kawad Swad on Instagram for new
-                products, Reels, behind-the-scenes moments
-                and updates.
-              </p>
-
-              <a
-                href="https://www.instagram.com/kawadswad"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="
-                  btn-primary
-                  mt-6
-                  min-h-[46px]
-                  px-6
-                "
-              >
-                <Instagram
-                  className="h-4 w-4"
-                  aria-hidden="true"
-                />
-
-                Follow @kawadswad
-
-                <ExternalLink
-                  className="h-3.5 w-3.5"
-                  aria-hidden="true"
-                />
-              </a>
             </div>
           </Reveal>
 
