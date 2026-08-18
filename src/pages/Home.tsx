@@ -283,16 +283,26 @@ export default function Home() {
                     sm:aspect-[5/6]
                   "
                 >
-                  <img
-                    src="/images/pages/product-showcase.png"
-                    alt="Kawad Swad premium papad collection"
+                  <video
                     className="
                       h-full
                       w-full
                       object-cover
                     "
-                    fetchPriority="high"
-                  />
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="auto"
+                    poster="/images/pages/product-showcase.png"
+                    aria-label="Kawad Swad premium papad hero video"
+                  >
+                    <source
+                      src="/videos/home-hero.mp4"
+                      type="video/mp4"
+                    />
+                    Your browser does not support the hero video.
+                  </video>
 
                   <div
                     className="
