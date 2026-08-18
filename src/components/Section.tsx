@@ -1,58 +1,64 @@
 import type { ReactNode } from 'react';
 
+/* ==========================================================================
+   KAWAD SWAD 2.0
+   CENTRAL SECTION / CONTENT SYSTEM
+
+   Purpose:
+   - One consistent section language across the entire website
+   - Central control of heading hierarchy
+   - Central control of page heroes
+   - Consistent responsive spacing
+   - Behavioral hierarchy: eyebrow → title → description → action
+   - Removes page-by-page visual improvisation
+
+   Important:
+   Existing exports are preserved:
+   - SectionHeading
+   - PageHero
+   - PlaceholderImage
+
+   New reusable exports:
+   - Section
+   - SectionHeader
+   ========================================================================== */
+
+
+/* ==========================================================================
+   TYPES
+   ========================================================================== */
+
+type SectionSpacing = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+
+type SectionSurface =
+  | 'default'
+  | 'white'
+  | 'soft'
+  | 'green'
+  | 'brown'
+  | 'transparent';
+
+interface SectionProps {
+  children: ReactNode;
+  className?: string;
+  id?: string;
+  spacing?: SectionSpacing;
+  surface?: SectionSurface;
+  container?: boolean;
+  containerClassName?: string;
+  as?: 'section' | 'div' | 'article' | 'aside';
+  ariaLabel?: string;
+}
+
 interface SectionHeadingProps {
   eyebrow?: string;
   title: string;
   description?: string;
   center?: boolean;
   className?: string;
-}
-
-export function SectionHeading({
-  eyebrow,
-  title,
-  description,
-  center = true,
-  className = '',
-}: SectionHeadingProps) {
-  return (
-    <div
-      className={`
-        w-full
-        ${center ? 'mx-auto max-w-3xl text-center' : 'max-w-3xl'}
-        ${className}
-      `}
-    >
-      {eyebrow && (
-        <p className="section-eyebrow mb-2.5 text-xs sm:mb-3 sm:text-sm">
-          {eyebrow}
-        </p>
-      )}
-
-      <h2
-        className="
-          text-balance
-          font-serif font-bold leading-tight
-          text-brand-green
-          text-3xl sm:text-4xl lg:text-5xl
-        "
-      >
-        {title}
-      </h2>
-
-      {description && (
-        <p
-          className="
-            text-pretty mx-auto mt-3 max-w-2xl
-            text-sm leading-relaxed text-brand-brown/65
-            sm:mt-4 sm:text-base lg:text-lg
-          "
-        >
-          {description}
-        </p>
-      )}
-    </div>
-  );
+  titleClassName?: string;
+  descriptionClassName?: string;
+  children?: ReactNode;
 }
 
 interface PageHeroProps {
@@ -60,74 +66,333 @@ interface PageHeroProps {
   title: string;
   description?: string;
   children?: ReactNode;
+  className?: string;
+  contentClassName?: string;
+  visual?: ReactNode;
+  align?: 'left' | 'center';
+  surface?: 'default' | 'green' | 'image';
+  imageSrc?: string;
+  imageAlt?: string;
+  showDecoration?: boolean;
 }
+
+interface PlaceholderImageProps {
+  label: string;
+  aspect?: string;
+  className?: string;
+  /** Kept for compatibility. */
+  decorative?: boolean;
+}
+
+
+/* ==========================================================================
+   CENTRAL SECTION
+   ========================================================================== */
+
+const spacingClasses: Record<SectionSpacing, string> = {
+  none: '',
+  sm: 'section-sm',
+  md: 'section-md',
+  lg: 'section-lg',
+  xl: 'section-xl',
+};
+
+const surfaceClasses: Record<SectionSurface, string> = {
+  default: 'bg-brand-ivory',
+  white: 'bg-white',
+  soft: 'bg-brand-ivory-dark',
+  green: 'bg-brand-green text-white',
+  brown: 'bg-brand-brown text-white',
+  transparent: 'bg-transparent',
+};
+
+export function Section({
+  children,
+  className = '',
+  id,
+  spacing = 'lg',
+  surface = 'default',
+  container = true,
+  containerClassName = '',
+  as: Component = 'section',
+  ariaLabel,
+}: SectionProps) {
+  return (
+    <Component
+      id={id}
+      aria-label={ariaLabel}
+      className={`
+        section
+        ${spacingClasses[spacing]}
+        ${surfaceClasses[surface]}
+        ${className}
+      `}
+    >
+      {container ? (
+        <div className={`container-max container-px ${containerClassName}`}>
+          {children}
+        </div>
+      ) : (
+        children
+      )}
+    </Component>
+  );
+}
+
+
+/* ==========================================================================
+   CENTRAL SECTION HEADER
+   ========================================================================== */
+
+export function SectionHeader({
+  eyebrow,
+  title,
+  description,
+  center = true,
+  className = '',
+  titleClassName = '',
+  descriptionClassName = '',
+  children,
+}: SectionHeadingProps) {
+  return (
+    <div
+      className={`
+        section-header
+        ${center ? 'text-center' : 'section-header-left'}
+        ${className}
+      `}
+    >
+      {eyebrow && (
+        <p className="section-eyebrow mb-2.5 sm:mb-3">
+          {eyebrow}
+        </p>
+      )}
+
+      <h2
+        className={`
+          type-h2
+          text-balance
+          text-brand-green
+          ${titleClassName}
+        `}
+      >
+        {title}
+      </h2>
+
+      {description && (
+        <p
+          className={`
+            type-body-lg
+            text-pretty
+            mt-4
+            max-w-2xl
+            text-brand-brown/65
+            ${center ? 'mx-auto' : ''}
+            ${descriptionClassName}
+          `}
+        >
+          {description}
+        </p>
+      )}
+
+      {children && (
+        <div className="mt-6 sm:mt-7">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/* ==========================================================================
+   BACKWARD-COMPATIBLE SECTION HEADING
+   ========================================================================== */
+
+export function SectionHeading({
+  eyebrow,
+  title,
+  description,
+  center = true,
+  className = '',
+  titleClassName = '',
+  descriptionClassName = '',
+  children,
+}: SectionHeadingProps) {
+  return (
+    <SectionHeader
+      eyebrow={eyebrow}
+      title={title}
+      description={description}
+      center={center}
+      className={className}
+      titleClassName={titleClassName}
+      descriptionClassName={descriptionClassName}
+    >
+      {children}
+    </SectionHeader>
+  );
+}
+
+
+/* ==========================================================================
+   CENTRAL PAGE HERO
+   ========================================================================== */
 
 export function PageHero({
   eyebrow,
   title,
   description,
   children,
+  className = '',
+  contentClassName = '',
+  visual,
+  align = 'left',
+  surface = 'default',
+  imageSrc,
+  imageAlt = '',
+  showDecoration = true,
 }: PageHeroProps) {
+  const hasImage = surface === 'image' && Boolean(imageSrc);
+
   return (
     <section
-      className="
-        relative overflow-hidden
-        bg-brand-ivory
-        py-10 sm:py-12 lg:py-16
-      "
+      className={`
+        page-hero
+        ${surface === 'green' ? 'bg-brand-green text-white' : ''}
+        ${surface === 'image' ? 'bg-brand-green' : ''}
+        ${surface === 'default' ? 'bg-brand-ivory' : ''}
+        ${className}
+      `}
     >
-      <div
-        className="
-          pointer-events-none absolute
-          -right-24 -top-24
-          h-56 w-56 rounded-full
-          border border-brand-saffron/15
-          sm:h-72 sm:w-72
-        "
-        aria-hidden="true"
-      />
+      {hasImage && (
+        <>
+          <img
+            src={imageSrc}
+            alt={imageAlt}
+            className="page-hero-image"
+            loading="eager"
+            decoding="async"
+          />
+
+          <div
+            className="page-hero-overlay"
+            aria-hidden="true"
+          />
+        </>
+      )}
+
+      {showDecoration && !hasImage && (
+        <>
+          <div
+            className="
+              pointer-events-none absolute
+              -right-24 -top-24
+              h-56 w-56 rounded-full
+              border border-brand-saffron/15
+              sm:h-72 sm:w-72
+              lg:h-96 lg:w-96
+            "
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              pointer-events-none absolute inset-0
+              bg-grid opacity-25
+            "
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              pointer-events-none absolute
+              -bottom-32 -left-24
+              h-72 w-72 rounded-full
+              border border-brand-green/10
+              sm:h-96 sm:w-96
+            "
+            aria-hidden="true"
+          />
+        </>
+      )}
+
+      {visual && (
+        <div
+          className="
+            pointer-events-none absolute
+            inset-y-0 right-0
+            hidden w-1/2
+            lg:block
+          "
+          aria-hidden="true"
+        >
+          {visual}
+        </div>
+      )}
 
       <div
-        className="
-          pointer-events-none absolute inset-0
-          bg-grid opacity-25
-        "
-        aria-hidden="true"
-      />
-
-      <div className="container-max container-px relative">
-        <div className="max-w-4xl">
+        className={`
+          container-max container-px
+          relative z-content
+          flex min-h-[18rem] items-center
+          py-12 sm:min-h-[20rem] sm:py-16
+          lg:min-h-[24rem] lg:py-20
+          ${align === 'center' ? 'justify-center text-center' : ''}
+        `}
+      >
+        <div
+          className={`
+            max-w-4xl
+            ${align === 'center' ? 'mx-auto' : ''}
+            ${contentClassName}
+          `}
+        >
           {eyebrow && (
-            <p className="section-eyebrow mb-2.5 text-xs sm:mb-3 sm:text-sm">
+            <p
+              className={`
+                section-eyebrow
+                mb-3
+                ${hasImage ? 'text-brand-saffron-light' : ''}
+              `}
+            >
               {eyebrow}
             </p>
           )}
 
           <h1
-            className="
-              text-balance max-w-4xl
-              font-serif font-bold leading-[1.05]
-              text-brand-green
-              text-4xl sm:text-5xl lg:text-6xl
-            "
+            className={`
+              type-h1
+              text-balance
+              ${hasImage || surface === 'green'
+                ? 'text-white'
+                : 'text-brand-green'
+              }
+            `}
           >
             {title}
           </h1>
 
           {description && (
             <p
-              className="
-                text-pretty mt-3 max-w-2xl
-                text-sm leading-relaxed text-brand-brown/65
-                sm:mt-4 sm:text-base lg:text-lg
-              "
+              className={`
+                type-body-lg
+                text-pretty
+                mt-4
+                max-w-2xl
+                ${align === 'center' ? 'mx-auto' : ''}
+                ${hasImage || surface === 'green'
+                  ? 'text-white/80'
+                  : 'text-brand-brown/65'
+                }
+              `}
             >
               {description}
             </p>
           )}
 
           {children && (
-            <div className="mt-5 sm:mt-6">
+            <div className="mt-6 sm:mt-7">
               {children}
             </div>
           )}
@@ -137,66 +402,70 @@ export function PageHero({
   );
 }
 
-interface PlaceholderImageProps {
-  label: string;
-  aspect?: string;
-  className?: string;
-}
+
+/* ==========================================================================
+   CENTRAL IMAGE PLACEHOLDER / FALLBACK
+
+   This remains available because existing pages may still import it.
+
+   It is intentionally visually neutral and should be treated as a temporary
+   development fallback. Once real assets exist, pages should use the central
+   image system instead.
+   ========================================================================== */
 
 export function PlaceholderImage({
   label,
   aspect = 'aspect-video',
   className = '',
+  decorative = false,
 }: PlaceholderImageProps) {
   return (
     <div
       className={`
-        relative ${aspect} w-full overflow-hidden rounded-2xl
-        bg-gradient-to-br
-        from-brand-ivory-dark
-        via-brand-ivory
-        to-brand-saffron/10
+        image-adaptive-surface
+        relative
+        ${aspect}
+        w-full
+        overflow-hidden
+        rounded-3xl
         ${className}
       `}
-      role="img"
-      aria-label={`${label} placeholder image`}
+      role={decorative ? undefined : 'img'}
+      aria-label={decorative ? undefined : label}
+      aria-hidden={decorative ? true : undefined}
     >
       <div
         className="
           pointer-events-none absolute inset-0
-          bg-dots opacity-30
+          bg-dots opacity-25
         "
         aria-hidden="true"
       />
 
       <div
         className="
-          absolute inset-0 flex items-center
-          justify-center p-5 sm:p-8
+          absolute inset-0
+          flex items-center justify-center
+          p-5 sm:p-8
         "
       >
         <span
           className="
-            max-w-[85%] text-center
-            text-xs font-medium leading-relaxed
-            text-brand-brown/40 sm:text-sm
+            max-w-[85%]
+            text-center
+            text-xs font-medium
+            leading-relaxed
+            text-brand-brown/40
+            sm:text-sm
           "
         >
           {label}
         </span>
       </div>
 
-      <div className="absolute bottom-2 right-3 sm:bottom-3 sm:right-4">
-        <span
-          className="
-            text-[9px] font-medium uppercase
-            tracking-[0.12em] text-brand-brown/25
-            sm:text-2xs sm:tracking-wider
-          "
-        >
-          Placeholder
-        </span>
-      </div>
+      <span className="sr-only">
+        {label}
+      </span>
     </div>
   );
 }
