@@ -34,21 +34,34 @@ export default function Home() {
   const featured =
     ProductService.getFeaturedProducts();
 
-  /*
-   * Compute a base URL that works when the site is served from a subpath
-   * (GitHub Pages /<repo>/) and when served from root. Prefer the
-   * bundler/runtime-provided BASE_URL / PUBLIC_URL when available.
-   */
-  const base =
-    (typeof (import.meta as any) !== 'undefined' &&
-      (import.meta as any).env &&
-      (import.meta as any).env.BASE_URL) ||
-    process.env.PUBLIC_URL ||
-    '/';
 
-  const videoSrc = `${base.replace(/\/$/, '')}/videos/home-hero.mp4`;
-  // poster fallback (uploaded to public/images/pages/home-hero-poster.png)
-  const posterSrc = `${base.replace(/\/$/, '')}/images/pages/home-hero-poster.png`;
+  /* ==========================================================================
+     HERO VIDEO
+     ======================================================================== */
+
+  /*
+   * The video is stored in:
+   *
+   * public/videos/home-hero.mp4
+   *
+   * Because this website is deployed on Render with the custom domain
+   * kawadswad.in, the public asset should be referenced directly from root.
+   */
+
+  const videoSrc = '/videos/home-hero.mp4';
+
+  /*
+   * Fallback poster:
+   *
+   * public/images/pages/home-hero-poster.png
+   *
+   * This is ONLY a fallback while the video is loading or if the browser
+   * cannot play the video.
+   */
+
+  const posterSrc =
+    '/images/pages/home-hero-poster.png';
+
 
   /* ==========================================================================
      TRUST DATA
@@ -272,7 +285,7 @@ export default function Home() {
 
 
             {/* ================================================================
-                HERO VISUAL
+                HERO VIDEO
                 ============================================================= */}
 
             <div
@@ -285,27 +298,31 @@ export default function Home() {
                 className="
                   relative
                   mx-auto
+                  w-full
                   max-w-[430px]
                 "
               >
+
+                {/* ------------------------------------------------------------
+                    VIDEO CONTAINER
+                    ------------------------------------------------------------ */}
+
                 <div
                   className="
                     image-premium
                     relative
                     aspect-[9/16]
                     overflow-hidden
+                    rounded-3xl
                     bg-brand-ivory-dark
                     shadow-lift
                   "
                 >
-                  {/*
-                    Use the computed videoSrc so the path works on subpath hosts
-                    (GitHub Pages) and when served from root. Poster provides a
-                    fallback image when the video isn't playing.
-                  */}
 
                   <video
                     className="
+                      absolute
+                      inset-0
                       h-full
                       w-full
                       object-cover
@@ -317,14 +334,31 @@ export default function Home() {
                     preload="auto"
                     poster={posterSrc}
                     aria-label="Kawad Swad welcoming papad mascot hero video"
-                    onError={(e) => {
-                      // hide the broken video element so the poster/fallback remains visible
-                      (e.currentTarget as HTMLVideoElement).style.display = 'none';
-                    }}
                   >
-                    <source src={videoSrc} type="video/mp4" />
+                    <source
+                      src={videoSrc}
+                      type="video/mp4"
+                    />
+
+                    <img
+                      src={posterSrc}
+                      alt="Kawad Swad welcoming mascot"
+                      className="
+                        absolute
+                        inset-0
+                        h-full
+                        w-full
+                        object-cover
+                      "
+                    />
+
                     Your browser does not support the hero video.
                   </video>
+
+
+                  {/* ----------------------------------------------------------
+                      SUBTLE PREMIUM OVERLAY
+                      ---------------------------------------------------------- */}
 
                   <div
                     className="
@@ -338,10 +372,13 @@ export default function Home() {
                     "
                     aria-hidden="true"
                   />
+
                 </div>
 
 
-                {/* Dimensional accent */}
+                {/* ============================================================
+                    DIMENSIONAL ACCENT
+                    ========================================================= */}
 
                 <div
                   className="
@@ -361,7 +398,9 @@ export default function Home() {
                 />
 
 
-                {/* Heritage badge */}
+                {/* ============================================================
+                    HERITAGE BADGE
+                    ========================================================= */}
 
                 <div
                   className="
@@ -395,8 +434,10 @@ export default function Home() {
                     अपना पापड़
                   </p>
                 </div>
+
               </div>
             </div>
+
           </div>
         </div>
       </section>
@@ -592,9 +633,9 @@ export default function Home() {
               Explore All Papads
 
               <ArrowRight
-                    className="h-4 w-4"
-                    aria-hidden="true"
-                  />
+                className="h-4 w-4"
+                aria-hidden="true"
+              />
             </Link>
           </div>
         </div>
@@ -625,7 +666,7 @@ export default function Home() {
             top-1/2
             h-72
             w-72
-          -translate-y-1/2
+            -translate-y-1/2
             rounded-full
             border
             border-brand-saffron/20
@@ -715,6 +756,7 @@ export default function Home() {
                 />
               </Link>
             </Reveal>
+
 
             <Reveal
               delay={100}
@@ -923,6 +965,7 @@ export default function Home() {
               </p>
             </div>
           </Reveal>
+
 
           <div
             className="
