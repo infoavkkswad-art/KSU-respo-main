@@ -7,6 +7,32 @@
 /* ==========================================================================
    KAWAD SWAD 2.0
    CENTRAL DESIGN SYSTEM
+   ==========================================================================
+
+   Single visual source of truth.
+
+   Architecture:
+   01. Design Tokens
+   02. Base / Accessibility
+   03. Layout
+   04. Typography
+   05. Buttons
+   06. Surfaces / Cards
+   07. Forms
+   08. Commerce
+   09. Trust / Badges
+   10. Hero / Story
+   11. 3D System
+   12. Image System
+   13. Brand Decoration
+   14. Motion
+   15. Utility Helpers
+   16. Responsive Safety
+   17. Reduced Motion
+
+   IMPORTANT:
+   Components consume this system.
+   Pages should not create a separate visual language.
    ========================================================================== */
 
 
@@ -16,6 +42,10 @@
 
 @layer base {
   :root {
+    /* ----------------------------------------------------------------------
+       BRAND
+       ---------------------------------------------------------------------- */
+
     --ks-color-green: #173c32;
     --ks-color-green-dark: #102d25;
     --ks-color-green-soft: #285447;
@@ -31,6 +61,10 @@
     --ks-color-red: #a63b2f;
     --ks-color-red-dark: #822b22;
 
+    /* ----------------------------------------------------------------------
+       SURFACES
+       ---------------------------------------------------------------------- */
+
     --ks-surface-page: #fbf7ed;
     --ks-surface-page-dark: #f2eadb;
     --ks-surface-card: #ffffff;
@@ -38,6 +72,10 @@
     --ks-surface-soft: #f7f0e3;
     --ks-surface-green: #173c32;
     --ks-surface-brown: #5b3926;
+
+    /* ----------------------------------------------------------------------
+       TEXT
+       ---------------------------------------------------------------------- */
 
     --ks-text-primary: #3f291d;
     --ks-text-secondary: #674c3a;
@@ -47,10 +85,18 @@
     --ks-text-brand: #173c32;
     --ks-text-accent: #9f6918;
 
+    /* ----------------------------------------------------------------------
+       BORDERS
+       ---------------------------------------------------------------------- */
+
     --ks-border-soft: rgba(23, 60, 50, 0.10);
     --ks-border-default: rgba(23, 60, 50, 0.15);
     --ks-border-strong: rgba(23, 60, 50, 0.25);
     --ks-border-saffron: rgba(200, 138, 42, 0.25);
+
+    /* ----------------------------------------------------------------------
+       TYPOGRAPHY
+       ---------------------------------------------------------------------- */
 
     --ks-font-sans:
       'Poppins',
@@ -75,6 +121,10 @@
     --ks-letter-wide: 0.08em;
     --ks-letter-eyebrow: 0.20em;
 
+    /* ----------------------------------------------------------------------
+       SPACING
+       ---------------------------------------------------------------------- */
+
     --ks-space-1: 0.25rem;
     --ks-space-2: 0.5rem;
     --ks-space-3: 0.75rem;
@@ -89,6 +139,10 @@
     --ks-space-24: 6rem;
     --ks-space-32: 8rem;
 
+    /* ----------------------------------------------------------------------
+       RADIUS
+       ---------------------------------------------------------------------- */
+
     --ks-radius-sm: 0.5rem;
     --ks-radius-md: 0.75rem;
     --ks-radius-lg: 1rem;
@@ -97,6 +151,10 @@
     --ks-radius-3xl: 1.875rem;
     --ks-radius-4xl: 2.5rem;
     --ks-radius-pill: 9999px;
+
+    /* ----------------------------------------------------------------------
+       ELEVATION
+       ---------------------------------------------------------------------- */
 
     --ks-shadow-xs: 0 1px 3px rgba(63, 41, 29, 0.05);
     --ks-shadow-sm: 0 4px 12px rgba(63, 41, 29, 0.07);
@@ -109,6 +167,10 @@
     --ks-shadow-glow: 0 10px 35px rgba(200, 138, 42, 0.22);
     --ks-shadow-green: 0 12px 35px rgba(23, 60, 50, 0.20);
 
+    /* ----------------------------------------------------------------------
+       3D
+       ---------------------------------------------------------------------- */
+
     --ks-perspective-card: 1200px;
     --ks-perspective-product: 1400px;
     --ks-perspective-hero: 1800px;
@@ -117,6 +179,10 @@
     --ks-depth-card: 8px;
     --ks-depth-product: 16px;
     --ks-depth-hero: 24px;
+
+    /* ----------------------------------------------------------------------
+       MOTION
+       ---------------------------------------------------------------------- */
 
     --ks-duration-fast: 160ms;
     --ks-duration-normal: 280ms;
@@ -127,10 +193,18 @@
     --ks-ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
     --ks-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
+    /* ----------------------------------------------------------------------
+       CONTENT WIDTHS
+       ---------------------------------------------------------------------- */
+
     --ks-content-sm: 42rem;
     --ks-content-md: 56rem;
     --ks-content-lg: 72rem;
     --ks-content-xl: 80rem;
+
+    /* ----------------------------------------------------------------------
+       Z-INDEX
+       ---------------------------------------------------------------------- */
 
     --ks-z-base: 0;
     --ks-z-content: 10;
@@ -142,6 +216,11 @@
     --ks-z-toast: 700;
     --ks-z-max: 999;
   }
+
+
+  /* ==========================================================================
+     BASE / RESET
+     ========================================================================== */
 
   *,
   *::before,
@@ -281,6 +360,7 @@
 @layer components {
   .container-px {
     @apply px-4;
+
     width: 100%;
   }
 
@@ -298,6 +378,7 @@
 
   .section {
     @apply relative w-full;
+
     isolation: isolate;
   }
 
@@ -334,16 +415,19 @@
 @layer components {
   .type-display {
     @apply font-serif text-4xl font-semibold leading-[1.02];
+
     letter-spacing: -0.035em;
   }
 
   .type-h1 {
     @apply font-serif text-4xl font-semibold leading-[1.06];
+
     letter-spacing: -0.03em;
   }
 
   .type-h2 {
     @apply font-serif text-3xl font-semibold leading-[1.1];
+
     letter-spacing: -0.025em;
   }
 
@@ -442,22 +526,26 @@
 
   .btn-primary {
     @apply btn bg-brand-green px-6 py-3 text-white;
+
     box-shadow: var(--ks-shadow-sm);
   }
 
   .btn-primary:hover:not(:disabled) {
     @apply bg-brand-green-dark;
+
     transform: translateY(-2px);
     box-shadow: var(--ks-shadow-green);
   }
 
   .btn-secondary {
     @apply btn bg-brand-brown px-6 py-3 text-white;
+
     box-shadow: var(--ks-shadow-sm);
   }
 
   .btn-secondary:hover:not(:disabled) {
     @apply bg-brand-brown-dark;
+
     transform: translateY(-2px);
     box-shadow: var(--ks-shadow-card);
   }
@@ -468,6 +556,7 @@
 
   .btn-outline:hover:not(:disabled) {
     @apply border-brand-green bg-brand-green text-white;
+
     transform: translateY(-2px);
     box-shadow: var(--ks-shadow-sm);
   }
@@ -478,6 +567,7 @@
 
   .btn-yellow:hover:not(:disabled) {
     @apply bg-brand-saffron-dark;
+
     transform: translateY(-2px);
     box-shadow: var(--ks-shadow-glow);
   }
@@ -488,6 +578,7 @@
 
   .btn-ghost:hover:not(:disabled) {
     @apply bg-brand-green/5;
+
     transform: translateY(-1px);
   }
 
@@ -497,6 +588,7 @@
 
   .btn-buy:hover:not(:disabled) {
     @apply bg-brand-green-dark;
+
     transform: translateY(-2px);
     box-shadow: var(--ks-shadow-green);
   }
@@ -507,6 +599,7 @@
 
   .btn-cart:hover:not(:disabled) {
     @apply border-brand-green bg-brand-green/5;
+
     transform: translateY(-1px);
   }
 
@@ -523,6 +616,7 @@
 @layer components {
   .card {
     @apply rounded-2xl bg-white;
+
     min-width: 0;
     box-shadow: var(--ks-shadow-card);
 
@@ -538,12 +632,14 @@
 
   .card-flat {
     @apply rounded-2xl bg-white;
+
     min-width: 0;
     border: 1px solid var(--ks-border-soft);
   }
 
   .card-soft {
     @apply rounded-2xl;
+
     min-width: 0;
     background: var(--ks-surface-soft);
     border: 1px solid var(--ks-border-soft);
@@ -551,12 +647,14 @@
 
   .card-elevated {
     @apply rounded-3xl bg-white;
+
     min-width: 0;
     box-shadow: var(--ks-shadow-floating);
   }
 
   .card-interactive {
     @apply card;
+
     cursor: pointer;
   }
 
@@ -577,6 +675,7 @@
 @layer components {
   .input-field {
     @apply w-full rounded-xl border bg-white px-4 py-3 text-brand-brown transition-colors;
+
     min-width: 0;
     border-color: var(--ks-border-default);
   }
@@ -587,6 +686,7 @@
 
   .input-field:focus {
     @apply border-brand-green ring-0 outline-none;
+
     box-shadow: 0 0 0 3px rgba(23, 60, 50, 0.08);
   }
 
@@ -620,6 +720,7 @@
 @layer components {
   .product-stage {
     @apply relative flex items-center justify-center overflow-hidden;
+
     min-width: 0;
     perspective: var(--ks-perspective-product);
     isolation: isolate;
@@ -662,6 +763,7 @@
 
   .product-card {
     @apply card;
+
     overflow: hidden;
     perspective: var(--ks-perspective-card);
     transform-style: preserve-3d;
@@ -711,6 +813,7 @@
 
   .product-badge {
     @apply badge;
+
     position: relative;
     z-index: 2;
     box-shadow: var(--ks-shadow-xs);
@@ -753,6 +856,7 @@
 
   .price-emphasis {
     @apply font-bold tracking-tight text-brand-brown;
+
     font-variant-numeric: tabular-nums;
   }
 
@@ -891,6 +995,7 @@
 @layer components {
   .hero {
     @apply relative overflow-hidden;
+
     isolation: isolate;
   }
 
@@ -910,6 +1015,7 @@
   .hero-product {
     position: relative;
     z-index: 2;
+
     transform-style: preserve-3d;
 
     filter: drop-shadow(
@@ -920,6 +1026,7 @@
   .hero-mascot {
     position: relative;
     z-index: 3;
+
     transform-style: preserve-3d;
 
     filter: drop-shadow(
@@ -929,6 +1036,7 @@
 
   .page-hero {
     @apply relative overflow-hidden;
+
     isolation: isolate;
     min-height: clamp(18rem, 42vw, 30rem);
   }
@@ -1052,6 +1160,15 @@
     animation: ks-float 7s ease-in-out infinite;
   }
 
+  /* ------------------------------------------------------------------------
+     CENTRAL COMPATIBILITY UTILITIES
+     ------------------------------------------------------------------------
+
+     These utilities are intentionally defined here because components such
+     as Footer and Reveal consume them directly. This prevents individual
+     components from inventing their own motion/elevation vocabulary.
+     ------------------------------------------------------------------------ */
+
   .ease-ks-standard {
     transition-timing-function: var(--ks-ease-standard);
   }
@@ -1113,6 +1230,7 @@
 @layer components {
   .image-premium {
     @apply overflow-hidden rounded-3xl;
+
     position: relative;
     isolation: isolate;
   }
@@ -1363,6 +1481,7 @@
 @layer utilities {
   .reveal {
     opacity: 0;
+
     transform: translateY(20px);
 
     transition:
@@ -1377,6 +1496,7 @@
 
   .reveal-scale {
     opacity: 0;
+
     transform: translateY(12px) scale(0.985);
 
     transition:
@@ -1436,8 +1556,113 @@
 
 
 /* ==========================================================================
-   16. RESPONSIVE DESIGN SYSTEM
+   16. MOBILE RESPONSIVE SAFETY
    ========================================================================== */
+
+@media (max-width: 639px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .container-px {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .section-header,
+  .section-header-left {
+    margin-bottom: 2rem;
+  }
+
+  h1 {
+    max-width: 100%;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-outline,
+  .btn-yellow,
+  .btn-buy,
+  .btn-cart {
+    max-width: 100%;
+  }
+
+  .card,
+  .card-flat,
+  .card-soft,
+  .card-elevated {
+    max-width: 100%;
+  }
+
+  .product-card:hover,
+  .card-interactive:hover {
+    transform: none;
+  }
+
+  .product-stage:hover .product-visual {
+    transform: none;
+  }
+
+  nav,
+  main,
+  section,
+  article,
+  aside,
+  header,
+  footer {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+
+/* ==========================================================================
+   17. ACCESSIBILITY / REDUCED MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal,
+  .reveal-scale {
+    opacity: 1;
+    transform: none;
+  }
+
+  .image-premium img,
+  .product-card-image {
+    transition: none;
+  }
+
+  .hover-float,
+  .hover-float-slow {
+    animation: none;
+  }
+}
+
+/* =====================================================================
+   RESPONSIVE OVERRIDES FOR DESIGN-SYSTEM COMPONENTS
+   ===================================================================== */
 
 @media (min-width: 640px) {
   @layer components {
@@ -1524,18 +1749,9 @@
     .story-panel {
       @apply p-8;
     }
+
   }
 }
-
-
-@media (min-width: 768px) {
-  @layer components {
-    .container-px {
-      @apply px-6;
-    }
-  }
-}
-
 
 @media (min-width: 1024px) {
   @layer components {
@@ -1582,120 +1798,19 @@
     .section-title {
       @apply text-5xl;
     }
+
+    .story-panel {
+      @apply p-10;
+    }
+
   }
 }
-
 
 @media (min-width: 1280px) {
   @layer components {
     .type-display {
       @apply text-7xl;
     }
-  }
-}
 
-
-/* ==========================================================================
-   17. MOBILE RESPONSIVE SAFETY
-   ========================================================================== */
-
-@media (max-width: 639px) {
-  html,
-  body {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  #root {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: clip;
-  }
-
-  .container-px {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  .section-header,
-  .section-header-left {
-    margin-bottom: 2rem;
-  }
-
-  h1 {
-    max-width: 100%;
-  }
-
-  .btn-primary,
-  .btn-secondary,
-  .btn-outline,
-  .btn-yellow,
-  .btn-buy,
-  .btn-cart {
-    max-width: 100%;
-  }
-
-  .card,
-  .card-flat,
-  .card-soft,
-  .card-elevated {
-    max-width: 100%;
-  }
-
-  .product-card:hover,
-  .card-interactive:hover {
-    transform: none;
-  }
-
-  .product-stage:hover .product-visual {
-    transform: none;
-  }
-
-  nav,
-  main,
-  section,
-  article,
-  aside,
-  header,
-  footer {
-    min-width: 0;
-    max-width: 100%;
-  }
-}
-
-
-/* ==========================================================================
-   18. ACCESSIBILITY / REDUCED MOTION
-   ========================================================================== */
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-
-  .reveal,
-  .reveal-scale {
-    opacity: 1;
-    transform: none;
-  }
-
-  .image-premium img,
-  .product-card-image {
-    transition: none;
-  }
-
-  .hover-float,
-  .hover-float-slow {
-    animation: none;
   }
 }
