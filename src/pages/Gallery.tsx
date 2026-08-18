@@ -11,14 +11,18 @@ import { Reveal } from '@/components/Reveal';
 
 /* ==========================================================================
    KAWAD SWAD 2.0
-   GALLERY PAGE
+   GALLERY
 
-   Experience:
-   HERO → REAL SOCIAL PROOF → DISCOVERY → FOLLOW
+   Design flow:
+   HERO → SOCIAL PROOF → DISCOVERY → FOLLOW
 
-   The Instagram content remains the source of truth.
-   The surrounding UI uses the central design system.
+   Instagram remains the source of truth.
+   The surrounding experience follows the central design system.
    ========================================================================== */
+
+
+const INSTAGRAM_EMBED_SCRIPT =
+  'https://www.instagram.com/embed.js';
 
 
 const instagramPosts = [
@@ -59,21 +63,22 @@ declare global {
 
 
 /* ==========================================================================
-   INSTAGRAM EMBED LOADER
+   INSTAGRAM EMBED SYSTEM
    ========================================================================== */
 
-function loadInstagramEmbeds() {
-  const processEmbeds = () => {
-    window.instgrm?.Embeds?.process();
-  };
+function processInstagramEmbeds() {
+  window.instgrm?.Embeds?.process();
+}
 
+
+function loadInstagramEmbeds() {
   const existingScript =
-    document.querySelector(
-      'script[src="https://www.instagram.com/embed.js"]',
+    document.querySelector<HTMLScriptElement>(
+      `script[src="${INSTAGRAM_EMBED_SCRIPT}"]`,
     );
 
   if (existingScript) {
-    processEmbeds();
+    processInstagramEmbeds();
     return;
   }
 
@@ -81,10 +86,12 @@ function loadInstagramEmbeds() {
     document.createElement('script');
 
   script.src =
-    'https://www.instagram.com/embed.js';
+    INSTAGRAM_EMBED_SCRIPT;
 
   script.async = true;
-  script.onload = processEmbeds;
+
+  script.onload =
+    processInstagramEmbeds;
 
   document.body.appendChild(script);
 }
@@ -97,6 +104,20 @@ function loadInstagramEmbeds() {
 export default function Gallery() {
   useEffect(() => {
     loadInstagramEmbeds();
+
+    /*
+     * Instagram's embed processor can finish before React has
+     * completely painted all cards. A second processing pass makes
+     * navigation back to this page more reliable.
+     */
+    const retryId = window.setTimeout(
+      processInstagramEmbeds,
+      600,
+    );
+
+    return () => {
+      window.clearTimeout(retryId);
+    };
   }, []);
 
 
@@ -107,8 +128,14 @@ export default function Gallery() {
         description="Explore the Kawad Swad visual story through real Instagram posts, Reels, products, craftsmanship and the journey of our brand."
         path="/gallery"
         structuredData={breadcrumbSchema([
-          { name: 'Home', path: '/' },
-          { name: 'Gallery', path: '/gallery' },
+          {
+            name: 'Home',
+            path: '/',
+          },
+          {
+            name: 'Gallery',
+            path: '/gallery',
+          },
         ])}
       />
 
@@ -125,7 +152,7 @@ export default function Gallery() {
 
 
       {/* ======================================================================
-          GALLERY
+          GALLERY CONTENT
           =================================================================== */}
 
       <section
@@ -135,12 +162,14 @@ export default function Gallery() {
           sm:py-16
           lg:py-24
         "
+        aria-labelledby="gallery-intro-title"
       >
         <div className="container-max container-px">
 
-          {/* ================================================================
+
+          {/* ==================================================================
               INTRO
-              ============================================================= */}
+              =================================================================== */}
 
           <Reveal>
             <div
@@ -176,6 +205,7 @@ export default function Gallery() {
               </span>
 
               <h2
+                id="gallery-intro-title"
                 className="
                   text-balance
                   font-serif
@@ -207,9 +237,9 @@ export default function Gallery() {
           </Reveal>
 
 
-          {/* ================================================================
-              INSTAGRAM POSTS
-              ============================================================= */}
+          {/* ==================================================================
+              INSTAGRAM GRID
+              =================================================================== */}
 
           <div
             className="
@@ -247,9 +277,9 @@ export default function Gallery() {
                       hover:shadow-lift
                     "
                   >
-                    {/* --------------------------------------------------------
-                        EMBED
-                        ----------------------------------------------------- */}
+                    {/* ========================================================
+                        INSTAGRAM EMBED
+                        ===================================================== */}
 
                     <div
                       className="
@@ -311,9 +341,9 @@ export default function Gallery() {
                     </div>
 
 
-                    {/* --------------------------------------------------------
-                        CARD FOOTER
-                        ----------------------------------------------------- */}
+                    {/* ========================================================
+                        CARD ACTION
+                        ===================================================== */}
 
                     <div
                       className="
@@ -359,21 +389,23 @@ export default function Gallery() {
                         aria-label={`Open Instagram post ${index + 1}`}
                         className="
                           inline-flex
-                          min-h-[32px]
+                          min-h-[36px]
                           shrink-0
                           items-center
                           gap-1
                           rounded-full
-                          px-2.5
-                          py-1
+                          px-3
+                          py-1.5
                           text-[10px]
                           font-semibold
                           text-brand-saffron
                           transition-all
                           duration-200
                           hover:bg-brand-saffron/10
+                          focus:outline-none
                           focus-visible:ring-2
                           focus-visible:ring-brand-saffron
+                          focus-visible:ring-offset-2
                         "
                       >
                         Open
@@ -391,9 +423,9 @@ export default function Gallery() {
           </div>
 
 
-          {/* ================================================================
-              INSTAGRAM CTA
-              ============================================================= */}
+          {/* ==================================================================
+              FOLLOW CTA
+              =================================================================== */}
 
           <Reveal>
             <div
