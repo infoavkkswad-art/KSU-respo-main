@@ -1,5 +1,9 @@
 import { ProductService } from '../services/product-service';
-import { CartItem } from '../context/CartContext';
+import type { CartItem } from '../context/CartContext';
+
+/* ============================================================================
+ * CALCULATED CART ITEM
+ * ========================================================================== */
 
 export interface CalculatedCartItem {
   sku: string;
@@ -8,9 +12,20 @@ export interface CalculatedCartItem {
   packSize: number | string;
   websitePrice: number;
   mrp: number;
+
+  /*
+   * Shipping is permanently FREE at checkout.
+   *
+   * The websitePrice supplied by the central product
+   * service is the final customer-facing product price.
+   */
   shipping: 0;
   freeShipping: true;
 }
+
+/* ============================================================================
+ * CALCULATED CART
+ * ========================================================================== */
 
 export interface CalculatedCart {
   subtotal: number;
@@ -20,15 +35,60 @@ export interface CalculatedCart {
   resolvedItems: CalculatedCartItem[];
 }
 
+/* ============================================================================
+ * SKU NORMALIZATION
+ * ========================================================================== */
+
+function normalizeSku(
+  sku: string,
+): string {
+  return sku
+    .trim()
+    .toUpperCase();
+}
+
+/* ============================================================================
+ * CART TOTAL CALCULATION
+ *
+ * PRICE AUTHORITY:
+ *
+ * sales-config.ts
+ *      ↓
+ * ProductService
+ *      ↓
+ * calculateCartTotals()
+ *      ↓
+ * CartContext
+ *      ↓
+ * Checkout
+ *
+ * This file MUST NOT contain product prices.
+ * ========================================================================== */
+
 export function calculateCartTotals(
   items: CartItem[],
 ): CalculatedCart {
   let subtotal = 0;
   let itemCount = 0;
 
-  const resolvedItems: CalculatedCartItem[] = [];
+  const resolvedItems: CalculatedCartItem[] =
+    [];
+
+  if (!Array.isArray(items)) {
+    return {
+      subtotal: 0,
+      shippingTotal: 0,
+      total: 0,
+      itemCount: 0,
+      resolvedItems: [],
+    };
+  }
 
   for (const item of items) {
+    /* ------------------------------------------------------------------------
+     * BASIC CART ITEM VALIDATION
+     * ---------------------------------------------------------------------- */
+
     if (
       !item ||
       typeof item.sku !== 'string' ||
@@ -40,73 +100,154 @@ export function calculateCartTotals(
       continue;
     }
 
-    /*
-     * Resolve through the central purchasable-product
-     * method so TypeScript knows that websitePrice and
-     * MRP are guaranteed to be numbers.
-     */
+    const sku =
+      normalizeSku(item.sku);
+
+    if (!sku) {
+      continue;
+    }
+
+    const quantity =
+      Math.floor(item.quantity);
+
+    if (
+      quantity <= 0 ||
+      !Number.isSafeInteger(
+        quantity,
+      )
+    ) {
+      continue;
+    }
+
+    /* ------------------------------------------------------------------------
+     * CENTRAL PRODUCT RESOLUTION
+     *
+     * ProductService decides whether the SKU is currently purchasable
+     * and supplies its authoritative product data.
+     * ---------------------------------------------------------------------- */
+
     const result =
       ProductService.getPurchasableProductBySku(
-        item.sku,
+        sku,
       );
 
     if (!result) {
+      /*
+       * SKU is no longer purchasable.
+       * Do not include it in totals.
+       */
       continue;
     }
 
-    const { family, skuObj } = result;
+    const {
+      family,
+      skuObj,
+    } = result;
 
-    const quantity = Math.floor(
-      item.quantity,
-    );
+    /* ------------------------------------------------------------------------
+     * AUTHORITATIVE PRICE VALIDATION
+     * ---------------------------------------------------------------------- */
 
-    if (quantity <= 0) {
+    const websitePrice =
+      skuObj.websitePrice;
+
+    const mrp =
+      skuObj.mrp;
+
+    if (
+      typeof websitePrice !==
+        'number' ||
+      !Number.isFinite(
+        websitePrice,
+      ) ||
+      websitePrice < 0
+    ) {
       continue;
     }
 
-    /*
-     * websitePrice is the FINAL customer-facing price.
+    if (
+      typeof mrp !== 'number' ||
+      !Number.isFinite(mrp) ||
+      mrp < 0
+    ) {
+      continue;
+    }
+
+    /* ------------------------------------------------------------------------
+     * LINE TOTAL
      *
-     * Shipping is already included.
+     * websitePrice is already the final customer-facing price.
      *
-     * NEVER:
-     * websitePrice + shipping
-     *
-     * ALWAYS:
-     * websitePrice × quantity
-     */
+     * DO NOT add shipping here.
+     * ---------------------------------------------------------------------- */
+
     const itemSubtotal =
-      skuObj.websitePrice * quantity;
+      websitePrice * quantity;
+
+    if (
+      !Number.isFinite(
+        itemSubtotal,
+      ) ||
+      itemSubtotal < 0
+    ) {
+      continue;
+    }
 
     subtotal += itemSubtotal;
     itemCount += quantity;
 
+    /*
+     * Protect the accumulator from malformed/extreme input.
+     */
+    if (
+      !Number.isFinite(subtotal) ||
+      !Number.isSafeInteger(itemCount)
+    ) {
+      continue;
+    }
+
+    /* ------------------------------------------------------------------------
+     * RESOLVED ITEM
+     * ---------------------------------------------------------------------- */
+
     resolvedItems.push({
       sku: skuObj.sku,
       quantity,
-      name: family.name,
-      packSize: skuObj.packSize,
-      websitePrice: skuObj.websitePrice,
-      mrp: skuObj.mrp,
 
-      // Free shipping is the permanent website rule.
+      name: family.name,
+
+      packSize:
+        skuObj.packSize,
+
+      websitePrice,
+
+      mrp,
+
+      /*
+       * FINAL WEBSITE RULE:
+       *
+       * Customer-facing shipping = FREE
+       */
       shipping: 0,
+
       freeShipping: true,
     });
   }
 
-  /*
-   * CENTRAL WEBSITE SALES RULE
+  /* ==========================================================================
+   * FINAL TOTALS
    *
-   * Product websitePrice already includes the
-   * customer's shipping cost.
+   * Shipping is NOT added to the product price.
    *
    * Customer sees:
-   * Product price = Final price
-   * Shipping = FREE
-   * Cart total = Product price total
-   */
+   *
+   *   Product price → final website price
+   *   Shipping      → FREE
+   *   Total         → product prices × quantities
+   * ======================================================================== */
+
   const shippingTotal = 0;
+
   const total = subtotal;
 
   return {
