@@ -1,42 +1,191 @@
+import {
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+} from 'lucide-react';
+
+
+/* ==========================================================================
+   KAWAD SWAD 2.0
+   CENTRAL FORM STATUS SYSTEM
+
+   Supports:
+   - idle
+   - loading
+   - success
+   - error
+
+   This component intentionally keeps its existing public API so existing
+   forms do not need to be rewritten.
+   ========================================================================== */
+
+
 interface FormStatusMessageProps {
-  status: 'idle' | 'loading' | 'success' | 'error';
+  status:
+    | 'idle'
+    | 'loading'
+    | 'success'
+    | 'error';
+
   successMsg?: string;
   errorMsg?: string;
   loadingMsg?: string;
 }
 
+
 export function FormStatusMessage({
   status,
   successMsg = 'Submitted successfully!',
-  errorMsg = 'An error occurred. Please try again.',
+  errorMsg =
+    'An error occurred. Please try again.',
   loadingMsg = 'Submitting...',
 }: FormStatusMessageProps) {
-  if (status === 'idle') return null;
+
+  /* ==========================================================================
+     IDLE
+     ======================================================================== */
+
+  if (status === 'idle') {
+    return null;
+  }
+
+
+  /* ==========================================================================
+     LOADING
+     ======================================================================== */
 
   if (status === 'loading') {
     return (
-      <div className="p-4 rounded-xl bg-brand-cream border border-brand-brown/10 text-brand-brown text-sm font-medium flex items-center gap-3">
-        <div className="w-4 h-4 border-2 border-brand-brown border-t-transparent rounded-full animate-spin" />
-        <span>{loadingMsg}</span>
+      <div
+        className="
+          flex
+          items-start
+          gap-3
+          rounded-xl
+          border
+          border-brand-brown/10
+          bg-brand-cream
+          p-4
+          text-sm
+          font-medium
+          leading-relaxed
+          text-brand-brown
+          shadow-soft
+          animate-scale-in
+        "
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <Loader2
+          className="
+            mt-0.5
+            h-4
+            w-4
+            shrink-0
+            animate-spin
+            text-brand-green
+          "
+          aria-hidden="true"
+        />
+
+        <span>
+          {loadingMsg}
+        </span>
       </div>
     );
   }
+
+
+  /* ==========================================================================
+     SUCCESS
+     ======================================================================== */
 
   if (status === 'success') {
     return (
-      <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-medium">
-        {successMsg}
+      <div
+        className="
+          flex
+          items-start
+          gap-3
+          rounded-xl
+          border
+          border-green-200
+          bg-green-50
+          p-4
+          text-sm
+          font-medium
+          leading-relaxed
+          text-green-800
+          shadow-soft
+          animate-scale-in
+        "
+        role="status"
+        aria-live="polite"
+      >
+        <CheckCircle
+          className="
+            mt-0.5
+            h-5
+            w-5
+            shrink-0
+            text-green-600
+          "
+          aria-hidden="true"
+        />
+
+        <span>
+          {successMsg}
+        </span>
       </div>
     );
   }
 
+
+  /* ==========================================================================
+     ERROR
+     ======================================================================== */
+
   if (status === 'error') {
     return (
-      <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium">
-        {errorMsg}
+      <div
+        className="
+          flex
+          items-start
+          gap-3
+          rounded-xl
+          border
+          border-red-200
+          bg-red-50
+          p-4
+          text-sm
+          font-medium
+          leading-relaxed
+          text-red-800
+          shadow-soft
+          animate-scale-in
+        "
+        role="alert"
+        aria-live="assertive"
+      >
+        <AlertCircle
+          className="
+            mt-0.5
+            h-5
+            w-5
+            shrink-0
+            text-brand-red
+          "
+          aria-hidden="true"
+        />
+
+        <span>
+          {errorMsg}
+        </span>
       </div>
     );
   }
+
 
   return null;
 }
