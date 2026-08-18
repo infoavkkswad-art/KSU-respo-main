@@ -10,6 +10,25 @@ import {
   formatPrice,
 } from '../context/CartContext';
 
+
+/* ==========================================================================
+   KAWAD SWAD 2.0
+   CENTRAL FLOATING CART SYSTEM
+
+   Purpose:
+   - Persistent purchase reminder
+   - Fast cart access
+   - Fast checkout access
+   - Mobile-safe conversion surface
+
+   Visual authority:
+   - Central design tokens
+   - Central elevation
+   - Central motion
+   - Central CTA hierarchy
+   ========================================================================== */
+
+
 export function FloatingCart() {
   const {
     itemCount,
@@ -18,6 +37,11 @@ export function FloatingCart() {
   } = useCart();
 
   const location = useLocation();
+
+
+  /* ==========================================================================
+     ROUTE VISIBILITY
+     ======================================================================== */
 
   const hiddenRoutes = [
     '/cart',
@@ -30,29 +54,40 @@ export function FloatingCart() {
       location.pathname.startsWith(route),
   );
 
-  if (itemCount <= 0 || shouldHide) {
+
+  /* ==========================================================================
+     VISIBILITY GUARD
+     ======================================================================== */
+
+  if (
+    itemCount <= 0 ||
+    shouldHide
+  ) {
     return null;
   }
+
+
+  /* ==========================================================================
+     RENDER
+     ======================================================================== */
 
   return (
     <div
       className="
+        pointer-events-none
         fixed
+        bottom-3
         left-3
         right-3
-        bottom-3
+        z-toast
+        sm:bottom-4
         sm:left-4
         sm:right-4
-        sm:bottom-4
+        md:bottom-6
         md:left-auto
         md:right-6
-        md:bottom-6
-        z-[70]
         md:w-[520px]
-        animate-in
-        slide-in-from-bottom-4
-        duration-300
-        pointer-events-none
+        animate-slide-up
       "
       role="region"
       aria-label="Shopping cart"
@@ -60,19 +95,24 @@ export function FloatingCart() {
       <div
         className="
           pointer-events-auto
-          bg-white/95
-          border
-          border-brand-brown/10
-          shadow-2xl
+          overflow-hidden
           rounded-2xl
+          border
+          border-brand-green/10
+          bg-white/95
           p-3
-          sm:p-4
+          shadow-floating
           backdrop-blur-xl
+          transition-all
+          duration-300
+          ease-ks-standard
+          sm:p-4
         "
       >
-        {/* ================================================================
+
+        {/* ====================================================================
             MAIN CART ROW
-        ================================================================= */}
+            ================================================================ */}
 
         <div
           className="
@@ -83,28 +123,40 @@ export function FloatingCart() {
             md:gap-4
           "
         >
-          {/* Cart Icon */}
+
+          {/* ================================================================
+              CART ICON
+              ================================================================ */}
 
           <div
             className="
               hidden
-              sm:flex
-              w-10
               h-10
-              md:w-11
-              md:h-11
-              rounded-xl
-              bg-brand-red/10
-              text-brand-red
+              w-10
+              shrink-0
               items-center
               justify-center
-              shrink-0
+              rounded-xl
+              bg-brand-green/8
+              text-brand-green
+              sm:flex
+              md:h-11
+              md:w-11
             "
+            aria-hidden="true"
           >
-            <ShoppingBag className="w-5 h-5" />
+            <ShoppingBag
+              className="
+                h-5
+                w-5
+              "
+            />
           </div>
 
-          {/* Cart Information */}
+
+          {/* ================================================================
+              CART INFORMATION
+              ================================================================ */}
 
           <div
             className="
@@ -114,11 +166,11 @@ export function FloatingCart() {
           >
             <p
               className="
+                truncate
                 text-xs
-                sm:text-sm
                 font-semibold
                 text-brand-brown
-                truncate
+                sm:text-sm
               "
             >
               {itemCount}{' '}
@@ -130,134 +182,176 @@ export function FloatingCart() {
 
             <p
               className="
-                text-sm
-                sm:text-base
-                font-bold
-                text-brand-red
                 mt-0.5
+                text-sm
+                font-bold
+                text-brand-green
+                sm:text-base
               "
             >
               {formatPrice(total)}
             </p>
           </div>
 
-          {/* Desktop View Cart */}
+
+          {/* ================================================================
+              DESKTOP VIEW CART
+              ================================================================ */}
 
           <Link
             to="/cart"
             className="
               hidden
-              sm:inline-flex
+              min-h-[42px]
+              shrink-0
               items-center
               justify-center
-              min-h-[42px]
-              px-3
-              md:px-4
-              py-2.5
+              whitespace-nowrap
               rounded-xl
               border
-              border-brand-brown/15
+              border-brand-green/15
+              bg-white
+              px-3
+              py-2.5
               text-xs
-              md:text-sm
               font-semibold
               text-brand-brown
-              hover:bg-brand-brown/5
-              active:bg-brand-brown/10
-              transition-colors
-              whitespace-nowrap
-              shrink-0
+              shadow-soft
+              transition-all
+              duration-200
+              ease-ks-standard
+              hover:-translate-y-0.5
+              hover:border-brand-green/25
+              hover:bg-brand-green/5
+              hover:text-brand-green
+              active:translate-y-0
+              sm:inline-flex
+              md:px-4
+              md:text-sm
             "
           >
             View Cart
           </Link>
 
-          {/* Checkout */}
+
+          {/* ================================================================
+              PRIMARY CHECKOUT CTA
+              ================================================================ */}
 
           <Link
             to="/checkout"
             className="
-              inline-flex
-              items-center
-              justify-center
-              gap-1
-              sm:gap-1.5
+              btn-primary
+              group/checkout
               min-h-[42px]
-              px-3
-              sm:px-4
-              py-2.5
-              rounded-xl
-              bg-brand-red
-              text-white
-              text-xs
-              sm:text-sm
-              font-semibold
-              hover:opacity-90
-              active:opacity-80
-              transition-opacity
-              whitespace-nowrap
-              shadow-sm
               shrink-0
+              gap-1
+              whitespace-nowrap
+              px-3
+              py-2.5
+              text-xs
+              shadow-green-glow
+              sm:gap-1.5
+              sm:px-4
+              sm:text-sm
             "
           >
-            <span>Checkout</span>
+            <span>
+              Checkout
+            </span>
 
-            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <ArrowRight
+              className="
+                h-3.5
+                w-3.5
+                transition-transform
+                duration-200
+                group-hover/checkout:translate-x-0.5
+                sm:h-4
+                sm:w-4
+              "
+              aria-hidden="true"
+            />
           </Link>
 
-          {/* Clear Cart */}
+
+          {/* ================================================================
+              CLEAR CART
+              ================================================================ */}
 
           <button
             type="button"
             onClick={clearCart}
             className="
               hidden
-              md:flex
-              w-9
               h-9
-              rounded-full
+              w-9
+              shrink-0
               items-center
               justify-center
-              text-brand-brown/40
-              hover:text-brand-red
+              rounded-full
+              text-brand-brown/35
+              transition-all
+              duration-200
+              ease-ks-standard
               hover:bg-brand-red/5
-              active:bg-brand-red/10
-              transition-colors
-              shrink-0
+              hover:text-brand-red
+              active:scale-95
+              focus:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-brand-saffron
+              md:flex
             "
             aria-label="Clear cart"
             title="Clear cart"
           >
-            <X className="w-4 h-4" />
+            <X
+              className="
+                h-4
+                w-4
+              "
+              aria-hidden="true"
+            />
           </button>
         </div>
 
-        {/* ================================================================
+
+        {/* ====================================================================
             MOBILE VIEW CART
-        ================================================================= */}
+            ================================================================= */}
 
         <Link
           to="/cart"
           className="
-            sm:hidden
+            mt-2
             flex
+            min-h-[30px]
             items-center
             justify-center
             gap-1
-            mt-2
-            pt-2
             border-t
-            border-brand-brown/10
+            border-brand-green/10
+            pt-2
             text-xs
             font-semibold
-            text-brand-brown/70
-            min-h-[30px]
-            hover:text-brand-red
+            text-brand-brown/65
             transition-colors
+            duration-200
+            hover:text-brand-green
+            sm:hidden
           "
         >
-          View full cart
+          <span>
+            View full cart
+          </span>
 
-          <ArrowRight className="w-3.5 h-3.5" />
+          <ArrowRight
+            className="
+              h-3.5
+              w-3.5
+            "
+            aria-hidden="true"
+          />
         </Link>
       </div>
     </div>
