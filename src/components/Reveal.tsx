@@ -15,10 +15,11 @@ import { ArrowRight } from 'lucide-react';
    NOTICE → REVEAL → UNDERSTAND → ACT
 
    Rules:
-   - Motion must support hierarchy, never distract from it.
-   - Reduced-motion users receive the complete content immediately.
-   - Reveal happens once per mounted element.
-   - CTA presentation is centralized here.
+   - Motion supports hierarchy.
+   - Reduced-motion users see content immediately.
+   - Reveal runs once by default.
+   - CTA presentation stays centralized.
+   - Uses only classes already established in the core design system.
    ========================================================================== */
 
 
@@ -41,11 +42,8 @@ export function Reveal({
   threshold = 0.08,
   once = true,
 }: RevealProps) {
-  const ref =
-    useRef<HTMLDivElement>(null);
-
-  const timeoutRef =
-    useRef<number | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const element = ref.current;
@@ -54,78 +52,64 @@ export function Reveal({
       return;
     }
 
-    /* -----------------------------------------------------------------------
-       Reduced motion
-       -------------------------------------------------------------------- */
-
-    const mediaQuery =
+    const prefersReducedMotion =
       window.matchMedia(
         '(prefers-reduced-motion: reduce)',
-      );
+      ).matches;
 
-    if (mediaQuery.matches) {
+    if (prefersReducedMotion) {
       element.classList.add('is-visible');
-
       return;
     }
 
+    const safeDelay = Math.max(
+      0,
+      Math.min(delay, 1500),
+    );
 
-    /* -----------------------------------------------------------------------
-       Intersection Observer
-       -------------------------------------------------------------------- */
+    const safeThreshold = Math.min(
+      1,
+      Math.max(0, threshold),
+    );
 
-    const observer =
-      new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) {
-              return;
-            }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return;
+          }
 
-            const revealDelay =
-              Math.max(
-                0,
-                Math.min(delay, 1500),
+          if (timeoutRef.current !== null) {
+            window.clearTimeout(
+              timeoutRef.current,
+            );
+          }
+
+          timeoutRef.current =
+            window.setTimeout(() => {
+              element.classList.add(
+                'is-visible',
               );
 
-            timeoutRef.current =
-              window.setTimeout(() => {
-                element.classList.add(
-                  'is-visible',
-                );
+              timeoutRef.current = null;
+            }, safeDelay);
 
-                timeoutRef.current = null;
-              }, revealDelay);
-
-            if (once) {
-              observer.unobserve(element);
-            }
-          });
-        },
-        {
-          threshold: Math.min(
-            1,
-            Math.max(0, threshold),
-          ),
-
-          rootMargin:
-            '0px 0px -32px 0px',
-        },
-      );
-
+          if (once) {
+            observer.unobserve(element);
+          }
+        });
+      },
+      {
+        threshold: safeThreshold,
+        rootMargin:
+          '0px 0px -32px 0px',
+      },
+    );
 
     observer.observe(element);
 
-
-    /* -----------------------------------------------------------------------
-       Cleanup
-       -------------------------------------------------------------------- */
-
     return () => {
-      if (
-        timeoutRef.current !==
-        null
-      ) {
+      if (timeoutRef.current !== null) {
         window.clearTimeout(
           timeoutRef.current,
         );
@@ -141,15 +125,10 @@ export function Reveal({
     once,
   ]);
 
-
   return (
     <div
       ref={ref}
-      className={`
-        reveal
-        w-full
-        ${className}
-      `}
+      className={`reveal w-full ${className}`}
     >
       {children}
     </div>
@@ -187,37 +166,33 @@ export function CTABanner({
       className={`
         container-max
         container-px
-        section-sm
+        py-10
         sm:py-14
         lg:py-20
         ${className}
       `}
     >
       <Reveal>
-
         <div
           className="
-            cta-banner
             group
             relative
             overflow-hidden
-            rounded-4xl
+            rounded-3xl
             bg-brand-brown
             px-5
             py-10
             text-center
             text-brand-cream
-            shadow-floating
+            shadow-lift
+            sm:rounded-4xl
             sm:px-8
             sm:py-12
             lg:px-16
             lg:py-16
           "
         >
-
-          {/* ================================================================
-              BACKGROUND TEXTURE
-              ============================================================= */}
+          {/* Background texture */}
 
           <div
             className="
@@ -230,10 +205,7 @@ export function CTABanner({
             aria-hidden="true"
           />
 
-
-          {/* ================================================================
-              BRAND GLOW
-              ============================================================= */}
+          {/* Saffron glow */}
 
           <div
             className="
@@ -248,7 +220,6 @@ export function CTABanner({
               blur-3xl
               transition-transform
               duration-700
-              ease-ks-standard
               group-hover:translate-x-3
               group-hover:-translate-y-3
               sm:h-72
@@ -256,6 +227,8 @@ export function CTABanner({
             "
             aria-hidden="true"
           />
+
+          {/* Decorative arc */}
 
           <div
             className="
@@ -274,20 +247,16 @@ export function CTABanner({
             aria-hidden="true"
           />
 
-
-          {/* ================================================================
-              CONTENT
-              ============================================================= */}
+          {/* Content */}
 
           <div
             className="
               relative
-              z-content
+              z-10
               mx-auto
               max-w-3xl
             "
           >
-
             {eyebrow && (
               <p
                 className="
@@ -302,9 +271,14 @@ export function CTABanner({
 
             <h2
               className="
-                type-h2
                 text-balance
+                font-serif
+                text-3xl
+                font-bold
+                leading-tight
                 text-white
+                sm:text-4xl
+                lg:text-5xl
               "
             >
               {title}
@@ -312,24 +286,21 @@ export function CTABanner({
 
             <p
               className="
-                type-body-lg
                 text-pretty
                 mx-auto
                 mt-4
                 max-w-2xl
+                text-sm
+                leading-relaxed
                 text-brand-cream/70
+                sm:text-base
+                lg:text-lg
               "
             >
               {description}
             </p>
 
-
-            {/* ================================================================
-                CTA ACTIONS
-
-                Primary action gets visual weight.
-                Secondary action remains available without competing.
-                ============================================================= */}
+            {/* CTA actions */}
 
             <div
               className="
@@ -343,7 +314,6 @@ export function CTABanner({
                 sm:justify-center
               "
             >
-
               <a
                 href={primaryLink}
                 className="
@@ -352,7 +322,7 @@ export function CTABanner({
                   min-h-[50px]
                   w-full
                   px-7
-                  shadow-green-glow
+                  shadow-lift
                   sm:w-auto
                 "
               >
@@ -371,7 +341,6 @@ export function CTABanner({
                   aria-hidden="true"
                 />
               </a>
-
 
               {secondaryLabel &&
                 secondaryLink && (
@@ -392,11 +361,9 @@ export function CTABanner({
                     {secondaryLabel}
                   </a>
                 )}
-
             </div>
           </div>
         </div>
-
       </Reveal>
     </section>
   );
