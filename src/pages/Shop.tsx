@@ -1,5 +1,12 @@
-import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import {
+  useMemo,
+  useState,
+} from 'react';
+
+import {
+  useSearchParams,
+} from 'react-router-dom';
+
 import {
   SlidersHorizontal,
   X,
@@ -11,16 +18,26 @@ import {
   breadcrumbSchema,
 } from '@/components/SEO';
 
-import { ProductCard } from '@/components/ProductCard';
-import { Reveal } from '@/components/Reveal';
+import {
+  ProductCard,
+} from '@/components/ProductCard';
 
-import { ProductService } from '@/services/product-service';
+import {
+  Reveal,
+} from '@/components/Reveal';
+
+import {
+  ProductService,
+} from '@/services/product-service';
 
 import type {
   ProductCategory,
   ProductFamily,
-  Sku,
 } from '@/data/products';
+
+/* ============================================================================
+ * CATEGORIES
+ * ========================================================================== */
 
 const categories: Array<
   ProductCategory | 'all'
@@ -42,6 +59,10 @@ const CATEGORY_LABELS: Record<
   combo: 'Combo Packs',
 };
 
+/* ============================================================================
+ * SORTING
+ * ========================================================================== */
+
 const SORT_OPTIONS = [
   'default',
   'price-low',
@@ -53,72 +74,31 @@ type SortOption =
   (typeof SORT_OPTIONS)[number];
 
 /* ============================================================================
- * CUSTOMER-FACING SKU
+ * PRODUCT SERVICE HELPERS
  *
- * ProductService is the single pricing/purchasability authority used by
- * Shop, Cart, Cart calculations and checkout.
+ * ProductService is the ONLY commercial authority.
+ *
+ * Shop does not recreate:
+ * - availability rules
+ * - price validation
+ * - shipping rules
+ * - MRP validation
+ *
+ * It simply consumes the already-resolved purchasable SKUs.
  * ========================================================================== */
 
-type ShopSku = Sku & {
-  websitePrice: number;
-  mrp: number;
-  available: true;
-  shipping: 0;
-  freeShipping: true;
-};
-
-/**
- * Return only SKUs that are actually purchasable.
- *
- * ProductService.getAvailableSkus() already validates:
- * - availability
- * - website price
- * - MRP
- * - finite numeric values
- */
 function getPurchasableSkus(
   product: ProductFamily,
-): ShopSku[] {
-  return ProductService
-    .getAvailableSkus(product)
-    .filter(
-      (
-        sku,
-      ): sku is ShopSku =>
-        sku.available === true &&
-        sku.websitePrice !== null &&
-        sku.mrp !== null &&
-        Number.isFinite(
-          sku.websitePrice,
-        ) &&
-        Number.isFinite(
-          sku.mrp,
-        ) &&
-        sku.shipping === 0 &&
-        sku.freeShipping === true,
-    )
-    .map(
-      (sku) => ({
-        ...sku,
-        websitePrice:
-          sku.websitePrice as number,
-        mrp: sku.mrp as number,
-        available: true,
-        shipping: 0,
-        freeShipping: true,
-      }),
-    );
+) {
+  return ProductService.getAvailableSkus(
+    product,
+  );
 }
 
-/**
- * Build the customer-facing shop catalog.
- *
- * IMPORTANT:
- * We do not copy prices from sales-config.ts.
- *
- * ProductService is the same source used by the cart and product purchase
- * flow, preventing Shop from displaying one price while Cart displays another.
- */
+/* ============================================================================
+ * SHOP CATALOG
+ * ========================================================================== */
+
 function getShopProducts(): ProductFamily[] {
   return ProductService
     .getAllProducts()
@@ -130,23 +110,33 @@ function getShopProducts(): ProductFamily[] {
     );
 }
 
-/**
- * Get valid numeric website prices.
- */
+/* ============================================================================
+ * PRICE HELPERS
+ * ========================================================================== */
+
 function getValidWebsitePrices(
   product: ProductFamily,
 ): number[] {
   return getPurchasableSkus(
     product,
-  ).map(
-    (sku) =>
-      sku.websitePrice,
-  );
+  )
+    .map(
+      (sku) =>
+        sku.websitePrice,
+    )
+    .filter(
+      (
+        price,
+      ): price is number =>
+        typeof price ===
+          'number' &&
+        Number.isFinite(
+          price,
+        ) &&
+        price >= 0,
+    );
 }
 
-/**
- * Safely get the lowest customer-facing price.
- */
 function getMinimumWebsitePrice(
   product: ProductFamily,
 ): number {
@@ -160,9 +150,6 @@ function getMinimumWebsitePrice(
     : Number.POSITIVE_INFINITY;
 }
 
-/**
- * Safely get the highest customer-facing price.
- */
 function getMaximumWebsitePrice(
   product: ProductFamily,
 ): number {
@@ -177,7 +164,9 @@ function getMaximumWebsitePrice(
 }
 
 /* ============================================================================
- * STATIC PRICE RANGE
+ * INITIAL CATALOG RANGE
+ *
+ * Product pricing comes from ProductService.
  * ========================================================================== */
 
 const catalogProducts =
@@ -199,7 +188,7 @@ const MAX_PRICE =
     : 0;
 
 /* ============================================================================
- * PAGE
+ * SHOP PAGE
  * ========================================================================== */
 
 export default function Shop() {
@@ -209,26 +198,42 @@ export default function Shop() {
   const initialQuery =
     searchParams.get('q') ?? '';
 
-  const [search, setSearch] =
-    useState(initialQuery);
+  const [
+    search,
+    setSearch,
+  ] = useState(
+    initialQuery,
+  );
 
-  const [category, setCategory] =
-    useState<
-      ProductCategory | 'all'
-    >('all');
+  const [
+    category,
+    setCategory,
+  ] = useState<
+    ProductCategory | 'all'
+  >('all');
 
-  const [sortBy, setSortBy] =
-    useState<SortOption>(
-      'default',
-    );
+  const [
+    sortBy,
+    setSortBy,
+  ] = useState<SortOption>(
+    'default',
+  );
 
-  const [maxPrice, setMaxPrice] =
-    useState(MAX_PRICE);
+  const [
+    maxPrice,
+    setMaxPrice,
+  ] = useState(
+    MAX_PRICE,
+  );
 
   const [
     showMobileFilters,
     setShowMobileFilters,
   ] = useState(false);
+
+  /* ==========================================================================
+   * FILTERED PRODUCTS
+   * ======================================================================== */
 
   const filtered =
     useMemo(() => {
@@ -265,9 +270,9 @@ export default function Shop() {
               product.name
                 .toLowerCase()
                 .includes(query) ||
-              product.hindiName.includes(
-                query,
-              ) ||
+              product.hindiName
+                .toLowerCase()
+                .includes(query) ||
               product.variant
                 .toLowerCase()
                 .includes(query) ||
@@ -302,8 +307,9 @@ export default function Shop() {
       /* ----------------------------------------------------------------------
        * PRICE FILTER
        *
-       * A product remains visible when at least one of its purchasable SKUs
-       * is within the selected maximum price.
+       * Product remains visible when at least one of its
+       * currently purchasable SKUs is within the selected
+       * maximum price.
        * -------------------------------------------------------------------- */
 
       list = list.filter(
@@ -371,23 +377,38 @@ export default function Shop() {
       maxPrice,
     ]);
 
+  /* ==========================================================================
+   * CLEAR FILTERS
+   * ======================================================================== */
+
   const clearFilters = () => {
     setCategory('all');
     setSearch('');
-    setMaxPrice(MAX_PRICE);
+    setMaxPrice(
+      MAX_PRICE,
+    );
     setSortBy('default');
   };
+
+  /* ==========================================================================
+   * ACTIVE FILTER COUNT
+   * ======================================================================== */
 
   const activeFilterCount =
     (category !== 'all'
       ? 1
       : 0) +
-    (maxPrice < MAX_PRICE
+    (maxPrice <
+    MAX_PRICE
       ? 1
       : 0) +
     (search.trim()
       ? 1
       : 0);
+
+  /* ==========================================================================
+   * RENDER
+   * ======================================================================== */
 
   return (
     <>
@@ -395,40 +416,45 @@ export default function Shop() {
         title="Shop Premium Papads"
         description="Shop authentic Kawad Swad papads from Nimar. Explore moong, chana, urad and combo packs."
         path="/shop"
-        structuredData={breadcrumbSchema(
-          [
-            {
-              name: 'Home',
-              path: '/',
-            },
-            {
-              name: 'Shop',
-              path: '/shop',
-            },
-          ],
-        )}
+        structuredData={breadcrumbSchema([
+          {
+            name: 'Home',
+            path: '/',
+          },
+          {
+            name: 'Shop',
+            path: '/shop',
+          },
+        ])}
       />
 
-      {/* ================================================================
+      {/* ======================================================================
           SHOP HERO
-      ================================================================ */}
+      ======================================================================= */}
 
       <section className="relative overflow-hidden bg-brand-ivory py-10 sm:py-14 lg:py-20">
         <div
           className="
-            pointer-events-none absolute
-            -right-24 -top-24
-            h-64 w-64 rounded-full
-            border border-brand-saffron/15
+            pointer-events-none
+            absolute
+            -right-24
+            -top-24
+            h-64
+            w-64
+            rounded-full
+            border
+            border-brand-saffron/15
             shadow-[inset_0_0_50px_rgba(230,126,34,0.04)]
-            sm:h-80 sm:w-80
+            sm:h-80
+            sm:w-80
           "
           aria-hidden="true"
         />
 
         <div
           className="
-            pointer-events-none absolute
+            pointer-events-none
+            absolute
             inset-0
             bg-grid
             opacity-30
@@ -443,9 +469,13 @@ export default function Shop() {
 
           <h1
             className="
-              font-serif font-bold leading-tight
+              font-serif
+              text-3xl
+              font-bold
+              leading-tight
               text-brand-green
-              text-3xl sm:text-4xl lg:text-6xl
+              sm:text-4xl
+              lg:text-6xl
             "
           >
             Find Your Papad
@@ -453,10 +483,14 @@ export default function Shop() {
 
           <p
             className="
-              mx-auto mt-4 max-w-xl
-              text-sm leading-relaxed
+              mx-auto
+              mt-4
+              max-w-xl
+              text-sm
+              leading-relaxed
               text-brand-brown/65
-              sm:text-base lg:text-lg
+              sm:text-base
+              lg:text-lg
             "
           >
             Explore authentic flavours from Nimar
@@ -465,20 +499,22 @@ export default function Shop() {
         </div>
       </section>
 
-      {/* ================================================================
+      {/* ======================================================================
           SHOP CONTENT
-      ================================================================ */}
+      ======================================================================= */}
 
       <section className="container-max container-px py-8 sm:py-10 lg:py-14">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
 
-          {/* ============================================================
+          {/* ==================================================================
               FILTER SIDEBAR
-          ============================================================ */}
+          =================================================================== */}
 
           <aside
             className={`
-              w-full shrink-0 lg:w-64
+              w-full
+              shrink-0
+              lg:w-64
               ${
                 showMobileFilters
                   ? 'block'
@@ -489,11 +525,14 @@ export default function Shop() {
             <div
               className="
                 card
-                border border-brand-green/10
+                border
+                border-brand-green/10
                 bg-white
-                p-4 sm:p-5
+                p-4
                 shadow-[0_5px_0_rgba(62,39,35,0.05),0_12px_28px_rgba(62,39,35,0.08)]
-                lg:sticky lg:top-24
+                sm:p-5
+                lg:sticky
+                lg:top-24
               "
             >
               <div className="mb-5 flex items-center justify-between lg:hidden">
@@ -515,8 +554,11 @@ export default function Shop() {
                     )
                   }
                   className="
-                    flex h-10 w-10
-                    items-center justify-center
+                    flex
+                    h-10
+                    w-10
+                    items-center
+                    justify-center
                     rounded-full
                     text-brand-brown/60
                     transition-all
@@ -550,7 +592,8 @@ export default function Shop() {
                   {categories.map(
                     (cat) => {
                       const active =
-                        category === cat;
+                        category ===
+                        cat;
 
                       return (
                         <button
@@ -576,11 +619,11 @@ export default function Shop() {
                             ${
                               active
                                 ? `
+                                  -translate-y-0.5
                                   bg-brand-green
                                   font-semibold
                                   text-white
                                   shadow-[0_3px_0_#315238,0_6px_12px_rgba(62,39,35,0.10)]
-                                  -translate-y-0.5
                                 `
                                 : `
                                   text-brand-brown/70
@@ -641,7 +684,8 @@ export default function Shop() {
                   ) =>
                     setMaxPrice(
                       Number(
-                        event.target
+                        event
+                          .target
                           .value,
                       ),
                     )
@@ -725,9 +769,9 @@ export default function Shop() {
             </div>
           </aside>
 
-          {/* ============================================================
+          {/* ==================================================================
               PRODUCT AREA
-          ============================================================ */}
+          =================================================================== */}
 
           <main className="min-w-0 flex-1">
 
@@ -755,7 +799,8 @@ export default function Shop() {
                 >
                   <Search
                     className="
-                      h-4 w-4
+                      h-4
+                      w-4
                       shrink-0
                       text-brand-green/45
                     "
