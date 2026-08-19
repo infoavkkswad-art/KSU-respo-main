@@ -19,7 +19,8 @@ import { ArrowRight } from 'lucide-react';
    - Reduced-motion users see content immediately.
    - Reveal runs once by default.
    - CTA presentation stays centralized.
-   - Uses only classes already established in the core design system.
+   - Reveal itself does not introduce intentional layout spacing.
+   - CTA spacing is compact and responsive.
    ========================================================================== */
 
 
@@ -35,6 +36,7 @@ interface RevealProps {
   once?: boolean;
 }
 
+
 export function Reveal({
   children,
   delay = 0,
@@ -42,8 +44,12 @@ export function Reveal({
   threshold = 0.08,
   once = true,
 }: RevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<number | null>(null);
+  const ref =
+    useRef<HTMLDivElement>(null);
+
+  const timeoutRef =
+    useRef<number | null>(null);
+
 
   useEffect(() => {
     const element = ref.current;
@@ -52,15 +58,28 @@ export function Reveal({
       return;
     }
 
+
+    /* ------------------------------------------------------------------------
+       REDUCED MOTION
+       ------------------------------------------------------------------------ */
+
     const prefersReducedMotion =
       window.matchMedia(
         '(prefers-reduced-motion: reduce)',
       ).matches;
 
     if (prefersReducedMotion) {
-      element.classList.add('is-visible');
+      element.classList.add(
+        'is-visible',
+      );
+
       return;
     }
+
+
+    /* ------------------------------------------------------------------------
+       SAFE VALUES
+       ------------------------------------------------------------------------ */
 
     const safeDelay = Math.max(
       0,
@@ -72,44 +91,77 @@ export function Reveal({
       Math.max(0, threshold),
     );
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) {
-            return;
-          }
 
-          if (timeoutRef.current !== null) {
-            window.clearTimeout(
-              timeoutRef.current,
-            );
-          }
+    /* ------------------------------------------------------------------------
+       INTERSECTION OBSERVER
+       ------------------------------------------------------------------------ */
 
-          timeoutRef.current =
-            window.setTimeout(() => {
-              element.classList.add(
-                'is-visible',
-              );
+    const observer =
+      new IntersectionObserver(
+        (entries) => {
+          entries.forEach(
+            (entry) => {
+              if (
+                !entry.isIntersecting
+              ) {
+                return;
+              }
 
-              timeoutRef.current = null;
-            }, safeDelay);
 
-          if (once) {
-            observer.unobserve(element);
-          }
-        });
-      },
-      {
-        threshold: safeThreshold,
-        rootMargin:
-          '0px 0px -32px 0px',
-      },
-    );
+              if (
+                timeoutRef.current !==
+                null
+              ) {
+                window.clearTimeout(
+                  timeoutRef.current,
+                );
+              }
+
+
+              timeoutRef.current =
+                window.setTimeout(
+                  () => {
+                    element.classList.add(
+                      'is-visible',
+                    );
+
+                    timeoutRef.current =
+                      null;
+                  },
+                  safeDelay,
+                );
+
+
+              if (once) {
+                observer.unobserve(
+                  element,
+                );
+              }
+            },
+          );
+        },
+        {
+          threshold:
+            safeThreshold,
+
+          rootMargin:
+            '0px 0px -32px 0px',
+        },
+      );
+
 
     observer.observe(element);
 
+
+    /* ------------------------------------------------------------------------
+       CLEANUP
+       ------------------------------------------------------------------------ */
+
     return () => {
-      if (timeoutRef.current !== null) {
+      if (
+        timeoutRef.current !==
+        null
+      ) {
         window.clearTimeout(
           timeoutRef.current,
         );
@@ -125,10 +177,15 @@ export function Reveal({
     once,
   ]);
 
+
   return (
     <div
       ref={ref}
-      className={`reveal w-full ${className}`}
+      className={`
+        reveal
+        w-full
+        ${className}
+      `}
     >
       {children}
     </div>
@@ -151,6 +208,7 @@ interface CTABannerProps {
   className?: string;
 }
 
+
 export function CTABanner({
   title,
   description,
@@ -166,13 +224,15 @@ export function CTABanner({
       className={`
         container-max
         container-px
-        py-10
-        sm:py-14
-        lg:py-20
+        py-7
+        sm:py-9
+        lg:py-11
         ${className}
       `}
     >
+
       <Reveal>
+
         <div
           className="
             group
@@ -181,18 +241,20 @@ export function CTABanner({
             rounded-3xl
             bg-brand-brown
             px-5
-            py-10
+            py-8
             text-center
             text-brand-cream
             shadow-lift
-            sm:rounded-4xl
             sm:px-8
-            sm:py-12
-            lg:px-16
-            lg:py-16
+            sm:py-9
+            lg:px-14
+            lg:py-11
           "
         >
-          {/* Background texture */}
+
+          {/* ================================================================
+              BACKGROUND TEXTURE
+              ============================================================= */}
 
           <div
             className="
@@ -205,16 +267,19 @@ export function CTABanner({
             aria-hidden="true"
           />
 
-          {/* Saffron glow */}
+
+          {/* ================================================================
+              SAFFRON GLOW
+              ============================================================= */}
 
           <div
             className="
               pointer-events-none
               absolute
-              -right-24
-              -top-24
-              h-56
-              w-56
+              -right-20
+              -top-20
+              h-48
+              w-48
               rounded-full
               bg-brand-saffron/10
               blur-3xl
@@ -222,32 +287,38 @@ export function CTABanner({
               duration-700
               group-hover:translate-x-3
               group-hover:-translate-y-3
-              sm:h-72
-              sm:w-72
+              sm:h-60
+              sm:w-60
             "
             aria-hidden="true"
           />
 
-          {/* Decorative arc */}
+
+          {/* ================================================================
+              DECORATIVE ARC
+              ============================================================= */}
 
           <div
             className="
               pointer-events-none
               absolute
-              -bottom-28
-              -left-24
-              h-52
-              w-52
+              -bottom-24
+              -left-20
+              h-44
+              w-44
               rounded-full
               border
               border-brand-saffron/10
-              sm:h-64
-              sm:w-64
+              sm:h-56
+              sm:w-56
             "
             aria-hidden="true"
           />
 
-          {/* Content */}
+
+          {/* ================================================================
+              CONTENT
+              ============================================================= */}
 
           <div
             className="
@@ -257,11 +328,16 @@ export function CTABanner({
               max-w-3xl
             "
           >
+
+            {/* ==============================================================
+                EYEBROW
+                ============================================================== */}
+
             {eyebrow && (
               <p
                 className="
                   section-eyebrow
-                  mb-3
+                  mb-2
                   text-brand-saffron-light
                 "
               >
@@ -269,26 +345,36 @@ export function CTABanner({
               </p>
             )}
 
+
+            {/* ==============================================================
+                TITLE
+                ============================================================== */}
+
             <h2
               className="
                 text-balance
                 font-serif
-                text-3xl
+                text-2xl
                 font-bold
                 leading-tight
                 text-white
-                sm:text-4xl
-                lg:text-5xl
+                sm:text-3xl
+                lg:text-4xl
               "
             >
               {title}
             </h2>
 
+
+            {/* ==============================================================
+                DESCRIPTION
+                ============================================================== */}
+
             <p
               className="
                 text-pretty
                 mx-auto
-                mt-4
+                mt-3
                 max-w-2xl
                 text-sm
                 leading-relaxed
@@ -300,28 +386,34 @@ export function CTABanner({
               {description}
             </p>
 
-            {/* CTA actions */}
+
+            {/* ==============================================================
+                CTA ACTIONS
+                ============================================================== */}
 
             <div
               className="
-                mt-7
+                mt-5
                 flex
                 w-full
                 flex-col
-                gap-3
-                sm:mt-8
+                gap-2.5
+                sm:mt-6
                 sm:flex-row
                 sm:justify-center
               "
             >
+
+              {/* Primary CTA */}
+
               <a
                 href={primaryLink}
                 className="
                   btn-primary
                   group/primary
-                  min-h-[50px]
+                  min-h-[46px]
                   w-full
-                  px-7
+                  px-6
                   shadow-lift
                   sm:w-auto
                 "
@@ -342,15 +434,19 @@ export function CTABanner({
                 />
               </a>
 
+
+              {/* Secondary CTA */}
+
               {secondaryLabel &&
                 secondaryLink && (
                   <a
                     href={secondaryLink}
                     className="
                       btn-outline
-                      min-h-[50px]
+                      min-h-[46px]
                       w-full
                       border-brand-cream/25
+                      px-6
                       text-brand-cream
                       hover:border-brand-cream/50
                       hover:bg-brand-cream
@@ -361,10 +457,15 @@ export function CTABanner({
                     {secondaryLabel}
                   </a>
                 )}
+
             </div>
+
           </div>
+
         </div>
+
       </Reveal>
+
     </section>
   );
 }
