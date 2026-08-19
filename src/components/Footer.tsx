@@ -15,6 +15,7 @@ import {
 import { brand, footerLinks } from '@/data/brand';
 import { Logo } from '@/components/Logo';
 
+
 /* ==========================================================================
    KAWAD SWAD 2.0
    PREMIUM FOOTER SYSTEM
@@ -22,7 +23,7 @@ import { Logo } from '@/components/Logo';
    Hierarchy:
    TRUST → DISCOVER → SHOP → BUSINESS → SUPPORT → CONTACT
 
-   Layout goals:
+   Design goals:
    - Compact premium footer
    - Reduced unnecessary vertical space
    - Strong brand presence
@@ -32,16 +33,23 @@ import { Logo } from '@/components/Logo';
    - Strong mobile usability
    ========================================================================== */
 
+
 export function Footer() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+
+  /* ==========================================================================
+     NEWSLETTER
+     ======================================================================== */
 
   const handleNewsletter = (
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
 
-    const normalizedEmail = email.trim();
+    const normalizedEmail =
+      email.trim();
 
     if (!normalizedEmail) {
       return;
@@ -54,6 +62,11 @@ export function Footer() {
       setSubmitted(false);
     }, 4000);
   };
+
+
+  /* ==========================================================================
+     SHARED LINK STYLE
+     ======================================================================== */
 
   const linkClass = `
     group
@@ -77,18 +90,20 @@ export function Footer() {
     sm:text-sm
   `;
 
+
   return (
     <footer
       className="
         relative
-        mt-8
+        mt-6
         overflow-hidden
         bg-brand-brown
         text-brand-cream
-        sm:mt-10
-        lg:mt-12
+        sm:mt-8
+        lg:mt-10
       "
     >
+
       {/* ======================================================================
           AMBIENT BRAND LAYER
           =================================================================== */}
@@ -108,16 +123,16 @@ export function Footer() {
         className="
           pointer-events-none
           absolute
-          -right-32
-          -top-36
-          h-80
-          w-80
+          -right-28
+          -top-32
+          h-72
+          w-72
           rounded-full
           border
           border-brand-saffron/10
-          shadow-[0_0_100px_rgba(200,138,42,0.05)]
-          sm:h-96
-          sm:w-96
+          shadow-[0_0_90px_rgba(200,138,42,0.05)]
+          sm:h-80
+          sm:w-80
         "
         aria-hidden="true"
       />
@@ -126,10 +141,10 @@ export function Footer() {
         className="
           pointer-events-none
           absolute
-          -bottom-44
-          -left-32
-          h-96
-          w-96
+          -bottom-36
+          -left-28
+          h-80
+          w-80
           rounded-full
           border
           border-brand-cream/5
@@ -164,26 +179,32 @@ export function Footer() {
           className="
             container-max
             container-px
-            py-7
-            sm:py-8
-            lg:py-10
+            py-6
+            sm:py-7
+            lg:py-8
           "
         >
           <div
             className="
               grid
               items-center
-              gap-5
+              gap-4
               md:grid-cols-[1fr_auto]
-              md:gap-10
-              lg:gap-16
+              md:gap-8
+              lg:gap-12
             "
           >
+
+            {/* --------------------------------------------------------------
+                NEWSLETTER COPY
+                -------------------------------------------------------------- */}
+
             <div className="min-w-0">
+
               <span
                 className="
                   section-eyebrow
-                  mb-2
+                  mb-1.5
                   block
                   text-brand-saffron-light
                 "
@@ -208,7 +229,7 @@ export function Footer() {
 
               <p
                 className="
-                  mt-2
+                  mt-1.5
                   max-w-lg
                   text-xs
                   leading-relaxed
@@ -219,9 +240,21 @@ export function Footer() {
                 Get product updates, recipes and special
                 offers from Kawad Swad.
               </p>
+
             </div>
 
-            <div className="min-w-0 md:w-[380px] lg:w-[440px]">
+
+            {/* --------------------------------------------------------------
+                NEWSLETTER FORM
+                -------------------------------------------------------------- */}
+
+            <div
+              className="
+                min-w-0
+                md:w-[360px]
+                lg:w-[420px]
+              "
+            >
               <form
                 onSubmit={handleNewsletter}
                 className="
@@ -232,6 +265,7 @@ export function Footer() {
                   sm:flex-row
                 "
               >
+
                 <label
                   htmlFor="footer-newsletter-email"
                   className="sr-only"
@@ -250,7 +284,7 @@ export function Footer() {
                   required
                   autoComplete="email"
                   className="
-                    min-h-[46px]
+                    min-h-[44px]
                     min-w-0
                     flex-1
                     rounded-full
@@ -258,7 +292,7 @@ export function Footer() {
                     border-brand-cream/15
                     bg-brand-cream/10
                     px-5
-                    py-2.5
+                    py-2
                     text-sm
                     text-white
                     outline-none
@@ -276,7 +310,7 @@ export function Footer() {
                   type="submit"
                   className="
                     btn-yellow
-                    min-h-[46px]
+                    min-h-[44px]
                     w-full
                     shrink-0
                     px-5
@@ -290,12 +324,14 @@ export function Footer() {
 
                   Subscribe
                 </button>
+
               </form>
+
 
               {submitted && (
                 <div
                   className="
-                    mt-2
+                    mt-1.5
                     flex
                     items-center
                     gap-2
@@ -315,7 +351,9 @@ export function Footer() {
                   Thank you for subscribing!
                 </div>
               )}
+
             </div>
+
           </div>
         </div>
       </div>
@@ -330,21 +368,22 @@ export function Footer() {
           relative
           container-max
           container-px
-          py-8
-          sm:py-10
-          lg:py-12
+          py-7
+          sm:py-8
+          lg:py-10
         "
       >
+
         <div
           className="
             grid
             grid-cols-2
-            gap-x-6
-            gap-y-7
-            sm:gap-x-8
+            gap-x-5
+            gap-y-6
+            sm:gap-x-7
             md:grid-cols-4
             lg:grid-cols-5
-            lg:gap-8
+            lg:gap-7
           "
         >
 
@@ -360,9 +399,10 @@ export function Footer() {
               lg:col-span-1
             "
           >
+
             <div
               className="
-                mb-4
+                mb-3
                 w-fit
               "
             >
@@ -370,12 +410,15 @@ export function Footer() {
                 className="
                   relative
                   rounded-2xl
-                  p-1
+                  p-0.5
                   transition-transform
                   duration-300
                   hover:-translate-y-0.5
                 "
               >
+
+                {/* Grounding shadow */}
+
                 <div
                   className="
                     pointer-events-none
@@ -383,7 +426,7 @@ export function Footer() {
                     bottom-0
                     left-[8%]
                     right-[8%]
-                    h-3
+                    h-2.5
                     rounded-[50%]
                     bg-black/20
                     blur-md
@@ -391,31 +434,36 @@ export function Footer() {
                   aria-hidden="true"
                 />
 
+
+                {/* Logo surface */}
+
                 <div
                   className="
                     relative
                     z-10
                     rounded-xl
                     bg-white/[0.03]
-                    px-1
-                    py-1
-                    shadow-[0_12px_28px_rgba(0,0,0,0.12)]
+                    px-0.5
+                    py-0.5
+                    shadow-[0_10px_24px_rgba(0,0,0,0.12)]
                   "
                 >
                   <Logo
                     imgClassName="
-                      h-14
-                      sm:h-16
-                      lg:h-[72px]
+                      h-13
+                      sm:h-14
+                      lg:h-16
                     "
                   />
                 </div>
+
               </div>
             </div>
 
+
             <p
               className="
-                mb-4
+                mb-3
                 max-w-xs
                 text-xs
                 leading-relaxed
@@ -428,7 +476,10 @@ export function Footer() {
               {brand.tagline}
             </p>
 
-            <div className="flex flex-wrap gap-2">
+
+            {/* Social links */}
+
+            <div className="flex flex-wrap gap-1.5">
               <SocialLink
                 href={brand.instagramUrl}
                 label="Instagram"
@@ -459,6 +510,7 @@ export function Footer() {
                 />
               </SocialLink>
             </div>
+
           </div>
 
 
@@ -489,6 +541,7 @@ export function Footer() {
             links={footerLinks.support}
             linkClass={linkClass}
           />
+
         </div>
 
 
@@ -498,28 +551,33 @@ export function Footer() {
 
         <div
           className="
-            mt-7
+            mt-6
             grid
-            gap-1.5
+            gap-1
             border-t
             border-brand-cream/10
-            pt-5
-            sm:mt-8
+            pt-4
+            sm:mt-7
             sm:grid-cols-2
-            sm:gap-2
+            sm:gap-1.5
             lg:grid-cols-4
-            lg:gap-3
+            lg:gap-2
           "
         >
+
           <ContactItem
             href={`tel:${brand.phoneRaw}`}
-            icon={<Phone className="h-4 w-4" />}
+            icon={
+              <Phone className="h-4 w-4" />
+            }
             label={brand.phone}
           />
 
           <ContactItem
             href={`mailto:${brand.email}`}
-            icon={<Mail className="h-4 w-4" />}
+            icon={
+              <Mail className="h-4 w-4" />
+            }
             label={brand.email}
           />
 
@@ -533,10 +591,14 @@ export function Footer() {
           />
 
           <ContactItem
-            icon={<MapPin className="h-4 w-4" />}
+            icon={
+              <MapPin className="h-4 w-4" />
+            }
             label={brand.region}
           />
+
         </div>
+
       </div>
 
 
@@ -560,8 +622,8 @@ export function Footer() {
             flex-col
             items-center
             justify-between
-            gap-2
-            py-3.5
+            gap-1.5
+            py-3
             text-center
             text-[10px]
             leading-relaxed
@@ -571,6 +633,7 @@ export function Footer() {
             sm:text-2xs
           "
         >
+
           <p>
             © {new Date().getFullYear()}{' '}
             {brand.manufacturer}. All rights reserved.
@@ -581,8 +644,10 @@ export function Footer() {
             {' · '}
             {brand.dietType}
           </p>
+
         </div>
       </div>
+
     </footer>
   );
 }
@@ -610,8 +675,8 @@ function SocialLink({
       rel="noopener noreferrer"
       className="
         flex
-        h-9
-        w-9
+        h-8
+        w-8
         items-center
         justify-center
         rounded-full
@@ -662,9 +727,10 @@ function FooterLinkGroup({
 }: FooterLinkGroupProps) {
   return (
     <div className="min-w-0">
+
       <h4
         className="
-          mb-3
+          mb-2.5
           text-[11px]
           font-semibold
           uppercase
@@ -676,7 +742,7 @@ function FooterLinkGroup({
         {title}
       </h4>
 
-      <ul className="space-y-1.5">
+      <ul className="space-y-1">
         {links.map((link) => (
           <li key={link.path}>
             <Link
@@ -705,6 +771,7 @@ function FooterLinkGroup({
           </li>
         ))}
       </ul>
+
     </div>
   );
 }
@@ -727,6 +794,7 @@ function ContactItem({
   label,
   external = false,
 }: ContactItemProps) {
+
   const content = (
     <>
       <span
@@ -755,13 +823,14 @@ function ContactItem({
     </>
   );
 
+
   if (!href) {
     return (
       <div
         className="
           flex
           min-w-0
-          min-h-[38px]
+          min-h-[36px]
           items-center
           gap-2.5
           text-xs
@@ -775,10 +844,15 @@ function ContactItem({
     );
   }
 
+
   return (
     <a
       href={href}
-      target={external ? '_blank' : undefined}
+      target={
+        external
+          ? '_blank'
+          : undefined
+      }
       rel={
         external
           ? 'noopener noreferrer'
@@ -788,7 +862,7 @@ function ContactItem({
         group
         flex
         min-w-0
-        min-h-[38px]
+        min-h-[36px]
         items-center
         gap-2.5
         rounded-xl
