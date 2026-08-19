@@ -22,13 +22,14 @@ import { Logo } from '@/components/Logo';
    Hierarchy:
    TRUST → DISCOVER → SHOP → BUSINESS → SUPPORT → CONTACT
 
-   Design goals:
-   - Stronger premium finish
-   - Larger dimensional brand presence
-   - Better mobile spacing
-   - Better interaction states
-   - No dependency on custom Tailwind classes outside the current system
-   - Accessible newsletter feedback
+   Layout goals:
+   - Compact premium footer
+   - Reduced unnecessary vertical space
+   - Strong brand presence
+   - Clear newsletter section
+   - Efficient link grouping
+   - Responsive spacing
+   - Strong mobile usability
    ========================================================================== */
 
 export function Footer() {
@@ -60,7 +61,7 @@ export function Footer() {
     min-w-0
     items-center
     gap-1.5
-    py-1
+    py-0.5
     text-xs
     leading-relaxed
     text-brand-cream/65
@@ -80,12 +81,12 @@ export function Footer() {
     <footer
       className="
         relative
-        mt-12
+        mt-8
         overflow-hidden
         bg-brand-brown
         text-brand-cream
-        sm:mt-16
-        lg:mt-20
+        sm:mt-10
+        lg:mt-12
       "
     >
       {/* ======================================================================
@@ -163,26 +164,26 @@ export function Footer() {
           className="
             container-max
             container-px
-            py-10
-            sm:py-12
-            lg:py-16
+            py-7
+            sm:py-8
+            lg:py-10
           "
         >
           <div
             className="
               grid
               items-center
-              gap-7
+              gap-5
               md:grid-cols-[1fr_auto]
-              md:gap-12
-              lg:gap-20
+              md:gap-10
+              lg:gap-16
             "
           >
             <div className="min-w-0">
               <span
                 className="
                   section-eyebrow
-                  mb-2.5
+                  mb-2
                   block
                   text-brand-saffron-light
                 "
@@ -194,12 +195,12 @@ export function Footer() {
                 className="
                   text-balance
                   font-serif
-                  text-2xl
+                  text-xl
                   font-bold
                   leading-tight
                   text-white
-                  sm:text-3xl
-                  lg:text-4xl
+                  sm:text-2xl
+                  lg:text-3xl
                 "
               >
                 Keep the Swad coming.
@@ -207,12 +208,12 @@ export function Footer() {
 
               <p
                 className="
-                  mt-3
+                  mt-2
                   max-w-lg
-                  text-sm
+                  text-xs
                   leading-relaxed
                   text-brand-cream/70
-                  sm:text-base
+                  sm:text-sm
                 "
               >
                 Get product updates, recipes and special
@@ -220,14 +221,14 @@ export function Footer() {
               </p>
             </div>
 
-            <div className="min-w-0 md:w-[420px] lg:w-[480px]">
+            <div className="min-w-0 md:w-[380px] lg:w-[440px]">
               <form
                 onSubmit={handleNewsletter}
                 className="
                   flex
                   w-full
                   flex-col
-                  gap-2.5
+                  gap-2
                   sm:flex-row
                 "
               >
@@ -249,7 +250,7 @@ export function Footer() {
                   required
                   autoComplete="email"
                   className="
-                    min-h-[50px]
+                    min-h-[46px]
                     min-w-0
                     flex-1
                     rounded-full
@@ -257,7 +258,7 @@ export function Footer() {
                     border-brand-cream/15
                     bg-brand-cream/10
                     px-5
-                    py-3
+                    py-2.5
                     text-sm
                     text-white
                     outline-none
@@ -275,7 +276,7 @@ export function Footer() {
                   type="submit"
                   className="
                     btn-yellow
-                    min-h-[50px]
+                    min-h-[46px]
                     w-full
                     shrink-0
                     px-5
@@ -294,7 +295,7 @@ export function Footer() {
               {submitted && (
                 <div
                   className="
-                    mt-3
+                    mt-2
                     flex
                     items-center
                     gap-2
@@ -329,9 +330,9 @@ export function Footer() {
           relative
           container-max
           container-px
-          py-11
-          sm:py-14
-          lg:py-16
+          py-8
+          sm:py-10
+          lg:py-12
         "
       >
         <div
@@ -339,11 +340,11 @@ export function Footer() {
             grid
             grid-cols-2
             gap-x-6
-            gap-y-10
+            gap-y-7
             sm:gap-x-8
             md:grid-cols-4
             lg:grid-cols-5
-            lg:gap-10
+            lg:gap-8
           "
         >
 
@@ -361,7 +362,7 @@ export function Footer() {
           >
             <div
               className="
-                mb-5
+                mb-4
                 w-fit
               "
             >
@@ -375,7 +376,6 @@ export function Footer() {
                   hover:-translate-y-0.5
                 "
               >
-                {/* Dimensional logo grounding */}
                 <div
                   className="
                     pointer-events-none
@@ -404,9 +404,9 @@ export function Footer() {
                 >
                   <Logo
                     imgClassName="
-                      h-16
-                      sm:h-[72px]
-                      lg:h-20
+                      h-14
+                      sm:h-16
+                      lg:h-[72px]
                     "
                   />
                 </div>
@@ -415,11 +415,12 @@ export function Footer() {
 
             <p
               className="
-                mb-5
+                mb-4
                 max-w-xs
-                text-sm
+                text-xs
                 leading-relaxed
                 text-brand-cream/70
+                sm:text-sm
               "
             >
               Premium Papad from Nimar, Madhya Pradesh.
@@ -427,7 +428,7 @@ export function Footer() {
               {brand.tagline}
             </p>
 
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-2">
               <SocialLink
                 href={brand.instagramUrl}
                 label="Instagram"
@@ -497,17 +498,17 @@ export function Footer() {
 
         <div
           className="
-            mt-10
+            mt-7
             grid
-            gap-2
+            gap-1.5
             border-t
             border-brand-cream/10
-            pt-8
-            sm:mt-12
+            pt-5
+            sm:mt-8
             sm:grid-cols-2
-            sm:gap-3
+            sm:gap-2
             lg:grid-cols-4
-            lg:gap-4
+            lg:gap-3
           "
         >
           <ContactItem
@@ -559,8 +560,8 @@ export function Footer() {
             flex-col
             items-center
             justify-between
-            gap-3
-            py-5
+            gap-2
+            py-3.5
             text-center
             text-[10px]
             leading-relaxed
@@ -609,8 +610,8 @@ function SocialLink({
       rel="noopener noreferrer"
       className="
         flex
-        h-10
-        w-10
+        h-9
+        w-9
         items-center
         justify-center
         rounded-full
@@ -663,7 +664,7 @@ function FooterLinkGroup({
     <div className="min-w-0">
       <h4
         className="
-          mb-4
+          mb-3
           text-[11px]
           font-semibold
           uppercase
@@ -675,7 +676,7 @@ function FooterLinkGroup({
         {title}
       </h4>
 
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {links.map((link) => (
           <li key={link.path}>
             <Link
@@ -731,8 +732,8 @@ function ContactItem({
       <span
         className="
           flex
-          h-9
-          w-9
+          h-8
+          w-8
           shrink-0
           items-center
           justify-center
@@ -760,9 +761,9 @@ function ContactItem({
         className="
           flex
           min-w-0
-          min-h-[42px]
+          min-h-[38px]
           items-center
-          gap-3
+          gap-2.5
           text-xs
           leading-relaxed
           text-brand-cream/65
@@ -787,9 +788,9 @@ function ContactItem({
         group
         flex
         min-w-0
-        min-h-[42px]
+        min-h-[38px]
         items-center
-        gap-3
+        gap-2.5
         rounded-xl
         text-xs
         leading-relaxed
