@@ -1,33 +1,21 @@
 import type { ReactNode } from 'react';
 
+
 /* ==========================================================================
    KAWAD SWAD 2.0
    CENTRAL SECTION / CONTENT SYSTEM
 
-   Purpose:
-   - One consistent section language across the entire website
-   - Central control of heading hierarchy
-   - Central control of page heroes
-   - Consistent responsive spacing
-   - Behavioral hierarchy: eyebrow → title → description → action
-   - Removes page-by-page visual improvisation
+   Responsibilities:
+   - Consistent section spacing
+   - Consistent section surfaces
+   - Central heading hierarchy
+   - Central page hero behavior
+   - Complete hero artwork visibility
+   - Shared placeholder system
 
-   Important:
-   Existing exports are preserved:
-   - SectionHeading
-   - PageHero
-   - PlaceholderImage
-
-   New reusable exports:
-   - Section
-   - SectionHeader
-
-   Hero image behavior:
-   - Full image remains visible
-   - 3:2 artwork is not cropped
-   - Image is centered responsively
-   - Brand-green background fills remaining space
-   - Hero height is intentionally compact
+   IMAGE RULE:
+   Supplied Kawad Swad artwork must NOT be cropped.
+   Hero artwork uses object-contain.
    ========================================================================== */
 
 
@@ -98,7 +86,7 @@ interface PlaceholderImageProps {
 
 
 /* ==========================================================================
-   CENTRAL SECTION
+   SECTION SYSTEM
    ========================================================================== */
 
 const spacingClasses: Record<
@@ -112,6 +100,7 @@ const spacingClasses: Record<
   xl: 'section-xl',
 };
 
+
 const surfaceClasses: Record<
   SectionSurface,
   string
@@ -124,6 +113,10 @@ const surfaceClasses: Record<
   transparent: 'bg-transparent',
 };
 
+
+/* ==========================================================================
+   CENTRAL SECTION
+   ========================================================================== */
 
 export function Section({
   children,
@@ -182,8 +175,8 @@ export function SectionHeader({
   return (
     <div
       className={`
-        section-header
-        ${center ? 'text-center' : 'section-header-left'}
+        w-full
+        ${center ? 'text-center' : 'text-left'}
         ${className}
       `}
     >
@@ -205,7 +198,6 @@ export function SectionHeader({
         className={`
           type-h2
           text-balance
-          text-brand-green
           ${titleClassName}
         `}
       >
@@ -216,12 +208,13 @@ export function SectionHeader({
       {description && (
         <p
           className={`
-            type-body-lg
-            text-pretty
             mt-3
             max-w-2xl
+            text-sm
+            leading-relaxed
             text-brand-brown/65
-            sm:mt-3.5
+            sm:text-base
+            sm:leading-7
             ${center ? 'mx-auto' : ''}
             ${descriptionClassName}
           `}
@@ -269,9 +262,7 @@ export function SectionHeading({
       center={center}
       className={className}
       titleClassName={titleClassName}
-      descriptionClassName={
-        descriptionClassName
-      }
+      descriptionClassName={descriptionClassName}
     >
       {children}
     </SectionHeader>
@@ -282,13 +273,30 @@ export function SectionHeading({
 /* ==========================================================================
    CENTRAL PAGE HERO
 
-   Image strategy:
-   - Hero artwork is NOT cropped.
-   - The image uses object-contain.
-   - The image occupies the complete available hero area.
-   - Brand-green fills any remaining space.
-   - Supplied 3:2 artwork remains completely visible.
-   - Hero height is intentionally reduced to remove excessive whitespace.
+   IMAGE BEHAVIOR
+   --------------------------------------------------------------------------
+
+   Supplied hero artwork is generally 3:2.
+
+   We intentionally use:
+     object-fit: contain
+
+   This means:
+   - no cropping
+   - no stretched artwork
+   - no distorted mascot
+   - no clipped logo
+   - complete supplied artwork remains visible
+
+   The remaining area is filled with brand green.
+
+   CONTENT
+   --------------------------------------------------------------------------
+
+   Hero content sits above:
+     artwork → overlay → content
+
+   The hero is intentionally compact to remove excessive top/bottom space.
    ========================================================================== */
 
 export function PageHero({
@@ -316,6 +324,7 @@ export function PageHero({
       className={`
         page-hero
         relative
+        isolate
         overflow-hidden
         ${
           surface === 'green'
@@ -337,64 +346,62 @@ export function PageHero({
     >
 
       {/* ====================================================================
-          FULL HERO IMAGE
+          COMPLETE HERO ARTWORK
           ================================================================= */}
 
       {hasImage && (
-        <>
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            z-0
+            overflow-hidden
+            bg-brand-green
+          "
+          aria-hidden="true"
+        >
 
-          <div
+          <img
+            src={imageSrc}
+            alt={imageAlt}
+            loading="eager"
+            decoding="async"
             className="
-              absolute
-              inset-0
-              flex
-              items-center
-              justify-center
-              overflow-hidden
-              bg-brand-green
+              block
+              h-full
+              w-full
+              max-h-full
+              max-w-full
+              object-contain
+              object-center
             "
-            aria-hidden="true"
-          >
-
-            <img
-              src={imageSrc}
-              alt={imageAlt}
-              className="
-                block
-                h-full
-                w-full
-                max-h-full
-                max-w-full
-                object-contain
-                object-center
-              "
-              loading="eager"
-              decoding="async"
-            />
-
-          </div>
-
-
-          {/* ================================================================
-              IMAGE OVERLAY
-              ================================================================ */}
-
-          <div
-            className="
-              page-hero-overlay
-              absolute
-              inset-0
-              z-10
-            "
-            aria-hidden="true"
           />
 
-        </>
+        </div>
       )}
 
 
       {/* ====================================================================
-          DECORATION
+          IMAGE READABILITY OVERLAY
+          ================================================================= */}
+
+      {hasImage && (
+        <div
+          className="
+            page-hero-overlay
+            pointer-events-none
+            absolute
+            inset-0
+            z-10
+          "
+          aria-hidden="true"
+        />
+      )}
+
+
+      {/* ====================================================================
+          DECORATIVE SYSTEM
           ================================================================= */}
 
       {showDecoration && !hasImage && (
@@ -468,6 +475,7 @@ export function PageHero({
             absolute
             inset-y-0
             right-0
+            z-10
             hidden
             w-1/2
             lg:block
@@ -482,14 +490,13 @@ export function PageHero({
       {/* ====================================================================
           HERO CONTENT
 
-          Reduced from:
-          18rem / 20rem / 24rem
+          Compact responsive height:
+          Mobile  : 15rem
+          Tablet  : 17rem
+          Desktop : 20rem
 
-          To:
-          15rem / 17rem / 20rem
-
-          This removes unnecessary empty vertical space while preserving
-          enough room for the hero title and description.
+          This intentionally reduces excessive empty space while keeping
+          enough room for title, description and actions.
           ================================================================= */}
 
       <div
@@ -497,7 +504,7 @@ export function PageHero({
           container-max
           container-px
           relative
-          z-content
+          z-20
           flex
           min-h-[15rem]
           items-center
@@ -574,10 +581,12 @@ export function PageHero({
           {description && (
             <p
               className={`
-                type-body-lg
-                text-pretty
                 mt-3
                 max-w-2xl
+                text-sm
+                leading-relaxed
+                sm:text-base
+                sm:leading-7
                 ${
                   align === 'center'
                     ? 'mx-auto'
