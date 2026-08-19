@@ -2,6 +2,7 @@ import { getProductFamilyImage } from '@/data/product-images';
 import type { ProductFamily } from '@/data/products';
 import { CATEGORY_LABELS } from '@/data/products';
 
+
 interface ProductImageProps {
   productId?: string;
   product?: ProductFamily;
@@ -9,40 +10,65 @@ interface ProductImageProps {
   className?: string;
 }
 
+
 /* ==========================================================================
    KAWAD SWAD 2.0
    CENTRAL PRODUCT IMAGE SYSTEM
 
-   This component owns the visual treatment of product photography.
-
    Design rules:
-   - Product image remains the source of truth.
-   - Background adapts around the product without competing with packaging.
+   - Product artwork is never intentionally cropped.
+   - Product image always uses object-contain.
+   - Natural image proportions are preserved.
+   - Card images receive a controlled safe area.
+   - Detail and hero images receive progressively more breathing room.
+   - Background adapts around the product.
    - Product receives consistent grounding and depth.
-   - Card / detail / hero use different visual breathing room.
    - Missing assets receive a deliberate branded fallback.
-   - No product-specific visual rules belong in ProductCard.
+
+   IMPORTANT:
+   The actual <img> element owns the containment rules.
+   This prevents parent components from accidentally forcing
+   product artwork into object-cover behaviour.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   VARIANT CONFIGURATION
    ========================================================================== */
 
 const variantConfig = {
   card: {
-    padding: 'p-2 sm:p-3',
-    stageClass: 'product-image-stage-card',
-    productClass: 'product-image-object-card',
+    padding:
+      'p-[6%] sm:p-[7%] md:p-[8%]',
+    stageClass:
+      'product-image-stage-card',
+    productClass:
+      'product-image-object-card',
   },
 
   detail: {
-    padding: 'p-3 sm:p-5 lg:p-6',
-    stageClass: 'product-image-stage-detail',
-    productClass: 'product-image-object-detail',
+    padding:
+      'p-[5%] sm:p-[6%] lg:p-[7%]',
+    stageClass:
+      'product-image-stage-detail',
+    productClass:
+      'product-image-object-detail',
   },
 
   hero: {
-    padding: 'p-4 sm:p-6 lg:p-8',
-    stageClass: 'product-image-stage-hero',
-    productClass: 'product-image-object-hero',
+    padding:
+      'p-[4%] sm:p-[5%] lg:p-[6%]',
+    stageClass:
+      'product-image-stage-hero',
+    productClass:
+      'product-image-object-hero',
   },
 } as const;
+
+
+/* ==========================================================================
+   PRODUCT IMAGE
+   ========================================================================== */
 
 export function ProductImage({
   productId,
@@ -50,34 +76,71 @@ export function ProductImage({
   variant = 'card',
   className = '',
 }: ProductImageProps) {
+
+  /* ------------------------------------------------------------------------
+     Resolve product
+     ------------------------------------------------------------------------ */
+
   const resolvedId =
     productId ||
     product?.id ||
     '';
 
+
+  /* ------------------------------------------------------------------------
+     Resolve image configuration
+     ------------------------------------------------------------------------ */
+
   const imageConfig =
-    getProductFamilyImage(resolvedId);
+    getProductFamilyImage(
+      resolvedId,
+    );
+
+
+  /* ------------------------------------------------------------------------
+     Category label
+     ------------------------------------------------------------------------ */
 
   const categoryLabel =
     product
-      ? CATEGORY_LABELS[product.category]
+      ? CATEGORY_LABELS[
+          product.category
+        ]
       : 'Papad';
 
+
+  /* ------------------------------------------------------------------------
+     Asset availability
+     ------------------------------------------------------------------------ */
+
   const isAvailable =
-    imageConfig.status === 'available' &&
-    Boolean(imageConfig.primary);
+    imageConfig.status ===
+      'available' &&
+    Boolean(
+      imageConfig.primary,
+    );
+
+
+  /* ------------------------------------------------------------------------
+     Loading priority
+     ------------------------------------------------------------------------ */
 
   const isEager =
     variant === 'hero' ||
     variant === 'detail';
 
+
+  /* ------------------------------------------------------------------------
+     Variant configuration
+     ------------------------------------------------------------------------ */
+
   const config =
     variantConfig[variant];
 
 
-  /* ==========================================================================
-     ACCESSIBLE LABEL
-     ======================================================================== */
+  /* ------------------------------------------------------------------------
+     Accessible image label
+     ------------------------------------------------------------------------ */
 
   const accessibleLabel =
     imageConfig.alt ||
@@ -93,6 +156,7 @@ export function ProductImage({
         h-full
         w-full
         min-h-0
+        min-w-0
         items-center
         justify-center
         overflow-hidden
@@ -124,7 +188,10 @@ export function ProductImage({
         aria-hidden="true"
       />
 
-      {/* Soft central light */}
+
+      {/* ======================================================================
+          SOFT CENTRAL LIGHT
+          =================================================================== */}
 
       <div
         className="
@@ -144,7 +211,10 @@ export function ProductImage({
         aria-hidden="true"
       />
 
-      {/* Warm peripheral atmosphere */}
+
+      {/* ======================================================================
+          WARM PERIPHERAL ATMOSPHERE
+          =================================================================== */}
 
       <div
         className="
@@ -169,19 +239,19 @@ export function ProductImage({
 
       {isAvailable ? (
         <>
-          {/* ------------------------------------------------------------------
-              Grounding shadow
-              ---------------------------------------------------------------- */}
+          {/* ==================================================================
+              GROUNDING SHADOW
+              ================================================================== */}
 
           <div
             className="
               pointer-events-none
               absolute
-              bottom-[6%]
+              bottom-[5%]
               left-1/2
               z-10
-              h-[7%]
-              w-[56%]
+              h-[6%]
+              w-[48%]
               -translate-x-1/2
               rounded-[50%]
               bg-brand-brown/14
@@ -189,15 +259,16 @@ export function ProductImage({
               transition-all
               duration-500
               ease-out
-              group-hover:w-[50%]
+              group-hover:w-[54%]
               group-hover:bg-brand-brown/20
             "
             aria-hidden="true"
           />
 
-          {/* ------------------------------------------------------------------
-              Product physical layer
-              ---------------------------------------------------------------- */}
+
+          {/* ==================================================================
+              PRODUCT PHYSICAL LAYER
+              ================================================================== */}
 
           <div
             className={`
@@ -205,8 +276,13 @@ export function ProductImage({
               ${config.productClass}
               relative
               z-20
+              flex
               h-full
               w-full
+              min-h-0
+              min-w-0
+              items-center
+              justify-center
               [transform-style:preserve-3d]
               transition-transform
               duration-500
@@ -215,6 +291,17 @@ export function ProductImage({
               group-hover:scale-[1.015]
             `}
           >
+
+            {/* ================================================================
+                ACTUAL PRODUCT IMAGE
+
+                These rules intentionally live directly on the image.
+
+                max-h + max-w + object-contain ensures the entire
+                packaging artwork remains visible even when the source
+                image has unusual dimensions.
+                ============================================================= */}
+
             <img
               src={imageConfig.primary}
               alt={accessibleLabel}
@@ -240,7 +327,12 @@ export function ProductImage({
                 block
                 h-full
                 w-full
+                min-h-0
+                min-w-0
+                max-h-full
+                max-w-full
                 object-contain
+                object-center
                 ${config.padding}
                 drop-shadow-[0_14px_14px_rgba(78,52,46,0.14)]
                 transition-all
@@ -248,12 +340,15 @@ export function ProductImage({
                 ease-out
                 group-hover:drop-shadow-[0_20px_18px_rgba(78,52,46,0.19)]
               `}
+              draggable={false}
             />
+
           </div>
 
-          {/* ------------------------------------------------------------------
-              Controlled product highlight
-              ---------------------------------------------------------------- */}
+
+          {/* ==================================================================
+              CONTROLLED PRODUCT HIGHLIGHT
+              ================================================================== */}
 
           <div
             className="
@@ -273,9 +368,10 @@ export function ProductImage({
             aria-hidden="true"
           />
 
-          {/* ------------------------------------------------------------------
-              Fine glass edge
-              ---------------------------------------------------------------- */}
+
+          {/* ==================================================================
+              FINE GLASS EDGE
+              ================================================================== */}
 
           <div
             className="
@@ -296,12 +392,15 @@ export function ProductImage({
           />
         </>
       ) : (
+
         /* ====================================================================
            MISSING PRODUCT ASSET
            ================================================================= */
 
         <>
-          {/* Placeholder surface */}
+          {/* ==================================================================
+              PLACEHOLDER SURFACE
+              ================================================================== */}
 
           <div
             className="
@@ -317,7 +416,10 @@ export function ProductImage({
             aria-hidden="true"
           />
 
-          {/* Placeholder texture */}
+
+          {/* ==================================================================
+              PLACEHOLDER TEXTURE
+              ================================================================== */}
 
           <div
             className="
@@ -331,7 +433,10 @@ export function ProductImage({
             aria-hidden="true"
           />
 
-          {/* Placeholder depth object */}
+
+          {/* ==================================================================
+              PLACEHOLDER DEPTH OBJECT
+              ================================================================== */}
 
           <div
             className="
@@ -353,7 +458,10 @@ export function ProductImage({
             aria-hidden="true"
           />
 
-          {/* Inner placeholder ring */}
+
+          {/* ==================================================================
+              INNER PLACEHOLDER RING
+              ================================================================== */}
 
           <div
             className="
@@ -373,7 +481,10 @@ export function ProductImage({
             aria-hidden="true"
           />
 
-          {/* Placeholder content */}
+
+          {/* ==================================================================
+              PLACEHOLDER CONTENT
+              ================================================================== */}
 
           <div
             className="
@@ -391,6 +502,7 @@ export function ProductImage({
               sm:p-6
             "
           >
+
             <div
               className="
                 font-serif
@@ -406,7 +518,13 @@ export function ProductImage({
               ◯
             </div>
 
-            <div className="min-w-0 max-w-[90%]">
+
+            <div
+              className="
+                min-w-0
+                max-w-[90%]
+              "
+            >
               <p
                 className="
                   truncate
@@ -436,9 +554,13 @@ export function ProductImage({
                 Product image coming soon
               </p>
             </div>
+
           </div>
 
-          {/* Category context */}
+
+          {/* ==================================================================
+              CATEGORY CONTEXT
+              ================================================================== */}
 
           {product && (
             <div
@@ -465,7 +587,10 @@ export function ProductImage({
             </div>
           )}
 
-          {/* Asset state */}
+
+          {/* ==================================================================
+              ASSET STATE
+              ================================================================== */}
 
           <div
             className="
@@ -491,6 +616,7 @@ export function ProductImage({
               Pending Asset
             </span>
           </div>
+
         </>
       )}
     </div>
