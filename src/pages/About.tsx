@@ -21,17 +21,14 @@ import { brand } from '@/data/brand';
    Narrative:
    ORIGIN → REGION → VALUES → HERITAGE → CREDIBILITY → ACTION
 
-   Spacing strategy:
-   - Compact page hero
-   - Reduced section padding
-   - Tighter content gaps
-   - Preserved image proportions
-   - Preserved all existing content and functionality
-
-   Image system:
-   - Hero artwork uses object-contain.
-   - Complete artwork remains visible.
-   - Secondary editorial images use object-contain.
+   Layout goals:
+   - Compact hero
+   - Reduced top whitespace
+   - Full artwork visibility
+   - No image cropping
+   - Tighter section rhythm
+   - Stronger visual hierarchy
+   - Mobile-first spacing
    ========================================================================== */
 
 
@@ -106,25 +103,31 @@ export default function About() {
         "
         aria-labelledby="about-page-title"
       >
+
         <div
           className="
             relative
-            min-h-[290px]
+            min-h-[260px]
             overflow-hidden
             bg-brand-green
-            sm:min-h-[350px]
-            lg:min-h-[410px]
+            sm:min-h-[310px]
+            lg:min-h-[350px]
           "
         >
 
           {/* ==================================================================
               COMPLETE HERO ARTWORK
+
+              The supplied artwork is preserved completely.
+              No object-cover.
               ================================================================== */}
 
           <div
             className="
+              pointer-events-none
               absolute
               inset-0
+              z-0
               flex
               items-center
               justify-center
@@ -140,8 +143,11 @@ export default function About() {
               fetchPriority="high"
               decoding="async"
               className="
+                block
                 h-full
                 w-full
+                max-h-full
+                max-w-full
                 object-contain
                 object-center
               "
@@ -150,7 +156,7 @@ export default function About() {
 
 
           {/* ==================================================================
-              HERO READABILITY OVERLAY
+              HERO READABILITY
               ================================================================== */}
 
           <div
@@ -158,10 +164,11 @@ export default function About() {
               pointer-events-none
               absolute
               inset-0
+              z-10
               bg-gradient-to-r
               from-brand-green/95
-              via-brand-green/60
-              to-brand-green/10
+              via-brand-green/55
+              to-brand-green/5
             "
             aria-hidden="true"
           />
@@ -171,8 +178,9 @@ export default function About() {
               pointer-events-none
               absolute
               inset-0
+              z-10
               bg-gradient-to-t
-              from-brand-green/35
+              from-brand-green/30
               via-transparent
               to-transparent
             "
@@ -184,8 +192,34 @@ export default function About() {
               pointer-events-none
               absolute
               inset-0
+              z-10
               bg-dots
-              opacity-[0.05]
+              opacity-[0.04]
+            "
+            aria-hidden="true"
+          />
+
+
+          {/* ==================================================================
+              DECORATIVE ARC
+              ================================================================== */}
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              -right-20
+              -top-20
+              z-10
+              h-44
+              w-44
+              rounded-full
+              border
+              border-brand-saffron/15
+              sm:h-56
+              sm:w-56
+              lg:h-64
+              lg:w-64
             "
             aria-hidden="true"
           />
@@ -202,41 +236,47 @@ export default function About() {
               relative
               z-20
               flex
-              min-h-[290px]
+              min-h-[260px]
               items-center
-              sm:min-h-[350px]
-              lg:min-h-[410px]
+              sm:min-h-[310px]
+              lg:min-h-[350px]
             "
           >
+
             <Reveal>
+
               <div
                 className="
-                  max-w-4xl
-                  py-7
-                  sm:py-9
-                  lg:py-10
+                  max-w-3xl
+                  py-6
+                  sm:py-7
+                  lg:py-8
                 "
               >
+
                 <span
                   className="
                     section-eyebrow
-                    mb-2.5
+                    mb-2
                     block
-                    text-brand-saffron
+                    text-brand-saffron-light
                   "
                 >
                   Our Brand Story
                 </span>
+
 
                 <h1
                   id="about-page-title"
                   className="
                     text-balance
                     font-serif
-                    text-display-sm
+                    text-3xl
                     font-bold
                     leading-[1.02]
                     text-white
+                    sm:text-4xl
+                    lg:text-5xl
                   "
                 >
                   From Nimar,
@@ -245,6 +285,7 @@ export default function About() {
                     with tradition.
                   </span>
                 </h1>
+
 
                 <p
                   className="
@@ -255,7 +296,7 @@ export default function About() {
                     leading-relaxed
                     text-white/80
                     sm:text-base
-                    lg:mt-4
+                    lg:max-w-3xl
                     lg:text-lg
                   "
                 >
@@ -265,10 +306,15 @@ export default function About() {
                   time-honored recipes with the reliability
                   of modern food manufacturing.
                 </p>
+
               </div>
+
             </Reveal>
+
           </div>
+
         </div>
+
       </section>
 
 
@@ -279,12 +325,13 @@ export default function About() {
       <section
         className="
           bg-brand-ivory
-          py-8
-          sm:py-10
-          lg:py-14
+          py-7
+          sm:py-9
+          lg:py-11
         "
         aria-labelledby="region-title"
       >
+
         <div className="container-max container-px">
 
           <div
@@ -293,7 +340,7 @@ export default function About() {
               items-center
               gap-6
               lg:grid-cols-12
-              lg:gap-9
+              lg:gap-8
             "
           >
 
@@ -302,12 +349,15 @@ export default function About() {
                 ============================================================= */}
 
             <div className="lg:col-span-6">
+
               <Reveal>
+
                 <div>
 
                   <span className="section-eyebrow mb-2 block">
                     The Region
                   </span>
+
 
                   <h2
                     id="region-title"
@@ -315,26 +365,30 @@ export default function About() {
                       text-balance
                       max-w-xl
                       font-serif
-                      text-headline-lg
+                      text-2xl
                       font-bold
                       leading-tight
                       text-brand-green
+                      sm:text-3xl
+                      lg:text-4xl
                     "
                   >
                     Rooted in the fertile soil of Nimar,
                     Madhya Pradesh.
                   </h2>
 
+
                   <div
                     className="
                       mt-3
-                      space-y-2.5
+                      space-y-2
                       text-sm
                       leading-relaxed
                       text-brand-brown/70
                       sm:text-base
                     "
                   >
+
                     <p>
                       Nimar is a historical region renowned
                       for its deep agricultural roots and rich
@@ -347,6 +401,7 @@ export default function About() {
                       dependable, professional platform.
                     </p>
 
+
                     <p>
                       Our papads carry the distinct warmth and
                       flavor of this region. We work with
@@ -355,17 +410,18 @@ export default function About() {
                       that taste the way traditional papad
                       should.
                     </p>
+
                   </div>
 
 
                   <blockquote
                     className="
-                      my-4
+                      my-3.5
                       rounded-r-2xl
                       border-l-2
                       border-brand-saffron
                       bg-brand-ivory-dark
-                      p-3.5
+                      p-3
                       font-devanagari
                       text-lg
                       text-brand-brown/90
@@ -390,6 +446,7 @@ export default function About() {
                       text-brand-green
                     "
                   >
+
                     <MapPin
                       className="
                         h-4
@@ -400,10 +457,13 @@ export default function About() {
                     />
 
                     Nimar, Madhya Pradesh
+
                   </div>
 
                 </div>
+
               </Reveal>
+
             </div>
 
 
@@ -412,7 +472,9 @@ export default function About() {
                 ============================================================= */}
 
             <div className="lg:col-span-6">
-              <Reveal delay={120}>
+
+              <Reveal delay={100}>
+
                 <div
                   className="
                     image-premium
@@ -422,6 +484,7 @@ export default function About() {
                     shadow-lift
                   "
                 >
+
                   <img
                     src={ABOUT_HERO_IMAGE}
                     alt="Kawad Swad and the Nimar region"
@@ -430,18 +493,22 @@ export default function About() {
                     className="
                       block
                       h-auto
-                      max-h-[480px]
                       w-full
                       object-contain
                       object-center
                     "
                   />
+
                 </div>
+
               </Reveal>
+
             </div>
 
           </div>
+
         </div>
+
       </section>
 
 
@@ -454,40 +521,48 @@ export default function About() {
           border-y
           border-brand-green/10
           bg-brand-ivory-dark
-          py-9
-          sm:py-11
-          lg:py-14
+          py-8
+          sm:py-10
+          lg:py-12
         "
         aria-labelledby="values-title"
       >
+
         <div className="container-max container-px">
 
           <Reveal>
+
             <div
               className="
                 mx-auto
-                mb-7
+                mb-6
                 max-w-2xl
                 text-center
-                sm:mb-8
+                sm:mb-7
               "
             >
+
               <span className="section-eyebrow mb-2 block">
                 What We Stand For
               </span>
+
 
               <h2
                 id="values-title"
                 className="
                   text-balance
                   font-serif
-                  text-headline-md
+                  text-2xl
                   font-bold
+                  leading-tight
                   text-brand-green
+                  sm:text-3xl
+                  lg:text-4xl
                 "
               >
                 Built on uncompromising principles.
               </h2>
+
 
               <p
                 className="
@@ -505,19 +580,22 @@ export default function About() {
                 package, and present every Kawad Swad
                 product.
               </p>
+
             </div>
+
           </Reveal>
 
 
           <div
             className="
               grid
-              gap-3
+              gap-2.5
               sm:grid-cols-2
               lg:grid-cols-4
-              lg:gap-4
+              lg:gap-3
             "
           >
+
             {values.map(
               (item, index) => {
                 const Icon = item.icon;
@@ -525,8 +603,12 @@ export default function About() {
                 return (
                   <Reveal
                     key={item.title}
-                    delay={index * 70}
+                    delay={Math.min(
+                      index * 60,
+                      180,
+                    )}
                   >
+
                     <article
                       className="
                         card
@@ -542,12 +624,13 @@ export default function About() {
                         duration-300
                         hover:-translate-y-1
                         hover:shadow-lift
-                        sm:p-5
+                        sm:p-4.5
                       "
                     >
+
                       <div
                         className="
-                          mb-3
+                          mb-2.5
                           flex
                           h-10
                           w-10
@@ -562,17 +645,20 @@ export default function About() {
                         <Icon className="h-5 w-5" />
                       </div>
 
+
                       <h3
                         className="
-                          mb-2
+                          mb-1.5
                           font-serif
                           text-lg
                           font-semibold
+                          leading-tight
                           text-brand-green
                         "
                       >
                         {item.title}
                       </h3>
+
 
                       <p
                         className="
@@ -583,14 +669,18 @@ export default function About() {
                       >
                         {item.desc}
                       </p>
+
                     </article>
+
                   </Reveal>
                 );
               },
             )}
+
           </div>
 
         </div>
+
       </section>
 
 
@@ -601,12 +691,13 @@ export default function About() {
       <section
         className="
           bg-brand-ivory
-          py-9
-          sm:py-11
-          lg:py-15
+          py-8
+          sm:py-10
+          lg:py-12
         "
         aria-labelledby="heritage-title"
       >
+
         <div className="container-max container-px">
 
           <div
@@ -615,7 +706,7 @@ export default function About() {
               items-center
               gap-6
               lg:grid-cols-12
-              lg:gap-9
+              lg:gap-8
             "
           >
 
@@ -630,7 +721,9 @@ export default function About() {
                 lg:col-span-6
               "
             >
+
               <Reveal>
+
                 <div
                   className="
                     image-premium
@@ -640,6 +733,7 @@ export default function About() {
                     shadow-lift
                   "
                 >
+
                   <img
                     src={ABOUT_POSTER_IMAGE}
                     alt="Kawad Swad traditional preparation and culinary heritage"
@@ -648,14 +742,16 @@ export default function About() {
                     className="
                       block
                       h-auto
-                      max-h-[480px]
                       w-full
                       object-contain
                       object-center
                     "
                   />
+
                 </div>
+
               </Reveal>
+
             </div>
 
 
@@ -670,12 +766,15 @@ export default function About() {
                 lg:col-span-6
               "
             >
-              <Reveal delay={120}>
+
+              <Reveal delay={100}>
+
                 <div>
 
                   <span className="section-eyebrow mb-2 block">
                     Heritage & Dietary Choices
                   </span>
+
 
                   <h2
                     id="heritage-title"
@@ -683,25 +782,29 @@ export default function About() {
                       text-balance
                       max-w-xl
                       font-serif
-                      text-headline-lg
+                      text-2xl
                       font-bold
                       leading-tight
                       text-brand-green
+                      sm:text-3xl
+                      lg:text-4xl
                     "
                   >
                     Honoring traditional culinary roots.
                   </h2>
 
+
                   <div
                     className="
                       mt-3
-                      space-y-2.5
+                      space-y-2
                       text-sm
                       leading-relaxed
                       text-brand-brown/70
                       sm:text-base
                     "
                   >
+
                     <p>
                       Our brand heritage is deeply
                       intertwined with traditional vegetarian
@@ -711,6 +814,7 @@ export default function About() {
                       alongside our spiced variants.
                     </p>
 
+
                     <p>
                       Because our product catalogue includes
                       specific garlic-infused SKUs, we
@@ -719,6 +823,7 @@ export default function About() {
                       businesses can select exactly what
                       matches their requirements.
                     </p>
+
                   </div>
 
 
@@ -726,22 +831,24 @@ export default function About() {
                     className="
                       mt-4
                       grid
-                      gap-2.5
+                      gap-2
                       sm:grid-cols-2
                     "
                   >
+
                     <div
                       className="
                         rounded-2xl
                         border
                         border-brand-green/10
                         bg-brand-ivory-dark
-                        p-3.5
+                        p-3
                       "
                     >
+
                       <Leaf
                         className="
-                          mb-2
+                          mb-1.5
                           h-5
                           w-5
                           text-brand-green
@@ -770,7 +877,9 @@ export default function About() {
                         Recipes inspired by regional
                         culinary heritage.
                       </p>
+
                     </div>
+
 
                     <div
                       className="
@@ -778,12 +887,13 @@ export default function About() {
                         border
                         border-brand-green/10
                         bg-brand-ivory-dark
-                        p-3.5
+                        p-3
                       "
                     >
+
                       <Shield
                         className="
-                          mb-2
+                          mb-1.5
                           h-5
                           w-5
                           text-brand-saffron
@@ -812,15 +922,21 @@ export default function About() {
                         Clear product labeling for informed
                         selection.
                       </p>
+
                     </div>
+
                   </div>
 
                 </div>
+
               </Reveal>
+
             </div>
 
           </div>
+
         </div>
+
       </section>
 
 
@@ -833,29 +949,33 @@ export default function About() {
           relative
           overflow-hidden
           bg-brand-green
-          py-9
+          py-8
           text-brand-ivory
-          sm:py-11
-          lg:py-14
+          sm:py-10
+          lg:py-12
         "
         aria-labelledby="manufacturer-title"
       >
+
         <div
           className="
             pointer-events-none
             absolute
-            -right-24
-            -top-24
-            h-56
-            w-56
+            -right-20
+            -top-20
+            h-48
+            w-48
             rounded-full
             border
             border-brand-saffron/15
-            sm:h-64
-            sm:w-64
+            sm:h-56
+            sm:w-56
+            lg:h-64
+            lg:w-64
           "
           aria-hidden="true"
         />
+
 
         <div
           className="
@@ -868,9 +988,17 @@ export default function About() {
           aria-hidden="true"
         />
 
-        <div className="container-max container-px relative">
+
+        <div
+          className="
+            container-max
+            container-px
+            relative
+          "
+        >
 
           <Reveal>
+
             <div className="max-w-4xl">
 
               <span
@@ -884,19 +1012,23 @@ export default function About() {
                 Manufacturer Credibility
               </span>
 
+
               <h2
                 id="manufacturer-title"
                 className="
                   text-balance
                   font-serif
-                  text-headline-lg
+                  text-2xl
                   font-bold
                   leading-tight
                   text-white
+                  sm:text-3xl
+                  lg:text-4xl
                 "
               >
                 Crafted by Kawad Swad Udhyog.
               </h2>
+
 
               <p
                 className="
@@ -924,12 +1056,12 @@ export default function About() {
 
               <div
                 className="
-                  mt-5
+                  mt-4
                   grid
                   gap-2.5
                   border-t
                   border-brand-ivory/15
-                  pt-4
+                  pt-3.5
                   sm:grid-cols-3
                   sm:gap-4
                 "
@@ -943,6 +1075,7 @@ export default function About() {
                     gap-2.5
                   "
                 >
+
                   <Factory
                     className="
                       mt-0.5
@@ -955,6 +1088,7 @@ export default function About() {
                   />
 
                   <div className="min-w-0">
+
                     <p
                       className="
                         text-xs
@@ -976,7 +1110,9 @@ export default function About() {
                     >
                       {brand.manufacturer}
                     </p>
+
                   </div>
+
                 </div>
 
 
@@ -988,6 +1124,7 @@ export default function About() {
                     gap-2.5
                   "
                 >
+
                   <MapPin
                     className="
                       mt-0.5
@@ -1000,6 +1137,7 @@ export default function About() {
                   />
 
                   <div className="min-w-0">
+
                     <p
                       className="
                         text-xs
@@ -1020,7 +1158,9 @@ export default function About() {
                     >
                       {brand.region}
                     </p>
+
                   </div>
+
                 </div>
 
 
@@ -1032,6 +1172,7 @@ export default function About() {
                     gap-2.5
                   "
                 >
+
                   <Shield
                     className="
                       mt-0.5
@@ -1044,6 +1185,7 @@ export default function About() {
                   />
 
                   <div className="min-w-0">
+
                     <p
                       className="
                         text-xs
@@ -1065,7 +1207,9 @@ export default function About() {
                     >
                       Licence No. {brand.fssai}
                     </p>
+
                   </div>
+
                 </div>
 
               </div>
@@ -1077,14 +1221,15 @@ export default function About() {
 
               <div
                 className="
-                  mt-5
+                  mt-4
                   flex
                   flex-col
-                  gap-2.5
+                  gap-2
                   sm:flex-row
                   sm:flex-wrap
                 "
               >
+
                 <Link
                   to="/manufacturing"
                   className="
@@ -1103,6 +1248,7 @@ export default function About() {
                   />
                 </Link>
 
+
                 <Link
                   to="/bulk-orders"
                   className="
@@ -1119,11 +1265,15 @@ export default function About() {
                 >
                   Explore Bulk Supply
                 </Link>
+
               </div>
 
             </div>
+
           </Reveal>
+
         </div>
+
       </section>
 
 
@@ -1139,6 +1289,7 @@ export default function About() {
         secondaryLabel="Contact Us"
         secondaryLink="/contact"
       />
+
     </>
   );
 }
