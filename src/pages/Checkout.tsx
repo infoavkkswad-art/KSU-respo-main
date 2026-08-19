@@ -13,18 +13,18 @@ import {
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle,
   Lock,
   ShoppingBag,
   ShieldCheck,
   Truck,
   Leaf,
-  PackageCheck,
   MapPin,
   CreditCard,
 } from 'lucide-react';
 
 import { SEO } from '@/components/SEO';
+
+import { ProductImage } from '@/components/ProductImage';
 
 import {
   FormContainer,
@@ -54,45 +54,6 @@ import { apiClient } from '@/services/api-client';
 /* ==========================================================================
    KAWAD SWAD 2.0
    CHECKOUT
-
-   FLOW:
-
-   CART
-     ↓
-   DELIVERY DETAILS
-     ↓
-   ORDER REVIEW
-     ↓
-   SECURE RAZORPAY PAYMENT
-     ↓
-   PAYMENT VERIFICATION
-     ↓
-   ORDER SUCCESS
-
-   IMPORTANT:
-
-   Existing business/payment logic is preserved.
-
-   ProductService:
-   - product/SKU authority
-
-   CartContext:
-   - cart authority
-   - subtotal
-   - shipping
-   - total
-
-   API:
-   - order creation
-   - payment verification
-
-   OrderContext:
-   - completed-order handoff
-   ========================================================================== */
-
-
-/* ==========================================================================
-   CUSTOMER FORM
    ========================================================================== */
 
 const initialCustomer: CustomerInfo = {
@@ -217,92 +178,81 @@ const RAZORPAY_SCRIPT =
 
 
 function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
 
-  return new Promise(
-    (resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
 
-      if (window.Razorpay) {
+
+    const existingScript =
+      document.querySelector(
+        `script[src="${RAZORPAY_SCRIPT}"]`,
+      );
+
+
+    if (existingScript) {
+
+      const handleLoad = () => {
+        cleanup();
         resolve(true);
-        return;
-      }
+      };
 
 
-      const existingScript =
-        document.querySelector(
-          `script[src="${RAZORPAY_SCRIPT}"]`,
-        );
+      const handleError = () => {
+        cleanup();
+        resolve(false);
+      };
 
 
-      if (existingScript) {
+      const cleanup = () => {
 
-        const handleLoad =
-          () => {
-            cleanup();
-            resolve(true);
-          };
-
-
-        const handleError =
-          () => {
-            cleanup();
-            resolve(false);
-          };
-
-
-        const cleanup =
-          () => {
-
-            existingScript.removeEventListener(
-              'load',
-              handleLoad,
-            );
-
-            existingScript.removeEventListener(
-              'error',
-              handleError,
-            );
-          };
-
-
-        existingScript.addEventListener(
+        existingScript.removeEventListener(
           'load',
           handleLoad,
         );
 
-        existingScript.addEventListener(
+        existingScript.removeEventListener(
           'error',
           handleError,
         );
 
-        return;
-      }
+      };
 
 
-      const script =
-        document.createElement(
-          'script',
-        );
-
-
-      script.src =
-        RAZORPAY_SCRIPT;
-
-      script.async = true;
-
-
-      script.onload =
-        () => resolve(true);
-
-      script.onerror =
-        () => resolve(false);
-
-
-      document.body.appendChild(
-        script,
+      existingScript.addEventListener(
+        'load',
+        handleLoad,
       );
 
-    },
-  );
+      existingScript.addEventListener(
+        'error',
+        handleError,
+      );
+
+      return;
+    }
+
+
+    const script =
+      document.createElement('script');
+
+
+    script.src = RAZORPAY_SCRIPT;
+    script.async = true;
+
+
+    script.onload = () =>
+      resolve(true);
+
+    script.onerror = () =>
+      resolve(false);
+
+
+    document.body.appendChild(script);
+
+  });
 }
 
 
@@ -363,9 +313,7 @@ function validateCustomer(
     );
 
   } else if (
-    !/^[6-9]\d{9}$/.test(
-      phone,
-    )
+    !/^[6-9]\d{9}$/.test(phone)
   ) {
 
     errors.push(
@@ -436,9 +384,7 @@ function validateCustomer(
     );
 
   } else if (
-    !/^[1-9][0-9]{5}$/.test(
-      pincode,
-    )
+    !/^[1-9][0-9]{5}$/.test(pincode)
   ) {
 
     errors.push(
@@ -460,8 +406,7 @@ function createIdempotencyKey(): string {
 
   if (
     typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID ===
-      'function'
+    typeof crypto.randomUUID === 'function'
   ) {
 
     return `ks-${crypto.randomUUID()}`;
@@ -475,7 +420,7 @@ function createIdempotencyKey(): string {
 
 
 /* ==========================================================================
-   CHECKOUT TRUST ITEM
+   TRUST ITEM
    ========================================================================== */
 
 interface CheckoutTrustProps {
@@ -682,9 +627,7 @@ export default function Checkout() {
 
 
   const form =
-    useFormState(
-      initialCustomer,
-    );
+    useFormState(initialCustomer);
 
 
   const [
@@ -701,44 +644,38 @@ export default function Checkout() {
 
   /* ==========================================================================
      PRELOAD RAZORPAY
-     ======================================================================== */
+     ========================================================================== */
 
   useEffect(() => {
-
     void loadRazorpayScript();
-
   }, []);
 
 
   /* ==========================================================================
      PRODUCT DISPLAY DATA
-     ======================================================================== */
+     ========================================================================== */
 
   const resolvedItems =
-    items.map(
-      (item) => {
+    items.map((item) => {
 
-        const result =
-          ProductService.getProductBySku(
-            item.sku,
-          );
+      const result =
+        ProductService.getProductBySku(
+          item.sku,
+        );
 
 
-        return {
-          ...item,
-          family:
-            result?.family,
-          skuData:
-            result?.skuObj,
-        };
+      return {
+        ...item,
+        family: result?.family,
+        skuData: result?.skuObj,
+      };
 
-      },
-    );
+    });
 
 
   /* ==========================================================================
      SUBMIT ORDER
-     ======================================================================== */
+     ========================================================================== */
 
   const submit = async (
     event: FormEvent<HTMLFormElement>,
@@ -752,7 +689,6 @@ export default function Checkout() {
       paymentOpening ||
       form.status === 'submitting'
     ) {
-
       return;
     }
 
@@ -803,28 +739,22 @@ export default function Checkout() {
           'Please correct the highlighted fields.',
       );
 
-      form.setStatus(
-        'error',
-      );
+      form.setStatus('error');
 
       return;
     }
 
 
-    form.setStatus(
-      'submitting',
-    );
+    form.setStatus('submitting');
 
-    setPaymentOpening(
-      true,
-    );
+    setPaymentOpening(true);
 
 
     try {
 
       /* ================================================================
          CREATE SERVER ORDER
-      ================================================================= */
+         ================================================================ */
 
       const orderResponse =
         await apiClient.createOrder({
@@ -904,7 +834,7 @@ export default function Checkout() {
 
       /* ================================================================
          LOAD RAZORPAY
-      ================================================================= */
+         ================================================================ */
 
       const loaded =
         await loadRazorpayScript();
@@ -924,10 +854,9 @@ export default function Checkout() {
 
       /* ================================================================
          RAZORPAY
-      ================================================================= */
+         ================================================================ */
 
-      const options:
-        RazorpayOptions = {
+      const options: RazorpayOptions = {
 
         key:
           orderResponse.razorpayKeyId,
@@ -961,10 +890,6 @@ export default function Checkout() {
 
         },
 
-        /*
-         * Keep Razorpay's own theme configuration
-         * separate from our site's CSS tokens.
-         */
         theme: {
           color: '#C88A2A',
         },
@@ -972,7 +897,7 @@ export default function Checkout() {
 
         /* ==============================================================
            PAYMENT SUCCESS
-        ============================================================== */
+           ============================================================== */
 
         handler:
           async (
@@ -997,8 +922,7 @@ export default function Checkout() {
 
 
               if (
-                verification.success !==
-                true
+                verification.success !== true
               ) {
 
                 throw new Error(
@@ -1011,7 +935,7 @@ export default function Checkout() {
 
               /* ========================================================
                  SAVE COMPLETED ORDER
-              ======================================================== */
+                 ======================================================== */
 
               setCompletedOrder({
 
@@ -1045,18 +969,14 @@ export default function Checkout() {
 
               /* ========================================================
                  CLEAR CART ONLY AFTER VERIFICATION
-              ======================================================== */
+                 ======================================================== */
 
               clearCart();
 
 
-              form.setStatus(
-                'success',
-              );
+              form.setStatus('success');
 
-              setPaymentOpening(
-                false,
-              );
+              setPaymentOpening(false);
 
 
               navigate(
@@ -1084,17 +1004,11 @@ export default function Checkout() {
                   : 'Payment verification failed. Please contact Kawad Swad support if money was deducted.';
 
 
-              setError(
-                message,
-              );
+              setError(message);
 
-              form.setStatus(
-                'error',
-              );
+              form.setStatus('error');
 
-              setPaymentOpening(
-                false,
-              );
+              setPaymentOpening(false);
 
             }
 
@@ -1103,19 +1017,15 @@ export default function Checkout() {
 
         /* ==============================================================
            PAYMENT DISMISSED
-        ============================================================== */
+           ============================================================== */
 
         modal: {
 
           ondismiss: () => {
 
-            form.setStatus(
-              'idle',
-            );
+            form.setStatus('idle');
 
-            setPaymentOpening(
-              false,
-            );
+            setPaymentOpening(false);
 
             setError(
               'Payment was cancelled or dismissed. You can retry anytime.',
@@ -1129,9 +1039,7 @@ export default function Checkout() {
 
 
       const razorpay =
-        new window.Razorpay(
-          options,
-        );
+        new window.Razorpay(options);
 
 
       razorpay.open();
@@ -1154,17 +1062,11 @@ export default function Checkout() {
           : 'We could not submit your order right now. Please try again.';
 
 
-      setError(
-        message,
-      );
+      setError(message);
 
-      form.setStatus(
-        'error',
-      );
+      form.setStatus('error');
 
-      setPaymentOpening(
-        false,
-      );
+      setPaymentOpening(false);
 
     }
 
@@ -1173,11 +1075,9 @@ export default function Checkout() {
 
   /* ==========================================================================
      EMPTY CART
-     ======================================================================== */
+     ========================================================================== */
 
-  if (
-    items.length === 0
-  ) {
+  if (items.length === 0) {
 
     return (
       <>
@@ -1263,8 +1163,7 @@ export default function Checkout() {
               "
             >
               Add your favourite Kawad Swad
-              papads before continuing
-              to checkout.
+              papads before continuing to checkout.
             </p>
 
 
@@ -1298,7 +1197,7 @@ export default function Checkout() {
 
   /* ==========================================================================
      PAGE
-     ======================================================================== */
+     ========================================================================== */
 
   return (
     <>
@@ -1313,7 +1212,7 @@ export default function Checkout() {
 
       {/* ======================================================================
           CHECKOUT HERO
-          =================================================================== */}
+          ====================================================================== */}
 
       <section
         className="
@@ -1363,8 +1262,6 @@ export default function Checkout() {
             relative
           "
         >
-
-          {/* BREADCRUMB */}
 
           <nav
             aria-label="Checkout breadcrumb"
@@ -1457,9 +1354,8 @@ export default function Checkout() {
                   sm:text-base
                 "
               >
-                Tell us where to send your
-                papads, then complete your
-                secure payment.
+                Tell us where to send your papads,
+                then complete your secure payment.
               </p>
 
             </div>
@@ -1506,7 +1402,7 @@ export default function Checkout() {
 
       {/* ======================================================================
           CHECKOUT CONTENT
-          =================================================================== */}
+          ====================================================================== */}
 
       <section
         className="
@@ -1536,8 +1432,8 @@ export default function Checkout() {
           >
 
             {/* ==================================================================
-                LEFT: CUSTOMER FORM
-                =================================================================== */}
+                CUSTOMER FORM
+                ================================================================== */}
 
             <div className="min-w-0">
 
@@ -1553,10 +1449,6 @@ export default function Checkout() {
                   shadow-card
                 "
               >
-
-                {/* ==============================================================
-                    FORM HEADER
-                    =========================================================== */}
 
                 <div
                   className="
@@ -1582,10 +1474,6 @@ export default function Checkout() {
 
                 </div>
 
-
-                {/* ==============================================================
-                    FORM FIELDS
-                    =========================================================== */}
 
                 <div
                   className="
@@ -1781,16 +1669,8 @@ export default function Checkout() {
                   </FormContainer>
 
 
-                  {/* ============================================================
-                      ERROR
-                  ============================================================= */}
-
                   {error && (
-                    <div
-                      className="
-                        mt-4
-                      "
-                    >
+                    <div className="mt-4">
 
                       <FormStatusMessage
                         status="error"
@@ -1800,10 +1680,6 @@ export default function Checkout() {
                     </div>
                   )}
 
-
-                  {/* ============================================================
-                      PAYMENT CTA
-                  ============================================================= */}
 
                   <div
                     className="
@@ -1866,17 +1742,13 @@ export default function Checkout() {
                           />
 
                           Creating Secure Payment...
-
                         </>
 
                       ) : (
 
                         <>
                           <CreditCard
-                            className="
-                              h-4
-                              w-4
-                            "
+                            className="h-4 w-4"
                             aria-hidden="true"
                           />
 
@@ -1892,7 +1764,6 @@ export default function Checkout() {
                             "
                             aria-hidden="true"
                           />
-
                         </>
                       )}
 
@@ -1919,10 +1790,6 @@ export default function Checkout() {
 
               </form>
 
-
-              {/* ==================================================================
-                  TRUST ROW
-                  =================================================================== */}
 
               <div
                 className="
@@ -1971,8 +1838,8 @@ export default function Checkout() {
 
 
             {/* ==================================================================
-                RIGHT: ORDER SUMMARY
-                =================================================================== */}
+                ORDER SUMMARY
+                ================================================================== */}
 
             <aside
               className="
@@ -1992,10 +1859,6 @@ export default function Checkout() {
                   shadow-card
                 "
               >
-
-                {/* ==============================================================
-                    SUMMARY HEADER
-                    =========================================================== */}
 
                 <div
                   className="
@@ -2087,10 +1950,6 @@ export default function Checkout() {
                 </div>
 
 
-                {/* ==============================================================
-                    PRODUCTS
-                    =========================================================== */}
-
                 <div
                   className="
                     max-h-[380px]
@@ -2100,11 +1959,7 @@ export default function Checkout() {
                   "
                 >
 
-                  <div
-                    className="
-                      space-y-3
-                    "
-                  >
+                  <div className="space-y-3">
 
                     {resolvedItems.map(
                       (item) => {
@@ -2140,9 +1995,7 @@ export default function Checkout() {
 
                         return (
                           <div
-                            key={
-                              item.sku
-                            }
+                            key={item.sku}
                             className="
                               flex
                               gap-3
@@ -2176,32 +2029,22 @@ export default function Checkout() {
                               "
                             >
 
-                              <div
-                                className="
-                                  h-full
-                                  w-full
-                                  p-1.5
-                                "
-                              >
-
-                                {product && (
-                                  <ProductImage
-                                    productId={
-                                      product.id
-                                    }
-                                    product={
-                                      product
-                                    }
-                                    variant="card"
-                                    className="
-                                      h-full
-                                      w-full
-                                      object-contain
-                                    "
-                                  />
-                                )}
-
-                              </div>
+                              {product && (
+                                <ProductImage
+                                  productId={
+                                    product.id
+                                  }
+                                  product={
+                                    product
+                                  }
+                                  variant="card"
+                                  className="
+                                    h-full
+                                    w-full
+                                    object-contain
+                                  "
+                                />
+                              )}
 
                             </div>
 
@@ -2271,9 +2114,7 @@ export default function Checkout() {
                 </div>
 
 
-                {/* ==============================================================
-                    TOTALS
-                    =========================================================== */}
+                {/* TOTALS */}
 
                 <div
                   className="
@@ -2312,9 +2153,7 @@ export default function Checkout() {
                           text-brand-brown
                         "
                       >
-                        {formatPrice(
-                          subtotal,
-                        )}
+                        {formatPrice(subtotal)}
                       </span>
 
                     </div>
@@ -2340,8 +2179,7 @@ export default function Checkout() {
                           text-brand-green
                         "
                       >
-                        {shippingTotal ===
-                        0
+                        {shippingTotal === 0
                           ? 'Free'
                           : formatPrice(
                               shippingTotal,
@@ -2393,9 +2231,7 @@ export default function Checkout() {
                               sm:text-3xl
                             "
                           >
-                            {formatPrice(
-                              total,
-                            )}
+                            {formatPrice(total)}
                           </p>
 
                         </div>
@@ -2421,8 +2257,6 @@ export default function Checkout() {
 
                   </div>
 
-
-                  {/* SHIPPING MESSAGE */}
 
                   <div
                     className="
@@ -2458,6 +2292,7 @@ export default function Checkout() {
                         text-brand-brown/55
                       "
                     >
+
                       <strong
                         className="
                           font-semibold
@@ -2466,14 +2301,14 @@ export default function Checkout() {
                       >
                         Free shipping included.
                       </strong>{' '}
+
                       Your displayed total is the
                       amount sent for secure payment.
+
                     </p>
 
                   </div>
 
-
-                  {/* BACK TO CART */}
 
                   <Link
                     to="/cart"
@@ -2516,9 +2351,7 @@ export default function Checkout() {
               </div>
 
 
-              {/* ================================================================
-                  PAYMENT TRUST
-                  ============================================================= */}
+              {/* PAYMENT TRUST */}
 
               <div
                 className="
