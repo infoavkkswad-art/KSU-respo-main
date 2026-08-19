@@ -1,5 +1,11 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import {
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
+
 import { Link } from 'react-router-dom';
+
 import {
   Phone,
   Mail,
@@ -12,7 +18,11 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
-import { brand, footerLinks } from '@/data/brand';
+import {
+  brand,
+  footerLinks,
+} from '@/data/brand';
+
 import { Logo } from '@/components/Logo';
 
 
@@ -31,12 +41,18 @@ import { Logo } from '@/components/Logo';
    - Efficient link grouping
    - Responsive spacing
    - Strong mobile usability
+   - Consistent Kawad Swad visual language
    ========================================================================== */
 
 
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+
 export function Footer() {
   const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] =
+    useState(false);
 
 
   /* ==========================================================================
@@ -95,12 +111,12 @@ export function Footer() {
     <footer
       className="
         relative
-        mt-6
+        mt-4
         overflow-hidden
         bg-brand-brown
         text-brand-cream
-        sm:mt-8
-        lg:mt-10
+        sm:mt-6
+        lg:mt-8
       "
     >
 
@@ -123,16 +139,18 @@ export function Footer() {
         className="
           pointer-events-none
           absolute
-          -right-28
-          -top-32
-          h-72
-          w-72
+          -right-24
+          -top-28
+          h-60
+          w-60
           rounded-full
           border
           border-brand-saffron/10
-          shadow-[0_0_90px_rgba(200,138,42,0.05)]
-          sm:h-80
-          sm:w-80
+          shadow-[0_0_80px_rgba(200,138,42,0.05)]
+          sm:-right-28
+          sm:-top-32
+          sm:h-72
+          sm:w-72
         "
         aria-hidden="true"
       />
@@ -141,13 +159,17 @@ export function Footer() {
         className="
           pointer-events-none
           absolute
-          -bottom-36
-          -left-28
-          h-80
-          w-80
+          -bottom-32
+          -left-24
+          h-72
+          w-72
           rounded-full
           border
           border-brand-cream/5
+          sm:-bottom-36
+          sm:-left-28
+          sm:h-80
+          sm:w-80
         "
         aria-hidden="true"
       />
@@ -179,19 +201,20 @@ export function Footer() {
           className="
             container-max
             container-px
-            py-6
-            sm:py-7
-            lg:py-8
+            py-5
+            sm:py-6
+            lg:py-7
           "
         >
+
           <div
             className="
               grid
               items-center
               gap-4
               md:grid-cols-[1fr_auto]
-              md:gap-8
-              lg:gap-12
+              md:gap-7
+              lg:gap-10
             "
           >
 
@@ -204,7 +227,7 @@ export function Footer() {
               <span
                 className="
                   section-eyebrow
-                  mb-1.5
+                  mb-1
                   block
                   text-brand-saffron-light
                 "
@@ -221,7 +244,7 @@ export function Footer() {
                   leading-tight
                   text-white
                   sm:text-2xl
-                  lg:text-3xl
+                  lg:text-[1.65rem]
                 "
               >
                 Keep the Swad coming.
@@ -229,7 +252,7 @@ export function Footer() {
 
               <p
                 className="
-                  mt-1.5
+                  mt-1
                   max-w-lg
                   text-xs
                   leading-relaxed
@@ -251,10 +274,11 @@ export function Footer() {
             <div
               className="
                 min-w-0
-                md:w-[360px]
-                lg:w-[420px]
+                md:w-[340px]
+                lg:w-[400px]
               "
             >
+
               <form
                 onSubmit={handleNewsletter}
                 className="
@@ -278,20 +302,22 @@ export function Footer() {
                   type="email"
                   value={email}
                   onChange={(event) =>
-                    setEmail(event.target.value)
+                    setEmail(
+                      event.target.value,
+                    )
                   }
                   placeholder="Your email address"
                   required
                   autoComplete="email"
                   className="
-                    min-h-[44px]
+                    min-h-[42px]
                     min-w-0
                     flex-1
                     rounded-full
                     border
                     border-brand-cream/15
                     bg-brand-cream/10
-                    px-5
+                    px-4
                     py-2
                     text-sm
                     text-white
@@ -310,7 +336,7 @@ export function Footer() {
                   type="submit"
                   className="
                     btn-yellow
-                    min-h-[44px]
+                    min-h-[42px]
                     w-full
                     shrink-0
                     px-5
@@ -344,7 +370,11 @@ export function Footer() {
                   aria-live="polite"
                 >
                   <CheckCircle2
-                    className="h-4 w-4 shrink-0"
+                    className="
+                      h-4
+                      w-4
+                      shrink-0
+                    "
                     aria-hidden="true"
                   />
 
@@ -368,9 +398,9 @@ export function Footer() {
           relative
           container-max
           container-px
-          py-7
-          sm:py-8
-          lg:py-10
+          py-6
+          sm:py-7
+          lg:py-8
         "
       >
 
@@ -379,11 +409,11 @@ export function Footer() {
             grid
             grid-cols-2
             gap-x-5
-            gap-y-6
+            gap-y-5
             sm:gap-x-7
             md:grid-cols-4
             lg:grid-cols-5
-            lg:gap-7
+            lg:gap-6
           "
         >
 
@@ -402,10 +432,11 @@ export function Footer() {
 
             <div
               className="
-                mb-3
+                mb-2.5
                 w-fit
               "
             >
+
               <div
                 className="
                   relative
@@ -426,7 +457,7 @@ export function Footer() {
                     bottom-0
                     left-[8%]
                     right-[8%]
-                    h-2.5
+                    h-2
                     rounded-[50%]
                     bg-black/20
                     blur-md
@@ -448,22 +479,25 @@ export function Footer() {
                     shadow-[0_10px_24px_rgba(0,0,0,0.12)]
                   "
                 >
+
                   <Logo
                     imgClassName="
-                      h-13
-                      sm:h-14
-                      lg:h-16
+                      h-12
+                      sm:h-13
+                      lg:h-15
                     "
                   />
+
                 </div>
 
               </div>
+
             </div>
 
 
             <p
               className="
-                mb-3
+                mb-2.5
                 max-w-xs
                 text-xs
                 leading-relaxed
@@ -480,6 +514,7 @@ export function Footer() {
             {/* Social links */}
 
             <div className="flex flex-wrap gap-1.5">
+
               <SocialLink
                 href={brand.instagramUrl}
                 label="Instagram"
@@ -509,6 +544,7 @@ export function Footer() {
                   aria-hidden="true"
                 />
               </SocialLink>
+
             </div>
 
           </div>
@@ -551,13 +587,13 @@ export function Footer() {
 
         <div
           className="
-            mt-6
+            mt-5
             grid
             gap-1
             border-t
             border-brand-cream/10
-            pt-4
-            sm:mt-7
+            pt-3.5
+            sm:mt-6
             sm:grid-cols-2
             sm:gap-1.5
             lg:grid-cols-4
@@ -614,6 +650,7 @@ export function Footer() {
           bg-black/10
         "
       >
+
         <div
           className="
             container-max
@@ -622,8 +659,8 @@ export function Footer() {
             flex-col
             items-center
             justify-between
-            gap-1.5
-            py-3
+            gap-1
+            py-2.5
             text-center
             text-[10px]
             leading-relaxed
@@ -646,6 +683,7 @@ export function Footer() {
           </p>
 
         </div>
+
       </div>
 
     </footer>
@@ -662,6 +700,7 @@ interface SocialLinkProps {
   label: string;
   children: ReactNode;
 }
+
 
 function SocialLink({
   href,
@@ -720,6 +759,7 @@ interface FooterLinkGroupProps {
   linkClass: string;
 }
 
+
 function FooterLinkGroup({
   title,
   links,
@@ -730,7 +770,7 @@ function FooterLinkGroup({
 
       <h4
         className="
-          mb-2.5
+          mb-2
           text-[11px]
           font-semibold
           uppercase
@@ -742,14 +782,22 @@ function FooterLinkGroup({
         {title}
       </h4>
 
-      <ul className="space-y-1">
+      <ul className="space-y-0.5">
+
         {links.map((link) => (
           <li key={link.path}>
+
             <Link
               to={link.path}
               className={linkClass}
             >
-              <span className="min-w-0 break-words">
+
+              <span
+                className="
+                  min-w-0
+                  break-words
+                "
+              >
                 {link.label}
               </span>
 
@@ -767,9 +815,12 @@ function FooterLinkGroup({
                 "
                 aria-hidden="true"
               />
+
             </Link>
+
           </li>
         ))}
+
       </ul>
 
     </div>
@@ -787,6 +838,7 @@ interface ContactItemProps {
   label: string;
   external?: boolean;
 }
+
 
 function ContactItem({
   href,
@@ -817,7 +869,12 @@ function ContactItem({
         {icon}
       </span>
 
-      <span className="min-w-0 break-words">
+      <span
+        className="
+          min-w-0
+          break-words
+        "
+      >
         {label}
       </span>
     </>
@@ -876,6 +933,8 @@ function ContactItem({
         focus-visible:outline-none
         focus-visible:ring-2
         focus-visible:ring-brand-saffron
+        focus-visible:ring-offset-2
+        focus-visible:ring-offset-brand-brown
         sm:text-sm
       "
     >
