@@ -35,15 +35,14 @@ import { Logo } from '@/components/Logo';
    Hierarchy:
    BRAND → DISCOVER → SEARCH → CART → SHOP
 
-   Cleanup:
-   - Reduced unnecessary vertical header height.
-   - Kept logo prominent.
-   - Preserved desktop navigation.
-   - Preserved search.
-   - Preserved cart.
-   - Preserved mobile navigation.
-   - Preserved sticky behaviour.
-   - Preserved keyboard / accessibility behaviour.
+   Design goals:
+   - Compact vertical footprint
+   - Strong logo presence
+   - Clean navigation rhythm
+   - Consistent brand colors
+   - Mobile-first touch targets
+   - No unnecessary top whitespace
+   - Preserve all existing functionality
    ========================================================================== */
 
 
@@ -270,11 +269,11 @@ export function Header() {
             container-max
             container-px
             flex
-            min-h-[26px]
+            min-h-[24px]
             items-center
             justify-center
             text-center
-            sm:min-h-[28px]
+            sm:min-h-[26px]
           "
         >
           <span
@@ -282,8 +281,8 @@ export function Header() {
               text-[8px]
               font-medium
               uppercase
-              tracking-[0.1em]
               leading-none
+              tracking-[0.09em]
               sm:text-2xs
               sm:tracking-widest
             "
@@ -336,22 +335,24 @@ export function Header() {
           }
         `}
       >
+
         <div
           className="
             container-max
             container-px
           "
         >
+
           <div
             className="
               flex
-              min-h-[60px]
+              min-h-[56px]
               w-full
               items-center
               justify-between
               gap-2
-              sm:min-h-[68px]
-              lg:min-h-[76px]
+              sm:min-h-[64px]
+              lg:min-h-[70px]
             "
           >
 
@@ -367,7 +368,7 @@ export function Header() {
             >
               <Logo
                 imgClassName="
-                  h-11
+                  h-10
                   w-auto
                   object-contain
                   drop-shadow-[0_5px_4px_rgba(62,39,35,0.12)]
@@ -375,8 +376,8 @@ export function Header() {
                   duration-300
                   group-hover:drop-shadow-[0_8px_8px_rgba(62,39,35,0.18)]
                   group-hover:scale-[1.025]
-                  sm:h-12
-                  lg:h-[64px]
+                  sm:h-11
+                  lg:h-[60px]
                 "
               />
             </div>
@@ -411,13 +412,13 @@ export function Header() {
                         whitespace-nowrap
                         rounded-full
                         px-2.5
-                        py-2
+                        py-1.5
                         text-sm
                         font-medium
                         transition-all
                         duration-200
                         ease-ks-standard
-                        xl:px-3.5
+                        xl:px-3
 
                         ${
                           isActive
@@ -444,7 +445,7 @@ export function Header() {
                           aria-hidden="true"
                           className={`
                             absolute
-                            bottom-0.5
+                            bottom-0
                             left-1/2
                             h-1
                             w-1
@@ -499,8 +500,8 @@ export function Header() {
                 onClick={toggleSearch}
                 className="
                   flex
-                  min-h-[42px]
-                  min-w-[42px]
+                  min-h-[40px]
+                  min-w-[40px]
                   items-center
                   justify-center
                   rounded-full
@@ -557,8 +558,8 @@ export function Header() {
                   group
                   relative
                   flex
-                  min-h-[44px]
-                  min-w-[44px]
+                  min-h-[42px]
+                  min-w-[42px]
                   items-center
                   justify-center
                   rounded-full
@@ -633,7 +634,7 @@ export function Header() {
                   group
                   ml-1
                   hidden
-                  min-h-[42px]
+                  min-h-[40px]
                   px-4
                   py-2
                   text-sm
@@ -668,8 +669,8 @@ export function Header() {
                 onClick={toggleMobile}
                 className="
                   flex
-                  min-h-[42px]
-                  min-w-[42px]
+                  min-h-[40px]
+                  min-w-[40px]
                   items-center
                   justify-center
                   rounded-full
@@ -712,6 +713,7 @@ export function Header() {
                   />
                 )}
               </button>
+
             </div>
           </div>
         </div>
@@ -748,14 +750,16 @@ export function Header() {
           `}
           aria-hidden={!searchOpen}
         >
+
           <div
             className="
               container-max
               container-px
-              py-3
-              sm:py-3.5
+              py-2.5
+              sm:py-3
             "
           >
+
             <form
               onSubmit={handleSearch}
               className="
@@ -766,6 +770,7 @@ export function Header() {
                 gap-2
               "
             >
+
               <label
                 htmlFor="header-search-input"
                 className="sr-only"
@@ -786,7 +791,7 @@ export function Header() {
                 placeholder="Search papads..."
                 className="
                   input-field
-                  min-h-[44px]
+                  min-h-[42px]
                   min-w-0
                   flex-1
                   bg-white/80
@@ -802,7 +807,7 @@ export function Header() {
                 type="submit"
                 className="
                   btn-primary
-                  min-h-[44px]
+                  min-h-[42px]
                   shrink-0
                   px-4
                   sm:px-6
@@ -810,9 +815,11 @@ export function Header() {
               >
                 Search
               </button>
+
             </form>
           </div>
         </div>
+
       </header>
 
 
@@ -830,7 +837,9 @@ export function Header() {
           "
         >
 
-          {/* Backdrop */}
+          {/* ------------------------------------------------------------------
+              BACKDROP
+              ------------------------------------------------------------------ */}
 
           <button
             type="button"
@@ -848,7 +857,9 @@ export function Header() {
           />
 
 
-          {/* Drawer */}
+          {/* ------------------------------------------------------------------
+              DRAWER
+              ------------------------------------------------------------------ */}
 
           <nav
             id="mobile-navigation"
@@ -878,24 +889,26 @@ export function Header() {
 
             <div
               className="
-                mb-5
+                mb-4
                 flex
                 items-center
                 justify-between
                 gap-3
                 border-b
                 border-brand-green/10
-                pb-4
-                sm:mb-6
+                pb-3.5
+                sm:mb-5
+                sm:pb-4
               "
             >
+
               <div className="min-w-0">
                 <Logo
                   imgClassName="
-                    h-11
+                    h-10
                     w-auto
                     object-contain
-                    sm:h-12
+                    sm:h-11
                   "
                 />
               </div>
@@ -905,8 +918,8 @@ export function Header() {
                 onClick={closeMobileMenu}
                 className="
                   flex
-                  min-h-[42px]
-                  min-w-[42px]
+                  min-h-[40px]
+                  min-w-[40px]
                   shrink-0
                   items-center
                   justify-center
@@ -930,6 +943,7 @@ export function Header() {
                   aria-hidden="true"
                 />
               </button>
+
             </div>
 
 
@@ -940,9 +954,10 @@ export function Header() {
             <div
               className="
                 flex-1
-                space-y-1
+                space-y-0.5
               "
             >
+
               {navLinks.map(
                 (link) => (
                   <NavLink
@@ -956,17 +971,18 @@ export function Header() {
                     }) =>
                       `
                         flex
-                        min-h-[48px]
+                        min-h-[46px]
                         w-full
                         items-center
                         justify-between
                         rounded-xl
                         px-4
-                        py-2.5
+                        py-2
                         text-base
                         font-medium
                         transition-all
                         duration-200
+                        sm:min-h-[48px]
                         sm:text-lg
 
                         ${
@@ -1010,6 +1026,7 @@ export function Header() {
                   </NavLink>
                 ),
               )}
+
             </div>
 
 
@@ -1019,14 +1036,15 @@ export function Header() {
 
             <div
               className="
-                mt-4
+                mt-3
                 border-t
                 border-brand-green/10
-                pt-4
-                sm:mt-5
-                sm:pt-5
+                pt-3
+                sm:mt-4
+                sm:pt-4
               "
             >
+
               <Link
                 to="/shop"
                 onClick={
@@ -1035,7 +1053,7 @@ export function Header() {
                 className="
                   btn-primary
                   group
-                  min-h-[50px]
+                  min-h-[48px]
                   w-full
                   shadow-green-glow
                 "
@@ -1056,15 +1074,16 @@ export function Header() {
                 />
               </Link>
 
+
               <Link
                 to="/cart"
                 onClick={
                   closeMobileMenu
                 }
                 className="
-                  mt-2.5
+                  mt-2
                   inline-flex
-                  min-h-[48px]
+                  min-h-[46px]
                   w-full
                   items-center
                   justify-center
@@ -1085,6 +1104,7 @@ export function Header() {
                   active:translate-y-[1px]
                 "
               >
+
                 <ShoppingBag
                   className="
                     h-4
@@ -1105,8 +1125,11 @@ export function Header() {
                     ({itemCount})
                   </span>
                 )}
+
               </Link>
+
             </div>
+
           </nav>
         </div>
       )}
