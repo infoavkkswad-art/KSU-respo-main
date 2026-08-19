@@ -136,8 +136,35 @@
     @apply badge;
   }
 
+  /* ========================================================================
+     PAGE HERO
+
+     The hero itself is the positioning context for the image.
+
+     Important:
+     Hero artwork supplied by Kawad Swad is generally 3:2.
+     We must NOT use object-cover here because that crops the artwork.
+
+     The image is instead rendered through the PageHero component using
+     object-contain. These rules make sure the image layer can safely fill
+     the hero without introducing overflow.
+     ======================================================================== */
+
   .page-hero {
     @apply relative overflow-hidden;
+    isolation: isolate;
+  }
+
+  .page-hero-overlay {
+    @apply pointer-events-none;
+    background:
+      linear-gradient(
+        90deg,
+        rgba(23, 60, 50, 0.62) 0%,
+        rgba(23, 60, 50, 0.38) 38%,
+        rgba(23, 60, 50, 0.12) 70%,
+        rgba(23, 60, 50, 0.02) 100%
+      );
   }
 
   .story-panel {
@@ -188,6 +215,17 @@
   .story-panel {
     @apply p-8;
   }
+
+  .page-hero-overlay {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(23, 60, 50, 0.60) 0%,
+        rgba(23, 60, 50, 0.34) 40%,
+        rgba(23, 60, 50, 0.10) 72%,
+        rgba(23, 60, 50, 0.02) 100%
+      );
+  }
 }
 
 @media (min-width: 1024px) {
@@ -201,6 +239,17 @@
 
   .story-panel {
     @apply p-10;
+  }
+
+  .page-hero-overlay {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(23, 60, 50, 0.58) 0%,
+        rgba(23, 60, 50, 0.30) 42%,
+        rgba(23, 60, 50, 0.08) 74%,
+        rgba(23, 60, 50, 0) 100%
+      );
   }
 }
 
