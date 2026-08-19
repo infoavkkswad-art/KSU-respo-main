@@ -22,6 +22,8 @@ import {
   Star,
   PackageCheck,
   ArrowRight,
+  ExternalLink,
+  Store,
 } from 'lucide-react';
 
 import {
@@ -56,42 +58,19 @@ import {
 
 
 /* ==========================================================================
-   KAWAD SWAD 2.0
-   PRODUCT DETAIL
-
-   VISUAL FLOW:
-
-   PRODUCT VISUAL
-        ↓
-   PRODUCT IDENTITY
-        ↓
-   PACK SIZE
-        ↓
-   PRICE
-        ↓
-   TRUST
-        ↓
-   QUANTITY
-        ↓
-   CART / BUY NOW
-        ↓
-   PRODUCT INFORMATION
-        ↓
-   REVIEWS
-        ↓
-   RELATED PRODUCTS
+   KAWAD SWAD
+   PRODUCT DETAIL PAGE
 
    IMPORTANT:
-
    ProductService remains the commercial authority.
 
    ProductDetail does NOT create:
    - pricing rules
    - SKU availability rules
-   - discount rules
    - shipping calculations
+   - discount rules
 
-   It only presents the authoritative values.
+   This page only presents the authoritative product values.
    ========================================================================== */
 
 
@@ -101,6 +80,55 @@ import {
 
 const FSSAI_LICENSE =
   '21425890001224';
+
+
+/* ==========================================================================
+   MARKETPLACE CONFIGURATION
+   ==========================================================================
+
+   IMPORTANT:
+   Only add a URL when the exact Kawad Swad marketplace listing/store URL
+   has been verified.
+
+   Do NOT replace these with generic marketplace homepages.
+   ========================================================================== */
+
+interface Marketplace {
+  name: string;
+  logo: string;
+  url?: string;
+  available: boolean;
+}
+
+
+const MARKETPLACES: Marketplace[] = [
+  {
+    name: 'Amazon',
+    logo: 'https://cdn.simpleicons.org/amazon/173C32',
+    available: false,
+  },
+  {
+    name: 'Flipkart',
+    logo: 'https://cdn.simpleicons.org/flipkart/173C32',
+    available: false,
+  },
+  {
+    name: 'Meesho',
+    logo: 'https://cdn.simpleicons.org/meesho/173C32',
+    url: 'https://www.meesho.com/',
+    available: true,
+  },
+  {
+    name: 'JioMart',
+    logo: 'https://cdn.simpleicons.org/jiomart/173C32',
+    available: false,
+  },
+  {
+    name: 'ONDC',
+    logo: 'https://cdn.simpleicons.org/ondc/173C32',
+    available: false,
+  },
+];
 
 
 /* ==========================================================================
@@ -207,6 +235,7 @@ export default function ProductDetail() {
     if (
       purchasableSkus.length === 0
     ) {
+
       setSelectedSkuIndex(0);
       setQuantity(1);
       setAdded(false);
@@ -219,7 +248,9 @@ export default function ProductDetail() {
       selectedSkuIndex >=
       purchasableSkus.length
     ) {
+
       setSelectedSkuIndex(0);
+
     }
 
   }, [
@@ -242,7 +273,6 @@ export default function ProductDetail() {
           path="/product/not-found"
           indexable={false}
         />
-
 
         <section
           className="
@@ -289,10 +319,12 @@ export default function ProductDetail() {
                   text-brand-green
                 "
               >
+
                 <ShoppingBag
                   className="h-6 w-6"
                   aria-hidden="true"
                 />
+
               </div>
 
 
@@ -335,12 +367,14 @@ export default function ProductDetail() {
                   shadow-soft
                 "
               >
+
                 Browse Shop
 
                 <ArrowRight
                   className="h-4 w-4"
                   aria-hidden="true"
                 />
+
               </Link>
 
             </div>
@@ -410,8 +444,6 @@ export default function ProductDetail() {
               "
             >
 
-              {/* IMAGE */}
-
               <div
                 className="
                   overflow-hidden
@@ -440,8 +472,6 @@ export default function ProductDetail() {
 
               </div>
 
-
-              {/* INFORMATION */}
 
               <div>
 
@@ -539,12 +569,14 @@ export default function ProductDetail() {
                     min-h-[46px]
                   "
                 >
+
                   Continue Shopping
 
                   <ArrowRight
                     className="h-4 w-4"
                     aria-hidden="true"
                   />
+
                 </Link>
 
               </div>
@@ -579,23 +611,6 @@ export default function ProductDetail() {
       selectedSku.packSize
     ] ??
     `${selectedSku.packSize}g`;
-
-
-  const discount =
-    selectedSku.mrp >
-      selectedSku.websitePrice &&
-    selectedSku.mrp > 0
-      ? Math.round(
-          (
-            (
-              selectedSku.mrp -
-              selectedSku.websitePrice
-            ) /
-            selectedSku.mrp
-          ) *
-            100,
-        )
-      : 0;
 
 
   /* ==========================================================================
@@ -742,7 +757,11 @@ export default function ProductDetail() {
 
             <Link
               to="/"
-              className="shrink-0 hover:text-brand-green"
+              className="
+                shrink-0
+                transition-colors
+                hover:text-brand-green
+              "
             >
               Home
             </Link>
@@ -753,7 +772,11 @@ export default function ProductDetail() {
 
             <Link
               to="/shop"
-              className="shrink-0 hover:text-brand-green"
+              className="
+                shrink-0
+                transition-colors
+                hover:text-brand-green
+              "
             >
               Shop
             </Link>
@@ -808,10 +831,6 @@ export default function ProductDetail() {
                   shadow-card
                 "
               >
-
-                {/* ==============================================================
-                    IMAGE STAGE
-                    =========================================================== */}
 
                 <div
                   className="
@@ -887,9 +906,7 @@ export default function ProductDetail() {
                   </div>
 
 
-                  {/* ============================================================
-                      CATEGORY
-                      ========================================================= */}
+                  {/* CATEGORY */}
 
                   <div
                     className="
@@ -915,40 +932,12 @@ export default function ProductDetail() {
                     {product.category}
                   </div>
 
-
-                  {/* ============================================================
-                      DISCOUNT
-                      ========================================================= */}
-
-                  {discount > 0 && (
-                    <div
-                      className="
-                        absolute
-                        right-5
-                        top-5
-                        z-20
-                        rounded-full
-                        bg-brand-saffron
-                        px-3
-                        py-1.5
-                        text-[10px]
-                        font-bold
-                        text-white
-                        shadow-soft
-                      "
-                    >
-                      {discount}% OFF
-                    </div>
-                  )}
-
                 </div>
 
               </div>
 
 
-              {/* ================================================================
-                  MOBILE TRUST STRIP
-                  ============================================================= */}
+              {/* MOBILE TRUST STRIP */}
 
               <div
                 className="
@@ -1015,9 +1004,7 @@ export default function ProductDetail() {
                 "
               >
 
-                {/* ==============================================================
-                    PRODUCT IDENTITY
-                    =========================================================== */}
+                {/* PRODUCT IDENTITY */}
 
                 <span
                   className="
@@ -1112,8 +1099,7 @@ export default function ProductDetail() {
 
                       const nextIndex =
                         Number(
-                          event.target
-                            .value,
+                          event.target.value,
                         );
 
 
@@ -1121,8 +1107,7 @@ export default function ProductDetail() {
                         Number.isInteger(
                           nextIndex,
                         ) &&
-                        nextIndex >=
-                          0 &&
+                        nextIndex >= 0 &&
                         nextIndex <
                           purchasableSkus.length
                       ) {
@@ -1195,9 +1180,16 @@ export default function ProductDetail() {
                     "
                   >
                     Selected pack:{' '}
-                    <span className="font-semibold text-brand-brown/60">
+
+                    <span
+                      className="
+                        font-semibold
+                        text-brand-brown/60
+                      "
+                    >
                       {packLabel}
                     </span>
+
                   </p>
 
                 </div>
@@ -1205,6 +1197,9 @@ export default function ProductDetail() {
 
                 {/* ==============================================================
                     PRICE
+                    =================================================================
+                    MRP and discount deliberately removed.
+                    Website price is the only customer-facing price.
                     =========================================================== */}
 
                 <div
@@ -1212,84 +1207,102 @@ export default function ProductDetail() {
                     mt-5
                     rounded-2xl
                     bg-brand-ivory
-                    p-3.5
-                    sm:p-4
+                    p-4
+                    sm:p-5
                   "
                 >
 
                   <div
                     className="
                       flex
-                      flex-wrap
-                      items-center
-                      gap-x-3
-                      gap-y-1
+                      items-end
+                      justify-between
+                      gap-4
                     "
                   >
 
-                    <span
-                      className="
-                        text-3xl
-                        font-bold
-                        tracking-tight
-                        text-brand-green
-                        sm:text-4xl
-                      "
-                    >
-                      {formatPrice(
-                        selectedSku.websitePrice,
-                      )}
-                    </span>
+                    <div>
+
+                      <p
+                        className="
+                          text-[10px]
+                          font-bold
+                          uppercase
+                          tracking-[0.14em]
+                          text-brand-brown/40
+                        "
+                      >
+                        Website Price
+                      </p>
 
 
-                    {selectedSku.mrp >
-                      selectedSku.websitePrice && (
                       <span
                         className="
-                          text-sm
-                          text-brand-brown/35
-                          line-through
-                          sm:text-base
+                          mt-0.5
+                          block
+                          text-3xl
+                          font-bold
+                          tracking-tight
+                          text-brand-green
+                          sm:text-4xl
                         "
                       >
                         {formatPrice(
-                          selectedSku.mrp,
+                          selectedSku.websitePrice,
                         )}
                       </span>
-                    )}
+
+                    </div>
 
 
-                    {discount > 0 && (
-                      <span
+                    <div
+                      className="
+                        flex
+                        items-center
+                        gap-1.5
+                        rounded-full
+                        border
+                        border-brand-green/10
+                        bg-white
+                        px-3
+                        py-2
+                        text-[10px]
+                        font-semibold
+                        text-brand-green
+                        shadow-soft
+                      "
+                    >
+
+                      <Truck
                         className="
-                          rounded-full
-                          bg-brand-saffron/10
-                          px-2.5
-                          py-1
-                          text-[10px]
-                          font-bold
-                          text-brand-saffron-dark
+                          h-3.5
+                          w-3.5
                         "
-                      >
-                        Save {discount}%
-                      </span>
-                    )}
+                        aria-hidden="true"
+                      />
+
+                      Free Shipping
+
+                    </div>
 
                   </div>
 
 
                   <div
                     className="
-                      mt-2
+                      mt-3
                       flex
                       items-center
-                      gap-1.5
+                      gap-2
+                      border-t
+                      border-brand-green/10
+                      pt-3
                       text-[11px]
                       text-brand-brown/50
                     "
                   >
 
-                    <Truck
+                    <PackageCheck
                       className="
                         h-3.5
                         w-3.5
@@ -1298,9 +1311,7 @@ export default function ProductDetail() {
                       aria-hidden="true"
                     />
 
-                    <span>
-                      Free shipping included
-                    </span>
+                    Carefully packed for safe delivery
 
                   </div>
 
@@ -1326,7 +1337,7 @@ export default function ProductDetail() {
                   <div
                     className="
                       flex
-                      min-h-[52px]
+                      min-h-[54px]
                       shrink-0
                       items-center
                       justify-between
@@ -1334,6 +1345,7 @@ export default function ProductDetail() {
                       border
                       border-brand-green/10
                       bg-brand-ivory
+                      shadow-inner-soft
                       sm:w-[138px]
                     "
                   >
@@ -1351,14 +1363,17 @@ export default function ProductDetail() {
                         justify-center
                         rounded-l-xl
                         text-brand-green/65
-                        transition-colors
+                        transition-all
+                        duration-200
                         hover:bg-brand-green/5
                         hover:text-brand-green
-                        active:bg-brand-green/10
+                        active:scale-95
                       "
                       aria-label="Decrease quantity"
                     >
+
                       <Minus className="h-4 w-4" />
+
                     </button>
 
 
@@ -1388,14 +1403,17 @@ export default function ProductDetail() {
                         justify-center
                         rounded-r-xl
                         text-brand-green/65
-                        transition-colors
+                        transition-all
+                        duration-200
                         hover:bg-brand-green/5
                         hover:text-brand-green
-                        active:bg-brand-green/10
+                        active:scale-95
                       "
                       aria-label="Increase quantity"
                     >
+
                       <Plus className="h-4 w-4" />
+
                     </button>
 
                   </div>
@@ -1409,12 +1427,15 @@ export default function ProductDetail() {
                       handleAddToCart
                     }
                     className={`
+                      group/cart
+                      relative
                       flex
-                      min-h-[52px]
+                      min-h-[54px]
                       flex-1
                       items-center
                       justify-center
                       gap-2
+                      overflow-hidden
                       rounded-xl
                       border
                       px-4
@@ -1423,7 +1444,7 @@ export default function ProductDetail() {
                       font-semibold
                       transition-all
                       duration-200
-                      active:translate-y-px
+                      active:translate-y-[2px]
 
                       ${
                         added
@@ -1438,38 +1459,87 @@ export default function ProductDetail() {
                             bg-white
                             text-brand-green
                             shadow-soft
-                            hover:-translate-y-0.5
-                            hover:bg-brand-green/5
+                            hover:-translate-y-1
                             hover:border-brand-green/25
+                            hover:bg-brand-green/5
+                            hover:shadow-lift
                           `
                       }
                     `}
                   >
 
+                    {!added && (
+                      <span
+                        className="
+                          pointer-events-none
+                          absolute
+                          inset-0
+                          -translate-x-full
+                          bg-gradient-to-r
+                          from-transparent
+                          via-white/50
+                          to-transparent
+                          transition-transform
+                          duration-700
+                          group-hover/cart:translate-x-full
+                        "
+                        aria-hidden="true"
+                      />
+                    )}
+
+
                     {added ? (
                       <>
-                        <Check
-                          className="h-4 w-4"
-                          aria-hidden="true"
-                        />
+
+                        <span
+                          className="
+                            flex
+                            h-7
+                            w-7
+                            items-center
+                            justify-center
+                            rounded-full
+                            bg-white/15
+                          "
+                        >
+
+                          <Check
+                            className="h-4 w-4"
+                            aria-hidden="true"
+                          />
+
+                        </span>
 
                         Added to Cart
+
                       </>
                     ) : (
                       <>
+
                         <ShoppingBag
-                          className="h-4 w-4"
+                          className="
+                            relative
+                            z-10
+                            h-4
+                            w-4
+                          "
                           aria-hidden="true"
                         />
 
-                        Add to Cart
+                        <span className="relative z-10">
+                          Add to Cart
+                        </span>
+
                       </>
                     )}
 
                   </button>
 
 
-                  {/* BUY NOW */}
+                  {/* ============================================================
+                      BUY NOW
+                      Premium CTA
+                      ========================================================= */}
 
                   <button
                     type="button"
@@ -1477,29 +1547,107 @@ export default function ProductDetail() {
                       handleBuyNow
                     }
                     className="
-                      btn-buy
                       group/buy
-                      min-h-[52px]
+                      relative
+                      flex
+                      min-h-[54px]
                       flex-1
-                      px-4
+                      items-center
+                      justify-center
+                      gap-2
+                      overflow-hidden
+                      rounded-xl
+                      border
+                      border-brand-saffron-dark
+                      bg-brand-saffron
+                      px-5
                       py-3
+                      text-sm
+                      font-bold
+                      text-white
+                      shadow-[0_5px_0_#A96F18,0_12px_24px_rgba(200,138,42,0.22)]
+                      transition-all
+                      duration-200
+                      hover:-translate-y-1
+                      hover:bg-brand-saffron-light
+                      hover:shadow-[0_6px_0_#A96F18,0_18px_30px_rgba(200,138,42,0.28)]
+                      active:translate-y-[3px]
+                      active:shadow-[0_2px_0_#A96F18,0_6px_12px_rgba(200,138,42,0.18)]
+                      focus:outline-none
+                      focus:ring-2
+                      focus:ring-brand-saffron
+                      focus:ring-offset-2
                     "
                   >
 
-                    <Zap
-                      className="h-4 w-4"
+                    {/* SHINE */}
+
+                    <span
+                      className="
+                        pointer-events-none
+                        absolute
+                        inset-y-0
+                        -left-1/2
+                        w-1/3
+                        -skew-x-12
+                        bg-white/20
+                        transition-all
+                        duration-700
+                        group-hover/buy:left-[120%]
+                      "
                       aria-hidden="true"
                     />
 
-                    Buy Now
+
+                    {/* ICON */}
+
+                    <span
+                      className="
+                        relative
+                        z-10
+                        flex
+                        h-7
+                        w-7
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-white/15
+                        shadow-inner-soft
+                      "
+                    >
+
+                      <Zap
+                        className="
+                          h-4
+                          w-4
+                          fill-current
+                        "
+                        aria-hidden="true"
+                      />
+
+                    </span>
+
+
+                    <span
+                      className="
+                        relative
+                        z-10
+                        whitespace-nowrap
+                      "
+                    >
+                      Buy Now
+                    </span>
+
 
                     <ArrowRight
                       className="
+                        relative
+                        z-10
                         h-4
                         w-4
                         transition-transform
                         duration-200
-                        group-hover/buy:translate-x-0.5
+                        group-hover/buy:translate-x-1
                       "
                       aria-hidden="true"
                     />
@@ -1555,6 +1703,13 @@ export default function ProductDetail() {
                   />
 
                 </div>
+
+
+                {/* ==============================================================
+                    MARKETPLACE AVAILABILITY
+                    =========================================================== */}
+
+                <MarketplaceSection />
 
               </div>
 
@@ -2012,12 +2167,14 @@ export default function ProductDetail() {
                   sm:inline-flex
                 "
               >
+
                 View all
 
                 <ArrowRight
                   className="h-4 w-4"
                   aria-hidden="true"
                 />
+
               </Link>
 
             </div>
@@ -2063,12 +2220,14 @@ export default function ProductDetail() {
                 sm:hidden
               "
             >
+
               View All Products
 
               <ArrowRight
                 className="h-4 w-4"
                 aria-hidden="true"
               />
+
             </Link>
 
           </div>
@@ -2078,6 +2237,281 @@ export default function ProductDetail() {
       )}
 
     </>
+  );
+}
+
+
+/* ==========================================================================
+   MARKETPLACE SECTION
+   ========================================================================== */
+
+function MarketplaceSection() {
+
+  return (
+    <section
+      className="
+        mt-5
+        border-t
+        border-brand-green/10
+        pt-5
+      "
+      aria-labelledby="marketplace-heading"
+    >
+
+      <div
+        className="
+          flex
+          items-center
+          gap-2
+        "
+      >
+
+        <span
+          className="
+            flex
+            h-8
+            w-8
+            items-center
+            justify-center
+            rounded-lg
+            bg-brand-saffron/10
+            text-brand-saffron
+          "
+        >
+
+          <Store
+            className="h-4 w-4"
+            aria-hidden="true"
+          />
+
+        </span>
+
+
+        <div>
+
+          <p
+            id="marketplace-heading"
+            className="
+              text-[10px]
+              font-bold
+              uppercase
+              tracking-[0.15em]
+              text-brand-green
+            "
+          >
+            Also Available On
+          </p>
+
+
+          <p
+            className="
+              mt-0.5
+              text-[10px]
+              text-brand-brown/45
+            "
+          >
+            Shop Kawad Swad on your preferred platform
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div
+        className="
+          mt-3
+          grid
+          grid-cols-2
+          gap-2
+          sm:grid-cols-3
+          lg:grid-cols-5
+        "
+      >
+
+        {MARKETPLACES.map(
+          (marketplace) => (
+
+            <MarketplaceCard
+              key={
+                marketplace.name
+              }
+              marketplace={
+                marketplace
+              }
+            />
+
+          ),
+        )}
+
+      </div>
+
+    </section>
+  );
+}
+
+
+/* ==========================================================================
+   MARKETPLACE CARD
+   ========================================================================== */
+
+interface MarketplaceCardProps {
+  marketplace: Marketplace;
+}
+
+
+function MarketplaceCard({
+  marketplace,
+}: MarketplaceCardProps) {
+
+  const content = (
+    <>
+      <div
+        className="
+          flex
+          h-9
+          w-9
+          shrink-0
+          items-center
+          justify-center
+          rounded-lg
+          border
+          border-brand-green/10
+          bg-white
+          shadow-soft
+        "
+      >
+
+        <img
+          src={
+            marketplace.logo
+          }
+          alt=""
+          className="
+            h-5
+            w-5
+            object-contain
+          "
+          loading="lazy"
+          aria-hidden="true"
+        />
+
+      </div>
+
+
+      <div
+        className="
+          min-w-0
+          flex-1
+        "
+      >
+
+        <p
+          className="
+            truncate
+            text-xs
+            font-bold
+            text-brand-green
+          "
+        >
+          {marketplace.name}
+        </p>
+
+
+        <p
+          className="
+            mt-0.5
+            flex
+            items-center
+            gap-1
+            text-[9px]
+            font-medium
+            text-brand-brown/45
+          "
+        >
+
+          {marketplace.available ? (
+            <>
+              Available
+
+              <ExternalLink
+                className="h-2.5 w-2.5"
+                aria-hidden="true"
+              />
+            </>
+          ) : (
+            'Coming Soon'
+          )}
+
+        </p>
+
+      </div>
+
+    </>
+  );
+
+
+  if (
+    marketplace.available &&
+    marketplace.url
+  ) {
+
+    return (
+      <a
+        href={
+          marketplace.url
+        }
+        target="_blank"
+        rel="noopener noreferrer"
+        className="
+          group/market
+          flex
+          min-h-[62px]
+          items-center
+          gap-2.5
+          rounded-xl
+          border
+          border-brand-green/10
+          bg-brand-ivory
+          px-2.5
+          py-2
+          transition-all
+          duration-200
+          hover:-translate-y-0.5
+          hover:border-brand-saffron/30
+          hover:bg-white
+          hover:shadow-soft
+          focus:outline-none
+          focus:ring-2
+          focus:ring-brand-saffron/40
+        "
+        aria-label={`Shop Kawad Swad on ${marketplace.name}`}
+      >
+        {content}
+      </a>
+    );
+  }
+
+
+  return (
+    <div
+      className="
+        flex
+        min-h-[62px]
+        items-center
+        gap-2.5
+        rounded-xl
+        border
+        border-brand-green/5
+        bg-brand-ivory/60
+        px-2.5
+        py-2
+        opacity-70
+      "
+      aria-label={`${marketplace.name} coming soon`}
+    >
+      {content}
+    </div>
   );
 }
 
@@ -2113,6 +2547,10 @@ function TrustMini({
         px-2
         py-2.5
         text-center
+        transition-all
+        duration-200
+        hover:-translate-y-0.5
+        hover:shadow-soft
       "
     >
 
@@ -2167,6 +2605,10 @@ function InfoCard({
         bg-white
         p-4
         shadow-soft
+        transition-all
+        duration-200
+        hover:-translate-y-0.5
+        hover:shadow-card
         sm:p-5
       "
     >
