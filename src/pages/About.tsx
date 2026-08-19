@@ -22,16 +22,16 @@ import { brand } from '@/data/brand';
    ORIGIN → REGION → VALUES → HERITAGE → CREDIBILITY → ACTION
 
    Central design system:
-   - Green = trust / brand authority
+   - Green   = trust / brand authority
    - Saffron = appetite / highlights / action
-   - Ivory = editorial canvas
-   - Brown = heritage / contrast
+   - Ivory   = editorial canvas
+   - Brown   = heritage / contrast
 
    Image system:
-   - Hero artwork is displayed completely.
-   - 3:2 artwork is never cropped.
-   - Hero background fills remaining space.
+   - Hero artwork uses object-contain.
+   - Complete artwork remains visible.
    - Secondary editorial images use object-contain.
+   - Vertical spacing is intentionally compact.
    ========================================================================== */
 
 
@@ -106,27 +106,21 @@ export default function About() {
         "
         aria-labelledby="about-page-title"
       >
-        {/* ====================================================================
-            IMAGE STAGE
-
-            The previous version used object-cover.
-
-            That caused the supplied 3:2 artwork to be cropped whenever the
-            browser hero ratio was different from the artwork ratio.
-
-            This version gives the artwork its own centered stage and uses
-            object-contain so the complete artwork remains visible.
-            ================================================================= */}
-
         <div
           className="
             relative
-            min-h-[380px]
+            min-h-[340px]
             overflow-hidden
-            sm:min-h-[460px]
-            lg:min-h-[560px]
+            bg-brand-green
+            sm:min-h-[410px]
+            lg:min-h-[470px]
           "
         >
+
+          {/* ==================================================================
+              COMPLETE HERO ARTWORK
+              ================================================================== */}
+
           <div
             className="
               absolute
@@ -166,7 +160,7 @@ export default function About() {
               inset-0
               bg-gradient-to-r
               from-brand-green/95
-              via-brand-green/65
+              via-brand-green/60
               to-brand-green/10
             "
             aria-hidden="true"
@@ -178,7 +172,7 @@ export default function About() {
               absolute
               inset-0
               bg-gradient-to-t
-              from-brand-green/40
+              from-brand-green/35
               via-transparent
               to-transparent
             "
@@ -208,25 +202,25 @@ export default function About() {
               relative
               z-20
               flex
-              min-h-[380px]
+              min-h-[340px]
               items-center
-              sm:min-h-[460px]
-              lg:min-h-[560px]
+              sm:min-h-[410px]
+              lg:min-h-[470px]
             "
           >
             <Reveal>
               <div
                 className="
                   max-w-4xl
-                  py-14
-                  sm:py-16
-                  lg:py-20
+                  py-9
+                  sm:py-11
+                  lg:py-12
                 "
               >
                 <span
                   className="
                     section-eyebrow
-                    mb-4
+                    mb-3
                     block
                     text-brand-saffron
                   "
@@ -255,7 +249,7 @@ export default function About() {
                 <p
                   className="
                     text-pretty
-                    mt-5
+                    mt-4
                     max-w-2xl
                     text-sm
                     leading-relaxed
@@ -284,9 +278,9 @@ export default function About() {
       <section
         className="
           bg-brand-ivory
-          py-14
-          sm:py-18
-          lg:py-24
+          py-10
+          sm:py-12
+          lg:py-16
         "
         aria-labelledby="region-title"
       >
@@ -296,9 +290,9 @@ export default function About() {
             className="
               grid
               items-center
-              gap-10
+              gap-7
               lg:grid-cols-12
-              lg:gap-16
+              lg:gap-10
             "
           >
 
@@ -310,7 +304,7 @@ export default function About() {
               <Reveal>
                 <div>
 
-                  <span className="section-eyebrow mb-3 block">
+                  <span className="section-eyebrow mb-2.5 block">
                     The Region
                   </span>
 
@@ -332,8 +326,8 @@ export default function About() {
 
                   <div
                     className="
-                      mt-6
-                      space-y-4
+                      mt-4
+                      space-y-3
                       text-sm
                       leading-relaxed
                       text-brand-brown/70
@@ -365,12 +359,12 @@ export default function About() {
 
                   <blockquote
                     className="
-                      my-7
+                      my-5
                       rounded-r-2xl
                       border-l-2
                       border-brand-saffron
                       bg-brand-ivory-dark
-                      p-5
+                      p-4
                       font-devanagari
                       text-lg
                       text-brand-brown/90
@@ -435,7 +429,7 @@ export default function About() {
                     className="
                       block
                       h-auto
-                      max-h-[620px]
+                      max-h-[520px]
                       w-full
                       object-contain
                       object-center
@@ -459,9 +453,9 @@ export default function About() {
           border-y
           border-brand-green/10
           bg-brand-ivory-dark
-          py-16
-          sm:py-20
-          lg:py-24
+          py-12
+          sm:py-14
+          lg:py-18
         "
         aria-labelledby="values-title"
       >
@@ -471,13 +465,13 @@ export default function About() {
             <div
               className="
                 mx-auto
-                mb-10
+                mb-8
                 max-w-2xl
                 text-center
-                sm:mb-14
+                sm:mb-10
               "
             >
-              <span className="section-eyebrow mb-3 block">
+              <span className="section-eyebrow mb-2.5 block">
                 What We Stand For
               </span>
 
@@ -498,7 +492,7 @@ export default function About() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-4
+                  mt-3
                   max-w-xl
                   text-sm
                   leading-relaxed
@@ -517,10 +511,10 @@ export default function About() {
           <div
             className="
               grid
-              gap-5
+              gap-4
               sm:grid-cols-2
               lg:grid-cols-4
-              lg:gap-6
+              lg:gap-5
             "
           >
             {values.map(
@@ -541,21 +535,21 @@ export default function About() {
                         border
                         border-brand-green/10
                         bg-white
-                        p-6
+                        p-5
                         shadow-card
                         transition-all
                         duration-300
                         hover:-translate-y-1
                         hover:shadow-lift
-                        sm:p-7
+                        sm:p-6
                       "
                     >
                       <div
                         className="
-                          mb-5
+                          mb-4
                           flex
-                          h-12
-                          w-12
+                          h-11
+                          w-11
                           items-center
                           justify-center
                           rounded-2xl
@@ -564,12 +558,12 @@ export default function About() {
                         "
                         aria-hidden="true"
                       >
-                        <Icon className="h-6 w-6" />
+                        <Icon className="h-5.5 w-5.5" />
                       </div>
 
                       <h3
                         className="
-                          mb-3
+                          mb-2.5
                           font-serif
                           text-lg
                           font-semibold
@@ -606,9 +600,9 @@ export default function About() {
       <section
         className="
           bg-brand-ivory
-          py-16
-          sm:py-20
-          lg:py-28
+          py-12
+          sm:py-14
+          lg:py-20
         "
         aria-labelledby="heritage-title"
       >
@@ -618,9 +612,9 @@ export default function About() {
             className="
               grid
               items-center
-              gap-10
+              gap-7
               lg:grid-cols-12
-              lg:gap-16
+              lg:gap-10
             "
           >
 
@@ -653,7 +647,7 @@ export default function About() {
                     className="
                       block
                       h-auto
-                      max-h-[620px]
+                      max-h-[520px]
                       w-full
                       object-contain
                       object-center
@@ -678,7 +672,7 @@ export default function About() {
               <Reveal delay={120}>
                 <div>
 
-                  <span className="section-eyebrow mb-3 block">
+                  <span className="section-eyebrow mb-2.5 block">
                     Heritage & Dietary Choices
                   </span>
 
@@ -699,8 +693,8 @@ export default function About() {
 
                   <div
                     className="
-                      mt-6
-                      space-y-4
+                      mt-4
+                      space-y-3
                       text-sm
                       leading-relaxed
                       text-brand-brown/70
@@ -729,7 +723,7 @@ export default function About() {
 
                   <div
                     className="
-                      mt-7
+                      mt-5
                       grid
                       gap-3
                       sm:grid-cols-2
@@ -746,7 +740,7 @@ export default function About() {
                     >
                       <Leaf
                         className="
-                          mb-3
+                          mb-2.5
                           h-5
                           w-5
                           text-brand-green
@@ -788,7 +782,7 @@ export default function About() {
                     >
                       <Shield
                         className="
-                          mb-3
+                          mb-2.5
                           h-5
                           w-5
                           text-brand-saffron
@@ -838,10 +832,10 @@ export default function About() {
           relative
           overflow-hidden
           bg-brand-green
-          py-16
+          py-12
           text-brand-ivory
-          sm:py-20
-          lg:py-24
+          sm:py-14
+          lg:py-18
         "
         aria-labelledby="manufacturer-title"
       >
@@ -851,8 +845,8 @@ export default function About() {
             absolute
             -right-24
             -top-24
-            h-72
-            w-72
+            h-64
+            w-64
             rounded-full
             border
             border-brand-saffron/15
@@ -879,7 +873,7 @@ export default function About() {
               <span
                 className="
                   section-eyebrow
-                  mb-3
+                  mb-2.5
                   block
                   text-brand-saffron
                 "
@@ -904,7 +898,7 @@ export default function About() {
               <p
                 className="
                   text-pretty
-                  mt-5
+                  mt-4
                   max-w-2xl
                   text-sm
                   leading-relaxed
@@ -927,12 +921,12 @@ export default function About() {
 
               <div
                 className="
-                  mt-8
+                  mt-6
                   grid
                   gap-3
                   border-t
                   border-brand-ivory/15
-                  pt-6
+                  pt-5
                   sm:grid-cols-3
                   sm:gap-5
                 "
@@ -1080,13 +1074,12 @@ export default function About() {
 
               <div
                 className="
-                  mt-8
+                  mt-6
                   flex
                   flex-col
                   gap-3
                   sm:flex-row
                   sm:flex-wrap
-                  sm:gap-4
                 "
               >
                 <Link
