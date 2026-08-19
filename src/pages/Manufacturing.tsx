@@ -23,10 +23,10 @@ import { brand } from '@/data/brand';
    → B2B ACTION
 
    Central design system:
-   - Green = trust / manufacturing confidence
+   - Green   = trust / manufacturing confidence
    - Saffron = process highlights / action
-   - Ivory = editorial canvas
-   - Brown = premium contrast
+   - Ivory   = editorial canvas
+   - Brown   = premium contrast
 
    Image system:
    - Hero artwork is displayed completely.
@@ -35,6 +35,10 @@ import { brand } from '@/data/brand';
    - Production artwork uses natural image ratio.
    ========================================================================== */
 
+
+/* ==========================================================================
+   ASSETS
+   ========================================================================== */
 
 const FACTORY_HERO_IMAGE =
   '/images/pages/manufacturing-hero.png';
@@ -104,8 +108,14 @@ export default function Manufacturing() {
         description="Explore the Kawad Swad manufacturing approach at Kawad Swad Udhyog in Nimar, from ingredient selection and papad preparation to quality checking and sealed packaging."
         path="/manufacturing"
         structuredData={breadcrumbSchema([
-          { name: 'Home', path: '/' },
-          { name: 'Manufacturing', path: '/manufacturing' },
+          {
+            name: 'Home',
+            path: '/',
+          },
+          {
+            name: 'Manufacturing',
+            path: '/manufacturing',
+          },
         ])}
       />
 
@@ -125,20 +135,19 @@ export default function Manufacturing() {
         <div
           className="
             relative
-            min-h-[360px]
+            min-h-[330px]
             w-full
             overflow-hidden
             bg-brand-green
-            sm:min-h-[420px]
-            lg:min-h-[480px]
+            sm:min-h-[390px]
+            lg:min-h-[440px]
           "
         >
 
           {/* ==================================================================
               FULL HERO ARTWORK
 
-              The supplied artwork is displayed with object-contain so the
-              complete composition remains visible on every screen size.
+              object-contain keeps the complete artwork visible.
               ================================================================== */}
 
           <div
@@ -214,17 +223,17 @@ export default function Manufacturing() {
             className="
               pointer-events-none
               absolute
-              -right-24
-              -top-24
-              h-64
-              w-64
+              -right-20
+              -top-20
+              h-56
+              w-56
               rounded-full
               border
               border-brand-saffron/15
-              sm:h-80
-              sm:w-80
-              lg:h-96
-              lg:w-96
+              sm:h-72
+              sm:w-72
+              lg:h-80
+              lg:w-80
             "
             aria-hidden="true"
           />
@@ -241,25 +250,25 @@ export default function Manufacturing() {
               relative
               z-20
               flex
-              min-h-[360px]
+              min-h-[330px]
               items-center
-              sm:min-h-[420px]
-              lg:min-h-[480px]
+              sm:min-h-[390px]
+              lg:min-h-[440px]
             "
           >
             <Reveal>
               <div
                 className="
                   max-w-3xl
-                  py-10
-                  sm:py-12
-                  lg:py-14
+                  py-8
+                  sm:py-9
+                  lg:py-10
                 "
               >
                 <span
                   className="
                     section-eyebrow
-                    mb-3
+                    mb-2.5
                     block
                     text-brand-saffron
                   "
@@ -288,7 +297,7 @@ export default function Manufacturing() {
                 <p
                   className="
                     text-pretty
-                    mt-4
+                    mt-3
                     max-w-2xl
                     text-sm
                     leading-relaxed
@@ -305,11 +314,10 @@ export default function Manufacturing() {
 
                 <div
                   className="
-                    mt-5
+                    mt-4
                     flex
                     flex-wrap
                     gap-2
-                    sm:gap-2.5
                   "
                 >
                   <span className="badge bg-white/10 text-white">
@@ -338,9 +346,9 @@ export default function Manufacturing() {
       <section
         className="
           bg-brand-ivory
-          py-10
-          sm:py-12
-          lg:py-16
+          py-8
+          sm:py-10
+          lg:py-14
         "
         aria-labelledby="process-overview-title"
       >
@@ -354,7 +362,7 @@ export default function Manufacturing() {
                 text-center
               "
             >
-              <span className="section-eyebrow mb-2.5 block">
+              <span className="section-eyebrow mb-2 block">
                 From Flour to Crisp
               </span>
 
@@ -375,7 +383,7 @@ export default function Manufacturing() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-3
+                  mt-2.5
                   max-w-2xl
                   text-sm
                   leading-relaxed
@@ -402,9 +410,9 @@ export default function Manufacturing() {
       <section
         className="
           bg-brand-ivory
-          pb-12
-          sm:pb-14
-          lg:pb-18
+          pb-10
+          sm:pb-12
+          lg:pb-16
         "
         aria-label="Manufacturing process"
       >
@@ -413,6 +421,7 @@ export default function Manufacturing() {
           <div className="relative">
 
             {/* Central desktop timeline */}
+
             <div
               className="
                 pointer-events-none
@@ -429,21 +438,27 @@ export default function Manufacturing() {
               aria-hidden="true"
             />
 
-            <div className="space-y-10 sm:space-y-12 lg:space-y-16">
+            <div
+              className="
+                space-y-8
+                sm:space-y-10
+                lg:space-y-12
+              "
+            >
 
               {steps.map((step, index) => (
                 <Reveal
                   key={step.num}
-                  delay={Math.min(index * 70, 280)}
+                  delay={Math.min(index * 60, 240)}
                 >
                   <article
                     className="
                       relative
                       grid
                       items-center
-                      gap-6
+                      gap-5
                       lg:grid-cols-2
-                      lg:gap-14
+                      lg:gap-12
                     "
                   >
 
@@ -507,8 +522,8 @@ export default function Manufacturing() {
                         <div
                           className="
                             flex
-                            h-11
-                            w-11
+                            h-10
+                            w-10
                             shrink-0
                             items-center
                             justify-center
@@ -521,8 +536,8 @@ export default function Manufacturing() {
                             font-bold
                             text-brand-saffron
                             shadow-soft
-                            lg:h-12
-                            lg:w-12
+                            lg:h-11
+                            lg:w-11
                           "
                           aria-hidden="true"
                         >
@@ -538,7 +553,6 @@ export default function Manufacturing() {
                               uppercase
                               tracking-[0.18em]
                               text-brand-saffron
-                              sm:text-xs
                             "
                           >
                             Production Stage
@@ -547,7 +561,7 @@ export default function Manufacturing() {
                           <h2
                             className="
                               text-balance
-                              mt-1.5
+                              mt-1
                               font-serif
                               text-headline-sm
                               font-bold
@@ -563,7 +577,7 @@ export default function Manufacturing() {
                       <p
                         className={`
                           text-pretty
-                          mt-4
+                          mt-3
                           max-w-xl
                           text-sm
                           leading-relaxed
@@ -581,9 +595,9 @@ export default function Manufacturing() {
 
                       <div
                         className={`
-                          mt-4
+                          mt-3
                           h-px
-                          w-14
+                          w-12
                           bg-brand-saffron/40
                           ${
                             index % 2 === 1
@@ -615,10 +629,10 @@ export default function Manufacturing() {
           relative
           overflow-hidden
           bg-brand-green
-          py-12
+          py-10
           text-brand-ivory
-          sm:py-16
-          lg:py-20
+          sm:py-13
+          lg:py-16
         "
         aria-labelledby="manufacturing-philosophy-title"
       >
@@ -626,10 +640,10 @@ export default function Manufacturing() {
           className="
             pointer-events-none
             absolute
-            -right-24
-            -top-24
-            h-72
-            w-72
+            -right-20
+            -top-20
+            h-64
+            w-64
             rounded-full
             border
             border-brand-saffron/10
@@ -654,11 +668,15 @@ export default function Manufacturing() {
             className="
               grid
               items-center
-              gap-8
+              gap-7
               lg:grid-cols-12
-              lg:gap-12
+              lg:gap-10
             "
           >
+
+            {/* ================================================================
+                TEXT
+                ============================================================= */}
 
             <div className="lg:col-span-6">
               <Reveal>
@@ -667,7 +685,7 @@ export default function Manufacturing() {
                   <span
                     className="
                       section-eyebrow
-                      mb-2.5
+                      mb-2
                       block
                       text-brand-saffron
                     "
@@ -692,7 +710,7 @@ export default function Manufacturing() {
                   <p
                     className="
                       text-pretty
-                      mt-4
+                      mt-3
                       max-w-xl
                       text-sm
                       leading-relaxed
@@ -711,7 +729,7 @@ export default function Manufacturing() {
 
                   <div
                     className="
-                      mt-6
+                      mt-5
                       grid
                       gap-2.5
                       sm:grid-cols-3
@@ -745,17 +763,17 @@ export default function Manufacturing() {
                             border
                             border-white/10
                             bg-white/5
-                            p-3.5
+                            p-3
                             transition-all
                             duration-300
                             hover:-translate-y-1
                             hover:bg-white/10
-                            sm:p-4
+                            sm:p-3.5
                           "
                         >
                           <Icon
                             className="
-                              mb-2.5
+                              mb-2
                               h-5
                               w-5
                               text-brand-saffron
@@ -794,8 +812,12 @@ export default function Manufacturing() {
             </div>
 
 
+            {/* ================================================================
+                PRODUCTION IMAGE
+                ============================================================= */}
+
             <div className="lg:col-span-6">
-              <Reveal delay={150}>
+              <Reveal delay={120}>
                 <div
                   className="
                     image-premium
@@ -813,7 +835,7 @@ export default function Manufacturing() {
                     className="
                       block
                       h-auto
-                      max-h-[560px]
+                      max-h-[500px]
                       w-full
                       object-contain
                       object-center
@@ -835,9 +857,9 @@ export default function Manufacturing() {
       <section
         className="
           bg-brand-ivory-light
-          py-12
-          sm:py-16
-          lg:py-20
+          py-10
+          sm:py-13
+          lg:py-16
         "
         aria-labelledby="quality-title"
       >
@@ -847,13 +869,13 @@ export default function Manufacturing() {
             <div
               className="
                 mx-auto
-                mb-8
+                mb-7
                 max-w-2xl
                 text-center
-                sm:mb-10
+                sm:mb-9
               "
             >
-              <span className="section-eyebrow mb-2.5 block">
+              <span className="section-eyebrow mb-2 block">
                 Quality Assurance
               </span>
 
@@ -874,7 +896,7 @@ export default function Manufacturing() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-3
+                  mt-2.5
                   max-w-xl
                   text-sm
                   leading-relaxed
@@ -896,14 +918,14 @@ export default function Manufacturing() {
               gap-2.5
               sm:grid-cols-2
               lg:grid-cols-4
-              lg:gap-4
+              lg:gap-3
             "
           >
             {qualityPoints.map(
               (point, index) => (
                 <Reveal
                   key={point}
-                  delay={Math.min(index * 40, 240)}
+                  delay={Math.min(index * 35, 210)}
                 >
                   <div
                     className="
@@ -915,13 +937,13 @@ export default function Manufacturing() {
                       border
                       border-brand-green/10
                       bg-white
-                      p-4
+                      p-3.5
                       shadow-soft
                       transition-all
                       duration-300
                       hover:-translate-y-1
                       hover:shadow-lift
-                      sm:p-5
+                      sm:p-4
                     "
                   >
                     <span
@@ -975,8 +997,8 @@ export default function Manufacturing() {
           border-t
           border-brand-green/10
           bg-brand-ivory-dark
-          py-12
-          sm:py-16
+          py-10
+          sm:py-13
         "
         aria-labelledby="manufacturing-business-title"
       >
@@ -985,7 +1007,7 @@ export default function Manufacturing() {
           <Reveal>
             <div className="mx-auto max-w-2xl text-center">
 
-              <span className="section-eyebrow mb-2.5 block">
+              <span className="section-eyebrow mb-2 block">
                 Business Partnerships
               </span>
 
@@ -1007,7 +1029,7 @@ export default function Manufacturing() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-3
+                  mt-2.5
                   max-w-xl
                   text-sm
                   leading-relaxed
@@ -1021,11 +1043,11 @@ export default function Manufacturing() {
 
               <div
                 className="
-                  mt-6
+                  mt-5
                   flex
                   flex-col
                   justify-center
-                  gap-3
+                  gap-2.5
                   sm:flex-row
                   sm:flex-wrap
                 "
