@@ -21,17 +21,17 @@ import { brand } from '@/data/brand';
    Narrative:
    ORIGIN → REGION → VALUES → HERITAGE → CREDIBILITY → ACTION
 
-   Central design system:
-   - Green   = trust / brand authority
-   - Saffron = appetite / highlights / action
-   - Ivory   = editorial canvas
-   - Brown   = heritage / contrast
+   Spacing strategy:
+   - Compact page hero
+   - Reduced section padding
+   - Tighter content gaps
+   - Preserved image proportions
+   - Preserved all existing content and functionality
 
    Image system:
    - Hero artwork uses object-contain.
    - Complete artwork remains visible.
    - Secondary editorial images use object-contain.
-   - Vertical spacing is intentionally compact.
    ========================================================================== */
 
 
@@ -109,11 +109,11 @@ export default function About() {
         <div
           className="
             relative
-            min-h-[340px]
+            min-h-[290px]
             overflow-hidden
             bg-brand-green
-            sm:min-h-[410px]
-            lg:min-h-[470px]
+            sm:min-h-[350px]
+            lg:min-h-[410px]
           "
         >
 
@@ -202,25 +202,25 @@ export default function About() {
               relative
               z-20
               flex
-              min-h-[340px]
+              min-h-[290px]
               items-center
-              sm:min-h-[410px]
-              lg:min-h-[470px]
+              sm:min-h-[350px]
+              lg:min-h-[410px]
             "
           >
             <Reveal>
               <div
                 className="
                   max-w-4xl
-                  py-9
-                  sm:py-11
-                  lg:py-12
+                  py-7
+                  sm:py-9
+                  lg:py-10
                 "
               >
                 <span
                   className="
                     section-eyebrow
-                    mb-3
+                    mb-2.5
                     block
                     text-brand-saffron
                   "
@@ -249,12 +249,13 @@ export default function About() {
                 <p
                   className="
                     text-pretty
-                    mt-4
+                    mt-3
                     max-w-2xl
                     text-sm
                     leading-relaxed
                     text-white/80
                     sm:text-base
+                    lg:mt-4
                     lg:text-lg
                   "
                 >
@@ -278,9 +279,9 @@ export default function About() {
       <section
         className="
           bg-brand-ivory
-          py-10
-          sm:py-12
-          lg:py-16
+          py-8
+          sm:py-10
+          lg:py-14
         "
         aria-labelledby="region-title"
       >
@@ -290,9 +291,9 @@ export default function About() {
             className="
               grid
               items-center
-              gap-7
+              gap-6
               lg:grid-cols-12
-              lg:gap-10
+              lg:gap-9
             "
           >
 
@@ -304,7 +305,7 @@ export default function About() {
               <Reveal>
                 <div>
 
-                  <span className="section-eyebrow mb-2.5 block">
+                  <span className="section-eyebrow mb-2 block">
                     The Region
                   </span>
 
@@ -326,8 +327,8 @@ export default function About() {
 
                   <div
                     className="
-                      mt-4
-                      space-y-3
+                      mt-3
+                      space-y-2.5
                       text-sm
                       leading-relaxed
                       text-brand-brown/70
@@ -359,12 +360,12 @@ export default function About() {
 
                   <blockquote
                     className="
-                      my-5
+                      my-4
                       rounded-r-2xl
                       border-l-2
                       border-brand-saffron
                       bg-brand-ivory-dark
-                      p-4
+                      p-3.5
                       font-devanagari
                       text-lg
                       text-brand-brown/90
@@ -383,7 +384,7 @@ export default function About() {
                       rounded-full
                       bg-brand-green/5
                       px-3
-                      py-2
+                      py-1.5
                       text-xs
                       font-medium
                       text-brand-green
@@ -429,7 +430,7 @@ export default function About() {
                     className="
                       block
                       h-auto
-                      max-h-[520px]
+                      max-h-[480px]
                       w-full
                       object-contain
                       object-center
@@ -453,9 +454,9 @@ export default function About() {
           border-y
           border-brand-green/10
           bg-brand-ivory-dark
-          py-12
-          sm:py-14
-          lg:py-18
+          py-9
+          sm:py-11
+          lg:py-14
         "
         aria-labelledby="values-title"
       >
@@ -465,13 +466,13 @@ export default function About() {
             <div
               className="
                 mx-auto
-                mb-8
+                mb-7
                 max-w-2xl
                 text-center
-                sm:mb-10
+                sm:mb-8
               "
             >
-              <span className="section-eyebrow mb-2.5 block">
+              <span className="section-eyebrow mb-2 block">
                 What We Stand For
               </span>
 
@@ -492,7 +493,7 @@ export default function About() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-3
+                  mt-2.5
                   max-w-xl
                   text-sm
                   leading-relaxed
@@ -511,10 +512,10 @@ export default function About() {
           <div
             className="
               grid
-              gap-4
+              gap-3
               sm:grid-cols-2
               lg:grid-cols-4
-              lg:gap-5
+              lg:gap-4
             "
           >
             {values.map(
@@ -535,21 +536,21 @@ export default function About() {
                         border
                         border-brand-green/10
                         bg-white
-                        p-5
+                        p-4
                         shadow-card
                         transition-all
                         duration-300
                         hover:-translate-y-1
                         hover:shadow-lift
-                        sm:p-6
+                        sm:p-5
                       "
                     >
                       <div
                         className="
-                          mb-4
+                          mb-3
                           flex
-                          h-11
-                          w-11
+                          h-10
+                          w-10
                           items-center
                           justify-center
                           rounded-2xl
@@ -558,12 +559,12 @@ export default function About() {
                         "
                         aria-hidden="true"
                       >
-                        <Icon className="h-5.5 w-5.5" />
+                        <Icon className="h-5 w-5" />
                       </div>
 
                       <h3
                         className="
-                          mb-2.5
+                          mb-2
                           font-serif
                           text-lg
                           font-semibold
@@ -600,9 +601,9 @@ export default function About() {
       <section
         className="
           bg-brand-ivory
-          py-12
-          sm:py-14
-          lg:py-20
+          py-9
+          sm:py-11
+          lg:py-15
         "
         aria-labelledby="heritage-title"
       >
@@ -612,9 +613,9 @@ export default function About() {
             className="
               grid
               items-center
-              gap-7
+              gap-6
               lg:grid-cols-12
-              lg:gap-10
+              lg:gap-9
             "
           >
 
@@ -647,7 +648,7 @@ export default function About() {
                     className="
                       block
                       h-auto
-                      max-h-[520px]
+                      max-h-[480px]
                       w-full
                       object-contain
                       object-center
@@ -672,7 +673,7 @@ export default function About() {
               <Reveal delay={120}>
                 <div>
 
-                  <span className="section-eyebrow mb-2.5 block">
+                  <span className="section-eyebrow mb-2 block">
                     Heritage & Dietary Choices
                   </span>
 
@@ -693,8 +694,8 @@ export default function About() {
 
                   <div
                     className="
-                      mt-4
-                      space-y-3
+                      mt-3
+                      space-y-2.5
                       text-sm
                       leading-relaxed
                       text-brand-brown/70
@@ -723,9 +724,9 @@ export default function About() {
 
                   <div
                     className="
-                      mt-5
+                      mt-4
                       grid
-                      gap-3
+                      gap-2.5
                       sm:grid-cols-2
                     "
                   >
@@ -735,12 +736,12 @@ export default function About() {
                         border
                         border-brand-green/10
                         bg-brand-ivory-dark
-                        p-4
+                        p-3.5
                       "
                     >
                       <Leaf
                         className="
-                          mb-2.5
+                          mb-2
                           h-5
                           w-5
                           text-brand-green
@@ -777,12 +778,12 @@ export default function About() {
                         border
                         border-brand-green/10
                         bg-brand-ivory-dark
-                        p-4
+                        p-3.5
                       "
                     >
                       <Shield
                         className="
-                          mb-2.5
+                          mb-2
                           h-5
                           w-5
                           text-brand-saffron
@@ -832,10 +833,10 @@ export default function About() {
           relative
           overflow-hidden
           bg-brand-green
-          py-12
+          py-9
           text-brand-ivory
-          sm:py-14
-          lg:py-18
+          sm:py-11
+          lg:py-14
         "
         aria-labelledby="manufacturer-title"
       >
@@ -845,11 +846,13 @@ export default function About() {
             absolute
             -right-24
             -top-24
-            h-64
-            w-64
+            h-56
+            w-56
             rounded-full
             border
             border-brand-saffron/15
+            sm:h-64
+            sm:w-64
           "
           aria-hidden="true"
         />
@@ -873,7 +876,7 @@ export default function About() {
               <span
                 className="
                   section-eyebrow
-                  mb-2.5
+                  mb-2
                   block
                   text-brand-saffron
                 "
@@ -898,7 +901,7 @@ export default function About() {
               <p
                 className="
                   text-pretty
-                  mt-4
+                  mt-3
                   max-w-2xl
                   text-sm
                   leading-relaxed
@@ -921,14 +924,14 @@ export default function About() {
 
               <div
                 className="
-                  mt-6
+                  mt-5
                   grid
-                  gap-3
+                  gap-2.5
                   border-t
                   border-brand-ivory/15
-                  pt-5
+                  pt-4
                   sm:grid-cols-3
-                  sm:gap-5
+                  sm:gap-4
                 "
               >
 
@@ -937,7 +940,7 @@ export default function About() {
                     flex
                     min-w-0
                     items-start
-                    gap-3
+                    gap-2.5
                   "
                 >
                   <Factory
@@ -964,7 +967,7 @@ export default function About() {
 
                     <p
                       className="
-                        mt-1
+                        mt-0.5
                         break-words
                         text-xs
                         leading-relaxed
@@ -982,7 +985,7 @@ export default function About() {
                     flex
                     min-w-0
                     items-start
-                    gap-3
+                    gap-2.5
                   "
                 >
                   <MapPin
@@ -1009,7 +1012,7 @@ export default function About() {
 
                     <p
                       className="
-                        mt-1
+                        mt-0.5
                         text-xs
                         leading-relaxed
                         text-brand-ivory/60
@@ -1026,7 +1029,7 @@ export default function About() {
                     flex
                     min-w-0
                     items-start
-                    gap-3
+                    gap-2.5
                   "
                 >
                   <Shield
@@ -1053,7 +1056,7 @@ export default function About() {
 
                     <p
                       className="
-                        mt-1
+                        mt-0.5
                         break-words
                         text-xs
                         leading-relaxed
@@ -1074,10 +1077,10 @@ export default function About() {
 
               <div
                 className="
-                  mt-6
+                  mt-5
                   flex
                   flex-col
-                  gap-3
+                  gap-2.5
                   sm:flex-row
                   sm:flex-wrap
                 "
@@ -1086,10 +1089,10 @@ export default function About() {
                   to="/manufacturing"
                   className="
                     btn-yellow
-                    min-h-[46px]
+                    min-h-[44px]
                     justify-center
-                    px-6
-                    sm:px-8
+                    px-5
+                    sm:px-7
                   "
                 >
                   View Manufacturing Process
@@ -1104,14 +1107,14 @@ export default function About() {
                   to="/bulk-orders"
                   className="
                     btn-outline
-                    min-h-[46px]
+                    min-h-[44px]
                     justify-center
                     border-brand-ivory/30
-                    px-6
+                    px-5
                     text-brand-ivory
                     hover:bg-brand-ivory
                     hover:text-brand-green
-                    sm:px-8
+                    sm:px-7
                   "
                 >
                   Explore Bulk Supply
