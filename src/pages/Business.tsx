@@ -21,21 +21,15 @@ import { brand } from '@/data/brand';
    KAWAD SWAD 2.0
    BUSINESS HUB
 
-   Conversion flow:
+   Flow:
    HERO → BUSINESS PATHWAYS → WHO WE SERVE
    → WHY PARTNER → DIRECT SUPPORT → CTA
 
-   CENTRAL DESIGN SYSTEM
-   - Green   = trust / primary authority
-   - Saffron = commercial action / appetite
-   - Ivory   = editorial canvas
-   - Brown   = heritage / premium contrast
-
-   IMAGE SYSTEM
-   - Hero artwork is displayed completely.
-   - 3:2 artwork is never cropped.
-   - Hero height is intentionally compact.
-   - Green background fills any remaining space.
+   Image rules:
+   - Business hero artwork remains completely visible.
+   - 3:2 artwork uses object-contain.
+   - Hero is intentionally compact.
+   - Green background fills remaining image area.
    ========================================================================== */
 
 
@@ -145,25 +139,19 @@ export default function Business() {
         <div
           className="
             relative
-            min-h-[360px]
+            min-h-[330px]
             w-full
             overflow-hidden
             bg-brand-green
-            sm:min-h-[420px]
-            lg:min-h-[480px]
+            sm:min-h-[390px]
+            lg:min-h-[440px]
           "
         >
 
           {/* ==================================================================
               FULL HERO ARTWORK
 
-              IMPORTANT:
-              The supplied business hero artwork is 3:2.
-
-              object-cover was intentionally removed because it crops the
-              artwork when the browser hero ratio differs from 3:2.
-
-              object-contain keeps the entire artwork visible.
+              object-contain prevents cropping of the supplied 3:2 artwork.
               ================================================================== */}
 
           <div
@@ -217,7 +205,7 @@ export default function Business() {
               absolute
               inset-0
               bg-gradient-to-t
-              from-brand-green/40
+              from-brand-green/35
               via-transparent
               to-transparent
             "
@@ -230,7 +218,7 @@ export default function Business() {
               absolute
               inset-0
               bg-dots
-              opacity-[0.05]
+              opacity-[0.04]
             "
             aria-hidden="true"
           />
@@ -239,17 +227,17 @@ export default function Business() {
             className="
               pointer-events-none
               absolute
-              -right-28
-              -top-28
-              h-64
-              w-64
+              -right-24
+              -top-24
+              h-56
+              w-56
               rounded-full
               border
               border-brand-saffron/15
-              sm:h-80
-              sm:w-80
-              lg:h-96
-              lg:w-96
+              sm:h-72
+              sm:w-72
+              lg:h-80
+              lg:w-80
             "
             aria-hidden="true"
           />
@@ -266,25 +254,25 @@ export default function Business() {
               relative
               z-20
               flex
-              min-h-[360px]
+              min-h-[330px]
               items-center
-              sm:min-h-[420px]
-              lg:min-h-[480px]
+              sm:min-h-[390px]
+              lg:min-h-[440px]
             "
           >
             <Reveal>
               <div
                 className="
                   max-w-4xl
-                  py-10
-                  sm:py-12
-                  lg:py-14
+                  py-8
+                  sm:py-9
+                  lg:py-10
                 "
               >
                 <span
                   className="
                     section-eyebrow
-                    mb-3
+                    mb-2.5
                     block
                     text-brand-saffron
                   "
@@ -313,7 +301,7 @@ export default function Business() {
                 <p
                   className="
                     text-pretty
-                    mt-4
+                    mt-3
                     max-w-2xl
                     text-sm
                     leading-relaxed
@@ -330,11 +318,10 @@ export default function Business() {
 
                 <div
                   className="
-                    mt-5
+                    mt-4
                     flex
                     flex-wrap
                     gap-2
-                    sm:gap-2.5
                   "
                 >
                   <span className="badge bg-white/10 text-white">
@@ -363,9 +350,9 @@ export default function Business() {
       <section
         className="
           bg-brand-ivory
-          py-12
-          sm:py-14
-          lg:py-18
+          py-9
+          sm:py-11
+          lg:py-14
         "
         aria-labelledby="business-pathways-title"
       >
@@ -375,13 +362,13 @@ export default function Business() {
             <div
               className="
                 mx-auto
-                mb-8
+                mb-7
                 max-w-3xl
                 text-center
-                sm:mb-10
+                sm:mb-8
               "
             >
-              <span className="section-eyebrow mb-2.5 block">
+              <span className="section-eyebrow mb-2 block">
                 Business Hub
               </span>
 
@@ -402,7 +389,7 @@ export default function Business() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-3
+                  mt-2.5
                   max-w-2xl
                   text-sm
                   leading-relaxed
@@ -418,7 +405,14 @@ export default function Business() {
           </Reveal>
 
 
-          <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
+          <div
+            className="
+              grid
+              gap-4
+              lg:grid-cols-12
+              lg:gap-5
+            "
+          >
 
             {/* ==================================================================
                 PRIMARY PATHWAY
@@ -431,17 +425,17 @@ export default function Business() {
                     relative
                     flex
                     h-full
-                    min-h-[320px]
+                    min-h-[290px]
                     flex-col
                     justify-between
                     overflow-hidden
                     rounded-3xl
                     bg-brand-brown
-                    p-6
+                    p-5
                     text-brand-cream
                     shadow-lift
-                    sm:p-7
-                    lg:p-8
+                    sm:p-6
+                    lg:p-7
                   "
                 >
                   <div
@@ -450,8 +444,8 @@ export default function Business() {
                       absolute
                       -right-20
                       -top-20
-                      h-56
-                      w-56
+                      h-52
+                      w-52
                       rounded-full
                       border
                       border-brand-saffron/15
@@ -474,7 +468,7 @@ export default function Business() {
 
                     <span
                       className="
-                        mb-5
+                        mb-4
                         inline-flex
                         rounded-full
                         bg-brand-saffron
@@ -493,10 +487,10 @@ export default function Business() {
 
                     <div
                       className="
-                        mb-5
+                        mb-4
                         flex
-                        h-12
-                        w-12
+                        h-11
+                        w-11
                         items-center
                         justify-center
                         rounded-2xl
@@ -508,7 +502,7 @@ export default function Business() {
                       "
                       aria-hidden="true"
                     >
-                      <Package className="h-6 w-6" />
+                      <Package className="h-5.5 w-5.5" />
                     </div>
 
                     <h3
@@ -527,7 +521,7 @@ export default function Business() {
                     <p
                       className="
                         text-pretty
-                        mt-3
+                        mt-2.5
                         max-w-xl
                         text-sm
                         leading-relaxed
@@ -543,12 +537,12 @@ export default function Business() {
                     </p>
                   </div>
 
-                  <div className="relative mt-6">
+                  <div className="relative mt-5">
                     <Link
                       to="/bulk-orders"
                       className="
                         btn-yellow
-                        min-h-[46px]
+                        min-h-[44px]
                         w-full
                         px-6
                         sm:w-auto
@@ -582,26 +576,26 @@ export default function Business() {
                     card
                     flex
                     h-full
-                    min-h-[320px]
+                    min-h-[290px]
                     flex-col
                     justify-between
                     border
                     border-brand-green/10
                     bg-white
-                    p-6
+                    p-5
                     shadow-card
                     transition-all
                     duration-300
                     hover:-translate-y-1
                     hover:shadow-lift
-                    sm:p-7
+                    sm:p-6
                   "
                 >
                   <div>
 
                     <span
                       className="
-                        mb-5
+                        mb-4
                         inline-flex
                         rounded-full
                         bg-brand-green/10
@@ -619,10 +613,10 @@ export default function Business() {
 
                     <div
                       className="
-                        mb-5
+                        mb-4
                         flex
-                        h-11
-                        w-11
+                        h-10
+                        w-10
                         items-center
                         justify-center
                         rounded-2xl
@@ -649,7 +643,7 @@ export default function Business() {
                     <p
                       className="
                         text-pretty
-                        mt-3
+                        mt-2.5
                         text-sm
                         leading-relaxed
                         text-brand-brown/70
@@ -665,9 +659,9 @@ export default function Business() {
                     to="/distributor"
                     className="
                       group
-                      mt-6
+                      mt-5
                       inline-flex
-                      min-h-[42px]
+                      min-h-[40px]
                       items-center
                       gap-2
                       border-t
@@ -720,29 +714,29 @@ export default function Business() {
                           card
                           flex
                           h-full
-                          min-h-[250px]
+                          min-h-[225px]
                           flex-col
                           justify-between
                           border
                           border-brand-green/10
                           bg-white
-                          p-6
+                          p-5
                           shadow-card
                           transition-all
                           duration-300
                           hover:-translate-y-1
                           hover:shadow-lift
-                          sm:p-7
+                          sm:p-6
                         "
                       >
                         <div>
 
                           <div
                             className="
-                              mb-5
+                              mb-4
                               flex
-                              h-11
-                              w-11
+                              h-10
+                              w-10
                               items-center
                               justify-center
                               rounded-2xl
@@ -771,7 +765,7 @@ export default function Business() {
                           <p
                             className="
                               text-pretty
-                              mt-3
+                              mt-2.5
                               text-sm
                               leading-relaxed
                               text-brand-brown/70
@@ -785,7 +779,7 @@ export default function Business() {
                           to={item.link}
                           className="
                             inline-flex
-                            min-h-[42px]
+                            min-h-[40px]
                             items-center
                             gap-2
                             border-t
@@ -832,8 +826,8 @@ export default function Business() {
           border-y
           border-brand-green/10
           bg-brand-ivory-dark
-          py-12
-          sm:py-14
+          py-10
+          sm:py-12
         "
         aria-labelledby="who-we-serve-title"
       >
@@ -843,13 +837,13 @@ export default function Business() {
             <div
               className="
                 mx-auto
-                mb-8
+                mb-7
                 max-w-2xl
                 text-center
-                sm:mb-10
+                sm:mb-8
               "
             >
-              <span className="section-eyebrow mb-2.5 block">
+              <span className="section-eyebrow mb-2 block">
                 Who We Serve
               </span>
 
@@ -870,7 +864,7 @@ export default function Business() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-3
+                  mt-2.5
                   max-w-xl
                   text-sm
                   leading-relaxed
@@ -890,7 +884,7 @@ export default function Business() {
             className="
               grid
               grid-cols-2
-              gap-2.5
+              gap-2
               sm:grid-cols-3
               sm:gap-3
               lg:grid-cols-6
@@ -913,22 +907,22 @@ export default function Business() {
                       border
                       border-brand-green/10
                       bg-white
-                      p-4
+                      p-3.5
                       text-center
                       shadow-soft
                       transition-all
                       duration-300
                       hover:-translate-y-1
                       hover:shadow-card
-                      sm:p-5
+                      sm:p-4
                     "
                   >
                     <div
                       className="
-                        mb-2.5
+                        mb-2
                         flex
-                        h-9
-                        w-9
+                        h-8
+                        w-8
                         items-center
                         justify-center
                         rounded-full
@@ -937,7 +931,7 @@ export default function Business() {
                       "
                       aria-hidden="true"
                     >
-                      <Check className="h-4 w-4" />
+                      <Check className="h-3.5 w-3.5" />
                     </div>
 
                     <p
@@ -967,9 +961,9 @@ export default function Business() {
       <section
         className="
           bg-brand-ivory
-          py-14
-          sm:py-16
-          lg:py-20
+          py-12
+          sm:py-14
+          lg:py-16
         "
         aria-labelledby="why-partner-title"
       >
@@ -979,9 +973,9 @@ export default function Business() {
             className="
               grid
               items-stretch
-              gap-7
+              gap-6
               lg:grid-cols-12
-              lg:gap-10
+              lg:gap-8
             "
           >
 
@@ -993,7 +987,7 @@ export default function Business() {
               <Reveal>
                 <div className="h-full">
 
-                  <span className="section-eyebrow mb-2.5 block">
+                  <span className="section-eyebrow mb-2 block">
                     Why Partner With Us
                   </span>
 
@@ -1015,7 +1009,7 @@ export default function Business() {
                   <p
                     className="
                       text-pretty
-                      mt-4
+                      mt-3
                       max-w-xl
                       text-sm
                       leading-relaxed
@@ -1031,9 +1025,9 @@ export default function Business() {
 
                   <ul
                     className="
-                      mt-6
+                      mt-5
                       grid
-                      gap-2.5
+                      gap-2
                       sm:grid-cols-2
                     "
                   >
@@ -1044,12 +1038,12 @@ export default function Business() {
                           className="
                             flex
                             items-start
-                            gap-3
+                            gap-2.5
                             rounded-2xl
                             border
                             border-brand-green/10
                             bg-white
-                            p-3.5
+                            p-3
                             text-sm
                             leading-relaxed
                             text-brand-brown/75
@@ -1082,10 +1076,10 @@ export default function Business() {
 
                   <div
                     className="
-                      mt-6
+                      mt-5
                       flex
                       flex-col
-                      gap-3
+                      gap-2.5
                       sm:flex-row
                       sm:flex-wrap
                     "
@@ -1095,7 +1089,7 @@ export default function Business() {
                       className="
                         btn-primary
                         justify-center
-                        px-8
+                        px-7
                       "
                     >
                       Request Bulk Supply
@@ -1106,7 +1100,7 @@ export default function Business() {
                       className="
                         btn-outline
                         justify-center
-                        px-8
+                        px-7
                       "
                     >
                       Become a Distributor
@@ -1137,11 +1131,11 @@ export default function Business() {
                     overflow-hidden
                     rounded-3xl
                     bg-brand-brown
-                    p-6
+                    p-5
                     text-brand-cream
                     shadow-lift
-                    sm:p-7
-                    lg:p-8
+                    sm:p-6
+                    lg:p-7
                   "
                   aria-labelledby="commercial-support-title"
                 >
@@ -1151,8 +1145,8 @@ export default function Business() {
                       absolute
                       -right-16
                       -top-16
-                      h-44
-                      w-44
+                      h-40
+                      w-40
                       rounded-full
                       border
                       border-brand-saffron/15
@@ -1191,9 +1185,10 @@ export default function Business() {
                       id="commercial-support-title"
                       className="
                         font-serif
-                        text-2xl
+                        text-xl
                         font-bold
                         text-white
+                        sm:text-2xl
                       "
                     >
                       Direct Commercial Support
@@ -1202,7 +1197,7 @@ export default function Business() {
                     <p
                       className="
                         text-pretty
-                        mt-3
+                        mt-2.5
                         text-sm
                         leading-relaxed
                         text-brand-cream/80
@@ -1215,13 +1210,13 @@ export default function Business() {
                     </p>
 
 
-                    <div className="mt-6 space-y-2.5">
+                    <div className="mt-5 space-y-2">
 
                       <a
                         href={`tel:${brand.phoneRaw}`}
                         className="
                           flex
-                          min-h-[48px]
+                          min-h-[46px]
                           items-center
                           gap-3
                           rounded-xl
@@ -1270,7 +1265,7 @@ export default function Business() {
                         rel="noopener noreferrer"
                         className="
                           flex
-                          min-h-[48px]
+                          min-h-[46px]
                           items-center
                           gap-3
                           rounded-xl
@@ -1317,7 +1312,7 @@ export default function Business() {
                         href={`mailto:${brand.email}`}
                         className="
                           flex
-                          min-h-[48px]
+                          min-h-[46px]
                           items-center
                           gap-3
                           rounded-xl
@@ -1363,12 +1358,12 @@ export default function Business() {
                   </div>
 
 
-                  <div className="relative mt-6">
+                  <div className="relative mt-5">
                     <Link
                       to="/contact"
                       className="
                         btn-yellow
-                        min-h-[46px]
+                        min-h-[44px]
                         w-full
                         justify-center
                       "
