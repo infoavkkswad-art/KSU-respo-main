@@ -35,12 +35,11 @@ import { Logo } from '@/components/Logo';
 
    Design goals:
    - Compact premium footer
-   - Reduced unnecessary vertical space
    - Strong brand presence
    - Clear newsletter section
    - Efficient link grouping
-   - Responsive spacing
    - Strong mobile usability
+   - Premium social-media presentation
    - Consistent Kawad Swad visual language
    ========================================================================== */
 
@@ -197,6 +196,7 @@ export function Footer() {
           border-brand-cream/10
         "
       >
+
         <div
           className="
             container-max
@@ -343,12 +343,14 @@ export function Footer() {
                     sm:w-auto
                   "
                 >
+
                   <Send
                     className="h-4 w-4"
                     aria-hidden="true"
                   />
 
                   Subscribe
+
                 </button>
 
               </form>
@@ -369,6 +371,7 @@ export function Footer() {
                   role="status"
                   aria-live="polite"
                 >
+
                   <CheckCircle2
                     className="
                       h-4
@@ -379,13 +382,16 @@ export function Footer() {
                   />
 
                   Thank you for subscribing!
+
                 </div>
               )}
 
             </div>
 
           </div>
+
         </div>
+
       </div>
 
 
@@ -497,7 +503,7 @@ export function Footer() {
 
             <p
               className="
-                mb-2.5
+                mb-3
                 max-w-xs
                 text-xs
                 leading-relaxed
@@ -511,36 +517,68 @@ export function Footer() {
             </p>
 
 
-            {/* Social links */}
+            {/* ==================================================================
+                PREMIUM SOCIAL BUTTONS
+                ================================================================== */}
 
-            <div className="flex flex-wrap gap-1.5">
+            <div
+              className="
+                flex
+                flex-wrap
+                items-center
+                gap-2
+              "
+            >
 
               <SocialLink
                 href={brand.instagramUrl}
                 label="Instagram"
+                platform="instagram"
               >
                 <Instagram
-                  className="h-4 w-4"
+                  className="
+                    relative
+                    z-10
+                    h-[18px]
+                    w-[18px]
+                  "
+                  strokeWidth={2}
                   aria-hidden="true"
                 />
               </SocialLink>
+
 
               <SocialLink
                 href={brand.youtubeUrl}
                 label="YouTube"
+                platform="youtube"
               >
                 <Youtube
-                  className="h-4 w-4"
+                  className="
+                    relative
+                    z-10
+                    h-[19px]
+                    w-[19px]
+                  "
+                  strokeWidth={2}
                   aria-hidden="true"
                 />
               </SocialLink>
 
+
               <SocialLink
                 href={brand.whatsappUrl}
                 label="WhatsApp"
+                platform="whatsapp"
               >
                 <MessageCircle
-                  className="h-4 w-4"
+                  className="
+                    relative
+                    z-10
+                    h-[18px]
+                    w-[18px]
+                  "
+                  strokeWidth={2}
                   aria-hidden="true"
                 />
               </SocialLink>
@@ -609,6 +647,7 @@ export function Footer() {
             label={brand.phone}
           />
 
+
           <ContactItem
             href={`mailto:${brand.email}`}
             icon={
@@ -616,6 +655,7 @@ export function Footer() {
             }
             label={brand.email}
           />
+
 
           <ContactItem
             href={brand.whatsappUrl}
@@ -625,6 +665,7 @@ export function Footer() {
             label={`WhatsApp: ${brand.phone}`}
             external
           />
+
 
           <ContactItem
             icon={
@@ -676,6 +717,7 @@ export function Footer() {
             {brand.manufacturer}. All rights reserved.
           </p>
 
+
           <p>
             FSSAI: {brand.fssai}
             {' · '}
@@ -698,6 +740,10 @@ export function Footer() {
 interface SocialLinkProps {
   href: string;
   label: string;
+  platform:
+    | 'instagram'
+    | 'youtube'
+    | 'whatsapp';
   children: ReactNode;
 }
 
@@ -705,40 +751,164 @@ interface SocialLinkProps {
 function SocialLink({
   href,
   label,
+  platform,
   children,
 }: SocialLinkProps) {
+
+  const platformLabel = {
+    instagram: 'Instagram',
+    youtube: 'YouTube',
+    whatsapp: 'WhatsApp',
+  }[platform];
+
+
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      aria-label={label}
+      title={platformLabel}
       className="
+        group/social
+        relative
         flex
-        h-8
-        w-8
+        h-11
+        w-11
         items-center
         justify-center
-        rounded-full
+        overflow-hidden
+        rounded-xl
         border
-        border-brand-cream/10
-        bg-brand-cream/10
+        border-brand-cream/15
+        bg-brand-cream/[0.08]
         text-brand-cream
+        shadow-[0_5px_14px_rgba(0,0,0,0.12)]
+        backdrop-blur-sm
         transition-all
-        duration-200
+        duration-300
+        ease-ks-standard
         hover:-translate-y-1
-        hover:border-brand-saffron/30
+        hover:border-brand-saffron/50
         hover:bg-brand-saffron
         hover:text-white
-        hover:shadow-glow
+        hover:shadow-[0_10px_24px_rgba(200,138,42,0.25)]
+        active:translate-y-[1px]
         focus-visible:outline-none
         focus-visible:ring-2
         focus-visible:ring-brand-saffron
         focus-visible:ring-offset-2
         focus-visible:ring-offset-brand-brown
+        sm:h-12
+        sm:w-12
       "
-      aria-label={label}
     >
-      {children}
+
+      {/* ==================================================================
+          TOP GLASS HIGHLIGHT
+          ================================================================== */}
+
+      <span
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute
+          inset-x-1
+          top-1
+          h-1/2
+          rounded-t-lg
+          bg-gradient-to-b
+          from-white/15
+          to-transparent
+          opacity-70
+          transition-opacity
+          duration-300
+          group-hover/social:opacity-100
+        "
+      />
+
+
+      {/* ==================================================================
+          INNER DEPTH
+          ================================================================== */}
+
+      <span
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          rounded-xl
+          shadow-[inset_0_1px_0_rgba(255,255,255,0.16),inset_0_-2px_0_rgba(0,0,0,0.12)]
+        "
+      />
+
+
+      {/* ==================================================================
+          HOVER GLOW
+          ================================================================== */}
+
+      <span
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute
+          -inset-4
+          rounded-full
+          bg-brand-saffron/20
+          opacity-0
+          blur-xl
+          transition-opacity
+          duration-300
+          group-hover/social:opacity-100
+        "
+      />
+
+
+      {/* ==================================================================
+          ICON
+          ================================================================== */}
+
+      <span
+        className="
+          relative
+          z-10
+          flex
+          items-center
+          justify-center
+          transition-transform
+          duration-300
+          ease-ks-spring
+          group-hover/social:scale-110
+        "
+      >
+        {children}
+      </span>
+
+
+      {/* ==================================================================
+          SHINE SWEEP
+          ================================================================== */}
+
+      <span
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute
+          -left-8
+          top-0
+          h-full
+          w-5
+          rotate-[18deg]
+          bg-white/25
+          blur-sm
+          transition-transform
+          duration-500
+          ease-ks-standard
+          group-hover/social:translate-x-[70px]
+        "
+      />
+
     </a>
   );
 }
@@ -765,6 +935,7 @@ function FooterLinkGroup({
   links,
   linkClass,
 }: FooterLinkGroupProps) {
+
   return (
     <div className="min-w-0">
 
@@ -782,10 +953,14 @@ function FooterLinkGroup({
         {title}
       </h4>
 
+
       <ul className="space-y-0.5">
 
         {links.map((link) => (
-          <li key={link.path}>
+
+          <li
+            key={link.path}
+          >
 
             <Link
               to={link.path}
@@ -800,6 +975,7 @@ function FooterLinkGroup({
               >
                 {link.label}
               </span>
+
 
               <ArrowUpRight
                 className="
@@ -819,6 +995,7 @@ function FooterLinkGroup({
             </Link>
 
           </li>
+
         ))}
 
       </ul>
@@ -869,6 +1046,7 @@ function ContactItem({
         {icon}
       </span>
 
+
       <span
         className="
           min-w-0
@@ -882,6 +1060,7 @@ function ContactItem({
 
 
   if (!href) {
+
     return (
       <div
         className="
@@ -899,6 +1078,7 @@ function ContactItem({
         {content}
       </div>
     );
+
   }
 
 
