@@ -23,6 +23,12 @@ import { Reveal } from '@/components/Reveal';
    - Brown   = heritage / supporting text
 
    Instagram remains the source of truth.
+
+   SPACING UPDATE:
+   - Reduced unnecessary vertical gaps.
+   - Kept gallery cards comfortable.
+   - Reduced intro / CTA whitespace.
+   - PageHero remains centralized.
    ========================================================================== */
 
 
@@ -144,12 +150,22 @@ export default function Gallery() {
 
       {/* ======================================================================
           HERO
+
+          Kept intentionally compact. No hero image is used on this page.
           =================================================================== */}
 
       <PageHero
         eyebrow="Visual Story"
         title="The Kawad Swad Gallery"
         description="Real moments from the Kawad Swad journey, shared through our Instagram posts and Reels."
+        className="
+          [&>div]:min-h-[15rem]
+          [&>div]:py-8
+          sm:[&>div]:min-h-[17rem]
+          sm:[&>div]:py-10
+          lg:[&>div]:min-h-[19rem]
+          lg:[&>div]:py-12
+        "
       />
 
 
@@ -162,9 +178,9 @@ export default function Gallery() {
           relative
           overflow-hidden
           bg-brand-ivory
-          py-14
-          sm:py-18
-          lg:py-24
+          py-10
+          sm:py-12
+          lg:py-16
         "
         aria-labelledby="gallery-intro-title"
       >
@@ -186,9 +202,9 @@ export default function Gallery() {
             pointer-events-none
             absolute
             right-[-8rem]
-            top-24
-            h-72
-            w-72
+            top-20
+            h-64
+            w-64
             rounded-full
             border
             border-brand-saffron/10
@@ -206,20 +222,20 @@ export default function Gallery() {
             <div
               className="
                 mx-auto
-                mb-10
+                mb-8
                 max-w-3xl
                 text-center
-                sm:mb-14
+                sm:mb-10
               "
             >
 
               <div
                 className="
                   mx-auto
-                  mb-5
+                  mb-4
                   flex
-                  h-14
-                  w-14
+                  h-12
+                  w-12
                   items-center
                   justify-center
                   rounded-2xl
@@ -231,10 +247,10 @@ export default function Gallery() {
                 "
                 aria-hidden="true"
               >
-                <Instagram className="h-6 w-6" />
+                <Instagram className="h-5 w-5" />
               </div>
 
-              <span className="section-eyebrow mb-3 block">
+              <span className="section-eyebrow mb-2.5 block">
                 Real Social Proof
               </span>
 
@@ -255,7 +271,7 @@ export default function Gallery() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-4
+                  mt-3
                   max-w-2xl
                   text-sm
                   leading-relaxed
@@ -271,9 +287,9 @@ export default function Gallery() {
               <div
                 className="
                   mx-auto
-                  mt-5
+                  mt-4
                   h-px
-                  w-16
+                  w-14
                   bg-brand-saffron/40
                 "
                 aria-hidden="true"
@@ -289,11 +305,11 @@ export default function Gallery() {
           <div
             className="
               grid
-              gap-5
+              gap-4
               sm:grid-cols-2
               lg:grid-cols-3
               xl:grid-cols-4
-              lg:gap-6
+              lg:gap-5
             "
           >
             {instagramPosts.map((url, index) => (
@@ -313,7 +329,7 @@ export default function Gallery() {
                     border
                     border-brand-green/10
                     bg-white
-                    p-3
+                    p-2.5
                     shadow-card
                     transition-all
                     duration-300
@@ -367,10 +383,10 @@ export default function Gallery() {
                       <div
                         className="
                           flex
-                          min-h-[300px]
+                          min-h-[280px]
                           items-center
                           justify-center
-                          p-6
+                          p-5
                           text-center
                         "
                       >
@@ -378,9 +394,9 @@ export default function Gallery() {
                           <Instagram
                             className="
                               mx-auto
-                              mb-3
-                              h-8
-                              w-8
+                              mb-2.5
+                              h-7
+                              w-7
                               text-brand-saffron
                             "
                             aria-hidden="true"
@@ -415,8 +431,8 @@ export default function Gallery() {
                       border-t
                       border-brand-green/10
                       px-2
-                      pb-1
-                      pt-3
+                      pb-0.5
+                      pt-2.5
                     "
                   >
                     <span
@@ -452,13 +468,13 @@ export default function Gallery() {
                       aria-label={`Open Instagram post ${index + 1}`}
                       className="
                         inline-flex
-                        min-h-[36px]
+                        min-h-[34px]
                         shrink-0
                         items-center
                         gap-1
                         rounded-full
                         px-3
-                        py-1.5
+                        py-1
                         text-[10px]
                         font-semibold
                         text-brand-green
@@ -495,19 +511,19 @@ export default function Gallery() {
             <div
               className="
                 mx-auto
-                mt-12
+                mt-8
                 max-w-3xl
                 rounded-2xl
                 border
                 border-brand-green/10
                 bg-white/70
                 px-5
-                py-4
+                py-3.5
                 text-center
                 shadow-soft
-                sm:mt-16
+                sm:mt-10
                 sm:px-7
-                sm:py-5
+                sm:py-4
               "
             >
               <p
@@ -535,16 +551,16 @@ export default function Gallery() {
               className="
                 relative
                 mx-auto
-                mt-10
+                mt-8
                 max-w-2xl
                 overflow-hidden
                 rounded-3xl
                 bg-brand-brown
-                p-7
+                p-6
                 text-center
                 shadow-lift
-                sm:mt-14
-                sm:p-10
+                sm:mt-10
+                sm:p-8
               "
             >
 
@@ -579,10 +595,10 @@ export default function Gallery() {
                 <div
                   className="
                     mx-auto
-                    mb-5
+                    mb-4
                     flex
-                    h-12
-                    w-12
+                    h-11
+                    w-11
                     items-center
                     justify-center
                     rounded-full
@@ -622,7 +638,7 @@ export default function Gallery() {
                   className="
                     text-pretty
                     mx-auto
-                    mt-3
+                    mt-2.5
                     max-w-lg
                     text-sm
                     leading-relaxed
@@ -641,8 +657,8 @@ export default function Gallery() {
                   rel="noopener noreferrer"
                   className="
                     btn-yellow
-                    mt-6
-                    min-h-[48px]
+                    mt-5
+                    min-h-[46px]
                     px-7
                   "
                 >
