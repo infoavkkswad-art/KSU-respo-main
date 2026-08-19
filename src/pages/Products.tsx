@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Filter, X, Search } from 'lucide-react';
+
 import { SEO, breadcrumbSchema } from '../components/SEO';
 import { ProductCard } from '../components/ProductCard';
 import { PageHero } from '../components/Section';
@@ -10,6 +11,23 @@ import {
   CATEGORY_LABELS,
   ProductCategory,
 } from '../data/products';
+
+
+/* ==========================================================================
+   KAWAD SWAD 2.0
+   PRODUCTS / CATALOGUE PAGE
+
+   Flow:
+   HERO → SEARCH / SORT → FILTERS → PRODUCT GRID
+
+   Cleanup:
+   - Reduced unnecessary vertical spacing.
+   - Kept product grid responsive.
+   - Preserved filtering and sorting logic.
+   - Preserved product data and ProductCard functionality.
+   - Product image rendering remains inside ProductCard.tsx.
+   ========================================================================== */
+
 
 const categories: (ProductCategory | 'all')[] = [
   'all',
@@ -21,8 +39,10 @@ const categories: (ProductCategory | 'all')[] = [
 
 const packSizes = [200, 500, 1000, 235];
 
+
 export default function Products() {
   const [searchParams] = useSearchParams();
+
   const query = searchParams.get('q') || '';
 
   const [category, setCategory] =
@@ -31,7 +51,8 @@ export default function Products() {
   const [packFilter, setPackFilter] =
     useState<number | null>(null);
 
-  const [search, setSearch] = useState(query);
+  const [search, setSearch] =
+    useState(query);
 
   const [sortBy, setSortBy] = useState<
     'default' | 'price-low' | 'price-high' | 'name'
@@ -40,8 +61,17 @@ export default function Products() {
   const [showFilters, setShowFilters] =
     useState(false);
 
+
+  /* ==========================================================================
+     FILTER + SORT
+     ========================================================================== */
+
   const filtered = useMemo(() => {
     let list = ProductService.getAllProducts();
+
+    /* ------------------------------------------------------------------------
+       CATEGORY
+       ------------------------------------------------------------------------ */
 
     if (category !== 'all') {
       list = list.filter(
@@ -49,6 +79,11 @@ export default function Products() {
           product.category === category,
       );
     }
+
+
+    /* ------------------------------------------------------------------------
+       SEARCH
+       ------------------------------------------------------------------------ */
 
     if (search.trim()) {
       const q = search
@@ -82,29 +117,36 @@ export default function Products() {
       );
     }
 
+
+    /* ------------------------------------------------------------------------
+       PACK SIZE
+       ------------------------------------------------------------------------ */
+
     if (packFilter !== null) {
-      list = list.filter((product) =>
-        ProductService.getAvailableSkus(
-          product,
-        ).some(
-          (sku) =>
-            sku.packSize === packFilter,
-        ),
+      list = list.filter(
+        (product) =>
+          ProductService
+            .getAvailableSkus(product)
+            .some(
+              (sku) =>
+                sku.packSize === packFilter,
+            ),
       );
     }
+
+
+    /* ------------------------------------------------------------------------
+       SORT
+       ------------------------------------------------------------------------ */
 
     switch (sortBy) {
       case 'price-low':
         list = [...list].sort((a, b) => {
           const aSkus =
-            ProductService.getAvailableSkus(
-              a,
-            );
+            ProductService.getAvailableSkus(a);
 
           const bSkus =
-            ProductService.getAvailableSkus(
-              b,
-            );
+            ProductService.getAvailableSkus(b);
 
           const aPrice =
             aSkus.length > 0
@@ -130,17 +172,14 @@ export default function Products() {
         });
         break;
 
+
       case 'price-high':
         list = [...list].sort((a, b) => {
           const aSkus =
-            ProductService.getAvailableSkus(
-              a,
-            );
+            ProductService.getAvailableSkus(a);
 
           const bSkus =
-            ProductService.getAvailableSkus(
-              b,
-            );
+            ProductService.getAvailableSkus(b);
 
           const aPrice =
             aSkus.length > 0
@@ -166,6 +205,7 @@ export default function Products() {
         });
         break;
 
+
       case 'name':
         list = [...list].sort(
           (a, b) =>
@@ -174,6 +214,7 @@ export default function Products() {
             ),
         );
         break;
+
 
       case 'default':
       default:
@@ -188,16 +229,31 @@ export default function Products() {
     sortBy,
   ]);
 
+
+  /* ==========================================================================
+     ACTIVE FILTERS
+     ========================================================================== */
+
   const activeFilterCount =
     (category !== 'all' ? 1 : 0) +
     (packFilter !== null ? 1 : 0) +
     (search.trim() ? 1 : 0);
+
+
+  /* ==========================================================================
+     CLEAR FILTERS
+     ========================================================================== */
 
   const clearFilters = () => {
     setCategory('all');
     setPackFilter(null);
     setSearch('');
   };
+
+
+  /* ==========================================================================
+     PAGE
+     ========================================================================== */
 
   return (
     <>
@@ -217,25 +273,69 @@ export default function Products() {
         ])}
       />
 
+
+      {/* ======================================================================
+          HERO
+          =================================================================== */}
+
       <PageHero
         eyebrow="Catalogue"
         title="Our Products"
         description="Premium papads in moong, chana and urad varieties — each available in multiple pack sizes."
       />
 
-      <section className="container-max container-px py-8 sm:py-10 lg:py-12">
-        <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mb-5 sm:mb-6">
-          <div className="relative flex-1 min-w-0">
+
+      {/* ======================================================================
+          CATALOGUE
+          =================================================================== */}
+
+      <section
+        className="
+          container-max
+          container-px
+          py-6
+          sm:py-8
+          lg:py-10
+        "
+        aria-label="Product catalogue"
+      >
+
+        {/* ====================================================================
+            SEARCH / SORT BAR
+            ================================================================= */}
+
+        <div
+          className="
+            mb-4
+            flex
+            flex-col
+            gap-2
+            sm:mb-5
+            sm:flex-row
+            sm:items-stretch
+            sm:gap-3
+          "
+        >
+
+          {/* Search */}
+
+          <div
+            className="
+              relative
+              min-w-0
+              flex-1
+            "
+          >
             <Search
               className="
+                pointer-events-none
                 absolute
                 left-3
                 top-1/2
-                -translate-y-1/2
-                w-4
                 h-4
+                w-4
+                -translate-y-1/2
                 text-brand-brown/40
-                pointer-events-none
               "
               aria-hidden="true"
             />
@@ -249,13 +349,16 @@ export default function Products() {
               placeholder="Search products..."
               className="
                 input-field
-                pl-10
-                w-full
                 min-h-[44px]
+                w-full
+                pl-10
               "
               aria-label="Search products"
             />
           </div>
+
+
+          {/* Sort */}
 
           <select
             value={sortBy}
@@ -266,9 +369,9 @@ export default function Products() {
             }
             className="
               input-field
+              min-h-[44px]
               w-full
               sm:w-48
-              min-h-[44px]
             "
             aria-label="Sort products"
           >
@@ -289,6 +392,9 @@ export default function Products() {
             </option>
           </select>
 
+
+          {/* Mobile filters */}
+
           <button
             type="button"
             onClick={() =>
@@ -298,19 +404,19 @@ export default function Products() {
             }
             className="
               btn-outline
-              sm:hidden
-              min-h-[44px]
               flex
+              min-h-[44px]
+              w-full
               items-center
               justify-center
               gap-2
-              w-full
+              sm:hidden
             "
             aria-expanded={showFilters}
             aria-controls="mobile-product-filters"
           >
             <Filter
-              className="w-4 h-4"
+              className="h-4 w-4"
               aria-hidden="true"
             />
 
@@ -320,24 +426,42 @@ export default function Products() {
               <span
                 className="
                   ml-1
-                  w-5
-                  h-5
-                  rounded-full
-                  bg-brand-red
-                  text-white
-                  text-2xs
                   flex
+                  h-5
+                  w-5
                   items-center
                   justify-center
+                  rounded-full
+                  bg-brand-red
+                  text-2xs
+                  text-white
                 "
               >
                 {activeFilterCount}
               </span>
             )}
           </button>
+
         </div>
 
-        <div className="grid lg:grid-cols-[220px_1fr] gap-5 lg:gap-8">
+
+        {/* ====================================================================
+            MAIN CATALOGUE LAYOUT
+            ================================================================= */}
+
+        <div
+          className="
+            grid
+            gap-5
+            lg:grid-cols-[210px_minmax(0,1fr)]
+            lg:gap-7
+          "
+        >
+
+          {/* ==================================================================
+              FILTER SIDEBAR
+              ================================================================= */}
+
           <aside
             id="mobile-product-filters"
             className={`
@@ -348,18 +472,33 @@ export default function Products() {
               }
               lg:block
             `}
+            aria-label="Product filters"
           >
             <div
               className="
                 card
-                p-4
-                sm:p-5
                 sticky
                 top-24
+                p-4
+                sm:p-5
               "
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-serif font-semibold text-brand-brown">
+
+              <div
+                className="
+                  mb-4
+                  flex
+                  items-center
+                  justify-between
+                "
+              >
+                <h3
+                  className="
+                    font-serif
+                    font-semibold
+                    text-brand-brown
+                  "
+                >
                   Filters
                 </h3>
 
@@ -378,43 +517,55 @@ export default function Products() {
                 )}
               </div>
 
-              <div className="mb-6">
+
+              {/* ==============================================================
+                  CATEGORY
+                  =========================================================== */}
+
+              <div className="mb-5">
                 <p className="label-field">
                   Category
                 </p>
 
-                <div className="space-y-1.5">
-                  {categories.map((cat) => (
-                    <button
-                      type="button"
-                      key={cat}
-                      onClick={() =>
-                        setCategory(cat)
-                      }
-                      className={`
-                        w-full
-                        text-left
-                        px-3
-                        py-2.5
-                        rounded-lg
-                        text-sm
-                        transition-colors
-                        ${
-                          category === cat
-                            ? 'bg-brand-red/10 text-brand-red font-medium'
-                            : 'text-brand-brown/70 hover:bg-brand-brown/5'
+                <div className="space-y-1">
+                  {categories.map(
+                    (cat) => (
+                      <button
+                        type="button"
+                        key={cat}
+                        onClick={() =>
+                          setCategory(cat)
                         }
-                      `}
-                    >
-                      {cat === 'all'
-                        ? 'All Products'
-                        : CATEGORY_LABELS[
-                            cat
-                          ]}
-                    </button>
-                  ))}
+                        className={`
+                          w-full
+                          rounded-lg
+                          px-3
+                          py-2
+                          text-left
+                          text-sm
+                          transition-colors
+                          ${
+                            category === cat
+                              ? 'bg-brand-red/10 font-medium text-brand-red'
+                              : 'text-brand-brown/70 hover:bg-brand-brown/5'
+                          }
+                        `}
+                      >
+                        {cat === 'all'
+                          ? 'All Products'
+                          : CATEGORY_LABELS[
+                              cat
+                            ]}
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
+
+
+              {/* ==============================================================
+                  PACK SIZE
+                  =========================================================== */}
 
               <div>
                 <p className="label-field">
@@ -422,39 +573,47 @@ export default function Products() {
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                  {packSizes.map((size) => (
-                    <button
-                      type="button"
-                      key={size}
-                      onClick={() =>
-                        setPackFilter(
-                          packFilter === size
-                            ? null
-                            : size,
-                        )
-                      }
-                      className={`
-                        px-3
-                        py-2
-                        rounded-full
-                        text-sm
-                        transition-colors
-                        ${
-                          packFilter === size
-                            ? 'bg-brand-red text-white'
-                            : 'bg-brand-brown/5 text-brand-brown/70 hover:bg-brand-brown/10'
+                  {packSizes.map(
+                    (size) => (
+                      <button
+                        type="button"
+                        key={size}
+                        onClick={() =>
+                          setPackFilter(
+                            packFilter ===
+                              size
+                              ? null
+                              : size,
+                          )
                         }
-                      `}
-                    >
-                      {size === 1000
-                        ? '1kg'
-                        : size === 235
-                          ? 'Combo'
-                          : `${size}g`}
-                    </button>
-                  ))}
+                        className={`
+                          rounded-full
+                          px-3
+                          py-2
+                          text-sm
+                          transition-colors
+                          ${
+                            packFilter === size
+                              ? 'bg-brand-red text-white'
+                              : 'bg-brand-brown/5 text-brand-brown/70 hover:bg-brand-brown/10'
+                          }
+                        `}
+                      >
+                        {size === 1000
+                          ? '1kg'
+                          : size === 235
+                            ? 'Combo'
+                            : `${size}g`}
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
+
+
+              {/* ==============================================================
+                  MOBILE APPLY
+                  =========================================================== */}
 
               <button
                 type="button"
@@ -462,43 +621,83 @@ export default function Products() {
                   setShowFilters(false)
                 }
                 className="
-                  mt-5
+                  btn-outline
+                  mt-4
                   w-full
                   sm:hidden
-                  btn-outline
                 "
               >
                 Apply Filters
               </button>
+
             </div>
           </aside>
 
+
+          {/* ==================================================================
+              PRODUCT AREA
+              ================================================================= */}
+
           <div className="min-w-0">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <p className="text-xs sm:text-sm text-brand-brown/60">
+
+            {/* ================================================================
+                RESULT BAR
+                ============================================================= */}
+
+            <div
+              className="
+                mb-3
+                flex
+                min-h-[28px]
+                items-center
+                justify-between
+                gap-3
+              "
+            >
+              <p
+                className="
+                  text-xs
+                  text-brand-brown/60
+                  sm:text-sm
+                "
+              >
                 {filtered.length} product
                 {filtered.length !== 1
                   ? 's'
                   : ''}
               </p>
 
+
+              {/* ==============================================================
+                  ACTIVE FILTER CHIPS
+                  =========================================================== */}
+
               {activeFilterCount > 0 && (
-                <div className="hidden lg:flex items-center gap-2 flex-wrap justify-end">
+                <div
+                  className="
+                    hidden
+                    flex-wrap
+                    items-center
+                    justify-end
+                    gap-1.5
+                    lg:flex
+                  "
+                >
+
                   {category !== 'all' && (
                     <span
                       className="
-                        badge-brown
                         flex
                         items-center
                         gap-1
-                        px-2.5
-                        py-1
                         rounded-md
-                        bg-amber-50
-                        text-xs
-                        text-brand-brown
                         border
                         border-amber-200
+                        bg-amber-50
+                        px-2.5
+                        py-1
+                        text-xs
+                        text-brand-brown
                       "
                     >
                       {CATEGORY_LABELS[
@@ -513,28 +712,28 @@ export default function Products() {
                         aria-label="Remove category filter"
                       >
                         <X
-                          className="w-3 h-3"
+                          className="h-3 w-3"
                           aria-hidden="true"
                         />
                       </button>
                     </span>
                   )}
 
+
                   {packFilter !== null && (
                     <span
                       className="
-                        badge-brown
                         flex
                         items-center
                         gap-1
-                        px-2.5
-                        py-1
                         rounded-md
-                        bg-amber-50
-                        text-xs
-                        text-brand-brown
                         border
                         border-amber-200
+                        bg-amber-50
+                        px-2.5
+                        py-1
+                        text-xs
+                        text-brand-brown
                       "
                     >
                       {packFilter === 1000
@@ -551,31 +750,34 @@ export default function Products() {
                         aria-label="Remove pack size filter"
                       >
                         <X
-                          className="w-3 h-3"
+                          className="h-3 w-3"
                           aria-hidden="true"
                         />
                       </button>
                     </span>
                   )}
 
+
                   {search.trim() && (
                     <span
                       className="
-                        badge-brown
                         flex
+                        max-w-[240px]
                         items-center
                         gap-1
-                        px-2.5
-                        py-1
                         rounded-md
-                        bg-amber-50
-                        text-xs
-                        text-brand-brown
                         border
                         border-amber-200
+                        bg-amber-50
+                        px-2.5
+                        py-1
+                        text-xs
+                        text-brand-brown
                       "
                     >
-                      Search: {search.trim()}
+                      <span className="truncate">
+                        Search: {search.trim()}
+                      </span>
 
                       <button
                         type="button"
@@ -585,19 +787,38 @@ export default function Products() {
                         aria-label="Remove search filter"
                       >
                         <X
-                          className="w-3 h-3"
+                          className="h-3 w-3"
                           aria-hidden="true"
                         />
                       </button>
                     </span>
                   )}
+
                 </div>
               )}
+
             </div>
 
+
+            {/* ================================================================
+                EMPTY STATE
+                ============================================================= */}
+
             {filtered.length === 0 ? (
-              <div className="card p-8 sm:p-12 text-center">
-                <p className="text-brand-brown/60 mb-2">
+              <div
+                className="
+                  card
+                  p-8
+                  text-center
+                  sm:p-10
+                "
+              >
+                <p
+                  className="
+                    mb-2
+                    text-brand-brown/60
+                  "
+                >
                   No products found.
                 </p>
 
@@ -605,8 +826,8 @@ export default function Products() {
                   type="button"
                   onClick={clearFilters}
                   className="
-                    text-brand-red
                     font-medium
+                    text-brand-red
                     hover:underline
                   "
                 >
@@ -614,15 +835,20 @@ export default function Products() {
                 </button>
               </div>
             ) : (
+
+              /* ==============================================================
+                 PRODUCT GRID
+                 =========================================================== */
+
               <div
                 className="
                   grid
                   grid-cols-1
-                  sm:grid-cols-2
-                  lg:grid-cols-3
                   gap-4
+                  sm:grid-cols-2
                   sm:gap-5
-                  lg:gap-6
+                  lg:grid-cols-3
+                  lg:gap-5
                 "
               >
                 {filtered.map(
@@ -630,8 +856,8 @@ export default function Products() {
                     <Reveal
                       key={product.id}
                       delay={Math.min(
-                        index * 50,
-                        300,
+                        index * 40,
+                        240,
                       )}
                     >
                       <ProductCard
@@ -642,7 +868,9 @@ export default function Products() {
                   ),
                 )}
               </div>
+
             )}
+
           </div>
         </div>
       </section>
