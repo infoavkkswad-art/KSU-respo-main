@@ -43,6 +43,12 @@ import { apiClient } from '@/services/api-client';
    - Existing enquiry ID
    - Existing contact information
    - Existing SEO
+
+   SPACING / IMAGE UPDATE:
+   - Hero artwork is fully visible.
+   - Hero height reduced.
+   - Excessive vertical spacing reduced.
+   - Contact content remains responsive.
    ========================================================================== */
 
 
@@ -161,33 +167,60 @@ export default function Contact() {
           =================================================================== */}
 
       <section
-        className="relative overflow-hidden"
+        className="
+          relative
+          overflow-hidden
+          bg-brand-green
+        "
         aria-labelledby="contact-page-title"
       >
         <div
           className="
             relative
-            min-h-[380px]
+            min-h-[340px]
             w-full
+            overflow-hidden
             bg-brand-green
-            sm:min-h-[460px]
-            lg:min-h-[540px]
+            sm:min-h-[400px]
+            lg:min-h-[460px]
           "
         >
-          <img
-            src={CONTACT_HERO_IMAGE}
-            alt="Kawad Swad contact and customer support"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
+
+          {/* ==================================================================
+              FULL HERO ARTWORK
+
+              IMPORTANT:
+              object-contain keeps the complete contact artwork visible.
+              The green background fills any remaining area.
+              ================================================================== */}
+
+          <div
             className="
               absolute
               inset-0
-              h-full
-              w-full
-              object-cover
+              flex
+              items-center
+              justify-center
+              overflow-hidden
+              bg-brand-green
             "
-          />
+            aria-hidden="true"
+          >
+            <img
+              src={CONTACT_HERO_IMAGE}
+              alt=""
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="
+                h-full
+                w-full
+                object-contain
+                object-center
+              "
+            />
+          </div>
+
 
           <div
             className="
@@ -196,8 +229,8 @@ export default function Contact() {
               inset-0
               bg-gradient-to-r
               from-brand-green/95
-              via-brand-green/65
-              to-brand-green/10
+              via-brand-green/60
+              to-brand-green/5
             "
             aria-hidden="true"
           />
@@ -208,7 +241,7 @@ export default function Contact() {
               absolute
               inset-0
               bg-gradient-to-t
-              from-brand-green/45
+              from-brand-green/40
               via-transparent
               to-transparent
             "
@@ -239,35 +272,43 @@ export default function Contact() {
               border-brand-saffron/15
               sm:h-80
               sm:w-80
+              lg:h-96
+              lg:w-96
             "
             aria-hidden="true"
           />
+
+
+          {/* ==================================================================
+              HERO CONTENT
+              ================================================================== */}
 
           <div
             className="
               container-max
               container-px
               relative
+              z-20
               flex
-              min-h-[380px]
+              min-h-[340px]
               items-center
-              sm:min-h-[460px]
-              lg:min-h-[540px]
+              sm:min-h-[400px]
+              lg:min-h-[460px]
             "
           >
             <Reveal>
               <div
                 className="
                   max-w-4xl
-                  py-14
-                  sm:py-16
-                  lg:py-20
+                  py-9
+                  sm:py-11
+                  lg:py-12
                 "
               >
                 <span
                   className="
                     section-eyebrow
-                    mb-4
+                    mb-3
                     block
                     text-brand-saffron
                   "
@@ -296,7 +337,7 @@ export default function Contact() {
                 <p
                   className="
                     text-pretty
-                    mt-5
+                    mt-3
                     max-w-2xl
                     text-sm
                     leading-relaxed
@@ -312,10 +353,10 @@ export default function Contact() {
 
                 <div
                   className="
-                    mt-6
+                    mt-5
                     flex
                     flex-wrap
-                    gap-2.5
+                    gap-2
                   "
                 >
                   <span className="badge bg-white/10 text-white">
@@ -346,9 +387,9 @@ export default function Contact() {
           relative
           overflow-hidden
           bg-brand-ivory
-          py-14
-          sm:py-18
-          lg:py-24
+          py-10
+          sm:py-12
+          lg:py-16
         "
         aria-labelledby="contact-form-title"
       >
@@ -369,9 +410,9 @@ export default function Contact() {
             className="
               grid
               items-start
-              gap-8
-              lg:grid-cols-[minmax(0,1fr)_380px]
-              lg:gap-10
+              gap-6
+              lg:grid-cols-[minmax(0,1fr)_360px]
+              lg:gap-8
             "
           >
 
@@ -388,19 +429,19 @@ export default function Contact() {
                   bg-white
                   p-5
                   shadow-card
-                  sm:p-8
-                  lg:p-10
+                  sm:p-7
+                  lg:p-8
                 "
               >
 
                 <div
                   className="
-                    mb-7
+                    mb-6
                     border-b
                     border-brand-green/10
-                    pb-6
-                    sm:mb-8
-                    sm:pb-7
+                    pb-5
+                    sm:mb-7
+                    sm:pb-6
                   "
                 >
                   <span className="section-eyebrow mb-2 block">
@@ -424,7 +465,7 @@ export default function Contact() {
                   <p
                     className="
                       text-pretty
-                      mt-3
+                      mt-2.5
                       max-w-xl
                       text-sm
                       leading-relaxed
@@ -445,7 +486,7 @@ export default function Contact() {
                 {form.status === 'success' && (
                   <div
                     className="
-                      mb-6
+                      mb-5
                       rounded-2xl
                       border
                       border-green-200
@@ -489,7 +530,7 @@ export default function Contact() {
 
                 {form.status === 'error' &&
                   errorMessage && (
-                    <div className="mb-6">
+                    <div className="mb-5">
                       <FormStatusMessage
                         status="error"
                         errorMsg={errorMessage}
@@ -617,15 +658,15 @@ export default function Contact() {
 
                   <div
                     className="
-                      mt-6
+                      mt-5
                       flex
                       flex-col
                       gap-3
                       border-t
                       border-brand-green/10
-                      pt-6
-                      sm:mt-7
-                      sm:pt-7
+                      pt-5
+                      sm:mt-6
+                      sm:pt-6
                     "
                   >
                     <SubmitButton
@@ -658,7 +699,7 @@ export default function Contact() {
 
             <aside
               className="
-                space-y-5
+                space-y-4
                 lg:sticky
                 lg:top-24
               "
@@ -687,7 +728,7 @@ export default function Contact() {
 
                   <h2
                     className="
-                      mb-5
+                      mb-4
                       font-serif
                       text-xl
                       font-bold
@@ -697,7 +738,7 @@ export default function Contact() {
                     Contact Information
                   </h2>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
 
                     {/* Phone */}
 
@@ -706,7 +747,7 @@ export default function Contact() {
                       className="
                         group
                         flex
-                        min-h-[68px]
+                        min-h-[64px]
                         items-center
                         gap-3
                         rounded-2xl
@@ -728,8 +769,8 @@ export default function Contact() {
                       <div
                         className="
                           flex
-                          h-10
-                          w-10
+                          h-9
+                          w-9
                           shrink-0
                           items-center
                           justify-center
@@ -739,7 +780,7 @@ export default function Contact() {
                         "
                         aria-hidden="true"
                       >
-                        <Phone className="h-5 w-5" />
+                        <Phone className="h-4.5 w-4.5" />
                       </div>
 
                       <div className="min-w-0">
@@ -789,7 +830,7 @@ export default function Contact() {
                       className="
                         group
                         flex
-                        min-h-[68px]
+                        min-h-[64px]
                         items-center
                         gap-3
                         rounded-2xl
@@ -811,8 +852,8 @@ export default function Contact() {
                       <div
                         className="
                           flex
-                          h-10
-                          w-10
+                          h-9
+                          w-9
                           shrink-0
                           items-center
                           justify-center
@@ -822,7 +863,7 @@ export default function Contact() {
                         "
                         aria-hidden="true"
                       >
-                        <MessageCircle className="h-5 w-5" />
+                        <MessageCircle className="h-4.5 w-4.5" />
                       </div>
 
                       <div className="min-w-0">
@@ -869,7 +910,7 @@ export default function Contact() {
                       className="
                         group
                         flex
-                        min-h-[68px]
+                        min-h-[64px]
                         items-center
                         gap-3
                         rounded-2xl
@@ -891,8 +932,8 @@ export default function Contact() {
                       <div
                         className="
                           flex
-                          h-10
-                          w-10
+                          h-9
+                          w-9
                           shrink-0
                           items-center
                           justify-center
@@ -902,7 +943,7 @@ export default function Contact() {
                         "
                         aria-hidden="true"
                       >
-                        <Mail className="h-5 w-5" />
+                        <Mail className="h-4.5 w-4.5" />
                       </div>
 
                       <div className="min-w-0">
@@ -948,7 +989,7 @@ export default function Contact() {
                     <div
                       className="
                         flex
-                        min-h-[68px]
+                        min-h-[64px]
                         items-center
                         gap-3
                         rounded-2xl
@@ -961,8 +1002,8 @@ export default function Contact() {
                       <div
                         className="
                           flex
-                          h-10
-                          w-10
+                          h-9
+                          w-9
                           shrink-0
                           items-center
                           justify-center
@@ -972,7 +1013,7 @@ export default function Contact() {
                         "
                         aria-hidden="true"
                       >
-                        <MapPin className="h-5 w-5" />
+                        <MapPin className="h-4.5 w-4.5" />
                       </div>
 
                       <div className="min-w-0">
@@ -1024,7 +1065,7 @@ export default function Contact() {
 
                   <h2
                     className="
-                      mb-5
+                      mb-4
                       font-serif
                       text-xl
                       font-bold
@@ -1034,7 +1075,7 @@ export default function Contact() {
                     Follow Us
                   </h2>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2.5">
 
                     <a
                       href={brand.instagramUrl}
@@ -1043,7 +1084,7 @@ export default function Contact() {
                       className="
                         group
                         flex
-                        min-h-[68px]
+                        min-h-[64px]
                         min-w-0
                         items-center
                         gap-2.5
@@ -1104,7 +1145,7 @@ export default function Contact() {
                       className="
                         group
                         flex
-                        min-h-[68px]
+                        min-h-[64px]
                         min-w-0
                         items-center
                         gap-2.5
@@ -1173,9 +1214,9 @@ export default function Contact() {
                     overflow-hidden
                     rounded-3xl
                     bg-brand-brown
-                    p-6
+                    p-5
                     shadow-lift
-                    sm:p-7
+                    sm:p-6
                   "
                 >
                   <div
@@ -1247,7 +1288,7 @@ export default function Contact() {
                       to="/business"
                       className="
                         btn-yellow
-                        mt-5
+                        mt-4
                         min-h-[44px]
                         px-5
                       "
