@@ -24,6 +24,11 @@ import {
    - Buttons/actions use central interaction patterns
    - Motion uses the central Reveal component
    - Spacing follows the central rhythm
+
+   Image system:
+   - Blog hero artwork is displayed completely.
+   - Featured article artwork remains fully visible.
+   - No unnecessary vertical whitespace.
    ========================================================================== */
 
 
@@ -87,34 +92,56 @@ export default function Blog() {
         className="
           relative
           overflow-hidden
+          bg-brand-green
         "
         aria-labelledby="blog-page-title"
       >
         <div
           className="
             relative
-            aspect-[16/8]
-            min-h-[280px]
-            max-h-[560px]
+            min-h-[340px]
             w-full
+            overflow-hidden
             bg-brand-green
-            sm:min-h-[340px]
+            sm:min-h-[400px]
+            lg:min-h-[460px]
           "
         >
-          <img
-            src={BLOG_HERO_IMAGE}
-            alt="Kawad Swad Journal, stories, recipes and tradition"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
+
+          {/* ==================================================================
+              FULL HERO ARTWORK
+
+              object-contain prevents the supplied artwork from being cropped.
+              Any remaining area is filled by the brand-green background.
+              ================================================================== */}
+
+          <div
             className="
               absolute
               inset-0
-              h-full
-              w-full
-              object-cover
+              flex
+              items-center
+              justify-center
+              overflow-hidden
+              bg-brand-green
             "
-          />
+            aria-hidden="true"
+          >
+            <img
+              src={BLOG_HERO_IMAGE}
+              alt=""
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="
+                h-full
+                w-full
+                object-contain
+                object-center
+              "
+            />
+          </div>
+
 
           <div
             className="
@@ -142,29 +169,32 @@ export default function Blog() {
             aria-hidden="true"
           />
 
+
           <div
             className="
               container-max
               container-px
               relative
               flex
-              h-full
+              min-h-[340px]
               items-center
+              sm:min-h-[400px]
+              lg:min-h-[460px]
             "
           >
             <Reveal>
               <div
                 className="
                   max-w-3xl
-                  py-12
-                  sm:py-16
-                  lg:py-20
+                  py-9
+                  sm:py-11
+                  lg:py-12
                 "
               >
                 <span
                   className="
                     section-eyebrow
-                    mb-3
+                    mb-2.5
                     block
                     text-brand-saffron
                   "
@@ -193,7 +223,7 @@ export default function Blog() {
                 <p
                   className="
                     text-pretty
-                    mt-4
+                    mt-3
                     max-w-xl
                     text-sm
                     leading-relaxed
@@ -220,9 +250,9 @@ export default function Blog() {
       <section
         className="
           bg-brand-ivory
-          py-12
-          sm:py-16
-          lg:py-24
+          py-9
+          sm:py-12
+          lg:py-16
         "
         aria-label="Kawad Swad journal articles"
       >
@@ -236,13 +266,13 @@ export default function Blog() {
           <Reveal>
             <div
               className="
-                mb-10
+                mb-7
                 flex
                 flex-wrap
                 items-center
                 justify-center
                 gap-2
-                sm:mb-12
+                sm:mb-8
               "
               role="group"
               aria-label="Filter articles by category"
@@ -310,10 +340,10 @@ export default function Blog() {
 
           {/* ==================================================================
               FEATURED ARTICLE
-              =============================================================== */}
+              =================================================================== */}
 
           {featuredPost && (
-            <Reveal className="mb-12 sm:mb-16">
+            <Reveal className="mb-8 sm:mb-10">
               <Link
                 to={`/blog/${featuredPost.slug}`}
                 aria-label={`Read featured article: ${featuredPost.title}`}
@@ -321,13 +351,13 @@ export default function Blog() {
                   group
                   grid
                   items-center
-                  gap-6
+                  gap-5
                   overflow-hidden
                   rounded-3xl
                   border
                   border-brand-green/10
                   bg-white
-                  p-4
+                  p-3.5
                   shadow-card
                   transition-all
                   duration-300
@@ -337,15 +367,17 @@ export default function Blog() {
                   focus-visible:ring-2
                   focus-visible:ring-brand-saffron
                   focus-visible:ring-offset-2
-                  sm:p-6
+                  sm:gap-6
+                  sm:p-5
                   lg:grid-cols-12
-                  lg:gap-8
-                  lg:p-10
+                  lg:gap-7
+                  lg:p-7
                 "
               >
                 <div
                   className="
                     image-premium
+                    overflow-hidden
                     bg-brand-ivory-dark
                     lg:col-span-7
                   "
@@ -360,7 +392,8 @@ export default function Blog() {
                       aspect-[16/9]
                       h-full
                       w-full
-                      object-cover
+                      object-contain
+                      bg-brand-ivory-dark
                     "
                   />
                 </div>
@@ -375,12 +408,11 @@ export default function Blog() {
                 >
                   <div
                     className="
-                      mb-3
+                      mb-2.5
                       flex
                       flex-wrap
                       items-center
                       gap-2
-                      sm:gap-3
                     "
                   >
                     <span className="badge-red">
@@ -408,7 +440,7 @@ export default function Blog() {
                   <h2
                     className="
                       text-balance
-                      mb-4
+                      mb-3
                       font-serif
                       text-headline-sm
                       font-bold
@@ -425,7 +457,7 @@ export default function Blog() {
 
                   <p
                     className="
-                      mb-6
+                      mb-4
                       line-clamp-3
                       text-pretty
                       text-sm
@@ -441,10 +473,10 @@ export default function Blog() {
                     className="
                       flex
                       flex-col
-                      gap-3
+                      gap-2.5
                       border-t
                       border-brand-green/10
-                      pt-4
+                      pt-3
                       text-xs
                       text-brand-brown/60
                       sm:flex-row
@@ -505,10 +537,9 @@ export default function Blog() {
                   border
                   border-brand-green/10
                   bg-brand-ivory-dark
-                  p-10
+                  p-8
                   text-center
-                  shadow-soft
-                  sm:p-12
+                  sm:p-10
                 "
               >
                 <span className="section-eyebrow">
@@ -530,11 +561,11 @@ export default function Blog() {
             <div
               className="
                 grid
-                gap-5
+                gap-4
                 sm:grid-cols-2
-                sm:gap-6
+                sm:gap-5
                 lg:grid-cols-3
-                lg:gap-8
+                lg:gap-6
               "
             >
               {standardPosts.map((post, index) => (
@@ -612,14 +643,14 @@ export default function Blog() {
                         flex-1
                         flex-col
                         justify-between
-                        p-5
-                        sm:p-6
+                        p-4
+                        sm:p-5
                       "
                     >
                       <div>
                         <div
                           className="
-                            mb-3
+                            mb-2.5
                             flex
                             items-center
                             justify-between
@@ -644,7 +675,7 @@ export default function Blog() {
                         <h3
                           className="
                             text-balance
-                            mb-3
+                            mb-2.5
                             font-serif
                             text-lg
                             font-semibold
@@ -661,7 +692,7 @@ export default function Blog() {
 
                         <p
                           className="
-                            mb-6
+                            mb-5
                             line-clamp-2
                             text-pretty
                             text-sm
@@ -680,7 +711,7 @@ export default function Blog() {
                           justify-between
                           border-t
                           border-brand-green/10
-                          pt-4
+                          pt-3
                           text-[10px]
                           text-brand-brown/50
                         "
