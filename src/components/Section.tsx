@@ -21,6 +21,12 @@ import type { ReactNode } from 'react';
    New reusable exports:
    - Section
    - SectionHeader
+
+   Hero image behavior:
+   - Full image remains visible
+   - 3:2 artwork is not cropped
+   - Image is centered responsively
+   - Brand-green background fills remaining space
    ========================================================================== */
 
 
@@ -237,6 +243,13 @@ export function SectionHeading({
 
 /* ==========================================================================
    CENTRAL PAGE HERO
+
+   Image strategy:
+   - Hero artwork is NOT cropped.
+   - The image uses object-contain.
+   - The image occupies the complete available hero area.
+   - Brand-green fills any remaining space.
+   - This is especially important for the supplied 3:2 hero artwork.
    ========================================================================== */
 
 export function PageHero({
@@ -259,6 +272,8 @@ export function PageHero({
     <section
       className={`
         page-hero
+        relative
+        overflow-hidden
         ${surface === 'green' ? 'bg-brand-green text-white' : ''}
         ${surface === 'image' ? 'bg-brand-green' : ''}
         ${surface === 'default' ? 'bg-brand-ivory' : ''}
@@ -267,16 +282,54 @@ export function PageHero({
     >
       {hasImage && (
         <>
-          <img
-            src={imageSrc}
-            alt={imageAlt}
-            className="page-hero-image"
-            loading="eager"
-            decoding="async"
-          />
+          {/* ================================================================
+             FULL HERO IMAGE
 
+             object-contain is intentional.
+
+             Do NOT use object-cover here because the supplied hero artwork
+             contains important mascot/logo/composition details that must
+             remain completely visible.
+             ================================================================ */}
           <div
-            className="page-hero-overlay"
+            className="
+              absolute
+              inset-0
+              flex
+              items-center
+              justify-center
+              overflow-hidden
+              bg-brand-green
+            "
+            aria-hidden="true"
+          >
+            <img
+              src={imageSrc}
+              alt={imageAlt}
+              className="
+                h-full
+                w-full
+                object-contain
+                object-center
+              "
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+
+          {/* ================================================================
+             IMAGE OVERLAY
+
+             Kept as a separate layer so the existing overlay styling can
+             continue to control readability without affecting image ratio.
+             ================================================================ */}
+          <div
+            className="
+              page-hero-overlay
+              absolute
+              inset-0
+              z-10
+            "
             aria-hidden="true"
           />
         </>
