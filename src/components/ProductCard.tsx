@@ -81,6 +81,7 @@ import {
    - Mobile remains stable and touch-friendly.
    - Website selling price is the ONLY displayed product price.
    - MRP / discount presentation is intentionally removed.
+   - Buy Now is the primary conversion CTA.
    ========================================================================== */
 
 
@@ -1020,10 +1021,9 @@ export function ProductCard({
 
           {/* ==================================================================
               WEBSITE SELLING PRICE
-              
-              IMPORTANT:
-              Only the current website price is displayed.
-              MRP and discount presentation are intentionally removed.
+
+              ONLY THE CURRENT WEBSITE PRICE IS DISPLAYED.
+              MRP AND DISCOUNT PRESENTATION ARE REMOVED.
               ================================================================== */}
 
           <div
@@ -1116,7 +1116,7 @@ export function ProductCard({
             className={`
               relative
               flex
-              min-h-[44px]
+              min-h-[46px]
               items-center
               justify-center
               gap-1.5
@@ -1186,46 +1186,140 @@ export function ProductCard({
 
 
           {/* ==================================================================
-              BUY NOW
+              PRIMARY BUY NOW CTA
               ================================================================== */}
 
           <button
             type="button"
             onClick={handleBuyNow}
             className="
-              btn-buy
               group/buy
+              relative
               flex
-              min-h-[44px]
+              min-h-[46px]
               items-center
               justify-center
               gap-1.5
+              overflow-hidden
               rounded-xl
-              px-2
+              border
+              border-brand-saffron-dark/70
+              bg-brand-saffron
+              px-2.5
               py-2
               text-[10px]
+              font-bold
+              tracking-[0.01em]
+              text-white
+              shadow-[0_5px_0_rgba(169,111,24,0.65),0_9px_18px_rgba(200,138,42,0.20)]
+              transition-all
+              duration-200
+              ease-ks-standard
+              hover:-translate-y-0.5
+              hover:bg-brand-saffron-light
+              hover:shadow-[0_6px_0_rgba(169,111,24,0.55),0_13px_24px_rgba(200,138,42,0.28)]
+              active:translate-y-[3px]
+              active:shadow-[0_2px_0_rgba(169,111,24,0.65),0_5px_10px_rgba(200,138,42,0.18)]
+              focus:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-brand-saffron
+              focus-visible:ring-offset-2
+              focus-visible:ring-offset-white
               sm:text-xs
             "
           >
 
+            {/* ================================================================
+                SOFT GLASS HIGHLIGHT
+                ================================================================ */}
+
+            <span
+              aria-hidden="true"
+              className="
+                pointer-events-none
+                absolute
+                inset-x-0
+                top-0
+                h-1/2
+                bg-gradient-to-b
+                from-white/20
+                to-transparent
+                opacity-80
+              "
+            />
+
+
+            {/* ================================================================
+                HOVER SHINE
+                ================================================================ */}
+
+            <span
+              aria-hidden="true"
+              className="
+                pointer-events-none
+                absolute
+                -left-10
+                top-0
+                h-full
+                w-8
+                rotate-[18deg]
+                bg-white/25
+                blur-sm
+                transition-transform
+                duration-500
+                ease-ks-standard
+                group-hover/buy:translate-x-[150px]
+              "
+            />
+
+
+            {/* ================================================================
+                ICON
+                ================================================================ */}
+
             <Zap
-              className="h-3.5 w-3.5"
+              className="
+                relative
+                z-10
+                h-3.5
+                w-3.5
+                fill-current
+                transition-transform
+                duration-200
+                group-hover/buy:scale-110
+                group-hover/buy:-rotate-3
+              "
               aria-hidden="true"
             />
 
-            <span>
+
+            {/* ================================================================
+                LABEL
+                ================================================================ */}
+
+            <span
+              className="
+                relative
+                z-10
+              "
+            >
               Buy Now
             </span>
 
+
+            {/* ================================================================
+                ARROW
+                ================================================================ */}
+
             <ArrowRight
               className="
-                hidden
+                relative
+                z-10
                 h-3.5
                 w-3.5
                 transition-transform
                 duration-200
-                group-hover/buy:translate-x-0.5
-                sm:block
+                group-hover/buy:translate-x-1
               "
               aria-hidden="true"
             />
