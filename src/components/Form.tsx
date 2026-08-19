@@ -15,7 +15,7 @@ import {
    KAWAD SWAD 2.0
    CENTRAL FORM SYSTEM
 
-   Form responsibilities:
+   Responsibilities:
    - Consistent field rendering
    - Validation state
    - Submission state
@@ -26,6 +26,8 @@ import {
    - index.css
    - .input-field
    - .label-field
+   - .form-error
+   - .form-success
    - .btn-primary
    - .btn-secondary
    - Central brand tokens
@@ -33,6 +35,10 @@ import {
    This file does NOT define its own global visual language.
    ========================================================================== */
 
+
+/* ==========================================================================
+   FORM STATUS
+   ========================================================================== */
 
 export type FormStatus =
   | 'idle'
@@ -65,6 +71,7 @@ export interface FormFieldProps {
   autoComplete?: string;
 }
 
+
 export function FormField({
   label,
   name,
@@ -78,29 +85,22 @@ export function FormField({
   rows = 4,
   autoComplete,
 }: FormFieldProps) {
+
   const inputId = name;
   const errorId = `${name}-error`;
 
   const baseClass = `
     input-field
-    ${
-      error
-        ? `
-          border-brand-red
-          ring-1
-          ring-brand-red/30
-        `
-        : ''
-    }
+    ${error ? 'border-brand-red ring-1 ring-brand-red/30' : ''}
   `;
 
 
   return (
     <div className="min-w-0">
 
-      {/* ======================================================================
+      {/* ====================================================================
           LABEL
-          =================================================================== */}
+          ================================================================= */}
 
       <label
         htmlFor={inputId}
@@ -109,28 +109,28 @@ export function FormField({
         {label}
 
         {required && (
-          <span
-            className="
-              ml-1
-              text-brand-red
-            "
-            aria-hidden="true"
-          >
-            *
-          </span>
-        )}
+          <>
+            <span
+              className="
+                ml-1
+                text-brand-red
+              "
+              aria-hidden="true"
+            >
+              *
+            </span>
 
-        {required && (
-          <span className="sr-only">
-            required
-          </span>
+            <span className="sr-only">
+              required
+            </span>
+          </>
         )}
       </label>
 
 
-      {/* ======================================================================
-          FIELD
-          =================================================================== */}
+      {/* ====================================================================
+          TEXTAREA
+          ================================================================= */}
 
       {type === 'textarea' ? (
         <textarea
@@ -146,7 +146,7 @@ export function FormField({
           autoComplete={autoComplete}
           className={`
             ${baseClass}
-            min-h-[110px]
+            min-h-[120px]
             resize-y
           `}
           aria-invalid={
@@ -159,41 +159,80 @@ export function FormField({
           }
         />
       ) : type === 'select' ? (
-        <select
-          id={inputId}
-          name={name}
-          value={value}
-          onChange={(event) =>
-            onChange(event.target.value)
-          }
-          required={required}
-          className={`
-            ${baseClass}
-            cursor-pointer
-          `}
-          aria-invalid={
-            error ? 'true' : 'false'
-          }
-          aria-describedby={
-            error
-              ? errorId
-              : undefined
-          }
-        >
-          <option value="">
-            Select...
-          </option>
 
-          {options?.map((option) => (
-            <option
-              key={option}
-              value={option}
-            >
-              {option}
+        /* ================================================================
+           SELECT
+           ================================================================ */
+
+        <div className="relative">
+
+          <select
+            id={inputId}
+            name={name}
+            value={value}
+            onChange={(event) =>
+              onChange(event.target.value)
+            }
+            required={required}
+            className={`
+              ${baseClass}
+              cursor-pointer
+              appearance-none
+              pr-10
+            `}
+            aria-invalid={
+              error ? 'true' : 'false'
+            }
+            aria-describedby={
+              error
+                ? errorId
+                : undefined
+            }
+          >
+            <option value="">
+              Select...
             </option>
-          ))}
-        </select>
+
+            {options?.map(
+              (option) => (
+                <option
+                  key={option}
+                  value={option}
+                >
+                  {option}
+                </option>
+              ),
+            )}
+          </select>
+
+
+          {/* ================================================================
+              SELECT INDICATOR
+              ============================================================= */}
+
+          <span
+            className="
+              pointer-events-none
+              absolute
+              right-4
+              top-1/2
+              -translate-y-1/2
+              text-xs
+              text-brand-brown/45
+            "
+            aria-hidden="true"
+          >
+            ▼
+          </span>
+
+        </div>
+
       ) : (
+
+        /* ================================================================
+           STANDARD INPUT
+           ================================================================ */
+
         <input
           id={inputId}
           name={name}
@@ -225,22 +264,14 @@ export function FormField({
       )}
 
 
-      {/* ======================================================================
+      {/* ====================================================================
           VALIDATION MESSAGE
-          =================================================================== */}
+          ================================================================= */}
 
       {error && (
         <p
           id={errorId}
-          className="
-            mt-1.5
-            flex
-            items-start
-            gap-1.5
-            text-xs
-            leading-relaxed
-            text-brand-red
-          "
+          className="form-error flex items-start gap-1.5"
           role="alert"
         >
           <AlertCircle
@@ -258,6 +289,7 @@ export function FormField({
           </span>
         </p>
       )}
+
     </div>
   );
 }
@@ -272,6 +304,7 @@ export function useFormState<
     [K in keyof T]: string;
   },
 >(initial: T) {
+
   const [values, setValues] =
     useState<T>(initial);
 
@@ -284,10 +317,15 @@ export function useFormState<
     useState<FormStatus>('idle');
 
 
+  /* ------------------------------------------------------------------------
+     SET VALUE
+     ------------------------------------------------------------------------ */
+
   const setValue = (
     name: keyof T,
     value: string,
   ) => {
+
     setValues(
       (previous) =>
         ({
@@ -296,6 +334,7 @@ export function useFormState<
         }) as T,
     );
 
+
     setErrors(
       (previous) => ({
         ...previous,
@@ -303,49 +342,67 @@ export function useFormState<
       }),
     );
 
+
     if (status === 'error') {
       setStatus('idle');
     }
   };
 
 
+  /* ------------------------------------------------------------------------
+     VALIDATE
+     ------------------------------------------------------------------------ */
+
   const validate = (
     rules: Partial<
       Record<
         keyof T,
-        (value: string) =>
+        (
+          value: string,
+        ) =>
           | string
           | undefined
       >
     >,
   ): boolean => {
+
     const newErrors: Partial<
       Record<keyof T, string>
     > = {};
 
+
     for (const key in rules) {
+
       const rule = rules[key];
 
       if (!rule) {
         continue;
       }
 
+
       const error = rule(
         values[key],
       );
+
 
       if (error) {
         newErrors[key] = error;
       }
     }
 
+
     setErrors(newErrors);
+
 
     return (
       Object.keys(newErrors).length === 0
     );
   };
 
+
+  /* ------------------------------------------------------------------------
+     RESET
+     ------------------------------------------------------------------------ */
 
   const reset = () => {
     setValues(initial);
@@ -376,31 +433,31 @@ export interface FormStatusMessageProps {
   errorMsg?: string;
 }
 
+
 export function FormStatusMessage({
   status,
   successMsg = 'Submitted successfully!',
   errorMsg =
     'Something went wrong. Please try again or contact us directly.',
 }: FormStatusMessageProps) {
+
+  /* ------------------------------------------------------------------------
+     SUCCESS
+     ------------------------------------------------------------------------ */
+
   if (status === 'success') {
     return (
       <div
         className="
+          form-success
           flex
           items-start
           gap-2.5
-          rounded-xl
-          border
-          border-green-200
-          bg-green-50
-          p-3
-          text-sm
-          leading-relaxed
-          text-green-700
           animate-scale-in
         "
         role="status"
       >
+
         <CheckCircle
           className="
             mt-0.5
@@ -414,10 +471,15 @@ export function FormStatusMessage({
         <span>
           {successMsg}
         </span>
+
       </div>
     );
   }
 
+
+  /* ------------------------------------------------------------------------
+     ERROR
+     ------------------------------------------------------------------------ */
 
   if (status === 'error') {
     return (
@@ -428,8 +490,8 @@ export function FormStatusMessage({
           gap-2.5
           rounded-xl
           border
-          border-red-200
-          bg-red-50
+          border-brand-red/20
+          bg-brand-red/5
           p-3
           text-sm
           leading-relaxed
@@ -438,6 +500,7 @@ export function FormStatusMessage({
         "
         role="alert"
       >
+
         <AlertCircle
           className="
             mt-0.5
@@ -451,6 +514,7 @@ export function FormStatusMessage({
         <span>
           {errorMsg}
         </span>
+
       </div>
     );
   }
@@ -473,6 +537,7 @@ export function SubmitButton({
   label: string;
   className?: string;
 }) {
+
   const isSubmitting =
     status === 'submitting';
 
@@ -500,6 +565,7 @@ export function SubmitButton({
         }
       `}
     >
+
       {isSubmitting ? (
         <>
           <Loader2
@@ -518,10 +584,7 @@ export function SubmitButton({
       ) : isSuccess ? (
         <>
           <CheckCircle
-            className="
-              h-4
-              w-4
-            "
+            className="h-4 w-4"
             aria-hidden="true"
           />
 
@@ -532,6 +595,7 @@ export function SubmitButton({
       ) : (
         label
       )}
+
     </button>
   );
 }
@@ -547,7 +611,12 @@ export function FormContainer({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-4">
+    <div
+      className="
+        space-y-4
+        sm:space-y-5
+      "
+    >
       {children}
     </div>
   );
@@ -577,14 +646,17 @@ export async function simulateSubmit(
    ========================================================================== */
 
 export const validators = {
+
   required:
     (
-      message = 'This field is required',
+      message =
+        'This field is required',
     ) =>
     (value: string) =>
       value.trim()
         ? undefined
         : message,
+
 
   email:
     (
@@ -598,6 +670,7 @@ export const validators = {
         ? undefined
         : message,
 
+
   phone:
     (
       message =
@@ -609,6 +682,7 @@ export const validators = {
       )
         ? undefined
         : message,
+
 
   pincode:
     (
