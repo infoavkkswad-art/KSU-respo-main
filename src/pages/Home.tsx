@@ -25,12 +25,12 @@ import { brand } from '@/data/brand';
    Conversion flow:
    ATTENTION → TRUST → CHOICE → DESIRE → MEANING → PROOF → ACTION
 
-   Spacing strategy:
-   - Compact first viewport
-   - Strong visual hierarchy
-   - Reduced empty vertical space
-   - Consistent shared design system
-   - No unnecessary page-level whitespace
+   Hero update:
+   - Better vertical balance
+   - Stronger mascot presence
+   - Reduced dead space
+   - More premium visual composition
+   - Desktop and mobile responsive
    ========================================================================== */
 
 
@@ -97,9 +97,10 @@ export default function Home() {
           relative
           overflow-hidden
           bg-brand-ivory
-          py-7
-          sm:py-10
-          lg:py-14
+          py-5
+          sm:py-7
+          lg:py-9
+          xl:py-11
         "
       >
 
@@ -113,33 +114,59 @@ export default function Home() {
             absolute
             inset-0
             bg-grid
-            opacity-40
+            opacity-30
           "
           aria-hidden="true"
         />
 
 
         {/* --------------------------------------------------------------------
-            DECORATIVE CIRCLE
+            LARGE DECORATIVE CIRCLE
             ----------------------------------------------------------------- */}
 
         <div
           className="
             pointer-events-none
             absolute
-            -right-24
-            -top-24
+            -right-20
+            -top-20
             h-56
             w-56
             rounded-full
             border
             border-brand-saffron/15
-            sm:h-80
-            sm:w-80
+            sm:h-72
+            sm:w-72
             lg:-right-40
-            lg:-top-40
+            lg:-top-44
             lg:h-[34rem]
             lg:w-[34rem]
+            xl:h-[38rem]
+            xl:w-[38rem]
+          "
+          aria-hidden="true"
+        />
+
+
+        {/* --------------------------------------------------------------------
+            SECONDARY DECORATIVE ARC
+            ----------------------------------------------------------------- */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -bottom-20
+            -left-20
+            hidden
+            h-44
+            w-44
+            rounded-full
+            border
+            border-brand-green/10
+            lg:block
+            xl:h-56
+            xl:w-56
           "
           aria-hidden="true"
         />
@@ -149,16 +176,25 @@ export default function Home() {
             HERO CONTENT
             ----------------------------------------------------------------- */}
 
-        <div className="container-max container-px relative">
+        <div
+          className="
+            container-max
+            container-px
+            relative
+          "
+        >
 
           <div
             className="
               grid
               items-center
-              gap-7
+              gap-6
+              sm:gap-8
+              lg:min-h-[610px]
               lg:grid-cols-12
-              lg:gap-9
-              xl:gap-14
+              lg:gap-8
+              xl:min-h-[650px]
+              xl:gap-12
             "
           >
 
@@ -170,14 +206,17 @@ export default function Home() {
               className="
                 animate-fade-up
                 lg:col-span-6
+                lg:-translate-y-6
+                xl:-translate-y-8
               "
             >
 
               <span
                 className="
                   section-eyebrow
-                  mb-3
+                  mb-2.5
                   block
+                  sm:mb-3
                 "
               >
                 Nimar · Since 2025
@@ -190,6 +229,7 @@ export default function Home() {
                   font-serif
                   text-display-sm
                   font-bold
+                  leading-[0.94]
                   text-brand-green
                 "
               >
@@ -208,8 +248,9 @@ export default function Home() {
                   text-base
                   leading-relaxed
                   text-brand-brown/70
+                  sm:mt-5
                   sm:text-lg
-                  lg:mt-5
+                  lg:max-w-[560px]
                 "
               >
                 Traditional flavour, made with care.
@@ -224,11 +265,12 @@ export default function Home() {
 
               <div
                 className="
-                  mt-6
+                  mt-5
                   flex
                   w-full
                   flex-col
                   gap-2.5
+                  sm:mt-6
                   sm:flex-row
                   sm:flex-wrap
                   sm:gap-3
@@ -242,6 +284,10 @@ export default function Home() {
                     min-h-[48px]
                     w-full
                     px-6
+                    shadow-green-glow
+                    transition-all
+                    duration-300
+                    hover:-translate-y-0.5
                     sm:w-auto
                     sm:px-7
                   "
@@ -249,7 +295,13 @@ export default function Home() {
                   Shop Papads
 
                   <ArrowRight
-                    className="h-4 w-4"
+                    className="
+                      h-4
+                      w-4
+                      transition-transform
+                      duration-300
+                      group-hover:translate-x-1
+                    "
                     aria-hidden="true"
                   />
                 </Link>
@@ -262,6 +314,9 @@ export default function Home() {
                     min-h-[48px]
                     w-full
                     px-6
+                    transition-all
+                    duration-300
+                    hover:-translate-y-0.5
                     sm:w-auto
                     sm:px-7
                   "
@@ -278,7 +333,7 @@ export default function Home() {
 
               <div
                 className="
-                  mt-6
+                  mt-5
                   flex
                   flex-wrap
                   items-center
@@ -286,6 +341,7 @@ export default function Home() {
                   gap-y-1.5
                   text-xs
                   text-brand-brown/55
+                  sm:mt-6
                 "
               >
 
@@ -297,6 +353,7 @@ export default function Home() {
                   className="
                     h-1
                     w-1
+                    shrink-0
                     rounded-full
                     bg-brand-saffron
                   "
@@ -328,10 +385,33 @@ export default function Home() {
                   relative
                   mx-auto
                   w-full
-                  max-w-[400px]
-                  lg:max-w-[410px]
+                  max-w-[430px]
+                  sm:max-w-[450px]
+                  lg:max-w-[455px]
+                  xl:max-w-[480px]
                 "
               >
+
+                {/* ------------------------------------------------------------
+                    BACKGROUND DEPTH
+                    ------------------------------------------------------------ */}
+
+                <div
+                  className="
+                    pointer-events-none
+                    absolute
+                    inset-x-5
+                    bottom-[-14px]
+                    top-5
+                    rounded-[2rem]
+                    bg-brand-saffron/10
+                    blur-[1px]
+                    sm:inset-x-6
+                    sm:bottom-[-18px]
+                  "
+                  aria-hidden="true"
+                />
+
 
                 {/* ------------------------------------------------------------
                     VIDEO CONTAINER
@@ -341,11 +421,18 @@ export default function Home() {
                   className="
                     image-premium
                     relative
+                    z-10
                     aspect-[9/16]
                     overflow-hidden
-                    rounded-3xl
+                    rounded-[2rem]
+                    border
+                    border-brand-green/10
                     bg-brand-ivory-dark
                     shadow-lift
+                    transition-transform
+                    duration-700
+                    ease-ks-standard
+                    hover:-translate-y-1
                   "
                 >
 
@@ -389,7 +476,7 @@ export default function Home() {
 
 
                   {/* ----------------------------------------------------------
-                      PREMIUM OVERLAY
+                      PREMIUM VIDEO OVERLAY
                       ---------------------------------------------------------- */}
 
                   <div
@@ -398,9 +485,28 @@ export default function Home() {
                       absolute
                       inset-0
                       bg-gradient-to-t
-                      from-brand-green/15
+                      from-brand-green/20
                       via-transparent
                       to-white/10
+                    "
+                    aria-hidden="true"
+                  />
+
+
+                  {/* ----------------------------------------------------------
+                      TOP GLASS HIGHLIGHT
+                      ---------------------------------------------------------- */}
+
+                  <div
+                    className="
+                      pointer-events-none
+                      absolute
+                      inset-x-0
+                      top-0
+                      h-24
+                      bg-gradient-to-b
+                      from-white/10
+                      to-transparent
                     "
                     aria-hidden="true"
                   />
@@ -416,8 +522,9 @@ export default function Home() {
                   className="
                     pointer-events-none
                     absolute
-                    -bottom-6
-                    -right-6
+                    -bottom-5
+                    -right-5
+                    z-0
                     h-24
                     w-24
                     rounded-full
@@ -427,6 +534,8 @@ export default function Home() {
                     sm:-right-7
                     sm:h-32
                     sm:w-32
+                    lg:h-36
+                    lg:w-36
                   "
                   aria-hidden="true"
                 />
@@ -441,13 +550,16 @@ export default function Home() {
                     absolute
                     -bottom-3
                     left-3
+                    z-20
                     rounded-2xl
+                    border
+                    border-brand-ivory/10
                     bg-brand-green
                     px-4
                     py-3
                     shadow-card
                     sm:-bottom-4
-                    sm:-left-4
+                    sm:-left-5
                     sm:px-5
                     sm:py-4
                   "
