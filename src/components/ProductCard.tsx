@@ -79,7 +79,8 @@ import {
    - Card uses layered depth rather than excessive shadows.
    - Hover lift is subtle and premium.
    - Mobile remains stable and touch-friendly.
-   - Pricing / SKU / review / cart logic remains authoritative.
+   - Website selling price is the ONLY displayed product price.
+   - MRP / discount presentation is intentionally removed.
    ========================================================================== */
 
 
@@ -264,26 +265,6 @@ export function ProductCard({
     reviewSummary.averageRating > 0;
 
 
-  const hasDiscount =
-    selectedSku.mrp >
-    selectedSku.websitePrice;
-
-
-  const discountPercent =
-    hasDiscount
-      ? Math.round(
-          (
-            (
-              selectedSku.mrp -
-              selectedSku.websitePrice
-            ) /
-            selectedSku.mrp
-          ) *
-            100,
-        )
-      : 0;
-
-
   /* ==========================================================================
      ADD TO CART
      ======================================================================== */
@@ -452,6 +433,7 @@ export function ProductCard({
           aria-hidden="true"
         />
 
+
         {/* ==================================================================
             BACKGROUND GLOW
             ================================================================== */}
@@ -481,8 +463,6 @@ export function ProductCard({
 
         {/* ==================================================================
             GROUNDING SHADOW
-
-            Creates the visual connection between product and surface.
             ================================================================== */}
 
         <div
@@ -511,9 +491,6 @@ export function ProductCard({
 
         {/* ==================================================================
             PRODUCT VISUAL
-
-            Intentional breathing room prevents packaging from touching
-            the edge of the visual stage.
             ================================================================== */}
 
         <div
@@ -683,34 +660,6 @@ export function ProductCard({
         >
           {product.category}
         </div>
-
-
-        {/* ==================================================================
-            DISCOUNT CHIP
-            ================================================================== */}
-
-        {hasDiscount &&
-          discountPercent > 0 && (
-            <div
-              className="
-                pointer-events-none
-                absolute
-                right-4
-                top-4
-                z-50
-                rounded-full
-                bg-brand-saffron
-                px-2.5
-                py-1
-                text-[9px]
-                font-bold
-                text-white
-                shadow-soft
-              "
-            >
-              {discountPercent}% OFF
-            </div>
-          )}
 
 
         {/* ==================================================================
@@ -1070,16 +1019,18 @@ export function ProductCard({
 
 
           {/* ==================================================================
-              PRICE
+              WEBSITE SELLING PRICE
+              
+              IMPORTANT:
+              Only the current website price is displayed.
+              MRP and discount presentation are intentionally removed.
               ================================================================== */}
 
           <div
             className="
               mb-0.5
               flex
-              flex-wrap
               items-baseline
-              gap-1.5
             "
           >
 
@@ -1094,15 +1045,6 @@ export function ProductCard({
                 selectedSku.websitePrice,
               )}
             </span>
-
-
-            {hasDiscount && (
-              <span className="price-secondary">
-                {formatPrice(
-                  selectedSku.mrp,
-                )}
-              </span>
-            )}
 
           </div>
 
@@ -1145,6 +1087,7 @@ export function ProductCard({
             </strong>
 
           </p>
+
 
         </div>
 
