@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* ==========================================================================
+   KAWAD SWAD 2.0
+   GLOBAL DESIGN + IMAGE SYSTEM
+
+   This stylesheet controls:
+   - Global layout safety
+   - Typography
+   - Shared components
+   - Page hero system
+   - Product image system
+   - Responsive spacing
+   - Accessibility / reduced motion
+
+   IMPORTANT IMAGE RULE:
+   Product artwork must remain completely visible.
+   Product images use object-contain and are never intentionally cropped.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+
 @layer base {
   *,
   *::before,
@@ -22,9 +46,17 @@
     max-width: 100%;
     min-width: 0;
     overflow-x: hidden;
+
     background: #F7F2E8;
     color: #5A4035;
-    font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    font-family:
+      'Poppins',
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
   }
 
   #root {
@@ -34,6 +66,12 @@
     overflow-x: clip;
   }
 
+  /*
+   * Global media safety.
+   *
+   * Do NOT force a fixed height here.
+   * Individual image systems control their own dimensions.
+   */
   img,
   video,
   canvas,
@@ -42,8 +80,15 @@
     max-width: 100%;
   }
 
+  /*
+   * Keep natural image height by default.
+   *
+   * ProductImage.tsx explicitly overrides this with
+   * h-full / max-h-full where required.
+   */
   img {
-    height: auto;
+    width: auto;
+    max-height: 100%;
   }
 
   button,
@@ -69,7 +114,17 @@
   }
 }
 
+
+/* ==========================================================================
+   COMPONENTS
+   ========================================================================== */
+
 @layer components {
+
+  /* ------------------------------------------------------------------------
+     CONTAINERS
+     ------------------------------------------------------------------------ */
+
   .container-px {
     @apply px-4;
   }
@@ -77,6 +132,11 @@
   .container-max {
     @apply mx-auto w-full max-w-7xl;
   }
+
+
+  /* ------------------------------------------------------------------------
+     BUTTONS
+     ------------------------------------------------------------------------ */
 
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold;
@@ -90,15 +150,29 @@
     @apply btn border border-brand-green/30 text-brand-green;
   }
 
+
+  /* ------------------------------------------------------------------------
+     CARDS
+     ------------------------------------------------------------------------ */
+
   .card {
     @apply rounded-2xl bg-white;
-    box-shadow: 0 10px 30px rgba(63, 41, 29, 0.08);
+
+    box-shadow:
+      0 10px 30px rgba(63, 41, 29, 0.08);
   }
 
   .card-flat {
     @apply rounded-2xl bg-white;
-    border: 1px solid rgba(23, 60, 50, 0.1);
+
+    border:
+      1px solid rgba(23, 60, 50, 0.1);
   }
+
+
+  /* ------------------------------------------------------------------------
+     BADGES
+     ------------------------------------------------------------------------ */
 
   .badge {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
@@ -112,6 +186,11 @@
     @apply badge bg-brand-saffron/15 text-brand-saffron-dark;
   }
 
+
+  /* ------------------------------------------------------------------------
+     SECTION TYPOGRAPHY
+     ------------------------------------------------------------------------ */
+
   .section-eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.2em] text-brand-saffron;
   }
@@ -124,9 +203,19 @@
     @apply mt-4 max-w-2xl text-sm leading-6 text-brand-brown/65;
   }
 
+
+  /* ------------------------------------------------------------------------
+     PREMIUM IMAGE WRAPPER
+     ------------------------------------------------------------------------ */
+
   .image-premium {
     @apply overflow-hidden rounded-3xl;
   }
+
+
+  /* ------------------------------------------------------------------------
+     PRODUCT CARD
+     ------------------------------------------------------------------------ */
 
   .product-card {
     @apply card overflow-hidden;
@@ -136,27 +225,152 @@
     @apply badge;
   }
 
+
   /* ========================================================================
-     PAGE HERO
+     PRODUCT IMAGE SYSTEM
+     ========================================================================
 
-     The hero itself is the positioning context for the image.
+     These classes are intentionally defined globally because the ProductImage
+     component uses them as its central visual system.
 
-     Important:
-     Hero artwork supplied by Kawad Swad is generally 3:2.
-     We must NOT use object-cover here because that crops the artwork.
+     The important rules are:
 
-     The image is instead rendered through the PageHero component using
-     object-contain. These rules make sure the image layer can safely fill
-     the hero without introducing overflow.
+     1. The stage establishes a safe clipping boundary.
+     2. The object layer cannot exceed the stage.
+     3. The actual image uses object-contain.
+     4. No product artwork is cropped with object-cover.
+     5. Images are centered.
+     6. Product images may shrink, but they may not overflow.
      ======================================================================== */
+
+
+  .product-image-stage-card,
+  .product-image-stage-detail,
+  .product-image-stage-hero {
+    position: relative;
+    display: flex;
+
+    width: 100%;
+    height: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+  }
+
+
+  .product-image-object-card,
+  .product-image-object-detail,
+  .product-image-object-hero {
+    position: relative;
+
+    display: flex;
+
+    width: 100%;
+    height: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    transform-style: preserve-3d;
+  }
+
+
+  /*
+   * Actual product artwork.
+   *
+   * These selectors deliberately target images inside the product image
+   * system so another component cannot accidentally switch them to
+   * object-cover.
+   */
+
+  .product-image-stage-card img,
+  .product-image-stage-detail img,
+  .product-image-stage-hero img,
+  .product-image-object-card img,
+  .product-image-object-detail img,
+  .product-image-object-hero img {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    max-width: 100%;
+    max-height: 100%;
+
+    margin: 0;
+
+    object-fit: contain;
+    object-position: center center;
+
+    flex: 0 1 auto;
+  }
+
+
+  /*
+   * Product card itself must not introduce an image crop.
+   */
+
+  .product-card-media {
+    position: relative;
+
+    width: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    overflow: hidden;
+  }
+
+
+  /*
+   * Product shadow remains below the packaging rather than replacing
+   * the image with a background treatment.
+   */
+
+  .product-shadow {
+    transform-origin: center center;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     PAGE HERO
+     ------------------------------------------------------------------------ */
 
   .page-hero {
     @apply relative overflow-hidden;
+
     isolation: isolate;
   }
 
+
+  /*
+   * Hero artwork supplied by Kawad Swad is generally 3:2.
+
+   * object-cover must NOT be used for the actual artwork.
+   */
+
+  .page-hero img {
+    object-fit: contain;
+    object-position: center center;
+  }
+
+
   .page-hero-overlay {
     @apply pointer-events-none;
+
     background:
       linear-gradient(
         90deg,
@@ -167,12 +381,23 @@
       );
   }
 
+
+  /* ------------------------------------------------------------------------
+     STORY PANEL
+     ------------------------------------------------------------------------ */
+
   .story-panel {
     @apply rounded-3xl p-6;
   }
 }
 
+
+/* ==========================================================================
+   UTILITIES
+   ========================================================================== */
+
 @layer utilities {
+
   .perspective-card {
     perspective: 1200px;
   }
@@ -189,6 +414,11 @@
     transform-style: preserve-3d;
   }
 
+
+  /* ------------------------------------------------------------------------
+     SCROLLBAR
+     ------------------------------------------------------------------------ */
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -199,7 +429,13 @@
   }
 }
 
+
+/* ==========================================================================
+   TABLET
+   ========================================================================== */
+
 @media (min-width: 640px) {
+
   .container-px {
     @apply px-6;
   }
@@ -216,6 +452,7 @@
     @apply p-8;
   }
 
+
   .page-hero-overlay {
     background:
       linear-gradient(
@@ -228,7 +465,13 @@
   }
 }
 
+
+/* ==========================================================================
+   DESKTOP
+   ========================================================================== */
+
 @media (min-width: 1024px) {
+
   .container-px {
     @apply px-8;
   }
@@ -240,6 +483,7 @@
   .story-panel {
     @apply p-10;
   }
+
 
   .page-hero-overlay {
     background:
@@ -253,13 +497,21 @@
   }
 }
 
+
+/* ==========================================================================
+   REDUCED MOTION
+   ========================================================================== */
+
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+
     scroll-behavior: auto !important;
+
     transition-duration: 0.01ms !important;
   }
 }
