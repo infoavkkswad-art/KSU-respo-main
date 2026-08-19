@@ -31,9 +31,11 @@ import { brand } from '@/data/brand';
    - Ivory   = editorial canvas
    - Brown   = heritage / premium contrast
 
-   IMPORTANT
-   This page intentionally uses the shared design tokens already established
-   across the Kawad Swad 2.0 system. No new page-specific design classes.
+   IMAGE SYSTEM
+   - Hero artwork is displayed completely.
+   - 3:2 artwork is never cropped.
+   - Hero height is intentionally compact.
+   - Green background fills any remaining space.
    ========================================================================== */
 
 
@@ -133,33 +135,68 @@ export default function Business() {
           =================================================================== */}
 
       <section
-        className="relative overflow-hidden"
+        className="
+          relative
+          overflow-hidden
+          bg-brand-green
+        "
         aria-labelledby="business-page-title"
       >
         <div
           className="
             relative
-            min-h-[400px]
+            min-h-[360px]
             w-full
+            overflow-hidden
             bg-brand-green
-            sm:min-h-[480px]
-            lg:min-h-[580px]
+            sm:min-h-[420px]
+            lg:min-h-[480px]
           "
         >
-          <img
-            src={BUSINESS_HERO_IMAGE}
-            alt="Kawad Swad business partnerships and commercial supply"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
+
+          {/* ==================================================================
+              FULL HERO ARTWORK
+
+              IMPORTANT:
+              The supplied business hero artwork is 3:2.
+
+              object-cover was intentionally removed because it crops the
+              artwork when the browser hero ratio differs from 3:2.
+
+              object-contain keeps the entire artwork visible.
+              ================================================================== */}
+
+          <div
             className="
               absolute
               inset-0
-              h-full
-              w-full
-              object-cover
+              flex
+              items-center
+              justify-center
+              overflow-hidden
+              bg-brand-green
             "
-          />
+            aria-hidden="true"
+          >
+            <img
+              src={BUSINESS_HERO_IMAGE}
+              alt=""
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="
+                h-full
+                w-full
+                object-contain
+                object-center
+              "
+            />
+          </div>
+
+
+          {/* ==================================================================
+              HERO OVERLAY
+              ================================================================== */}
 
           <div
             className="
@@ -168,8 +205,8 @@ export default function Business() {
               inset-0
               bg-gradient-to-r
               from-brand-green/95
-              via-brand-green/65
-              to-brand-green/10
+              via-brand-green/60
+              to-brand-green/5
             "
             aria-hidden="true"
           />
@@ -180,7 +217,7 @@ export default function Business() {
               absolute
               inset-0
               bg-gradient-to-t
-              from-brand-green/45
+              from-brand-green/40
               via-transparent
               to-transparent
             "
@@ -204,42 +241,50 @@ export default function Business() {
               absolute
               -right-28
               -top-28
-              h-72
-              w-72
+              h-64
+              w-64
               rounded-full
               border
               border-brand-saffron/15
-              sm:h-96
-              sm:w-96
+              sm:h-80
+              sm:w-80
+              lg:h-96
+              lg:w-96
             "
             aria-hidden="true"
           />
+
+
+          {/* ==================================================================
+              HERO CONTENT
+              ================================================================== */}
 
           <div
             className="
               container-max
               container-px
               relative
+              z-20
               flex
-              min-h-[400px]
+              min-h-[360px]
               items-center
-              sm:min-h-[480px]
-              lg:min-h-[580px]
+              sm:min-h-[420px]
+              lg:min-h-[480px]
             "
           >
             <Reveal>
               <div
                 className="
                   max-w-4xl
-                  py-14
-                  sm:py-16
-                  lg:py-20
+                  py-10
+                  sm:py-12
+                  lg:py-14
                 "
               >
                 <span
                   className="
                     section-eyebrow
-                    mb-4
+                    mb-3
                     block
                     text-brand-saffron
                   "
@@ -268,7 +313,7 @@ export default function Business() {
                 <p
                   className="
                     text-pretty
-                    mt-5
+                    mt-4
                     max-w-2xl
                     text-sm
                     leading-relaxed
@@ -285,11 +330,11 @@ export default function Business() {
 
                 <div
                   className="
-                    mt-7
+                    mt-5
                     flex
                     flex-wrap
-                    gap-2.5
-                    sm:gap-3
+                    gap-2
+                    sm:gap-2.5
                   "
                 >
                   <span className="badge bg-white/10 text-white">
@@ -318,9 +363,9 @@ export default function Business() {
       <section
         className="
           bg-brand-ivory
-          py-14
-          sm:py-18
-          lg:py-24
+          py-12
+          sm:py-14
+          lg:py-18
         "
         aria-labelledby="business-pathways-title"
       >
@@ -330,13 +375,13 @@ export default function Business() {
             <div
               className="
                 mx-auto
-                mb-10
+                mb-8
                 max-w-3xl
                 text-center
-                sm:mb-14
+                sm:mb-10
               "
             >
-              <span className="section-eyebrow mb-3 block">
+              <span className="section-eyebrow mb-2.5 block">
                 Business Hub
               </span>
 
@@ -357,7 +402,7 @@ export default function Business() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-4
+                  mt-3
                   max-w-2xl
                   text-sm
                   leading-relaxed
@@ -373,7 +418,7 @@ export default function Business() {
           </Reveal>
 
 
-          <div className="grid gap-5 lg:grid-cols-12 lg:gap-6">
+          <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
 
             {/* ==================================================================
                 PRIMARY PATHWAY
@@ -386,7 +431,7 @@ export default function Business() {
                     relative
                     flex
                     h-full
-                    min-h-[360px]
+                    min-h-[320px]
                     flex-col
                     justify-between
                     overflow-hidden
@@ -395,8 +440,8 @@ export default function Business() {
                     p-6
                     text-brand-cream
                     shadow-lift
-                    sm:p-8
-                    lg:p-10
+                    sm:p-7
+                    lg:p-8
                   "
                 >
                   <div
@@ -429,7 +474,7 @@ export default function Business() {
 
                     <span
                       className="
-                        mb-6
+                        mb-5
                         inline-flex
                         rounded-full
                         bg-brand-saffron
@@ -448,10 +493,10 @@ export default function Business() {
 
                     <div
                       className="
-                        mb-6
+                        mb-5
                         flex
-                        h-14
-                        w-14
+                        h-12
+                        w-12
                         items-center
                         justify-center
                         rounded-2xl
@@ -463,7 +508,7 @@ export default function Business() {
                       "
                       aria-hidden="true"
                     >
-                      <Package className="h-7 w-7" />
+                      <Package className="h-6 w-6" />
                     </div>
 
                     <h3
@@ -482,7 +527,7 @@ export default function Business() {
                     <p
                       className="
                         text-pretty
-                        mt-4
+                        mt-3
                         max-w-xl
                         text-sm
                         leading-relaxed
@@ -498,12 +543,12 @@ export default function Business() {
                     </p>
                   </div>
 
-                  <div className="relative mt-8">
+                  <div className="relative mt-6">
                     <Link
                       to="/bulk-orders"
                       className="
                         btn-yellow
-                        min-h-[48px]
+                        min-h-[46px]
                         w-full
                         px-6
                         sm:w-auto
@@ -537,7 +582,7 @@ export default function Business() {
                     card
                     flex
                     h-full
-                    min-h-[360px]
+                    min-h-[320px]
                     flex-col
                     justify-between
                     border
@@ -549,14 +594,14 @@ export default function Business() {
                     duration-300
                     hover:-translate-y-1
                     hover:shadow-lift
-                    sm:p-8
+                    sm:p-7
                   "
                 >
                   <div>
 
                     <span
                       className="
-                        mb-6
+                        mb-5
                         inline-flex
                         rounded-full
                         bg-brand-green/10
@@ -574,10 +619,10 @@ export default function Business() {
 
                     <div
                       className="
-                        mb-6
+                        mb-5
                         flex
-                        h-12
-                        w-12
+                        h-11
+                        w-11
                         items-center
                         justify-center
                         rounded-2xl
@@ -586,7 +631,7 @@ export default function Business() {
                       "
                       aria-hidden="true"
                     >
-                      <Store className="h-6 w-6" />
+                      <Store className="h-5 w-5" />
                     </div>
 
                     <h3
@@ -620,14 +665,14 @@ export default function Business() {
                     to="/distributor"
                     className="
                       group
-                      mt-8
+                      mt-6
                       inline-flex
-                      min-h-[44px]
+                      min-h-[42px]
                       items-center
                       gap-2
                       border-t
                       border-brand-green/10
-                      pt-4
+                      pt-3
                       text-sm
                       font-semibold
                       text-brand-green
@@ -675,7 +720,7 @@ export default function Business() {
                           card
                           flex
                           h-full
-                          min-h-[290px]
+                          min-h-[250px]
                           flex-col
                           justify-between
                           border
@@ -687,17 +732,17 @@ export default function Business() {
                           duration-300
                           hover:-translate-y-1
                           hover:shadow-lift
-                          sm:p-8
+                          sm:p-7
                         "
                       >
                         <div>
 
                           <div
                             className="
-                              mb-6
+                              mb-5
                               flex
-                              h-12
-                              w-12
+                              h-11
+                              w-11
                               items-center
                               justify-center
                               rounded-2xl
@@ -708,7 +753,7 @@ export default function Business() {
                             "
                             aria-hidden="true"
                           >
-                            <Icon className="h-6 w-6" />
+                            <Icon className="h-5 w-5" />
                           </div>
 
                           <h3
@@ -740,12 +785,12 @@ export default function Business() {
                           to={item.link}
                           className="
                             inline-flex
-                            min-h-[44px]
+                            min-h-[42px]
                             items-center
                             gap-2
                             border-t
                             border-brand-green/10
-                            pt-4
+                            pt-3
                             text-sm
                             font-semibold
                             text-brand-green
@@ -787,8 +832,8 @@ export default function Business() {
           border-y
           border-brand-green/10
           bg-brand-ivory-dark
-          py-16
-          sm:py-20
+          py-12
+          sm:py-14
         "
         aria-labelledby="who-we-serve-title"
       >
@@ -798,13 +843,13 @@ export default function Business() {
             <div
               className="
                 mx-auto
-                mb-10
+                mb-8
                 max-w-2xl
                 text-center
-                sm:mb-12
+                sm:mb-10
               "
             >
-              <span className="section-eyebrow mb-3 block">
+              <span className="section-eyebrow mb-2.5 block">
                 Who We Serve
               </span>
 
@@ -825,7 +870,7 @@ export default function Business() {
                 className="
                   text-pretty
                   mx-auto
-                  mt-4
+                  mt-3
                   max-w-xl
                   text-sm
                   leading-relaxed
@@ -845,9 +890,9 @@ export default function Business() {
             className="
               grid
               grid-cols-2
-              gap-3
+              gap-2.5
               sm:grid-cols-3
-              sm:gap-4
+              sm:gap-3
               lg:grid-cols-6
             "
           >
@@ -875,15 +920,15 @@ export default function Business() {
                       duration-300
                       hover:-translate-y-1
                       hover:shadow-card
-                      sm:p-6
+                      sm:p-5
                     "
                   >
                     <div
                       className="
-                        mb-3
+                        mb-2.5
                         flex
-                        h-10
-                        w-10
+                        h-9
+                        w-9
                         items-center
                         justify-center
                         rounded-full
@@ -892,7 +937,7 @@ export default function Business() {
                       "
                       aria-hidden="true"
                     >
-                      <Check className="h-5 w-5" />
+                      <Check className="h-4 w-4" />
                     </div>
 
                     <p
@@ -922,9 +967,9 @@ export default function Business() {
       <section
         className="
           bg-brand-ivory
-          py-16
-          sm:py-20
-          lg:py-28
+          py-14
+          sm:py-16
+          lg:py-20
         "
         aria-labelledby="why-partner-title"
       >
@@ -934,9 +979,9 @@ export default function Business() {
             className="
               grid
               items-stretch
-              gap-8
+              gap-7
               lg:grid-cols-12
-              lg:gap-12
+              lg:gap-10
             "
           >
 
@@ -948,7 +993,7 @@ export default function Business() {
               <Reveal>
                 <div className="h-full">
 
-                  <span className="section-eyebrow mb-3 block">
+                  <span className="section-eyebrow mb-2.5 block">
                     Why Partner With Us
                   </span>
 
@@ -970,7 +1015,7 @@ export default function Business() {
                   <p
                     className="
                       text-pretty
-                      mt-5
+                      mt-4
                       max-w-xl
                       text-sm
                       leading-relaxed
@@ -986,9 +1031,9 @@ export default function Business() {
 
                   <ul
                     className="
-                      mt-7
+                      mt-6
                       grid
-                      gap-3
+                      gap-2.5
                       sm:grid-cols-2
                     "
                   >
@@ -1004,7 +1049,7 @@ export default function Business() {
                             border
                             border-brand-green/10
                             bg-white
-                            p-4
+                            p-3.5
                             text-sm
                             leading-relaxed
                             text-brand-brown/75
@@ -1037,13 +1082,12 @@ export default function Business() {
 
                   <div
                     className="
-                      mt-8
+                      mt-6
                       flex
                       flex-col
                       gap-3
                       sm:flex-row
                       sm:flex-wrap
-                      sm:gap-4
                     "
                   >
                     <Link
@@ -1096,8 +1140,8 @@ export default function Business() {
                     p-6
                     text-brand-cream
                     shadow-lift
-                    sm:p-8
-                    lg:p-10
+                    sm:p-7
+                    lg:p-8
                   "
                   aria-labelledby="commercial-support-title"
                 >
@@ -1158,7 +1202,7 @@ export default function Business() {
                     <p
                       className="
                         text-pretty
-                        mt-4
+                        mt-3
                         text-sm
                         leading-relaxed
                         text-brand-cream/80
@@ -1171,18 +1215,18 @@ export default function Business() {
                     </p>
 
 
-                    <div className="mt-8 space-y-3">
+                    <div className="mt-6 space-y-2.5">
 
                       <a
                         href={`tel:${brand.phoneRaw}`}
                         className="
                           flex
-                          min-h-[52px]
+                          min-h-[48px]
                           items-center
                           gap-3
                           rounded-xl
                           bg-white/5
-                          p-3
+                          p-2.5
                           text-sm
                           font-medium
                           text-brand-cream
@@ -1226,12 +1270,12 @@ export default function Business() {
                         rel="noopener noreferrer"
                         className="
                           flex
-                          min-h-[52px]
+                          min-h-[48px]
                           items-center
                           gap-3
                           rounded-xl
                           bg-white/5
-                          p-3
+                          p-2.5
                           text-sm
                           font-medium
                           text-brand-cream
@@ -1273,12 +1317,12 @@ export default function Business() {
                         href={`mailto:${brand.email}`}
                         className="
                           flex
-                          min-h-[52px]
+                          min-h-[48px]
                           items-center
                           gap-3
                           rounded-xl
                           bg-white/5
-                          p-3
+                          p-2.5
                           text-sm
                           font-medium
                           text-brand-cream
@@ -1319,7 +1363,7 @@ export default function Business() {
                   </div>
 
 
-                  <div className="relative mt-8">
+                  <div className="relative mt-6">
                     <Link
                       to="/contact"
                       className="
