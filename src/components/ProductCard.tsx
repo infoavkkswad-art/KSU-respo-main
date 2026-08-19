@@ -69,24 +69,24 @@ import {
       ↓
    BUY
 
-   Commercial authority:
+   IMAGE SYSTEM:
 
-   sales-config.ts
-        ↓
-   ProductService
-        ↓
    ProductCard
+      ↓
+   product-card-media
+      ↓
+   image-adaptive-surface
+      ↓
+   product-visual
+      ↓
+   ProductImage
 
-   This component does NOT invent:
-   - prices
-   - discounts
-   - availability
-   - SKU rules
-
-   Visual authority:
-   - index.css
-   - ProductImage
-   - StarRating
+   Important visual rules:
+   - Product artwork must remain completely visible.
+   - Product packaging must never be intentionally cropped.
+   - Product images receive safe internal breathing room.
+   - The card background fills unused image space.
+   - The actual image keeps its natural proportions.
    ========================================================================== */
 
 
@@ -337,13 +337,17 @@ export function ProductCard({
           group/image
           relative
           block
-          aspect-square
+          aspect-[4/3]
           w-full
+          overflow-hidden
           bg-brand-cream-dark
+          sm:aspect-square
         "
       >
 
-        {/* Adaptive image surface */}
+        {/* ==================================================================
+            ADAPTIVE IMAGE SURFACE
+            ================================================================== */}
 
         <div
           className="
@@ -360,17 +364,20 @@ export function ProductCard({
           aria-hidden="true"
         />
 
-        {/* Grounding shadow */}
+
+        {/* ==================================================================
+            GROUNDING SHADOW
+            ================================================================== */}
 
         <div
           className="
             pointer-events-none
             absolute
-            bottom-[8%]
+            bottom-[7%]
             left-1/2
             z-0
-            h-[8%]
-            w-[48%]
+            h-[7%]
+            w-[42%]
             -translate-x-1/2
             rounded-[50%]
             bg-brand-brown/15
@@ -378,21 +385,44 @@ export function ProductCard({
             transition-all
             duration-500
             ease-ks-standard
-            group-hover/image:w-[55%]
+            group-hover/image:w-[50%]
             group-hover/image:bg-brand-brown/20
           "
           aria-hidden="true"
         />
 
-        {/* Product visual */}
+
+        {/* ==================================================================
+            PRODUCT VISUAL
+
+            The extra padding is intentional.
+
+            It prevents tall product pouches / packets from touching
+            the edge of the card and gives the artwork room to breathe.
+
+            [&_img] rules also protect against an internal object-cover
+            declaration inside ProductImage.
+            ================================================================== */}
 
         <div
           className="
             product-visual
             relative
             z-10
+            flex
             h-full
             w-full
+            items-center
+            justify-center
+            overflow-hidden
+            px-[7%]
+            py-[6%]
+            [&_img]:h-full
+            [&_img]:w-full
+            [&_img]:max-h-full
+            [&_img]:max-w-full
+            [&_img]:object-contain
+            [&_img]:object-center
           "
         >
           <ProductImage
@@ -403,11 +433,16 @@ export function ProductCard({
               product-shadow
               h-full
               w-full
+              object-contain
+              object-center
             "
           />
         </div>
 
-        {/* Soft lighting */}
+
+        {/* ==================================================================
+            SOFT LIGHTING
+            ================================================================== */}
 
         <div
           className="
@@ -428,7 +463,10 @@ export function ProductCard({
           aria-hidden="true"
         />
 
-        {/* Physical frame */}
+
+        {/* ==================================================================
+            PHYSICAL FRAME
+            ================================================================== */}
 
         <div
           className="
@@ -447,7 +485,10 @@ export function ProductCard({
           aria-hidden="true"
         />
 
-        {/* Discovery hint */}
+
+        {/* ==================================================================
+            DISCOVERY HINT
+            ================================================================== */}
 
         <span
           className="
@@ -850,9 +891,6 @@ export function ProductCard({
 
         {/* ====================================================================
             PRIMARY ACTION AREA
-
-            Cart = lower commitment
-            Buy Now = highest conversion action
             ================================================================= */}
 
         <div
@@ -913,10 +951,7 @@ export function ProductCard({
             {added ? (
               <>
                 <Check
-                  className="
-                    h-3.5
-                    w-3.5
-                  "
+                  className="h-3.5 w-3.5"
                   aria-hidden="true"
                 />
 
@@ -927,10 +962,7 @@ export function ProductCard({
             ) : (
               <>
                 <Plus
-                  className="
-                    h-3.5
-                    w-3.5
-                  "
+                  className="h-3.5 w-3.5"
                   aria-hidden="true"
                 />
 
@@ -960,10 +992,7 @@ export function ProductCard({
             "
           >
             <Zap
-              className="
-                h-3.5
-                w-3.5
-              "
+              className="h-3.5 w-3.5"
               aria-hidden="true"
             />
 
