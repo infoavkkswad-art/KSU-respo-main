@@ -7,18 +7,18 @@
    KAWAD SWAD 2.0
    GLOBAL DESIGN + IMAGE SYSTEM
 
-   This stylesheet controls:
+   Controls:
    - Global layout safety
    - Typography
-   - Shared components
-   - Page hero system
+   - Buttons
+   - Forms
+   - Cards
+   - Badges
+   - Section spacing
+   - Page heroes
    - Product image system
-   - Responsive spacing
-   - Accessibility / reduced motion
-
-   IMPORTANT IMAGE RULE:
-   Product artwork must remain completely visible.
-   Product images use object-contain and are never intentionally cropped.
+   - Placeholder image system
+   - Accessibility
    ========================================================================== */
 
 
@@ -57,6 +57,9 @@
       BlinkMacSystemFont,
       'Segoe UI',
       sans-serif;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
@@ -66,12 +69,15 @@
     overflow-x: clip;
   }
 
-  /*
-   * Global media safety.
-   *
-   * Do NOT force a fixed height here.
-   * Individual image systems control their own dimensions.
-   */
+
+  /* ------------------------------------------------------------------------
+     GLOBAL MEDIA SAFETY
+
+     IMPORTANT:
+     Do not impose a global max-height on images.
+     Individual image systems control their own dimensions.
+     ------------------------------------------------------------------------ */
+
   img,
   video,
   canvas,
@@ -80,16 +86,15 @@
     max-width: 100%;
   }
 
-  /*
-   * Keep natural image height by default.
-   *
-   * ProductImage.tsx explicitly overrides this with
-   * h-full / max-h-full where required.
-   */
   img {
     width: auto;
-    max-height: 100%;
+    height: auto;
   }
+
+
+  /* ------------------------------------------------------------------------
+     FORM ELEMENTS
+     ------------------------------------------------------------------------ */
 
   button,
   input,
@@ -103,10 +108,30 @@
     touch-action: manipulation;
   }
 
+  input,
+  select,
+  textarea {
+    color: #5A4035;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     LINKS
+     ------------------------------------------------------------------------ */
+
   a {
     color: inherit;
     text-decoration: none;
   }
+
+
+  /* ------------------------------------------------------------------------
+     SELECTION
+     ------------------------------------------------------------------------ */
 
   ::selection {
     background: #173C32;
@@ -121,9 +146,10 @@
 
 @layer components {
 
-  /* ------------------------------------------------------------------------
+
+  /* ========================================================================
      CONTAINERS
-     ------------------------------------------------------------------------ */
+     ======================================================================== */
 
   .container-px {
     @apply px-4;
@@ -134,26 +160,91 @@
   }
 
 
-  /* ------------------------------------------------------------------------
-     BUTTONS
-     ------------------------------------------------------------------------ */
+  /* ========================================================================
+     TYPOGRAPHY SYSTEM
+     ======================================================================== */
+
+  .type-h1 {
+    @apply font-serif font-bold leading-[1.05] text-brand-green;
+  }
+
+  .type-h2 {
+    @apply font-serif font-bold leading-tight text-brand-green;
+  }
+
+  .section-eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-brand-saffron;
+  }
+
+  .section-title {
+    @apply font-serif text-3xl font-semibold leading-tight text-brand-brown;
+  }
+
+  .section-description {
+    @apply mt-4 max-w-2xl text-sm leading-6 text-brand-brown/65;
+  }
+
+
+  /* ========================================================================
+     BUTTON SYSTEM
+     ======================================================================== */
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold transition-all duration-200;
   }
 
   .btn-primary {
-    @apply btn bg-brand-green text-white;
+    @apply btn bg-brand-green text-white shadow-sm;
+  }
+
+  .btn-primary:hover {
+    @apply -translate-y-0.5 shadow-lift;
+  }
+
+  .btn-primary:active {
+    @apply translate-y-0;
   }
 
   .btn-outline {
-    @apply btn border border-brand-green/30 text-brand-green;
+    @apply btn border border-brand-green/30 bg-transparent text-brand-green;
+  }
+
+  .btn-outline:hover {
+    @apply -translate-y-0.5 border-brand-green/50 bg-brand-green/5;
+  }
+
+  .btn-yellow {
+    @apply btn bg-brand-saffron text-white shadow-sm;
+  }
+
+  .btn-yellow:hover {
+    @apply -translate-y-0.5 bg-brand-saffron-dark shadow-lift;
+  }
+
+  .btn-yellow:active {
+    @apply translate-y-0;
+  }
+
+  .btn-secondary {
+    @apply btn bg-brand-brown text-white shadow-sm;
+  }
+
+  .btn-secondary:hover {
+    @apply -translate-y-0.5 bg-brand-brown/90 shadow-lift;
+  }
+
+  .btn:focus-visible,
+  .btn-primary:focus-visible,
+  .btn-outline:focus-visible,
+  .btn-yellow:focus-visible,
+  .btn-secondary:focus-visible {
+    @apply outline-none ring-2 ring-brand-saffron ring-offset-2 ring-offset-brand-ivory;
   }
 
 
-  /* ------------------------------------------------------------------------
+  /* ========================================================================
      CARDS
-     ------------------------------------------------------------------------ */
+     ======================================================================== */
 
   .card {
     @apply rounded-2xl bg-white;
@@ -170,9 +261,9 @@
   }
 
 
-  /* ------------------------------------------------------------------------
+  /* ========================================================================
      BADGES
-     ------------------------------------------------------------------------ */
+     ======================================================================== */
 
   .badge {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
@@ -186,36 +277,123 @@
     @apply badge bg-brand-saffron/15 text-brand-saffron-dark;
   }
 
-
-  /* ------------------------------------------------------------------------
-     SECTION TYPOGRAPHY
-     ------------------------------------------------------------------------ */
-
-  .section-eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.2em] text-brand-saffron;
-  }
-
-  .section-title {
-    @apply font-serif text-3xl font-semibold leading-tight text-brand-brown;
-  }
-
-  .section-description {
-    @apply mt-4 max-w-2xl text-sm leading-6 text-brand-brown/65;
+  .badge-brown {
+    @apply badge bg-brand-brown/10 text-brand-brown;
   }
 
 
-  /* ------------------------------------------------------------------------
+  /* ========================================================================
+     FORM SYSTEM
+     ========================================================================
+
+     Central form styling used across:
+     - Contact
+     - Distributor
+     - Bulk Orders
+     - Reviews
+     - Checkout
+     - Track Order
+     - Work With Us
+     ======================================================================== */
+
+  .label-field {
+    @apply mb-1.5 block text-xs font-semibold leading-5 text-brand-brown sm:text-sm;
+  }
+
+  .input-field {
+    @apply block w-full min-h-[46px] rounded-xl border border-brand-brown/15 bg-white px-4 py-2.5 text-sm text-brand-brown shadow-sm outline-none transition-all duration-200 placeholder:text-brand-brown/35;
+  }
+
+  .input-field:hover {
+    @apply border-brand-green/25;
+  }
+
+  .input-field:focus {
+    @apply border-brand-green ring-2 ring-brand-green/10;
+  }
+
+  .input-field:disabled {
+    @apply cursor-not-allowed bg-brand-ivory-dark/60 opacity-70;
+  }
+
+  textarea.input-field {
+    min-height: 120px;
+    line-height: 1.6;
+  }
+
+  select.input-field {
+    @apply cursor-pointer appearance-none;
+  }
+
+  .input-field[aria-invalid='true'] {
+    @apply border-brand-red ring-2 ring-brand-red/10;
+  }
+
+  .form-error {
+    @apply mt-1.5 text-xs font-medium leading-relaxed text-brand-red;
+  }
+
+  .form-help {
+    @apply mt-1.5 text-xs leading-relaxed text-brand-brown/50;
+  }
+
+  .form-success {
+    @apply rounded-xl border border-brand-green/15 bg-brand-green/5 px-4 py-3 text-sm text-brand-green;
+  }
+
+
+  /* ========================================================================
+     SECTION SPACING SYSTEM
+     ======================================================================== */
+
+  .section {
+    @apply w-full py-10;
+  }
+
+  .section-sm {
+    @apply w-full py-7;
+  }
+
+  .section-md {
+    @apply w-full py-10;
+  }
+
+  .section-lg {
+    @apply w-full py-14;
+  }
+
+  .section-xl {
+    @apply w-full py-16;
+  }
+
+
+  /* ========================================================================
      PREMIUM IMAGE WRAPPER
-     ------------------------------------------------------------------------ */
+     ======================================================================== */
 
   .image-premium {
     @apply overflow-hidden rounded-3xl;
   }
 
 
-  /* ------------------------------------------------------------------------
+  /* ========================================================================
+     ADAPTIVE IMAGE SURFACE
+
+     Used for:
+     - Placeholder artwork
+     - Editorial image surfaces
+     - Empty image states
+     - Brand visual fallback areas
+     ======================================================================== */
+
+  .image-adaptive-surface {
+    @apply relative flex w-full items-center justify-center overflow-hidden rounded-3xl bg-brand-ivory-dark;
+  }
+
+
+  /* ========================================================================
      PRODUCT CARD
-     ------------------------------------------------------------------------ */
+     ======================================================================== */
 
   .product-card {
     @apply card overflow-hidden;
@@ -230,24 +408,20 @@
      PRODUCT IMAGE SYSTEM
      ========================================================================
 
-     These classes are intentionally defined globally because the ProductImage
-     component uses them as its central visual system.
-
-     The important rules are:
-
-     1. The stage establishes a safe clipping boundary.
-     2. The object layer cannot exceed the stage.
-     3. The actual image uses object-contain.
-     4. No product artwork is cropped with object-cover.
-     5. Images are centered.
-     6. Product images may shrink, but they may not overflow.
+     Rules:
+     1. Stage establishes safe boundaries.
+     2. Artwork remains inside stage.
+     3. Product artwork uses object-contain.
+     4. Product artwork is never intentionally cropped.
+     5. Artwork remains centered.
+     6. Different aspect ratios remain intact.
      ======================================================================== */
-
 
   .product-image-stage-card,
   .product-image-stage-detail,
   .product-image-stage-hero {
     position: relative;
+
     display: flex;
 
     width: 100%;
@@ -285,13 +459,9 @@
   }
 
 
-  /*
-   * Actual product artwork.
-   *
-   * These selectors deliberately target images inside the product image
-   * system so another component cannot accidentally switch them to
-   * object-cover.
-   */
+  /* ------------------------------------------------------------------------
+     ACTUAL PRODUCT ARTWORK
+     ------------------------------------------------------------------------ */
 
   .product-image-stage-card img,
   .product-image-stage-detail img,
@@ -319,9 +489,9 @@
   }
 
 
-  /*
-   * Product card itself must not introduce an image crop.
-   */
+  /* ------------------------------------------------------------------------
+     PRODUCT CARD MEDIA
+     ------------------------------------------------------------------------ */
 
   .product-card-media {
     position: relative;
@@ -335,19 +505,18 @@
   }
 
 
-  /*
-   * Product shadow remains below the packaging rather than replacing
-   * the image with a background treatment.
-   */
+  /* ------------------------------------------------------------------------
+     PRODUCT SHADOW
+     ------------------------------------------------------------------------ */
 
   .product-shadow {
     transform-origin: center center;
   }
 
 
-  /* ------------------------------------------------------------------------
+  /* ========================================================================
      PAGE HERO
-     ------------------------------------------------------------------------ */
+     ======================================================================== */
 
   .page-hero {
     @apply relative overflow-hidden;
@@ -357,9 +526,9 @@
 
 
   /*
-   * Hero artwork supplied by Kawad Swad is generally 3:2.
-
-   * object-cover must NOT be used for the actual artwork.
+   * Designed Kawad Swad hero artwork is generally 3:2.
+   *
+   * Do not crop the supplied artwork.
    */
 
   .page-hero img {
@@ -382,9 +551,9 @@
   }
 
 
-  /* ------------------------------------------------------------------------
+  /* ========================================================================
      STORY PANEL
-     ------------------------------------------------------------------------ */
+     ======================================================================== */
 
   .story-panel {
     @apply rounded-3xl p-6;
@@ -397,6 +566,10 @@
    ========================================================================== */
 
 @layer utilities {
+
+  /* ------------------------------------------------------------------------
+     3D / PERSPECTIVE
+     ------------------------------------------------------------------------ */
 
   .perspective-card {
     perspective: 1200px;
@@ -453,6 +626,35 @@
   }
 
 
+  /* ------------------------------------------------------------------------
+     SECTION SPACING
+     ------------------------------------------------------------------------ */
+
+  .section {
+    @apply py-14;
+  }
+
+  .section-sm {
+    @apply py-9;
+  }
+
+  .section-md {
+    @apply py-12;
+  }
+
+  .section-lg {
+    @apply py-16;
+  }
+
+  .section-xl {
+    @apply py-20;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     HERO OVERLAY
+     ------------------------------------------------------------------------ */
+
   .page-hero-overlay {
     background:
       linear-gradient(
@@ -484,6 +686,35 @@
     @apply p-10;
   }
 
+
+  /* ------------------------------------------------------------------------
+     SECTION SPACING
+     ------------------------------------------------------------------------ */
+
+  .section {
+    @apply py-18;
+  }
+
+  .section-sm {
+    @apply py-11;
+  }
+
+  .section-md {
+    @apply py-14;
+  }
+
+  .section-lg {
+    @apply py-18;
+  }
+
+  .section-xl {
+    @apply py-22;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     HERO OVERLAY
+     ------------------------------------------------------------------------ */
 
   .page-hero-overlay {
     background:
