@@ -447,10 +447,6 @@ export default function Checkout() {
     setPaymentOpening(true);
 
     try {
-      /* ================================================================
-       * CREATE BACKEND ORDER
-       * ================================================================ */
-
       const orderResponse =
         await apiClient.createOrder({
           customer: {
@@ -506,10 +502,6 @@ export default function Checkout() {
         );
       }
 
-      /* ================================================================
-       * LOAD RAZORPAY
-       * ================================================================ */
-
       const loaded =
         await loadRazorpayScript();
 
@@ -521,10 +513,6 @@ export default function Checkout() {
           'Razorpay payment gateway could not be loaded. Please try again.',
         );
       }
-
-      /* ================================================================
-       * RAZORPAY OPTIONS
-       * ================================================================ */
 
       const options: RazorpayOptions = {
         key:
@@ -566,10 +554,6 @@ export default function Checkout() {
             paymentResponse,
           ) => {
             try {
-              /* ======================================================
-               * VERIFY PAYMENT ON SERVER
-               * ====================================================== */
-
               const verification =
                 await apiClient.verifyPayment({
                   razorpay_order_id:
@@ -591,10 +575,6 @@ export default function Checkout() {
                     'Payment verification failed.',
                 );
               }
-
-              /* ======================================================
-               * SAVE VERIFIED ORDER
-               * ====================================================== */
 
               setCompletedOrder({
                 orderId:
@@ -621,10 +601,6 @@ export default function Checkout() {
 
                 status: 'confirmed',
               });
-
-              /* ======================================================
-               * CLEAR CART
-               * ====================================================== */
 
               clearCart();
 
@@ -711,7 +687,16 @@ export default function Checkout() {
           indexable={false}
         />
 
-        <section className="container-max container-px py-16 text-center sm:py-20">
+        <section
+          className="
+            container-max
+            container-px
+            py-12
+            text-center
+            sm:py-14
+            lg:py-16
+          "
+        >
           <ShoppingBag className="mx-auto h-12 w-12 text-brand-brown/20" />
 
           <h1 className="mt-4 font-serif text-2xl font-bold text-brand-brown sm:text-3xl">
@@ -726,7 +711,7 @@ export default function Checkout() {
 
           <Link
             to="/shop"
-            className="btn-primary mt-6 inline-flex"
+            className="btn-primary mt-5 inline-flex"
           >
             Shop Papads
           </Link>
@@ -748,10 +733,31 @@ export default function Checkout() {
         indexable={false}
       />
 
-      <section className="bg-brand-cream py-6 sm:py-8 lg:py-12">
+      <section
+        className="
+          bg-brand-cream
+          py-3
+          sm:py-4
+          lg:py-6
+        "
+      >
         <div className="container-max container-px">
 
-          <div className="mb-5 flex items-center gap-2 text-xs text-brand-brown/50 sm:mb-6">
+          {/* ================================================================
+              BREADCRUMB
+          ================================================================ */}
+
+          <div
+            className="
+              mb-3
+              flex
+              items-center
+              gap-2
+              text-xs
+              text-brand-brown/50
+              sm:mb-4
+            "
+          >
             <Link
               to="/cart"
               className="transition-colors hover:text-brand-red"
@@ -764,7 +770,16 @@ export default function Checkout() {
             <span>Checkout</span>
           </div>
 
-          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10">
+
+          <div
+            className="
+              grid
+              items-start
+              gap-5
+              lg:grid-cols-[minmax(0,1fr)_380px]
+              lg:gap-7
+            "
+          >
 
             {/* ================================================================
                 CUSTOMER FORM
@@ -780,21 +795,57 @@ export default function Checkout() {
                 bg-white
                 p-4
                 shadow-soft
-                sm:p-6
-                lg:p-8
+                sm:p-5
+                lg:p-6
               "
             >
-              <div className="mb-7 flex items-center gap-4 border-b border-brand-brown/10 pb-6">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-red/10">
-                  <Lock className="h-6 w-6 text-brand-red" />
+              <div
+                className="
+                  mb-5
+                  flex
+                  items-center
+                  gap-3
+                  border-b
+                  border-brand-brown/10
+                  pb-4
+                "
+              >
+                <div
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-brand-red/10
+                  "
+                >
+                  <Lock className="h-5 w-5 text-brand-red" />
                 </div>
 
                 <div>
-                  <h1 className="font-serif text-2xl font-bold text-brand-brown">
+                  <h1
+                    className="
+                      font-serif
+                      text-xl
+                      font-bold
+                      text-brand-brown
+                      sm:text-2xl
+                    "
+                  >
                     Delivery Details
                   </h1>
 
-                  <p className="mt-1 text-sm text-brand-brown/55">
+                  <p
+                    className="
+                      mt-0.5
+                      text-xs
+                      text-brand-brown/55
+                      sm:text-sm
+                    "
+                  >
                     Enter your details
                     for delivery and
                     secure payment.
@@ -824,7 +875,7 @@ export default function Checkout() {
                   placeholder="Your full name"
                 />
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <FormField
                     label="Mobile Number"
                     name="phone"
@@ -887,10 +938,10 @@ export default function Checkout() {
                   required
                   autoComplete="street-address"
                   placeholder="House / flat number, street, area"
-                  rows={4}
+                  rows={3}
                 />
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <FormField
                     label="City"
                     name="city"
@@ -963,7 +1014,7 @@ export default function Checkout() {
               </FormContainer>
 
               {error && (
-                <div className="mt-5">
+                <div className="mt-4">
                   <FormStatusMessage
                     status="error"
                     errorMsg={error}
@@ -971,7 +1022,14 @@ export default function Checkout() {
                 </div>
               )}
 
-              <div className="mt-7 border-t border-brand-brown/10 pt-6">
+              <div
+                className="
+                  mt-5
+                  border-t
+                  border-brand-brown/10
+                  pt-4
+                "
+              >
                 <button
                   type="submit"
                   disabled={
@@ -981,7 +1039,7 @@ export default function Checkout() {
                   }
                   className="
                     flex
-                    min-h-[54px]
+                    min-h-[50px]
                     w-full
                     items-center
                     justify-center
@@ -992,7 +1050,7 @@ export default function Checkout() {
                     py-3
                     font-bold
                     text-white
-                    shadow-[0_5px_0_#b9230a]
+                    shadow-[0_4px_0_#b9230a]
                     transition-all
                     hover:-translate-y-0.5
                     hover:bg-brand-red-dark
@@ -1027,25 +1085,35 @@ export default function Checkout() {
                 </button>
               </div>
 
-              <div className="mt-5 grid grid-cols-3 gap-3 border-t border-brand-brown/10 pt-5">
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <ShieldCheck className="h-5 w-5 text-green-700" />
+              <div
+                className="
+                  mt-4
+                  grid
+                  grid-cols-3
+                  gap-2
+                  border-t
+                  border-brand-brown/10
+                  pt-4
+                "
+              >
+                <div className="flex flex-col items-center gap-1.5 text-center">
+                  <ShieldCheck className="h-4 w-4 text-green-700" />
 
                   <span className="text-[10px] font-medium text-brand-brown/60">
                     Secure payment
                   </span>
                 </div>
 
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <Truck className="h-5 w-5 text-brand-brown/45" />
+                <div className="flex flex-col items-center gap-1.5 text-center">
+                  <Truck className="h-4 w-4 text-brand-brown/45" />
 
                   <span className="text-[10px] font-medium text-brand-brown/60">
                     Free shipping
                   </span>
                 </div>
 
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <CheckCircle className="h-5 w-5 text-green-700" />
+                <div className="flex flex-col items-center gap-1.5 text-center">
+                  <CheckCircle className="h-4 w-4 text-green-700" />
 
                   <span className="text-[10px] font-medium text-brand-brown/60">
                     Verified order
@@ -1054,6 +1122,7 @@ export default function Checkout() {
               </div>
             </form>
 
+
             {/* ================================================================
                 ORDER SUMMARY
             ================================================================ */}
@@ -1061,12 +1130,22 @@ export default function Checkout() {
             <aside className="lg:sticky lg:top-24">
               <div className="card overflow-hidden border border-brand-brown/5 bg-white shadow-soft">
 
-                <div className="border-b border-brand-brown/10 bg-brand-cream px-5 py-4">
-                  <h2 className="font-serif text-xl font-bold text-brand-brown">
+                <div
+                  className="
+                    border-b
+                    border-brand-brown/10
+                    bg-brand-cream
+                    px-4
+                    py-3.5
+                    sm:px-5
+                    sm:py-4
+                  "
+                >
+                  <h2 className="font-serif text-lg font-bold text-brand-brown sm:text-xl">
                     Order Summary
                   </h2>
 
-                  <p className="mt-1 text-xs text-brand-brown/50">
+                  <p className="mt-0.5 text-xs text-brand-brown/50">
                     {items.length}{' '}
                     {items.length === 1
                       ? 'product'
@@ -1075,8 +1154,15 @@ export default function Checkout() {
                   </p>
                 </div>
 
-                <div className="max-h-[420px] overflow-y-auto p-5">
-                  <div className="space-y-4">
+                <div
+                  className="
+                    max-h-[360px]
+                    overflow-y-auto
+                    p-4
+                    sm:p-5
+                  "
+                >
+                  <div className="space-y-3">
                     {resolvedItems.map(
                       (item) => {
                         const product =
@@ -1107,7 +1193,15 @@ export default function Checkout() {
                         return (
                           <div
                             key={item.sku}
-                            className="flex gap-3"
+                            className="
+                              flex
+                              gap-3
+                              border-b
+                              border-brand-brown/5
+                              pb-3
+                              last:border-0
+                              last:pb-0
+                            "
                           >
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold text-brand-brown">
@@ -1115,7 +1209,7 @@ export default function Checkout() {
                                   item.sku}
                               </p>
 
-                              <p className="mt-1 text-xs text-brand-brown/50">
+                              <p className="mt-0.5 text-xs text-brand-brown/50">
                                 {packLabel
                                   ? `${packLabel} × ${item.quantity}`
                                   : `Qty: ${item.quantity}`}
@@ -1134,8 +1228,15 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                <div className="border-t border-brand-brown/10 p-5">
-                  <div className="space-y-2.5 text-sm">
+                <div
+                  className="
+                    border-t
+                    border-brand-brown/10
+                    p-4
+                    sm:p-5
+                  "
+                >
+                  <div className="space-y-2 text-sm">
 
                     <div className="flex justify-between gap-4 text-brand-brown/65">
                       <span>
@@ -1163,7 +1264,7 @@ export default function Checkout() {
                       </span>
                     </div>
 
-                    <div className="flex justify-between gap-4 border-t border-brand-brown/10 pt-4">
+                    <div className="flex justify-between gap-4 border-t border-brand-brown/10 pt-3">
                       <span className="font-semibold text-brand-brown">
                         Order Total
                       </span>
@@ -1177,7 +1278,18 @@ export default function Checkout() {
 
                   </div>
 
-                  <div className="mt-5 rounded-xl bg-green-50 px-4 py-3 text-xs leading-relaxed text-green-800">
+                  <div
+                    className="
+                      mt-4
+                      rounded-xl
+                      bg-green-50
+                      px-3
+                      py-2.5
+                      text-xs
+                      leading-relaxed
+                      text-green-800
+                    "
+                  >
                     <strong>
                       Free shipping included.
                     </strong>{' '}
@@ -1191,9 +1303,9 @@ export default function Checkout() {
               <Link
                 to="/cart"
                 className="
-                  mt-4
+                  mt-3
                   inline-flex
-                  min-h-[44px]
+                  min-h-[42px]
                   w-full
                   items-center
                   justify-center
@@ -1203,7 +1315,7 @@ export default function Checkout() {
                   border-brand-brown/10
                   bg-white
                   px-4
-                  py-2.5
+                  py-2
                   text-sm
                   font-semibold
                   text-brand-brown
