@@ -26,6 +26,12 @@ import { brand } from '@/data/brand';
    - Saffron = appetite / highlights / action
    - Ivory = editorial canvas
    - Brown = heritage / contrast
+
+   Image system:
+   - Hero artwork is displayed completely.
+   - 3:2 artwork is never cropped.
+   - Hero background fills remaining space.
+   - Secondary editorial images use object-contain.
    ========================================================================== */
 
 
@@ -100,28 +106,58 @@ export default function About() {
         "
         aria-labelledby="about-page-title"
       >
+        {/* ====================================================================
+            IMAGE STAGE
+
+            The previous version used object-cover.
+
+            That caused the supplied 3:2 artwork to be cropped whenever the
+            browser hero ratio was different from the artwork ratio.
+
+            This version gives the artwork its own centered stage and uses
+            object-contain so the complete artwork remains visible.
+            ================================================================= */}
+
         <div
           className="
             relative
             min-h-[380px]
+            overflow-hidden
             sm:min-h-[460px]
             lg:min-h-[560px]
           "
         >
-          <img
-            src={ABOUT_HERO_IMAGE}
-            alt="Kawad Swad and the Nimar region"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
+          <div
             className="
               absolute
               inset-0
-              h-full
-              w-full
-              object-cover
+              flex
+              items-center
+              justify-center
+              overflow-hidden
+              bg-brand-green
             "
-          />
+            aria-hidden="true"
+          >
+            <img
+              src={ABOUT_HERO_IMAGE}
+              alt=""
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="
+                h-full
+                w-full
+                object-contain
+                object-center
+              "
+            />
+          </div>
+
+
+          {/* ==================================================================
+              HERO READABILITY OVERLAY
+              ================================================================== */}
 
           <div
             className="
@@ -160,11 +196,17 @@ export default function About() {
             aria-hidden="true"
           />
 
+
+          {/* ==================================================================
+              HERO CONTENT
+              ================================================================== */}
+
           <div
             className="
               container-max
               container-px
               relative
+              z-20
               flex
               min-h-[380px]
               items-center
@@ -392,10 +434,11 @@ export default function About() {
                     decoding="async"
                     className="
                       block
-                      aspect-[4/3]
-                      h-full
+                      h-auto
+                      max-h-[620px]
                       w-full
-                      object-cover
+                      object-contain
+                      object-center
                     "
                   />
                 </div>
@@ -609,10 +652,11 @@ export default function About() {
                     decoding="async"
                     className="
                       block
-                      aspect-[4/3]
-                      h-full
+                      h-auto
+                      max-h-[620px]
                       w-full
-                      object-cover
+                      object-contain
+                      object-center
                     "
                   />
                 </div>
