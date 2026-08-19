@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+
 import {
   ArrowRight,
   Check,
@@ -15,24 +16,23 @@ import { brand } from '@/data/brand';
 
 /* ==========================================================================
    KAWAD SWAD 2.0
-   CENTRAL MANUFACTURING EXPERIENCE
+   MANUFACTURING PAGE
 
-   Narrative:
-   HERO → PROCESS INTRO → PRODUCTION JOURNEY
-   → MANUFACTURING PHILOSOPHY → QUALITY SYSTEM
-   → B2B ACTION
+   Visual hierarchy:
+   HERO
+   → PROCESS INTRO
+   → PRODUCTION JOURNEY
+   → MANUFACTURING PHILOSOPHY
+   → QUALITY SYSTEM
+   → BUSINESS ACTION
+   → FINAL CTA
 
-   Central design system:
-   - Green   = trust / manufacturing confidence
-   - Saffron = process highlights / action
-   - Ivory   = editorial canvas
-   - Brown   = premium contrast
-
-   Image system:
-   - Hero artwork is displayed completely.
-   - 3:2 artwork is never cropped.
-   - Hero height is intentionally compact.
-   - Production artwork uses natural image ratio.
+   Image rules:
+   - Supplied manufacturing artwork is never cropped.
+   - 3:2 artwork remains completely visible.
+   - Production artwork keeps its natural aspect ratio.
+   - No object-cover is used for supplied brand artwork.
+   - Vertical spacing is intentionally compact.
    ========================================================================== */
 
 
@@ -132,28 +132,32 @@ export default function Manufacturing() {
         "
         aria-labelledby="manufacturing-title"
       >
+
         <div
           className="
             relative
-            min-h-[330px]
+            min-h-[280px]
             w-full
             overflow-hidden
             bg-brand-green
-            sm:min-h-[390px]
-            lg:min-h-[440px]
+            sm:min-h-[330px]
+            lg:min-h-[370px]
           "
         >
 
           {/* ==================================================================
-              FULL HERO ARTWORK
+              COMPLETE HERO ARTWORK
 
-              object-contain keeps the complete artwork visible.
+              The supplied artwork is 3:2.
+              It is intentionally contained instead of cropped.
               ================================================================== */}
 
           <div
             className="
+              pointer-events-none
               absolute
               inset-0
+              z-0
               flex
               items-center
               justify-center
@@ -169,8 +173,11 @@ export default function Manufacturing() {
               fetchPriority="high"
               decoding="async"
               className="
+                block
                 h-full
                 w-full
+                max-h-full
+                max-w-full
                 object-contain
                 object-center
               "
@@ -179,7 +186,7 @@ export default function Manufacturing() {
 
 
           {/* ==================================================================
-              HERO OVERLAY
+              HERO READABILITY
               ================================================================== */}
 
           <div
@@ -187,9 +194,10 @@ export default function Manufacturing() {
               pointer-events-none
               absolute
               inset-0
+              z-10
               bg-gradient-to-r
               from-brand-green/95
-              via-brand-green/60
+              via-brand-green/58
               to-brand-green/5
             "
             aria-hidden="true"
@@ -200,24 +208,36 @@ export default function Manufacturing() {
               pointer-events-none
               absolute
               inset-0
+              z-10
               bg-gradient-to-t
-              from-brand-green/40
+              from-brand-green/35
               via-transparent
               to-transparent
             "
             aria-hidden="true"
           />
 
+
+          {/* ==================================================================
+              SUBTLE TEXTURE
+              ================================================================== */}
+
           <div
             className="
               pointer-events-none
               absolute
               inset-0
+              z-10
               bg-dots
-              opacity-[0.06]
+              opacity-[0.045]
             "
             aria-hidden="true"
           />
+
+
+          {/* ==================================================================
+              DECORATIVE ARC
+              ================================================================== */}
 
           <div
             className="
@@ -225,15 +245,16 @@ export default function Manufacturing() {
               absolute
               -right-20
               -top-20
-              h-56
-              w-56
+              z-10
+              h-48
+              w-48
               rounded-full
               border
               border-brand-saffron/15
-              sm:h-72
-              sm:w-72
-              lg:h-80
-              lg:w-80
+              sm:h-60
+              sm:w-60
+              lg:h-72
+              lg:w-72
             "
             aria-hidden="true"
           />
@@ -250,41 +271,48 @@ export default function Manufacturing() {
               relative
               z-20
               flex
-              min-h-[330px]
+              min-h-[280px]
               items-center
-              sm:min-h-[390px]
-              lg:min-h-[440px]
+              sm:min-h-[330px]
+              lg:min-h-[370px]
             "
           >
+
             <Reveal>
+
               <div
                 className="
                   max-w-3xl
-                  py-8
-                  sm:py-9
-                  lg:py-10
+                  py-7
+                  sm:py-8
+                  lg:py-9
                 "
               >
+
                 <span
                   className="
                     section-eyebrow
-                    mb-2.5
+                    mb-2
                     block
-                    text-brand-saffron
+                    text-brand-saffron-light
                   "
                 >
                   Our Process
                 </span>
 
+
                 <h1
                   id="manufacturing-title"
                   className="
+                    max-w-3xl
                     text-balance
                     font-serif
-                    text-display-sm
+                    text-3xl
                     font-bold
-                    leading-[1.02]
+                    leading-[1.04]
                     text-white
+                    sm:text-4xl
+                    lg:text-5xl
                   "
                 >
                   Crafted with precision,
@@ -293,6 +321,7 @@ export default function Manufacturing() {
                     grounded in tradition.
                   </span>
                 </h1>
+
 
                 <p
                   className="
@@ -312,6 +341,7 @@ export default function Manufacturing() {
                   and hygiene practices.
                 </p>
 
+
                 <div
                   className="
                     mt-4
@@ -320,6 +350,7 @@ export default function Manufacturing() {
                     gap-2
                   "
                 >
+
                   <span className="badge bg-white/10 text-white">
                     Traditional Recipes
                   </span>
@@ -331,11 +362,17 @@ export default function Manufacturing() {
                   <span className="badge bg-white/10 text-white">
                     FSSAI Licensed
                   </span>
+
                 </div>
+
               </div>
+
             </Reveal>
+
           </div>
+
         </div>
+
       </section>
 
 
@@ -346,15 +383,17 @@ export default function Manufacturing() {
       <section
         className="
           bg-brand-ivory
-          py-8
-          sm:py-10
-          lg:py-14
+          py-7
+          sm:py-9
+          lg:py-11
         "
         aria-labelledby="process-overview-title"
       >
+
         <div className="container-max container-px">
 
           <Reveal>
+
             <div
               className="
                 mx-auto
@@ -362,22 +401,28 @@ export default function Manufacturing() {
                 text-center
               "
             >
+
               <span className="section-eyebrow mb-2 block">
                 From Flour to Crisp
               </span>
+
 
               <h2
                 id="process-overview-title"
                 className="
                   text-balance
                   font-serif
-                  text-headline-md
+                  text-2xl
                   font-bold
+                  leading-tight
                   text-brand-green
+                  sm:text-3xl
+                  lg:text-4xl
                 "
               >
                 Five stages. One consistent standard.
               </h2>
+
 
               <p
                 className="
@@ -396,10 +441,13 @@ export default function Manufacturing() {
                 protecting the finished papad inside its
                 final package.
               </p>
+
             </div>
+
           </Reveal>
 
         </div>
+
       </section>
 
 
@@ -410,17 +458,20 @@ export default function Manufacturing() {
       <section
         className="
           bg-brand-ivory
-          pb-10
-          sm:pb-12
-          lg:pb-16
+          pb-8
+          sm:pb-10
+          lg:pb-13
         "
         aria-label="Manufacturing process"
       >
+
         <div className="container-max container-px">
 
           <div className="relative">
 
-            {/* Central desktop timeline */}
+            {/* --------------------------------------------------------------
+                DESKTOP TIMELINE
+                -------------------------------------------------------------- */}
 
             <div
               className="
@@ -438,185 +489,210 @@ export default function Manufacturing() {
               aria-hidden="true"
             />
 
+
             <div
               className="
-                space-y-8
-                sm:space-y-10
-                lg:space-y-12
+                space-y-6
+                sm:space-y-8
+                lg:space-y-9
               "
             >
 
-              {steps.map((step, index) => (
-                <Reveal
-                  key={step.num}
-                  delay={Math.min(index * 60, 240)}
-                >
-                  <article
-                    className="
-                      relative
-                      grid
-                      items-center
-                      gap-5
-                      lg:grid-cols-2
-                      lg:gap-12
-                    "
+              {steps.map(
+                (step, index) => (
+                  <Reveal
+                    key={step.num}
+                    delay={Math.min(
+                      index * 60,
+                      240,
+                    )}
                   >
 
-                    {/* ========================================================
-                        IMAGE
-                        ===================================================== */}
-
-                    <div
-                      className={`
-                        ${
-                          index % 2 === 1
-                            ? 'lg:order-2'
-                            : 'lg:order-1'
-                        }
-                      `}
+                    <article
+                      className="
+                        relative
+                        grid
+                        items-center
+                        gap-5
+                        lg:grid-cols-2
+                        lg:gap-10
+                      "
                     >
-                      <div
-                        className="
-                          image-premium
-                          border
-                          border-brand-green/10
-                          bg-white
-                          shadow-card
-                        "
-                      >
-                        <PlaceholderImage
-                          label={`${step.title} — real process photography pending`}
-                          aspect="aspect-[4/3]"
-                          className="rounded-3xl"
-                        />
-                      </div>
-                    </div>
 
+                      {/* ======================================================
+                          IMAGE
+                          =================================================== */}
 
-                    {/* ========================================================
-                        CONTENT
-                        ===================================================== */}
-
-                    <div
-                      className={`
-                        ${
-                          index % 2 === 1
-                            ? 'lg:order-1 lg:text-right'
-                            : 'lg:order-2'
-                        }
-                      `}
-                    >
                       <div
                         className={`
-                          flex
-                          items-start
-                          gap-3
                           ${
                             index % 2 === 1
-                              ? 'lg:flex-row-reverse'
-                              : ''
+                              ? 'lg:order-2'
+                              : 'lg:order-1'
                           }
                         `}
                       >
 
                         <div
                           className="
-                            flex
-                            h-10
-                            w-10
-                            shrink-0
-                            items-center
-                            justify-center
-                            rounded-full
+                            image-premium
                             border
-                            border-brand-saffron/20
-                            bg-brand-ivory
-                            font-serif
-                            text-sm
-                            font-bold
-                            text-brand-saffron
-                            shadow-soft
-                            lg:h-11
-                            lg:w-11
+                            border-brand-green/10
+                            bg-white
+                            shadow-card
                           "
-                          aria-hidden="true"
                         >
-                          {step.num}
+
+                          <PlaceholderImage
+                            label={`${step.title} — real process photography pending`}
+                            aspect="aspect-[4/3]"
+                            className="rounded-3xl"
+                          />
+
                         </div>
 
-                        <div className="min-w-0">
-                          <span
-                            className="
-                              block
-                              text-[10px]
-                              font-semibold
-                              uppercase
-                              tracking-[0.18em]
-                              text-brand-saffron
-                            "
-                          >
-                            Production Stage
-                          </span>
-
-                          <h2
-                            className="
-                              text-balance
-                              mt-1
-                              font-serif
-                              text-headline-sm
-                              font-bold
-                              text-brand-green
-                              sm:text-headline-md
-                            "
-                          >
-                            {step.title}
-                          </h2>
-                        </div>
                       </div>
 
-                      <p
-                        className={`
-                          text-pretty
-                          mt-3
-                          max-w-xl
-                          text-sm
-                          leading-relaxed
-                          text-brand-brown/70
-                          sm:text-base
-                          ${
-                            index % 2 === 1
-                              ? 'lg:ml-auto'
-                              : ''
-                          }
-                        `}
-                      >
-                        {step.desc}
-                      </p>
+
+                      {/* ======================================================
+                          CONTENT
+                          =================================================== */}
 
                       <div
                         className={`
-                          mt-3
-                          h-px
-                          w-12
-                          bg-brand-saffron/40
                           ${
                             index % 2 === 1
-                              ? 'lg:ml-auto'
-                              : ''
+                              ? 'lg:order-1 lg:text-right'
+                              : 'lg:order-2'
                           }
                         `}
-                        aria-hidden="true"
-                      />
-                    </div>
+                      >
 
-                  </article>
-                </Reveal>
-              ))}
+                        <div
+                          className={`
+                            flex
+                            items-start
+                            gap-3
+                            ${
+                              index % 2 === 1
+                                ? 'lg:flex-row-reverse'
+                                : ''
+                            }
+                          `}
+                        >
+
+                          <div
+                            className="
+                              flex
+                              h-10
+                              w-10
+                              shrink-0
+                              items-center
+                              justify-center
+                              rounded-full
+                              border
+                              border-brand-saffron/20
+                              bg-brand-ivory
+                              font-serif
+                              text-sm
+                              font-bold
+                              text-brand-saffron
+                              shadow-soft
+                              lg:h-11
+                              lg:w-11
+                            "
+                            aria-hidden="true"
+                          >
+                            {step.num}
+                          </div>
+
+
+                          <div className="min-w-0">
+
+                            <span
+                              className="
+                                block
+                                text-[10px]
+                                font-semibold
+                                uppercase
+                                tracking-[0.18em]
+                                text-brand-saffron
+                              "
+                            >
+                              Production Stage
+                            </span>
+
+
+                            <h2
+                              className="
+                                text-balance
+                                mt-1
+                                font-serif
+                                text-xl
+                                font-bold
+                                leading-tight
+                                text-brand-green
+                                sm:text-2xl
+                                lg:text-3xl
+                              "
+                            >
+                              {step.title}
+                            </h2>
+
+                          </div>
+
+                        </div>
+
+
+                        <p
+                          className={`
+                            text-pretty
+                            mt-3
+                            max-w-xl
+                            text-sm
+                            leading-relaxed
+                            text-brand-brown/70
+                            sm:text-base
+                            ${
+                              index % 2 === 1
+                                ? 'lg:ml-auto'
+                                : ''
+                            }
+                          `}
+                        >
+                          {step.desc}
+                        </p>
+
+
+                        <div
+                          className={`
+                            mt-3
+                            h-px
+                            w-12
+                            bg-brand-saffron/40
+                            ${
+                              index % 2 === 1
+                                ? 'lg:ml-auto'
+                                : ''
+                            }
+                          `}
+                          aria-hidden="true"
+                        />
+
+                      </div>
+
+                    </article>
+
+                  </Reveal>
+                ),
+              )}
 
             </div>
+
           </div>
 
         </div>
+
       </section>
 
 
@@ -629,27 +705,31 @@ export default function Manufacturing() {
           relative
           overflow-hidden
           bg-brand-green
-          py-10
+          py-9
           text-brand-ivory
-          sm:py-13
-          lg:py-16
+          sm:py-11
+          lg:py-14
         "
         aria-labelledby="manufacturing-philosophy-title"
       >
+
         <div
           className="
             pointer-events-none
             absolute
             -right-20
             -top-20
-            h-64
-            w-64
+            h-56
+            w-56
             rounded-full
             border
             border-brand-saffron/10
+            sm:h-64
+            sm:w-64
           "
           aria-hidden="true"
         />
+
 
         <div
           className="
@@ -662,15 +742,22 @@ export default function Manufacturing() {
           aria-hidden="true"
         />
 
-        <div className="container-max container-px relative">
+
+        <div
+          className="
+            container-max
+            container-px
+            relative
+          "
+        >
 
           <div
             className="
               grid
               items-center
-              gap-7
+              gap-6
               lg:grid-cols-12
-              lg:gap-10
+              lg:gap-9
             "
           >
 
@@ -679,7 +766,9 @@ export default function Manufacturing() {
                 ============================================================= */}
 
             <div className="lg:col-span-6">
+
               <Reveal>
+
                 <div>
 
                   <span
@@ -693,19 +782,24 @@ export default function Manufacturing() {
                     Manufacturing Philosophy
                   </span>
 
+
                   <h2
                     id="manufacturing-philosophy-title"
                     className="
                       text-balance
                       font-serif
-                      text-headline-md
+                      text-2xl
                       font-bold
+                      leading-tight
                       text-white
+                      sm:text-3xl
+                      lg:text-4xl
                     "
                   >
                     Honoring tradition through
                     structured execution.
                   </h2>
+
 
                   <p
                     className="
@@ -731,11 +825,12 @@ export default function Manufacturing() {
                     className="
                       mt-5
                       grid
-                      gap-2.5
+                      gap-2
                       sm:grid-cols-3
-                      sm:gap-3
+                      sm:gap-2.5
                     "
                   >
+
                     {[
                       {
                         icon: Leaf,
@@ -753,7 +848,9 @@ export default function Manufacturing() {
                         desc: 'Consistent production capacity',
                       },
                     ].map((item) => {
-                      const Icon = item.icon;
+
+                      const Icon =
+                        item.icon;
 
                       return (
                         <div
@@ -771,6 +868,7 @@ export default function Manufacturing() {
                             sm:p-3.5
                           "
                         >
+
                           <Icon
                             className="
                               mb-2
@@ -780,6 +878,7 @@ export default function Manufacturing() {
                             "
                             aria-hidden="true"
                           />
+
 
                           <h3
                             className="
@@ -793,6 +892,7 @@ export default function Manufacturing() {
                             {item.title}
                           </h3>
 
+
                           <p
                             className="
                               text-xs
@@ -802,13 +902,17 @@ export default function Manufacturing() {
                           >
                             {item.desc}
                           </p>
+
                         </div>
                       );
                     })}
+
                   </div>
 
                 </div>
+
               </Reveal>
+
             </div>
 
 
@@ -817,7 +921,9 @@ export default function Manufacturing() {
                 ============================================================= */}
 
             <div className="lg:col-span-6">
+
               <Reveal delay={120}>
+
                 <div
                   className="
                     image-premium
@@ -827,6 +933,7 @@ export default function Manufacturing() {
                     shadow-lift
                   "
                 >
+
                   <img
                     src={FACTORY_PRODUCTION_IMAGE}
                     alt="Kawad Swad papad production environment"
@@ -835,18 +942,22 @@ export default function Manufacturing() {
                     className="
                       block
                       h-auto
-                      max-h-[500px]
                       w-full
                       object-contain
                       object-center
                     "
                   />
+
                 </div>
+
               </Reveal>
+
             </div>
 
           </div>
+
         </div>
+
       </section>
 
 
@@ -857,40 +968,48 @@ export default function Manufacturing() {
       <section
         className="
           bg-brand-ivory-light
-          py-10
-          sm:py-13
-          lg:py-16
+          py-9
+          sm:py-11
+          lg:py-14
         "
         aria-labelledby="quality-title"
       >
+
         <div className="container-max container-px">
 
           <Reveal>
+
             <div
               className="
                 mx-auto
-                mb-7
+                mb-6
                 max-w-2xl
                 text-center
-                sm:mb-9
+                sm:mb-8
               "
             >
+
               <span className="section-eyebrow mb-2 block">
                 Quality Assurance
               </span>
+
 
               <h2
                 id="quality-title"
                 className="
                   text-balance
                   font-serif
-                  text-headline-md
+                  text-2xl
                   font-bold
+                  leading-tight
                   text-brand-green
+                  sm:text-3xl
+                  lg:text-4xl
                 "
               >
                 Standards built into every batch.
               </h2>
+
 
               <p
                 className="
@@ -908,44 +1027,52 @@ export default function Manufacturing() {
                 product consistent from production through
                 packaging.
               </p>
+
             </div>
+
           </Reveal>
 
 
           <div
             className="
               grid
-              gap-2.5
+              gap-2
               sm:grid-cols-2
               lg:grid-cols-4
-              lg:gap-3
+              lg:gap-2.5
             "
           >
+
             {qualityPoints.map(
               (point, index) => (
                 <Reveal
                   key={point}
-                  delay={Math.min(index * 35, 210)}
+                  delay={Math.min(
+                    index * 35,
+                    210,
+                  )}
                 >
+
                   <div
                     className="
                       card
                       flex
                       h-full
                       items-start
-                      gap-3
+                      gap-2.5
                       border
                       border-brand-green/10
                       bg-white
-                      p-3.5
+                      p-3
                       shadow-soft
                       transition-all
                       duration-300
                       hover:-translate-y-1
                       hover:shadow-lift
-                      sm:p-4
+                      sm:p-3.5
                     "
                   >
+
                     <span
                       className="
                         flex
@@ -958,6 +1085,7 @@ export default function Manufacturing() {
                         bg-brand-green/10
                       "
                     >
+
                       <Check
                         className="
                           h-3.5
@@ -966,7 +1094,9 @@ export default function Manufacturing() {
                         "
                         aria-hidden="true"
                       />
+
                     </span>
+
 
                     <span
                       className="
@@ -978,13 +1108,17 @@ export default function Manufacturing() {
                     >
                       {point}
                     </span>
+
                   </div>
+
                 </Reveal>
               ),
             )}
+
           </div>
 
         </div>
+
       </section>
 
 
@@ -997,33 +1131,45 @@ export default function Manufacturing() {
           border-t
           border-brand-green/10
           bg-brand-ivory-dark
-          py-10
-          sm:py-13
+          py-8
+          sm:py-10
         "
         aria-labelledby="manufacturing-business-title"
       >
+
         <div className="container-max container-px">
 
           <Reveal>
-            <div className="mx-auto max-w-2xl text-center">
+
+            <div
+              className="
+                mx-auto
+                max-w-2xl
+                text-center
+              "
+            >
 
               <span className="section-eyebrow mb-2 block">
                 Business Partnerships
               </span>
+
 
               <h2
                 id="manufacturing-business-title"
                 className="
                   text-balance
                   font-serif
-                  text-headline-sm
+                  text-xl
                   font-bold
+                  leading-tight
                   text-brand-green
-                  sm:text-headline-md
+                  sm:text-2xl
+                  lg:text-3xl
                 "
               >
                 Looking for a reliable papad supply partner?
               </h2>
+
 
               <p
                 className="
@@ -1041,6 +1187,7 @@ export default function Manufacturing() {
                 opportunities with Kawad Swad.
               </p>
 
+
               <div
                 className="
                   mt-5
@@ -1052,6 +1199,7 @@ export default function Manufacturing() {
                   sm:flex-wrap
                 "
               >
+
                 <Link
                   to="/bulk-orders"
                   className="
@@ -1069,6 +1217,7 @@ export default function Manufacturing() {
                   />
                 </Link>
 
+
                 <Link
                   to="/distributor"
                   className="
@@ -1080,12 +1229,15 @@ export default function Manufacturing() {
                 >
                   Become a Distributor
                 </Link>
+
               </div>
 
             </div>
+
           </Reveal>
 
         </div>
+
       </section>
 
 
@@ -1101,6 +1253,7 @@ export default function Manufacturing() {
         secondaryLabel="Explore Products"
         secondaryLink="/products"
       />
+
     </>
   );
 }
