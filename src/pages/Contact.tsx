@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+
 import {
   ArrowRight,
   Instagram,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { SEO, breadcrumbSchema } from '@/components/SEO';
+
 import {
   FormContainer,
   FormField,
@@ -19,7 +21,9 @@ import {
   useFormState,
   validators,
 } from '@/components/Form';
+
 import { Reveal } from '@/components/Reveal';
+
 import { brand } from '@/data/brand';
 import { apiClient } from '@/services/api-client';
 
@@ -28,14 +32,24 @@ import { apiClient } from '@/services/api-client';
    KAWAD SWAD 2.0
    CONTACT PAGE
 
-   Conversion flow:
-   HERO → ENQUIRY → DIRECT CONTACT → SOCIAL → BUSINESS
+   FLOW:
+   HERO
+   → ENQUIRY FORM
+   → DIRECT CONTACT
+   → SOCIAL
+   → BUSINESS
 
-   Central design system:
-   - Green   = trust / primary authority
-   - Saffron = action / appetite
-   - Ivory   = editorial canvas
-   - Brown   = heritage / premium contrast
+   DESIGN RULES:
+   - Compact hero
+   - Reduced top whitespace
+   - Strong form hierarchy
+   - Comfortable field spacing
+   - Compact contact cards
+   - Mobile-first layout
+   - Green = trust
+   - Saffron = action
+   - Ivory = canvas
+   - Brown = heritage / contrast
 
    FUNCTIONALITY PRESERVED:
    - Existing enquiry API
@@ -43,12 +57,6 @@ import { apiClient } from '@/services/api-client';
    - Existing enquiry ID
    - Existing contact information
    - Existing SEO
-
-   SPACING / IMAGE UPDATE:
-   - Hero artwork is fully visible.
-   - Hero height reduced.
-   - Excessive vertical spacing reduced.
-   - Contact content remains responsive.
    ========================================================================== */
 
 
@@ -76,11 +84,13 @@ export default function Contact() {
     useState<string | null>(null);
 
 
-  /* ========================================================================
+  /* ==========================================================================
      FORM SUBMISSION
-     ====================================================================== */
+     ======================================================================== */
 
-  const submit = async (e: FormEvent) => {
+  const submit = async (
+    e: FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
 
     setErrorMessage(null);
@@ -145,6 +155,10 @@ export default function Contact() {
 
   return (
     <>
+      {/* ======================================================================
+          SEO
+          =================================================================== */}
+
       <SEO
         title="Contact Us"
         description="Get in touch with Kawad Swad. Call, WhatsApp or email us, or send a message through our contact form."
@@ -174,30 +188,31 @@ export default function Contact() {
         "
         aria-labelledby="contact-page-title"
       >
+
         <div
           className="
             relative
-            min-h-[340px]
+            min-h-[270px]
             w-full
             overflow-hidden
             bg-brand-green
-            sm:min-h-[400px]
-            lg:min-h-[460px]
+            sm:min-h-[315px]
+            lg:min-h-[355px]
           "
         >
 
           {/* ==================================================================
-              FULL HERO ARTWORK
+              COMPLETE HERO ARTWORK
 
-              IMPORTANT:
-              object-contain keeps the complete contact artwork visible.
-              The green background fills any remaining area.
+              object-contain preserves the complete artwork.
               ================================================================== */}
 
           <div
             className="
+              pointer-events-none
               absolute
               inset-0
+              z-0
               flex
               items-center
               justify-center
@@ -206,6 +221,7 @@ export default function Contact() {
             "
             aria-hidden="true"
           >
+
             <img
               src={CONTACT_HERO_IMAGE}
               alt=""
@@ -213,23 +229,32 @@ export default function Contact() {
               fetchPriority="high"
               decoding="async"
               className="
+                block
                 h-full
                 w-full
+                max-h-full
+                max-w-full
                 object-contain
                 object-center
               "
             />
+
           </div>
 
+
+          {/* ==================================================================
+              READABILITY OVERLAYS
+              ================================================================== */}
 
           <div
             className="
               pointer-events-none
               absolute
               inset-0
+              z-10
               bg-gradient-to-r
               from-brand-green/95
-              via-brand-green/60
+              via-brand-green/55
               to-brand-green/5
             "
             aria-hidden="true"
@@ -240,8 +265,9 @@ export default function Contact() {
               pointer-events-none
               absolute
               inset-0
+              z-10
               bg-gradient-to-t
-              from-brand-green/40
+              from-brand-green/30
               via-transparent
               to-transparent
             "
@@ -253,27 +279,34 @@ export default function Contact() {
               pointer-events-none
               absolute
               inset-0
+              z-10
               bg-dots
-              opacity-[0.05]
+              opacity-[0.04]
             "
             aria-hidden="true"
           />
+
+
+          {/* ==================================================================
+              DECORATIVE RING
+              ================================================================== */}
 
           <div
             className="
               pointer-events-none
               absolute
-              -right-24
-              -top-24
-              h-64
-              w-64
+              -right-20
+              -top-20
+              z-10
+              h-48
+              w-48
               rounded-full
               border
               border-brand-saffron/15
-              sm:h-80
-              sm:w-80
-              lg:h-96
-              lg:w-96
+              sm:h-56
+              sm:w-56
+              lg:h-64
+              lg:w-64
             "
             aria-hidden="true"
           />
@@ -290,25 +323,28 @@ export default function Contact() {
               relative
               z-20
               flex
-              min-h-[340px]
+              min-h-[270px]
               items-center
-              sm:min-h-[400px]
-              lg:min-h-[460px]
+              sm:min-h-[315px]
+              lg:min-h-[355px]
             "
           >
+
             <Reveal>
+
               <div
                 className="
-                  max-w-4xl
-                  py-9
-                  sm:py-11
-                  lg:py-12
+                  max-w-3xl
+                  py-6
+                  sm:py-7
+                  lg:py-8
                 "
               >
+
                 <span
                   className="
                     section-eyebrow
-                    mb-3
+                    mb-2
                     block
                     text-brand-saffron
                   "
@@ -316,15 +352,18 @@ export default function Contact() {
                   Get in Touch
                 </span>
 
+
                 <h1
                   id="contact-page-title"
                   className="
                     text-balance
                     font-serif
-                    text-display-sm
+                    text-3xl
                     font-bold
-                    leading-[1.02]
+                    leading-[1.03]
                     text-white
+                    sm:text-4xl
+                    lg:text-5xl
                   "
                 >
                   We&apos;d love to
@@ -334,10 +373,11 @@ export default function Contact() {
                   </span>
                 </h1>
 
+
                 <p
                   className="
                     text-pretty
-                    mt-3
+                    mt-2.5
                     max-w-2xl
                     text-sm
                     leading-relaxed
@@ -351,14 +391,16 @@ export default function Contact() {
                   reach out and our team will be happy to help.
                 </p>
 
+
                 <div
                   className="
-                    mt-5
+                    mt-4
                     flex
                     flex-wrap
-                    gap-2
+                    gap-1.5
                   "
                 >
+
                   <span className="badge bg-white/10 text-white">
                     Questions
                   </span>
@@ -370,11 +412,17 @@ export default function Contact() {
                   <span className="badge bg-white/10 text-white">
                     Business Enquiries
                   </span>
+
                 </div>
+
               </div>
+
             </Reveal>
+
           </div>
+
         </div>
+
       </section>
 
 
@@ -387,100 +435,123 @@ export default function Contact() {
           relative
           overflow-hidden
           bg-brand-ivory
-          py-10
-          sm:py-12
-          lg:py-16
+          py-7
+          sm:py-9
+          lg:py-11
         "
         aria-labelledby="contact-form-title"
       >
+
         <div
           className="
             pointer-events-none
             absolute
             inset-0
             bg-warm-glow
-            opacity-50
+            opacity-40
           "
           aria-hidden="true"
         />
 
-        <div className="container-max container-px relative">
+
+        <div
+          className="
+            container-max
+            container-px
+            relative
+          "
+        >
 
           <div
             className="
               grid
               items-start
-              gap-6
-              lg:grid-cols-[minmax(0,1fr)_360px]
-              lg:gap-8
+              gap-5
+              lg:grid-cols-[minmax(0,1fr)_340px]
+              lg:gap-7
             "
           >
 
             {/* ==================================================================
-                CONTACT FORM
-                =============================================================== */}
+                FORM
+                =================================================================== */}
 
             <Reveal>
+
               <div
                 className="
                   card
                   border
                   border-brand-green/10
                   bg-white
-                  p-5
+                  p-4
                   shadow-card
-                  sm:p-7
-                  lg:p-8
+                  sm:p-6
+                  lg:p-7
                 "
               >
 
+                {/* ==============================================================
+                    FORM HEADER
+                    =========================================================== */}
+
                 <div
                   className="
-                    mb-6
+                    mb-5
                     border-b
                     border-brand-green/10
-                    pb-5
-                    sm:mb-7
-                    sm:pb-6
+                    pb-4
+                    sm:mb-6
+                    sm:pb-5
                   "
                 >
-                  <span className="section-eyebrow mb-2 block">
+
+                  <span
+                    className="
+                      section-eyebrow
+                      mb-1.5
+                      block
+                    "
+                  >
                     Send an Enquiry
                   </span>
+
 
                   <h2
                     id="contact-form-title"
                     className="
                       text-balance
                       font-serif
-                      text-headline-sm
+                      text-2xl
                       font-bold
+                      leading-tight
                       text-brand-green
-                      sm:text-headline-md
+                      sm:text-3xl
                     "
                   >
                     Send a Message
                   </h2>
 
+
                   <p
                     className="
                       text-pretty
-                      mt-2.5
+                      mt-2
                       max-w-xl
                       text-sm
                       leading-relaxed
                       text-brand-brown/60
-                      sm:text-base
                     "
                   >
                     Fill in the form and we will get back
                     to you as soon as possible.
                   </p>
+
                 </div>
 
 
                 {/* ==============================================================
-                    SUCCESS
+                    SUCCESS MESSAGE
                     =========================================================== */}
 
                 {form.status === 'success' && (
@@ -491,11 +562,13 @@ export default function Contact() {
                       border
                       border-green-200
                       bg-green-50
-                      p-4
+                      p-3.5
                       shadow-soft
                     "
                     role="status"
+                    aria-live="polite"
                   >
+
                     <p
                       className="
                         text-sm
@@ -507,10 +580,11 @@ export default function Contact() {
                       We&apos;ll be in touch soon.
                     </p>
 
+
                     {enquiryId && (
                       <p
                         className="
-                          mt-2
+                          mt-1.5
                           break-all
                           font-mono
                           text-xs
@@ -520,42 +594,52 @@ export default function Contact() {
                         Enquiry ID: {enquiryId}
                       </p>
                     )}
+
                   </div>
                 )}
 
 
                 {/* ==============================================================
-                    ERROR
+                    ERROR MESSAGE
                     =========================================================== */}
 
                 {form.status === 'error' &&
                   errorMessage && (
                     <div className="mb-5">
+
                       <FormStatusMessage
                         status="error"
                         errorMsg={errorMessage}
                       />
+
                     </div>
                   )}
 
 
                 {/* ==============================================================
-                    FORM
+                    FORM FIELDS
                     =========================================================== */}
 
                 <form
                   onSubmit={submit}
                   noValidate
                 >
+
                   <FormContainer>
+
+                    {/* ----------------------------------------------------------
+                        NAME + EMAIL
+                        ------------------------------------------------------ */}
 
                     <div
                       className="
                         grid
-                        gap-4
+                        gap-3.5
                         sm:grid-cols-2
+                        sm:gap-4
                       "
                     >
+
                       <FormField
                         label="Name"
                         name="name"
@@ -571,6 +655,7 @@ export default function Contact() {
                         placeholder="Your name"
                         autoComplete="name"
                       />
+
 
                       <FormField
                         label="Email"
@@ -588,16 +673,23 @@ export default function Contact() {
                         placeholder="you@domain.com"
                         autoComplete="email"
                       />
+
                     </div>
 
+
+                    {/* ----------------------------------------------------------
+                        PHONE + SUBJECT
+                        ------------------------------------------------------ */}
 
                     <div
                       className="
                         grid
-                        gap-4
+                        gap-3.5
                         sm:grid-cols-2
+                        sm:gap-4
                       "
                     >
+
                       <FormField
                         label="Phone (optional)"
                         name="phone"
@@ -612,6 +704,7 @@ export default function Contact() {
                         placeholder="10-digit phone"
                         autoComplete="tel"
                       />
+
 
                       <FormField
                         label="Subject"
@@ -633,8 +726,13 @@ export default function Contact() {
                           'Other',
                         ]}
                       />
+
                     </div>
 
+
+                    {/* ----------------------------------------------------------
+                        MESSAGE
+                        ------------------------------------------------------ */}
 
                     <FormField
                       label="Message"
@@ -656,26 +754,30 @@ export default function Contact() {
                   </FormContainer>
 
 
+                  {/* ============================================================
+                      SUBMIT AREA
+                      ========================================================= */}
+
                   <div
                     className="
-                      mt-5
-                      flex
-                      flex-col
-                      gap-3
+                      mt-4
                       border-t
                       border-brand-green/10
-                      pt-5
-                      sm:mt-6
-                      sm:pt-6
+                      pt-4
+                      sm:mt-5
+                      sm:pt-5
                     "
                   >
+
                     <SubmitButton
                       status={form.status}
                       label="Send Message"
                     />
 
+
                     <p
                       className="
+                        mt-2
                         text-center
                         text-[11px]
                         leading-relaxed
@@ -686,20 +788,23 @@ export default function Contact() {
                       Your enquiry will be securely sent to
                       the Kawad Swad team.
                     </p>
+
                   </div>
+
                 </form>
 
               </div>
+
             </Reveal>
 
 
             {/* ==================================================================
-                CONTACT INFORMATION
-                =============================================================== */}
+                RIGHT COLUMN
+                =================================================================== */}
 
             <aside
               className="
-                space-y-4
+                space-y-3
                 lg:sticky
                 lg:top-24
               "
@@ -711,24 +816,33 @@ export default function Contact() {
                   ============================================================= */}
 
               <Reveal delay={100}>
+
                 <div
                   className="
                     card
                     border
                     border-brand-green/10
                     bg-white
-                    p-5
+                    p-4
                     shadow-card
-                    sm:p-6
+                    sm:p-5
                   "
                 >
-                  <span className="section-eyebrow mb-2 block">
+
+                  <span
+                    className="
+                      section-eyebrow
+                      mb-1.5
+                      block
+                    "
+                  >
                     Direct Contact
                   </span>
 
+
                   <h2
                     className="
-                      mb-4
+                      mb-3
                       font-serif
                       text-xl
                       font-bold
@@ -738,25 +852,28 @@ export default function Contact() {
                     Contact Information
                   </h2>
 
-                  <div className="space-y-2.5">
 
-                    {/* Phone */}
+                  <div className="space-y-2">
+
+                    {/* ----------------------------------------------------------
+                        PHONE
+                        ------------------------------------------------------ */}
 
                     <a
                       href={`tel:${brand.phoneRaw}`}
                       className="
                         group
                         flex
-                        min-h-[64px]
+                        min-h-[58px]
                         items-center
-                        gap-3
+                        gap-2.5
                         rounded-2xl
                         border
                         border-brand-green/5
                         bg-brand-ivory
-                        p-3
+                        p-2.5
                         transition-all
-                        duration-300
+                        duration-200
                         hover:-translate-y-0.5
                         hover:border-brand-saffron/20
                         hover:shadow-soft
@@ -766,44 +883,20 @@ export default function Contact() {
                         focus-visible:ring-offset-2
                       "
                     >
-                      <div
-                        className="
-                          flex
-                          h-9
-                          w-9
-                          shrink-0
-                          items-center
-                          justify-center
-                          rounded-xl
-                          bg-brand-saffron/10
-                          text-brand-saffron
-                        "
-                        aria-hidden="true"
-                      >
-                        <Phone className="h-4.5 w-4.5" />
-                      </div>
 
-                      <div className="min-w-0">
-                        <p
-                          className="
-                            text-sm
-                            font-semibold
-                            text-brand-green
-                          "
-                        >
-                          Phone
-                        </p>
+                      <ContactIcon>
+                        <Phone
+                          className="h-4 w-4"
+                          aria-hidden="true"
+                        />
+                      </ContactIcon>
 
-                        <p
-                          className="
-                            truncate
-                            text-xs
-                            text-brand-brown/50
-                          "
-                        >
-                          {brand.phone}
-                        </p>
-                      </div>
+
+                      <ContactText
+                        title="Phone"
+                        value={brand.phone}
+                      />
+
 
                       <ArrowRight
                         className="
@@ -812,16 +905,20 @@ export default function Contact() {
                           w-4
                           shrink-0
                           text-brand-brown/20
-                          transition-transform
+                          transition-all
+                          duration-200
                           group-hover:translate-x-0.5
                           group-hover:text-brand-saffron
                         "
                         aria-hidden="true"
                       />
+
                     </a>
 
 
-                    {/* WhatsApp */}
+                    {/* ----------------------------------------------------------
+                        WHATSAPP
+                        ------------------------------------------------------ */}
 
                     <a
                       href={`https://wa.me/${brand.phoneRaw}?text=${whatsappMsg}`}
@@ -830,16 +927,16 @@ export default function Contact() {
                       className="
                         group
                         flex
-                        min-h-[64px]
+                        min-h-[58px]
                         items-center
-                        gap-3
+                        gap-2.5
                         rounded-2xl
                         border
                         border-green-200/70
                         bg-green-50
-                        p-3
+                        p-2.5
                         transition-all
-                        duration-300
+                        duration-200
                         hover:-translate-y-0.5
                         hover:bg-green-100
                         hover:shadow-soft
@@ -849,7 +946,8 @@ export default function Contact() {
                         focus-visible:ring-offset-2
                       "
                     >
-                      <div
+
+                      <span
                         className="
                           flex
                           h-9
@@ -863,30 +961,17 @@ export default function Contact() {
                         "
                         aria-hidden="true"
                       >
-                        <MessageCircle className="h-4.5 w-4.5" />
-                      </div>
+                        <MessageCircle
+                          className="h-4 w-4"
+                        />
+                      </span>
 
-                      <div className="min-w-0">
-                        <p
-                          className="
-                            text-sm
-                            font-semibold
-                            text-brand-green
-                          "
-                        >
-                          WhatsApp
-                        </p>
 
-                        <p
-                          className="
-                            truncate
-                            text-xs
-                            text-brand-brown/50
-                          "
-                        >
-                          {brand.phone}
-                        </p>
-                      </div>
+                      <ContactText
+                        title="WhatsApp"
+                        value={brand.phone}
+                      />
+
 
                       <ArrowRight
                         className="
@@ -896,30 +981,34 @@ export default function Contact() {
                           shrink-0
                           text-green-600/40
                           transition-transform
+                          duration-200
                           group-hover:translate-x-0.5
                         "
                         aria-hidden="true"
                       />
+
                     </a>
 
 
-                    {/* Email */}
+                    {/* ----------------------------------------------------------
+                        EMAIL
+                        ------------------------------------------------------ */}
 
                     <a
                       href={`mailto:${brand.email}`}
                       className="
                         group
                         flex
-                        min-h-[64px]
+                        min-h-[58px]
                         items-center
-                        gap-3
+                        gap-2.5
                         rounded-2xl
                         border
                         border-brand-green/5
                         bg-brand-ivory
-                        p-3
+                        p-2.5
                         transition-all
-                        duration-300
+                        duration-200
                         hover:-translate-y-0.5
                         hover:border-brand-saffron/20
                         hover:shadow-soft
@@ -929,44 +1018,21 @@ export default function Contact() {
                         focus-visible:ring-offset-2
                       "
                     >
-                      <div
-                        className="
-                          flex
-                          h-9
-                          w-9
-                          shrink-0
-                          items-center
-                          justify-center
-                          rounded-xl
-                          bg-brand-saffron/10
-                          text-brand-saffron
-                        "
-                        aria-hidden="true"
-                      >
-                        <Mail className="h-4.5 w-4.5" />
-                      </div>
 
-                      <div className="min-w-0">
-                        <p
-                          className="
-                            text-sm
-                            font-semibold
-                            text-brand-green
-                          "
-                        >
-                          Email
-                        </p>
+                      <ContactIcon>
+                        <Mail
+                          className="h-4 w-4"
+                          aria-hidden="true"
+                        />
+                      </ContactIcon>
 
-                        <p
-                          className="
-                            break-all
-                            text-xs
-                            text-brand-brown/50
-                          "
-                        >
-                          {brand.email}
-                        </p>
-                      </div>
+
+                      <ContactText
+                        title="Email"
+                        value={brand.email}
+                        breakValue
+                      />
+
 
                       <ArrowRight
                         className="
@@ -975,71 +1041,54 @@ export default function Contact() {
                           w-4
                           shrink-0
                           text-brand-brown/20
-                          transition-transform
+                          transition-all
+                          duration-200
                           group-hover:translate-x-0.5
                           group-hover:text-brand-saffron
                         "
                         aria-hidden="true"
                       />
+
                     </a>
 
 
-                    {/* Location */}
+                    {/* ----------------------------------------------------------
+                        LOCATION
+                        ------------------------------------------------------ */}
 
                     <div
                       className="
                         flex
-                        min-h-[64px]
+                        min-h-[58px]
                         items-center
-                        gap-3
+                        gap-2.5
                         rounded-2xl
                         border
                         border-brand-green/5
                         bg-brand-ivory
-                        p-3
+                        p-2.5
                       "
                     >
-                      <div
-                        className="
-                          flex
-                          h-9
-                          w-9
-                          shrink-0
-                          items-center
-                          justify-center
-                          rounded-xl
-                          bg-brand-saffron/10
-                          text-brand-saffron
-                        "
-                        aria-hidden="true"
-                      >
-                        <MapPin className="h-4.5 w-4.5" />
-                      </div>
 
-                      <div className="min-w-0">
-                        <p
-                          className="
-                            text-sm
-                            font-semibold
-                            text-brand-green
-                          "
-                        >
-                          Location
-                        </p>
+                      <ContactIcon>
+                        <MapPin
+                          className="h-4 w-4"
+                          aria-hidden="true"
+                        />
+                      </ContactIcon>
 
-                        <p
-                          className="
-                            text-xs
-                            text-brand-brown/50
-                          "
-                        >
-                          {brand.region}
-                        </p>
-                      </div>
+
+                      <ContactText
+                        title="Location"
+                        value={brand.region}
+                      />
+
                     </div>
 
                   </div>
+
                 </div>
+
               </Reveal>
 
 
@@ -1048,24 +1097,33 @@ export default function Contact() {
                   ============================================================= */}
 
               <Reveal delay={150}>
+
                 <div
                   className="
                     card
                     border
                     border-brand-green/10
                     bg-white
-                    p-5
+                    p-4
                     shadow-card
-                    sm:p-6
+                    sm:p-5
                   "
                 >
-                  <span className="section-eyebrow mb-2 block">
+
+                  <span
+                    className="
+                      section-eyebrow
+                      mb-1.5
+                      block
+                    "
+                  >
                     Stay Connected
                   </span>
 
+
                   <h2
                     className="
-                      mb-4
+                      mb-3
                       font-serif
                       text-xl
                       font-bold
@@ -1075,131 +1133,38 @@ export default function Contact() {
                     Follow Us
                   </h2>
 
-                  <div className="grid grid-cols-2 gap-2.5">
 
-                    <a
+                  <div className="grid grid-cols-2 gap-2">
+
+                    <SocialCard
                       href={brand.instagramUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="
-                        group
-                        flex
-                        min-h-[64px]
-                        min-w-0
-                        items-center
-                        gap-2.5
-                        rounded-2xl
-                        border
-                        border-brand-green/5
-                        bg-brand-ivory
-                        p-3
-                        transition-all
-                        duration-300
-                        hover:-translate-y-0.5
-                        hover:border-brand-saffron/15
-                        hover:shadow-soft
-                        focus:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-brand-saffron
-                        focus-visible:ring-offset-2
-                      "
-                    >
-                      <Instagram
-                        className="
-                          h-5
-                          w-5
-                          shrink-0
-                          text-brand-saffron
-                        "
-                        aria-hidden="true"
-                      />
-
-                      <div className="min-w-0">
-                        <p
-                          className="
-                            text-sm
-                            font-semibold
-                            text-brand-green
-                          "
-                        >
-                          Instagram
-                        </p>
-
-                        <p
-                          className="
-                            truncate
-                            text-[10px]
-                            text-brand-brown/50
-                          "
-                        >
-                          @{brand.instagram}
-                        </p>
-                      </div>
-                    </a>
+                      icon={
+                        <Instagram
+                          className="h-5 w-5"
+                          aria-hidden="true"
+                        />
+                      }
+                      title="Instagram"
+                      value={`@${brand.instagram}`}
+                    />
 
 
-                    <a
+                    <SocialCard
                       href={brand.youtubeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="
-                        group
-                        flex
-                        min-h-[64px]
-                        min-w-0
-                        items-center
-                        gap-2.5
-                        rounded-2xl
-                        border
-                        border-brand-green/5
-                        bg-brand-ivory
-                        p-3
-                        transition-all
-                        duration-300
-                        hover:-translate-y-0.5
-                        hover:border-brand-saffron/15
-                        hover:shadow-soft
-                        focus:outline-none
-                        focus-visible:ring-2
-                        focus-visible:ring-brand-saffron
-                        focus-visible:ring-offset-2
-                      "
-                    >
-                      <Youtube
-                        className="
-                          h-5
-                          w-5
-                          shrink-0
-                          text-brand-saffron
-                        "
-                        aria-hidden="true"
-                      />
-
-                      <div className="min-w-0">
-                        <p
-                          className="
-                            text-sm
-                            font-semibold
-                            text-brand-green
-                          "
-                        >
-                          YouTube
-                        </p>
-
-                        <p
-                          className="
-                            truncate
-                            text-[10px]
-                            text-brand-brown/50
-                          "
-                        >
-                          {brand.youtube}
-                        </p>
-                      </div>
-                    </a>
+                      icon={
+                        <Youtube
+                          className="h-5 w-5"
+                          aria-hidden="true"
+                        />
+                      }
+                      title="YouTube"
+                      value={brand.youtube}
+                    />
 
                   </div>
+
                 </div>
+
               </Reveal>
 
 
@@ -1208,31 +1173,34 @@ export default function Contact() {
                   ============================================================= */}
 
               <Reveal delay={200}>
+
                 <div
                   className="
                     relative
                     overflow-hidden
                     rounded-3xl
                     bg-brand-brown
-                    p-5
+                    p-4
                     shadow-lift
-                    sm:p-6
+                    sm:p-5
                   "
                 >
+
                   <div
                     className="
                       pointer-events-none
                       absolute
                       -right-16
                       -top-16
-                      h-44
-                      w-44
+                      h-40
+                      w-40
                       rounded-full
                       border
                       border-brand-saffron/20
                     "
                     aria-hidden="true"
                   />
+
 
                   <div
                     className="
@@ -1245,11 +1213,12 @@ export default function Contact() {
                     aria-hidden="true"
                   />
 
+
                   <div className="relative">
 
                     <span
                       className="
-                        mb-2
+                        mb-1.5
                         block
                         text-[10px]
                         font-semibold
@@ -1260,6 +1229,7 @@ export default function Contact() {
                     >
                       Partnerships
                     </span>
+
 
                     <h2
                       className="
@@ -1272,9 +1242,10 @@ export default function Contact() {
                       Business Enquiry
                     </h2>
 
+
                     <p
                       className="
-                        mt-2
+                        mt-1.5
                         text-sm
                         leading-relaxed
                         text-brand-cream/70
@@ -1284,12 +1255,13 @@ export default function Contact() {
                       Visit our Business Hub.
                     </p>
 
+
                     <Link
                       to="/business"
                       className="
                         btn-yellow
-                        mt-4
-                        min-h-[44px]
+                        mt-3
+                        min-h-[42px]
                         px-5
                       "
                     >
@@ -1302,13 +1274,194 @@ export default function Contact() {
                     </Link>
 
                   </div>
+
                 </div>
+
               </Reveal>
 
             </aside>
+
           </div>
+
         </div>
+
       </section>
     </>
+  );
+}
+
+
+/* ==========================================================================
+   CONTACT ICON
+   ========================================================================== */
+
+interface ContactIconProps {
+  children: React.ReactNode;
+}
+
+
+function ContactIcon({
+  children,
+}: ContactIconProps) {
+  return (
+    <span
+      className="
+        flex
+        h-9
+        w-9
+        shrink-0
+        items-center
+        justify-center
+        rounded-xl
+        bg-brand-saffron/10
+        text-brand-saffron
+      "
+      aria-hidden="true"
+    >
+      {children}
+    </span>
+  );
+}
+
+
+/* ==========================================================================
+   CONTACT TEXT
+   ========================================================================== */
+
+interface ContactTextProps {
+  title: string;
+  value: string;
+  breakValue?: boolean;
+}
+
+
+function ContactText({
+  title,
+  value,
+  breakValue = false,
+}: ContactTextProps) {
+  return (
+    <div className="min-w-0">
+
+      <p
+        className="
+          text-sm
+          font-semibold
+          text-brand-green
+        "
+      >
+        {title}
+      </p>
+
+
+      <p
+        className={`
+          text-xs
+          text-brand-brown/50
+          ${
+            breakValue
+              ? 'break-all'
+              : 'truncate'
+          }
+        `}
+      >
+        {value}
+      </p>
+
+    </div>
+  );
+}
+
+
+/* ==========================================================================
+   SOCIAL CARD
+   ========================================================================== */
+
+interface SocialCardProps {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  value: string;
+}
+
+
+function SocialCard({
+  href,
+  icon,
+  title,
+  value,
+}: SocialCardProps) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="
+        group
+        flex
+        min-h-[58px]
+        min-w-0
+        items-center
+        gap-2
+        rounded-2xl
+        border
+        border-brand-green/5
+        bg-brand-ivory
+        p-2.5
+        transition-all
+        duration-200
+        hover:-translate-y-0.5
+        hover:border-brand-saffron/15
+        hover:shadow-soft
+        focus:outline-none
+        focus-visible:ring-2
+        focus-visible:ring-brand-saffron
+        focus-visible:ring-offset-2
+      "
+    >
+
+      <span
+        className="
+          shrink-0
+          text-brand-saffron
+          transition-transform
+          duration-200
+          group-hover:scale-105
+        "
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
+
+
+      <span className="min-w-0">
+
+        <span
+          className="
+            block
+            truncate
+            text-sm
+            font-semibold
+            text-brand-green
+          "
+        >
+          {title}
+        </span>
+
+
+        <span
+          className="
+            block
+            truncate
+            text-[10px]
+            text-brand-brown/50
+          "
+        >
+          {value}
+        </span>
+
+      </span>
+
+    </a>
   );
 }
