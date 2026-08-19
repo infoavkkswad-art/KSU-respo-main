@@ -55,38 +55,31 @@ import {
 
 /* ==========================================================================
    KAWAD SWAD 2.0
-   CENTRAL PRODUCT CARD
+   CENTRAL 3D PRODUCT CARD
 
-   Behavioral hierarchy:
+   BEHAVIOR:
 
    NOTICE
+      ↓
+   SEE PRODUCT
       ↓
    UNDERSTAND
       ↓
    TRUST
       ↓
-   CHOOSE
+   CHOOSE PACK
       ↓
    BUY
 
-   IMAGE SYSTEM:
+   DESIGN SYSTEM:
 
-   ProductCard
-      ↓
-   product-card-media
-      ↓
-   image-adaptive-surface
-      ↓
-   product-visual
-      ↓
-   ProductImage
-
-   Important visual rules:
-   - Product artwork must remain completely visible.
-   - Product packaging must never be intentionally cropped.
-   - Product images receive safe internal breathing room.
-   - The card background fills unused image space.
-   - The actual image keeps its natural proportions.
+   - Product artwork remains completely visible.
+   - No object-cover on product artwork.
+   - Product sits inside a dimensional stage.
+   - Card uses layered depth rather than excessive shadows.
+   - Hover lift is subtle and premium.
+   - Mobile remains stable and touch-friendly.
+   - Pricing / SKU / review / cart logic remains authoritative.
    ========================================================================== */
 
 
@@ -108,11 +101,17 @@ export function ProductCard({
   product,
   className = '',
 }: ProductCardProps) {
+
   const { addItem } = useCart();
 
   const navigate = useNavigate();
 
   const selectId = useId();
+
+
+  /* ==========================================================================
+     STATE
+     ======================================================================== */
 
   const [
     selectedSkuIndex,
@@ -164,6 +163,7 @@ export function ProductCard({
      ======================================================================== */
 
   useEffect(() => {
+
     if (
       purchasableSkus.length === 0
     ) {
@@ -177,6 +177,7 @@ export function ProductCard({
     ) {
       setSelectedSkuIndex(0);
     }
+
   }, [
     purchasableSkus.length,
     selectedSkuIndex,
@@ -188,12 +189,15 @@ export function ProductCard({
      ======================================================================== */
 
   useEffect(() => {
+
     let cancelled = false;
 
     async function loadReviewSummary() {
+
       setReviewsLoading(true);
 
       try {
+
         const summary =
           await ReviewService.getSummary(
             product.id,
@@ -202,19 +206,27 @@ export function ProductCard({
         if (!cancelled) {
           setReviewSummary(summary);
         }
+
       } catch {
+
         if (!cancelled) {
+
           setReviewSummary({
             productId: product.id,
             averageRating: 0,
             reviewCount: 0,
           });
+
         }
+
       } finally {
+
         if (!cancelled) {
           setReviewsLoading(false);
         }
+
       }
+
     }
 
     void loadReviewSummary();
@@ -222,6 +234,7 @@ export function ProductCard({
     return () => {
       cancelled = true;
     };
+
   }, [product.id]);
 
 
@@ -244,10 +257,31 @@ export function ProductCard({
     ] ??
     `${selectedSku.packSize}g`;
 
+
   const hasReviews =
     reviewSummary !== null &&
     reviewSummary.reviewCount > 0 &&
     reviewSummary.averageRating > 0;
+
+
+  const hasDiscount =
+    selectedSku.mrp >
+    selectedSku.websitePrice;
+
+
+  const discountPercent =
+    hasDiscount
+      ? Math.round(
+          (
+            (
+              selectedSku.mrp -
+              selectedSku.websitePrice
+            ) /
+            selectedSku.mrp
+          ) *
+            100,
+        )
+      : 0;
 
 
   /* ==========================================================================
@@ -255,6 +289,7 @@ export function ProductCard({
      ======================================================================== */
 
   const handleAdd = () => {
+
     addItem(
       selectedSku.sku,
       1,
@@ -265,6 +300,7 @@ export function ProductCard({
     window.setTimeout(() => {
       setAdded(false);
     }, 2000);
+
   };
 
 
@@ -273,12 +309,14 @@ export function ProductCard({
      ======================================================================== */
 
   const handleBuyNow = () => {
+
     addItem(
       selectedSku.sku,
       1,
     );
 
     navigate('/checkout');
+
   };
 
 
@@ -289,19 +327,27 @@ export function ProductCard({
   const handlePackChange = (
     event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
+
     const nextIndex =
-      Number(event.target.value);
+      Number(
+        event.target.value,
+      );
 
     if (
-      Number.isInteger(nextIndex) &&
+      Number.isInteger(
+        nextIndex,
+      ) &&
       nextIndex >= 0 &&
       nextIndex <
         purchasableSkus.length
     ) {
+
       setSelectedSkuIndex(
         nextIndex,
       );
+
     }
+
   };
 
 
@@ -319,11 +365,45 @@ export function ProductCard({
         h-full
         min-w-0
         flex-col
+        overflow-hidden
+        rounded-3xl
+        border
+        border-brand-green/10
+        bg-white
+        shadow-card
+        transition-all
+        duration-500
+        ease-ks-standard
+        hover:-translate-y-1
+        hover:border-brand-green/15
+        hover:shadow-lift
         ${className}
       `}
       data-product-id={product.id}
       data-product-category={product.category}
     >
+
+      {/* ======================================================================
+          TOP EDGE LIGHT
+          =================================================================== */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-x-4
+          top-0
+          z-50
+          h-px
+          bg-gradient-to-r
+          from-transparent
+          via-brand-saffron/35
+          to-transparent
+          opacity-70
+        "
+        aria-hidden="true"
+      />
+
 
       {/* ======================================================================
           PRODUCT VISUAL
@@ -342,24 +422,58 @@ export function ProductCard({
           overflow-hidden
           bg-brand-cream-dark
           sm:aspect-square
+          [perspective:1200px]
         "
       >
 
         {/* ==================================================================
-            ADAPTIVE IMAGE SURFACE
+            OUTER IMAGE STAGE
             ================================================================== */}
 
         <div
           className="
-            image-adaptive-surface
             absolute
-            inset-2
-            rounded-2xl
-            shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-10px_25px_rgba(62,39,35,0.05)]
+            inset-2.5
+            overflow-hidden
+            rounded-[1.35rem]
+            border
+            border-white/70
+            bg-gradient-to-br
+            from-white
+            via-brand-cream
+            to-brand-cream-dark
+            shadow-[inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-18px_35px_rgba(62,39,35,0.07)]
             transition-all
             duration-500
             ease-ks-standard
-            group-hover/image:inset-1.5
+            group-hover/image:inset-2
+            group-hover/image:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-22px_40px_rgba(62,39,35,0.09)]
+          "
+          aria-hidden="true"
+        />
+
+        {/* ==================================================================
+            BACKGROUND GLOW
+            ================================================================== */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            left-1/2
+            top-[38%]
+            z-0
+            h-[58%]
+            w-[58%]
+            -translate-x-1/2
+            -translate-y-1/2
+            rounded-full
+            bg-brand-saffron/5
+            blur-3xl
+            transition-all
+            duration-500
+            group-hover/image:scale-110
+            group-hover/image:bg-brand-saffron/8
           "
           aria-hidden="true"
         />
@@ -367,26 +481,29 @@ export function ProductCard({
 
         {/* ==================================================================
             GROUNDING SHADOW
+
+            Creates the visual connection between product and surface.
             ================================================================== */}
 
         <div
           className="
             pointer-events-none
             absolute
-            bottom-[7%]
+            bottom-[8%]
             left-1/2
-            z-0
-            h-[7%]
+            z-10
+            h-[8%]
             w-[42%]
             -translate-x-1/2
             rounded-[50%]
-            bg-brand-brown/15
+            bg-brand-brown/18
             blur-[10px]
             transition-all
             duration-500
             ease-ks-standard
             group-hover/image:w-[50%]
-            group-hover/image:bg-brand-brown/20
+            group-hover/image:bg-brand-brown/22
+            group-hover/image:blur-[12px]
           "
           aria-hidden="true"
         />
@@ -395,28 +512,24 @@ export function ProductCard({
         {/* ==================================================================
             PRODUCT VISUAL
 
-            The extra padding is intentional.
-
-            It prevents tall product pouches / packets from touching
-            the edge of the card and gives the artwork room to breathe.
-
-            [&_img] rules also protect against an internal object-cover
-            declaration inside ProductImage.
+            Intentional breathing room prevents packaging from touching
+            the edge of the visual stage.
             ================================================================== */}
 
         <div
           className="
             product-visual
             relative
-            z-10
+            z-20
             flex
             h-full
             w-full
             items-center
             justify-center
             overflow-hidden
-            px-[7%]
-            py-[6%]
+            px-[8%]
+            py-[7%]
+            [transform-style:preserve-3d]
             [&_img]:h-full
             [&_img]:w-full
             [&_img]:max-h-full
@@ -425,40 +538,95 @@ export function ProductCard({
             [&_img]:object-center
           "
         >
-          <ProductImage
-            productId={product.id}
-            product={product}
-            variant="card"
+
+          <div
             className="
-              product-shadow
+              relative
+              flex
               h-full
               w-full
-              object-contain
-              object-center
+              items-center
+              justify-center
+              [transform:translateZ(20px)]
+              transition-transform
+              duration-500
+              ease-ks-standard
+              group-hover/image:-translate-y-1
+              group-hover/image:[transform:translateZ(28px)_scale(1.015)]
             "
-          />
+          >
+
+            <ProductImage
+              productId={product.id}
+              product={product}
+              variant="card"
+              className="
+                product-shadow
+                h-full
+                w-full
+                object-contain
+                object-center
+                drop-shadow-[0_12px_10px_rgba(62,39,35,0.13)]
+                transition-all
+                duration-500
+                ease-ks-standard
+                group-hover/image:drop-shadow-[0_18px_14px_rgba(62,39,35,0.18)]
+              "
+            />
+
+          </div>
+
         </div>
 
 
         {/* ==================================================================
-            SOFT LIGHTING
+            SOFT 3D LIGHT
             ================================================================== */}
 
         <div
           className="
             pointer-events-none
             absolute
-            inset-0
-            z-20
+            inset-2.5
+            z-30
+            rounded-[1.35rem]
             bg-gradient-to-br
-            from-white/25
+            from-white/30
             via-transparent
             to-brand-brown/5
             opacity-70
-            transition-opacity
+            transition-all
             duration-500
             ease-ks-standard
+            group-hover/image:inset-2
             group-hover/image:opacity-100
+          "
+          aria-hidden="true"
+        />
+
+
+        {/* ==================================================================
+            GLASS HIGHLIGHT
+            ================================================================== */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            left-[10%]
+            top-[7%]
+            z-40
+            h-[34%]
+            w-[18%]
+            rotate-[18deg]
+            rounded-full
+            bg-white/25
+            blur-xl
+            opacity-40
+            transition-all
+            duration-500
+            group-hover/image:translate-x-2
+            group-hover/image:opacity-60
           "
           aria-hidden="true"
         />
@@ -472,18 +640,77 @@ export function ProductCard({
           className="
             pointer-events-none
             absolute
-            inset-2
-            z-30
-            rounded-2xl
+            inset-2.5
+            z-40
+            rounded-[1.35rem]
             border
-            border-white/50
+            border-white/55
             transition-all
             duration-500
             ease-ks-standard
-            group-hover/image:inset-1.5
+            group-hover/image:inset-2
+            group-hover/image:border-white/70
           "
           aria-hidden="true"
         />
+
+
+        {/* ==================================================================
+            CATEGORY CHIP
+            ================================================================== */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            left-4
+            top-4
+            z-50
+            rounded-full
+            border
+            border-white/60
+            bg-white/80
+            px-2.5
+            py-1
+            text-[9px]
+            font-semibold
+            uppercase
+            tracking-[0.1em]
+            text-brand-green
+            shadow-soft
+            backdrop-blur-sm
+          "
+        >
+          {product.category}
+        </div>
+
+
+        {/* ==================================================================
+            DISCOUNT CHIP
+            ================================================================== */}
+
+        {hasDiscount &&
+          discountPercent > 0 && (
+            <div
+              className="
+                pointer-events-none
+                absolute
+                right-4
+                top-4
+                z-50
+                rounded-full
+                bg-brand-saffron
+                px-2.5
+                py-1
+                text-[9px]
+                font-bold
+                text-white
+                shadow-soft
+              "
+            >
+              {discountPercent}% OFF
+            </div>
+          )}
 
 
         {/* ==================================================================
@@ -494,14 +721,17 @@ export function ProductCard({
           className="
             pointer-events-none
             absolute
-            bottom-3
-            left-3
-            z-40
+            bottom-4
+            left-1/2
+            z-50
             hidden
+            -translate-x-1/2
             rounded-full
+            border
+            border-white/60
             bg-white/90
-            px-2.5
-            py-1
+            px-3
+            py-1.5
             text-[9px]
             font-semibold
             text-brand-green
@@ -512,6 +742,7 @@ export function ProductCard({
             duration-300
             ease-ks-standard
             sm:block
+            group-hover/image:-translate-x-1/2
             group-hover/image:-translate-y-0.5
             group-hover/image:opacity-100
           "
@@ -532,16 +763,16 @@ export function ProductCard({
           flex-1
           flex-col
           justify-between
-          p-4
-          sm:p-5
+          p-3.5
+          sm:p-4
         "
       >
 
         <div className="min-w-0">
 
-          {/* ================================================================
+          {/* ==================================================================
               PRODUCT IDENTITY
-              ============================================================= */}
+              ================================================================== */}
 
           <Link
             to={`/product/${product.slug}`}
@@ -564,14 +795,13 @@ export function ProductCard({
             {product.name}
           </Link>
 
+
           <p
             className="
-              mb-2
               mt-1
               truncate
               text-[10px]
               text-brand-brown/55
-              sm:mb-3
               sm:text-xs
             "
             title={product.variant}
@@ -580,16 +810,17 @@ export function ProductCard({
           </p>
 
 
-          {/* ================================================================
+          {/* ==================================================================
               SOCIAL PROOF
-              ============================================================= */}
+              ================================================================== */}
 
           <Link
             to={`/product/${product.slug}#reviews`}
             className="
-              mb-3
+              mb-2.5
+              mt-2
               inline-flex
-              min-h-[30px]
+              min-h-[28px]
               max-w-full
               items-center
               rounded-md
@@ -599,7 +830,7 @@ export function ProductCard({
               focus:outline-none
               focus-visible:ring-2
               focus-visible:ring-brand-saffron/40
-              sm:mb-4
+              sm:mb-3
             "
             aria-label={
               reviewsLoading
@@ -609,7 +840,9 @@ export function ProductCard({
                   : `No reviews yet for ${product.name}`
             }
           >
+
             {reviewsLoading ? (
+
               <span
                 className="
                   inline-flex
@@ -620,6 +853,7 @@ export function ProductCard({
                   sm:text-xs
                 "
               >
+
                 <span
                   className="
                     inline-block
@@ -637,8 +871,11 @@ export function ProductCard({
                 />
 
                 Loading reviews...
+
               </span>
+
             ) : hasReviews ? (
+
               <StarRating
                 rating={
                   reviewSummary.averageRating
@@ -650,7 +887,9 @@ export function ProductCard({
                 showValue
                 showCount
               />
+
             ) : (
+
               <span
                 className="
                   inline-flex
@@ -662,6 +901,7 @@ export function ProductCard({
                   sm:text-xs
                 "
               >
+
                 <span
                   className="
                     shrink-0
@@ -676,16 +916,19 @@ export function ProductCard({
                 <span>
                   No reviews yet
                 </span>
+
               </span>
+
             )}
+
           </Link>
 
 
-          {/* ================================================================
+          {/* ==================================================================
               PACK SELECTION
-              ============================================================= */}
+              ================================================================== */}
 
-          <div className="mb-3 sm:mb-4">
+          <div className="mb-2.5 sm:mb-3">
 
             {product.category ===
             'combo' ? (
@@ -700,7 +943,7 @@ export function ProductCard({
                   border
                   border-brand-brown/10
                   bg-brand-cream
-                  px-3
+                  px-2.5
                   py-1.5
                   text-[9px]
                   font-semibold
@@ -709,6 +952,7 @@ export function ProductCard({
                   sm:text-xs
                 "
               >
+
                 <ShoppingBag
                   className="
                     h-3
@@ -721,11 +965,12 @@ export function ProductCard({
                 <span className="truncate">
                   {packLabel}
                 </span>
+
               </div>
 
             ) : (
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
 
                 <label
                   htmlFor={`pack-size-${selectId}`}
@@ -734,13 +979,14 @@ export function ProductCard({
                     text-[9px]
                     font-bold
                     uppercase
-                    tracking-wider
-                    text-brand-brown/60
+                    tracking-[0.13em]
+                    text-brand-brown/55
                     sm:text-2xs
                   "
                 >
                   Choose your pack
                 </label>
+
 
                 <div className="relative w-full">
 
@@ -751,7 +997,7 @@ export function ProductCard({
                       handlePackChange
                     }
                     className="
-                      min-h-[42px]
+                      min-h-[40px]
                       w-full
                       appearance-none
                       cursor-pointer
@@ -777,8 +1023,13 @@ export function ProductCard({
                     "
                     aria-label={`Select pack size for ${product.name}`}
                   >
+
                     {purchasableSkus.map(
-                      (sku, index) => (
+                      (
+                        sku,
+                        index,
+                      ) => (
+
                         <option
                           key={sku.sku}
                           value={index}
@@ -788,9 +1039,12 @@ export function ProductCard({
                           ] ??
                             `${sku.packSize}g`}
                         </option>
+
                       ),
                     )}
+
                   </select>
+
 
                   <ChevronDown
                     className="
@@ -807,24 +1061,28 @@ export function ProductCard({
                   />
 
                 </div>
+
               </div>
+
             )}
+
           </div>
 
 
-          {/* ================================================================
+          {/* ==================================================================
               PRICE
-              ============================================================= */}
+              ================================================================== */}
 
           <div
             className="
-              mb-1
+              mb-0.5
               flex
               flex-wrap
               items-baseline
-              gap-2
+              gap-1.5
             "
           >
+
             <span
               className="
                 price-emphasis
@@ -837,33 +1095,36 @@ export function ProductCard({
               )}
             </span>
 
-            {selectedSku.mrp >
-              selectedSku.websitePrice && (
+
+            {hasDiscount && (
               <span className="price-secondary">
                 {formatPrice(
                   selectedSku.mrp,
                 )}
               </span>
             )}
+
           </div>
 
 
-          {/* ================================================================
+          {/* ==================================================================
               SHIPPING TRUST
-              ============================================================= */}
+              ================================================================== */}
 
           <p
             className="
-              mb-4
+              mb-3
               flex
               items-center
               gap-1.5
               text-[9px]
               leading-relaxed
               text-brand-brown/55
+              sm:mb-3.5
               sm:text-2xs
             "
           >
+
             <Check
               className="
                 h-3
@@ -874,35 +1135,36 @@ export function ProductCard({
               aria-hidden="true"
             />
 
-            <span>
-              <strong
-                className="
-                  font-semibold
-                  text-brand-green
-                "
-              >
-                Free shipping
-              </strong>
-            </span>
+            <strong
+              className="
+                font-semibold
+                text-brand-green
+              "
+            >
+              Free shipping
+            </strong>
+
           </p>
 
         </div>
 
 
         {/* ====================================================================
-            PRIMARY ACTION AREA
+            ACTION AREA
             ================================================================= */}
 
         <div
           className="
-            mt-1
+            mt-auto
             grid
             grid-cols-2
             gap-2
           "
         >
 
-          {/* Add to Cart */}
+          {/* ==================================================================
+              ADD TO CART
+              ================================================================== */}
 
           <button
             type="button"
@@ -911,12 +1173,13 @@ export function ProductCard({
             className={`
               relative
               flex
-              min-h-[46px]
+              min-h-[44px]
               items-center
               justify-center
               gap-1.5
               overflow-hidden
               rounded-xl
+              border
               px-2
               py-2
               text-[10px]
@@ -926,17 +1189,16 @@ export function ProductCard({
               ease-ks-standard
               active:translate-y-[1px]
               sm:text-xs
-              md:text-sm
 
               ${
                 added
                   ? `
+                    border-brand-green
                     bg-brand-green
                     text-white
                     shadow-green-glow
                   `
                   : `
-                    border
                     border-brand-green/15
                     bg-white
                     text-brand-green
@@ -948,7 +1210,9 @@ export function ProductCard({
               }
             `}
           >
+
             {added ? (
+
               <>
                 <Check
                   className="h-3.5 w-3.5"
@@ -959,7 +1223,9 @@ export function ProductCard({
                   Added
                 </span>
               </>
+
             ) : (
+
               <>
                 <Plus
                   className="h-3.5 w-3.5"
@@ -970,11 +1236,15 @@ export function ProductCard({
                   Cart
                 </span>
               </>
+
             )}
+
           </button>
 
 
-          {/* Buy Now */}
+          {/* ==================================================================
+              BUY NOW
+              ================================================================== */}
 
           <button
             type="button"
@@ -982,15 +1252,19 @@ export function ProductCard({
             className="
               btn-buy
               group/buy
-              min-h-[46px]
+              flex
+              min-h-[44px]
+              items-center
+              justify-center
+              gap-1.5
               rounded-xl
               px-2
               py-2
               text-[10px]
               sm:text-xs
-              md:text-sm
             "
           >
+
             <Zap
               className="h-3.5 w-3.5"
               aria-hidden="true"
@@ -1012,11 +1286,33 @@ export function ProductCard({
               "
               aria-hidden="true"
             />
+
           </button>
 
         </div>
 
       </div>
+
+
+      {/* ======================================================================
+          BOTTOM DEPTH LINE
+          =================================================================== */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-x-6
+          bottom-0
+          h-px
+          bg-gradient-to-r
+          from-transparent
+          via-brand-green/10
+          to-transparent
+        "
+        aria-hidden="true"
+      />
+
     </article>
   );
 }
