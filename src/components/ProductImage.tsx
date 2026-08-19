@@ -19,16 +19,10 @@ interface ProductImageProps {
    - Product artwork is never intentionally cropped.
    - Product image always uses object-contain.
    - Natural image proportions are preserved.
-   - Card images receive a controlled safe area.
-   - Detail and hero images receive progressively more breathing room.
-   - Background adapts around the product.
+   - Square and portrait assets receive balanced visual breathing room.
+   - Card / detail / hero variants have independent visual scaling.
    - Product receives consistent grounding and depth.
    - Missing assets receive a deliberate branded fallback.
-
-   IMPORTANT:
-   The actual <img> element owns the containment rules.
-   This prevents parent components from accidentally forcing
-   product artwork into object-cover behaviour.
    ========================================================================== */
 
 
@@ -38,30 +32,41 @@ interface ProductImageProps {
 
 const variantConfig = {
   card: {
-    padding:
-      'p-[6%] sm:p-[7%] md:p-[8%]',
     stageClass:
       'product-image-stage-card',
+
     productClass:
       'product-image-object-card',
+
+    /*
+     * Slightly more conservative padding for cards.
+     * This keeps portrait packs from becoming too small while
+     * still protecting the artwork from the card edges.
+     */
+    imageClass:
+      'p-[3%] sm:p-[4%] md:p-[5%]',
   },
 
   detail: {
-    padding:
-      'p-[5%] sm:p-[6%] lg:p-[7%]',
     stageClass:
       'product-image-stage-detail',
+
     productClass:
       'product-image-object-detail',
+
+    imageClass:
+      'p-[2%] sm:p-[3%] lg:p-[4%]',
   },
 
   hero: {
-    padding:
-      'p-[4%] sm:p-[5%] lg:p-[6%]',
     stageClass:
       'product-image-stage-hero',
+
     productClass:
       'product-image-object-hero',
+
+    imageClass:
+      'p-[1%] sm:p-[2%] lg:p-[3%]',
   },
 } as const;
 
@@ -78,7 +83,7 @@ export function ProductImage({
 }: ProductImageProps) {
 
   /* ------------------------------------------------------------------------
-     Resolve product
+     RESOLVE PRODUCT
      ------------------------------------------------------------------------ */
 
   const resolvedId =
@@ -88,7 +93,7 @@ export function ProductImage({
 
 
   /* ------------------------------------------------------------------------
-     Resolve image configuration
+     RESOLVE IMAGE CONFIGURATION
      ------------------------------------------------------------------------ */
 
   const imageConfig =
@@ -98,7 +103,7 @@ export function ProductImage({
 
 
   /* ------------------------------------------------------------------------
-     Category label
+     CATEGORY LABEL
      ------------------------------------------------------------------------ */
 
   const categoryLabel =
@@ -110,7 +115,7 @@ export function ProductImage({
 
 
   /* ------------------------------------------------------------------------
-     Asset availability
+     ASSET AVAILABILITY
      ------------------------------------------------------------------------ */
 
   const isAvailable =
@@ -122,7 +127,7 @@ export function ProductImage({
 
 
   /* ------------------------------------------------------------------------
-     Loading priority
+     LOADING PRIORITY
      ------------------------------------------------------------------------ */
 
   const isEager =
@@ -131,7 +136,7 @@ export function ProductImage({
 
 
   /* ------------------------------------------------------------------------
-     Variant configuration
+     VARIANT CONFIGURATION
      ------------------------------------------------------------------------ */
 
   const config =
@@ -139,7 +144,7 @@ export function ProductImage({
 
 
   /* ------------------------------------------------------------------------
-     Accessible image label
+     ACCESSIBLE IMAGE LABEL
      ------------------------------------------------------------------------ */
 
   const accessibleLabel =
@@ -151,6 +156,7 @@ export function ProductImage({
   return (
     <div
       className={`
+        group
         relative
         flex
         h-full
@@ -239,6 +245,7 @@ export function ProductImage({
 
       {isAvailable ? (
         <>
+
           {/* ==================================================================
               GROUNDING SHADOW
               ================================================================== */}
@@ -250,8 +257,8 @@ export function ProductImage({
               bottom-[5%]
               left-1/2
               z-10
-              h-[6%]
-              w-[48%]
+              h-[5%]
+              w-[44%]
               -translate-x-1/2
               rounded-[50%]
               bg-brand-brown/14
@@ -259,7 +266,7 @@ export function ProductImage({
               transition-all
               duration-500
               ease-out
-              group-hover:w-[54%]
+              group-hover:w-[50%]
               group-hover:bg-brand-brown/20
             "
             aria-hidden="true"
@@ -272,7 +279,6 @@ export function ProductImage({
 
           <div
             className={`
-              product-image-object
               ${config.productClass}
               relative
               z-20
@@ -288,19 +294,22 @@ export function ProductImage({
               duration-500
               ease-out
               group-hover:-translate-y-1
-              group-hover:scale-[1.015]
             `}
           >
 
             {/* ================================================================
                 ACTUAL PRODUCT IMAGE
 
-                These rules intentionally live directly on the image.
+                IMPORTANT:
+                object-contain is retained.
 
-                max-h + max-w + object-contain ensures the entire
-                packaging artwork remains visible even when the source
-                image has unusual dimensions.
-                ============================================================= */}
+                We intentionally do NOT use object-cover.
+                This preserves the complete packaging artwork.
+
+                The image is allowed to use more of the available stage
+                than before so portrait product packs do not look
+                unnecessarily tiny.
+                ================================================================ */}
 
             <img
               src={imageConfig.primary}
@@ -333,7 +342,7 @@ export function ProductImage({
                 max-w-full
                 object-contain
                 object-center
-                ${config.padding}
+                ${config.imageClass}
                 drop-shadow-[0_14px_14px_rgba(78,52,46,0.14)]
                 transition-all
                 duration-500
@@ -390,6 +399,7 @@ export function ProductImage({
             "
             aria-hidden="true"
           />
+
         </>
       ) : (
 
@@ -398,6 +408,7 @@ export function ProductImage({
            ================================================================= */
 
         <>
+
           {/* ==================================================================
               PLACEHOLDER SURFACE
               ================================================================== */}
@@ -525,6 +536,7 @@ export function ProductImage({
                 max-w-[90%]
               "
             >
+
               <p
                 className="
                   truncate
@@ -537,6 +549,7 @@ export function ProductImage({
               >
                 {accessibleLabel}
               </p>
+
 
               <p
                 className="
@@ -553,6 +566,7 @@ export function ProductImage({
               >
                 Product image coming soon
               </p>
+
             </div>
 
           </div>
@@ -573,6 +587,7 @@ export function ProductImage({
                 sm:top-3
               "
             >
+
               <span
                 className="
                   badge-brown
@@ -584,6 +599,7 @@ export function ProductImage({
               >
                 {categoryLabel}
               </span>
+
             </div>
           )}
 
@@ -602,6 +618,7 @@ export function ProductImage({
               sm:right-3
             "
           >
+
             <span
               className="
                 text-[7px]
@@ -615,10 +632,12 @@ export function ProductImage({
             >
               Pending Asset
             </span>
+
           </div>
 
         </>
       )}
+
     </div>
   );
 }
