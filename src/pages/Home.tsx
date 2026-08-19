@@ -25,8 +25,12 @@ import { brand } from '@/data/brand';
    Conversion flow:
    ATTENTION → TRUST → CHOICE → DESIRE → MEANING → PROOF → ACTION
 
-   The page intentionally consumes the central design system rather than
-   creating page-specific visual tokens.
+   Spacing strategy:
+   - Compact first viewport
+   - Strong visual hierarchy
+   - Reduced empty vertical space
+   - Consistent shared design system
+   - No unnecessary page-level whitespace
    ========================================================================== */
 
 
@@ -39,25 +43,8 @@ export default function Home() {
      HERO VIDEO
      ======================================================================== */
 
-  /*
-   * The video is stored in:
-   *
-   * public/videos/home-hero.mp4
-   *
-   * Because this website is deployed on Render with the custom domain
-   * kawadswad.in, the public asset should be referenced directly from root.
-   */
-
-  const videoSrc = '/videos/home-hero.mp4';
-
-  /*
-   * Fallback poster:
-   *
-   * public/images/pages/home-hero-poster.png
-   *
-   * This is ONLY a fallback while the video is loading or if the browser
-   * cannot play the video.
-   */
+  const videoSrc =
+    '/videos/home-hero.mp4';
 
   const posterSrc =
     '/images/pages/home-hero-poster.png';
@@ -110,11 +97,16 @@ export default function Home() {
           relative
           overflow-hidden
           bg-brand-ivory
-          py-10
-          sm:py-16
-          lg:py-24
+          py-7
+          sm:py-10
+          lg:py-14
         "
       >
+
+        {/* --------------------------------------------------------------------
+            BACKGROUND GRID
+            ----------------------------------------------------------------- */}
+
         <div
           className="
             pointer-events-none
@@ -126,36 +118,47 @@ export default function Home() {
           aria-hidden="true"
         />
 
+
+        {/* --------------------------------------------------------------------
+            DECORATIVE CIRCLE
+            ----------------------------------------------------------------- */}
+
         <div
           className="
             pointer-events-none
             absolute
-            -right-32
-            -top-32
-            h-72
-            w-72
+            -right-24
+            -top-24
+            h-56
+            w-56
             rounded-full
             border
             border-brand-saffron/15
-            sm:h-[28rem]
-            sm:w-[28rem]
-            lg:-right-48
-            lg:-top-48
-            lg:h-[42rem]
-            lg:w-[42rem]
+            sm:h-80
+            sm:w-80
+            lg:-right-40
+            lg:-top-40
+            lg:h-[34rem]
+            lg:w-[34rem]
           "
           aria-hidden="true"
         />
 
+
+        {/* --------------------------------------------------------------------
+            HERO CONTENT
+            ----------------------------------------------------------------- */}
+
         <div className="container-max container-px relative">
+
           <div
             className="
               grid
               items-center
-              gap-10
+              gap-7
               lg:grid-cols-12
-              lg:gap-12
-              xl:gap-20
+              lg:gap-9
+              xl:gap-14
             "
           >
 
@@ -169,9 +172,17 @@ export default function Home() {
                 lg:col-span-6
               "
             >
-              <span className="section-eyebrow mb-4 block">
+
+              <span
+                className="
+                  section-eyebrow
+                  mb-3
+                  block
+                "
+              >
                 Nimar · Since 2025
               </span>
+
 
               <h1
                 className="
@@ -189,15 +200,16 @@ export default function Home() {
                 </span>
               </h1>
 
+
               <p
                 className="
-                  mt-6
+                  mt-4
                   max-w-xl
                   text-base
                   leading-relaxed
                   text-brand-brown/70
                   sm:text-lg
-                  lg:mt-7
+                  lg:mt-5
                 "
               >
                 Traditional flavour, made with care.
@@ -205,27 +217,33 @@ export default function Home() {
                 in the taste and food culture of Nimar.
               </p>
 
+
+              {/* --------------------------------------------------------------
+                  HERO ACTIONS
+                  -------------------------------------------------------------- */}
+
               <div
                 className="
-                  mt-8
+                  mt-6
                   flex
                   w-full
                   flex-col
-                  gap-3
+                  gap-2.5
                   sm:flex-row
                   sm:flex-wrap
-                  sm:gap-4
+                  sm:gap-3
                 "
               >
+
                 <Link
                   to="/shop"
                   className="
                     btn-primary
-                    min-h-[50px]
+                    min-h-[48px]
                     w-full
-                    px-7
+                    px-6
                     sm:w-auto
-                    sm:px-8
+                    sm:px-7
                   "
                 >
                   Shop Papads
@@ -236,33 +254,41 @@ export default function Home() {
                   />
                 </Link>
 
+
                 <Link
                   to="/about"
                   className="
                     btn-outline
-                    min-h-[50px]
+                    min-h-[48px]
                     w-full
-                    px-7
+                    px-6
                     sm:w-auto
-                    sm:px-8
+                    sm:px-7
                   "
                 >
                   Our Story
                 </Link>
+
               </div>
+
+
+              {/* --------------------------------------------------------------
+                  BRAND MICRO COPY
+                  -------------------------------------------------------------- */}
 
               <div
                 className="
-                  mt-8
+                  mt-6
                   flex
                   flex-wrap
                   items-center
-                  gap-x-5
-                  gap-y-2
+                  gap-x-4
+                  gap-y-1.5
                   text-xs
                   text-brand-brown/55
                 "
               >
+
                 <span>
                   निमाड़ का अपना पापड़
                 </span>
@@ -280,7 +306,9 @@ export default function Home() {
                 <span>
                   100% Vegetarian
                 </span>
+
               </div>
+
             </div>
 
 
@@ -294,12 +322,14 @@ export default function Home() {
                 lg:col-span-6
               "
             >
+
               <div
                 className="
                   relative
                   mx-auto
                   w-full
-                  max-w-[430px]
+                  max-w-[400px]
+                  lg:max-w-[410px]
                 "
               >
 
@@ -335,6 +365,7 @@ export default function Home() {
                     poster={posterSrc}
                     aria-label="Kawad Swad welcoming papad mascot hero video"
                   >
+
                     <source
                       src={videoSrc}
                       type="video/mp4"
@@ -353,11 +384,12 @@ export default function Home() {
                     />
 
                     Your browser does not support the hero video.
+
                   </video>
 
 
                   {/* ----------------------------------------------------------
-                      SUBTLE PREMIUM OVERLAY
+                      PREMIUM OVERLAY
                       ---------------------------------------------------------- */}
 
                   <div
@@ -384,15 +416,17 @@ export default function Home() {
                   className="
                     pointer-events-none
                     absolute
-                    -bottom-8
-                    -right-8
-                    h-28
-                    w-28
+                    -bottom-6
+                    -right-6
+                    h-24
+                    w-24
                     rounded-full
                     border
                     border-brand-saffron/30
-                    sm:h-40
-                    sm:w-40
+                    sm:-bottom-7
+                    sm:-right-7
+                    sm:h-32
+                    sm:w-32
                   "
                   aria-hidden="true"
                 />
@@ -405,41 +439,46 @@ export default function Home() {
                 <div
                   className="
                     absolute
-                    -bottom-4
-                    left-4
+                    -bottom-3
+                    left-3
                     rounded-2xl
                     bg-brand-green
-                    px-5
-                    py-4
+                    px-4
+                    py-3
                     shadow-card
-                    sm:-bottom-5
-                    sm:-left-5
-                    sm:px-6
-                    sm:py-5
+                    sm:-bottom-4
+                    sm:-left-4
+                    sm:px-5
+                    sm:py-4
                   "
                   aria-hidden="true"
                 >
+
                   <p
                     className="
                       font-serif
-                      text-lg
+                      text-base
                       font-bold
                       leading-tight
                       text-brand-ivory
-                      sm:text-xl
+                      sm:text-lg
                     "
                   >
                     निमाड़ का
                     <br />
                     अपना पापड़
                   </p>
+
                 </div>
 
               </div>
+
             </div>
 
           </div>
+
         </div>
+
       </section>
 
 
@@ -456,7 +495,16 @@ export default function Home() {
           text-brand-ivory
         "
       >
-        <div className="container-max container-px py-7 sm:py-8">
+
+        <div
+          className="
+            container-max
+            container-px
+            py-5
+            sm:py-6
+          "
+        >
+
           <div
             className="
               grid
@@ -466,6 +514,7 @@ export default function Home() {
               sm:divide-brand-ivory/15
             "
           >
+
             {trustItems.map(
               (item) => {
                 const Icon =
@@ -480,12 +529,13 @@ export default function Home() {
                       justify-center
                       gap-3
                       px-3
-                      py-3
+                      py-2
                       text-center
-                      sm:min-h-[62px]
+                      sm:min-h-[58px]
                       sm:px-5
                     "
                   >
+
                     <Icon
                       className="
                         h-5
@@ -497,6 +547,7 @@ export default function Home() {
                     />
 
                     <div className="text-left">
+
                       <p
                         className="
                           text-xs
@@ -517,13 +568,18 @@ export default function Home() {
                       >
                         {item.description}
                       </p>
+
                     </div>
+
                   </div>
                 );
               },
             )}
+
           </div>
+
         </div>
+
       </section>
 
 
@@ -537,15 +593,25 @@ export default function Home() {
           relative
           overflow-hidden
           bg-brand-ivory-light
-          py-16
-          sm:py-20
-          lg:py-28
+          py-10
+          sm:py-14
+          lg:py-18
         "
       >
+
         <div className="container-max container-px relative">
+
           <Reveal>
+
             <div className="mx-auto max-w-2xl text-center">
-              <span className="section-eyebrow mb-3 block">
+
+              <span
+                className="
+                  section-eyebrow
+                  mb-2.5
+                  block
+                "
+              >
                 Find Your Taste
               </span>
 
@@ -563,7 +629,7 @@ export default function Home() {
               <p
                 className="
                   mx-auto
-                  mt-4
+                  mt-3
                   max-w-xl
                   text-sm
                   leading-relaxed
@@ -574,24 +640,27 @@ export default function Home() {
                 From familiar classics to bold masalas,
                 choose the papad that belongs on your table.
               </p>
+
             </div>
+
           </Reveal>
 
 
           {featured.length > 0 && (
             <div
               className="
-                mt-10
+                mt-8
                 grid
                 grid-cols-2
                 gap-3
-                sm:mt-12
+                sm:mt-10
                 sm:gap-5
                 md:grid-cols-3
                 lg:grid-cols-4
                 lg:gap-6
               "
             >
+
               {featured.map(
                 (
                   product,
@@ -610,24 +679,26 @@ export default function Home() {
                   </Reveal>
                 ),
               )}
+
             </div>
           )}
 
 
           <div
             className="
-              mt-10
+              mt-8
               text-center
-              sm:mt-12
+              sm:mt-10
             "
           >
+
             <Link
               to="/shop"
               className="
                 btn-outline
-                min-h-[46px]
+                min-h-[44px]
                 px-6
-                sm:px-8
+                sm:px-7
               "
             >
               Explore All Papads
@@ -637,8 +708,11 @@ export default function Home() {
                 aria-hidden="true"
               />
             </Link>
+
           </div>
+
         </div>
+
       </section>
 
 
@@ -652,44 +726,49 @@ export default function Home() {
           relative
           overflow-hidden
           bg-brand-green
-          py-16
+          py-10
           text-brand-ivory
-          sm:py-20
-          lg:py-28
+          sm:py-14
+          lg:py-18
         "
       >
+
         <div
           className="
             pointer-events-none
             absolute
-            -left-24
+            -left-20
             top-1/2
-            h-72
-            w-72
+            h-56
+            w-56
             -translate-y-1/2
             rounded-full
             border
             border-brand-saffron/20
-            sm:h-[26rem]
-            sm:w-[26rem]
+            sm:h-80
+            sm:w-80
           "
           aria-hidden="true"
         />
 
+
         <div className="container-max container-px relative">
+
           <div
             className="
               grid
               items-center
-              gap-10
+              gap-8
               lg:grid-cols-12
-              lg:gap-16
+              lg:gap-12
             "
           >
+
             <Reveal className="lg:col-span-5">
+
               <span
                 className="
-                  mb-3
+                  mb-2.5
                   block
                   text-xs
                   font-semibold
@@ -721,7 +800,7 @@ export default function Home() {
 
               <p
                 className="
-                  mt-5
+                  mt-4
                   max-w-lg
                   text-base
                   leading-relaxed
@@ -736,9 +815,9 @@ export default function Home() {
               <Link
                 to="/shop"
                 className="
-                  mt-7
+                  mt-6
                   inline-flex
-                  min-h-[44px]
+                  min-h-[42px]
                   items-center
                   gap-2
                   font-semibold
@@ -755,6 +834,7 @@ export default function Home() {
                   aria-hidden="true"
                 />
               </Link>
+
             </Reveal>
 
 
@@ -762,6 +842,7 @@ export default function Home() {
               delay={100}
               className="lg:col-span-7"
             >
+
               <div
                 className="
                   relative
@@ -769,6 +850,7 @@ export default function Home() {
                   max-w-2xl
                 "
               >
+
                 <div
                   className="
                     image-premium
@@ -778,32 +860,43 @@ export default function Home() {
                     shadow-lift
                   "
                 >
+
                   <PlaceholderImage
                     label="Papad texture and crisp moment"
                     aspect="aspect-[4/3]"
-                    className="rounded-3xl bg-brand-green-dark"
+                    className="
+                      rounded-3xl
+                      bg-brand-green-dark
+                    "
                   />
+
                 </div>
+
 
                 <Sparkles
                   className="
                     absolute
                     -right-3
                     -top-3
-                    h-8
-                    w-8
+                    h-7
+                    w-7
                     text-brand-saffron
-                    sm:-right-5
-                    sm:-top-5
-                    sm:h-10
-                    sm:w-10
+                    sm:-right-4
+                    sm:-top-4
+                    sm:h-9
+                    sm:w-9
                   "
                   aria-hidden="true"
                 />
+
               </div>
+
             </Reveal>
+
           </div>
+
         </div>
+
       </section>
 
 
@@ -815,34 +908,47 @@ export default function Home() {
       <section
         className="
           bg-brand-ivory
-          py-16
-          sm:py-20
-          lg:py-28
+          py-10
+          sm:py-14
+          lg:py-18
         "
       >
+
         <div className="container-max container-px">
+
           <div
             className="
               grid
               items-center
-              gap-10
+              gap-8
               lg:grid-cols-12
-              lg:gap-16
+              lg:gap-12
             "
           >
+
             <Reveal className="lg:col-span-6">
+
               <PlaceholderImage
                 label="Kawad Swad heritage and making"
                 aspect="aspect-[4/3]"
                 className="rounded-3xl"
               />
+
             </Reveal>
+
 
             <Reveal
               delay={100}
               className="lg:col-span-6"
             >
-              <span className="section-eyebrow mb-3 block">
+
+              <span
+                className="
+                  section-eyebrow
+                  mb-2.5
+                  block
+                "
+              >
                 From Nimar
               </span>
 
@@ -861,7 +967,7 @@ export default function Home() {
 
               <p
                 className="
-                  mt-5
+                  mt-4
                   max-w-xl
                   text-base
                   leading-relaxed
@@ -875,7 +981,16 @@ export default function Home() {
                 modern discipline and dependable standards.
               </p>
 
-              <div className="mt-7 flex flex-wrap gap-3">
+
+              <div
+                className="
+                  mt-6
+                  flex
+                  flex-wrap
+                  gap-2.5
+                "
+              >
+
                 <span className="badge-green">
                   Nimar Heritage
                 </span>
@@ -887,14 +1002,16 @@ export default function Home() {
                 <span className="badge-brown">
                   Made with Care
                 </span>
+
               </div>
+
 
               <Link
                 to="/about"
                 className="
-                  mt-8
+                  mt-6
                   inline-flex
-                  min-h-[44px]
+                  min-h-[42px]
                   items-center
                   gap-2
                   font-semibold
@@ -911,9 +1028,13 @@ export default function Home() {
                   aria-hidden="true"
                 />
               </Link>
+
             </Reveal>
+
           </div>
+
         </div>
+
       </section>
 
 
@@ -927,15 +1048,25 @@ export default function Home() {
           border-y
           border-brand-green/10
           bg-brand-ivory-dark
-          py-16
-          sm:py-20
-          lg:py-24
+          py-10
+          sm:py-14
+          lg:py-16
         "
       >
+
         <div className="container-max container-px">
+
           <Reveal>
+
             <div className="mx-auto max-w-2xl text-center">
-              <span className="section-eyebrow mb-3 block">
+
+              <span
+                className="
+                  section-eyebrow
+                  mb-2.5
+                  block
+                "
+              >
                 From Flour to Crisp
               </span>
 
@@ -952,7 +1083,7 @@ export default function Home() {
 
               <p
                 className="
-                  mt-4
+                  mt-3
                   text-sm
                   leading-relaxed
                   text-brand-brown/65
@@ -963,20 +1094,23 @@ export default function Home() {
                 quality inspection and secure packaging are
                 built into every batch.
               </p>
+
             </div>
+
           </Reveal>
 
 
           <div
             className="
-              mt-10
+              mt-8
               grid
               gap-3
               sm:grid-cols-3
-              lg:mt-12
+              lg:mt-10
               lg:grid-cols-5
             "
           >
+
             {[
               ['01', 'Prepare'],
               ['02', 'Shape'],
@@ -992,14 +1126,17 @@ export default function Home() {
                   key={number}
                   delay={index * 50}
                 >
+
                   <div
                     className="
                       card-flat
                       relative
                       h-full
-                      p-5
+                      p-4
+                      sm:p-5
                     "
                   >
+
                     <span
                       className="
                         font-serif
@@ -1013,7 +1150,7 @@ export default function Home() {
 
                     <h3
                       className="
-                        mt-4
+                        mt-3
                         font-serif
                         text-lg
                         font-semibold
@@ -1022,19 +1159,28 @@ export default function Home() {
                     >
                       {title}
                     </h3>
+
                   </div>
+
                 </Reveal>
               ),
             )}
+
           </div>
 
 
-          <div className="mt-10 text-center">
+          <div
+            className="
+              mt-8
+              text-center
+            "
+          >
+
             <Link
               to="/manufacturing"
               className="
                 btn-outline
-                min-h-[46px]
+                min-h-[44px]
                 px-6
               "
             >
@@ -1045,8 +1191,11 @@ export default function Home() {
                 aria-hidden="true"
               />
             </Link>
+
           </div>
+
         </div>
+
       </section>
 
 
@@ -1063,6 +1212,7 @@ export default function Home() {
         secondaryLabel="Our Story"
         secondaryLink="/about"
       />
+
     </>
   );
 }
