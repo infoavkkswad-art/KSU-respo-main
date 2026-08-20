@@ -643,6 +643,32 @@ export default function Checkout() {
 
 
   /* ==========================================================================
+     SERVER-SIDE PRICE QUOTE
+     ========================================================================== */
+
+  const [
+    priceQuote,
+    setPriceQuote,
+  ] = useState<
+    Awaited<
+      ReturnType<
+        typeof apiClient.getCartQuote
+      >
+    > | null
+  >(null);
+
+  const [
+    quoteLoading,
+    setQuoteLoading,
+  ] = useState(false);
+
+  const [
+    quoteError,
+    setQuoteError,
+  ] = useState('');
+
+
+  /* ==========================================================================
      PRELOAD RAZORPAY
      ========================================================================== */
 
@@ -671,6 +697,74 @@ export default function Checkout() {
       };
 
     });
+
+
+  /* ==========================================================================
+     SERVER-SIDE PRICE QUOTE
+     ========================================================================== */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const pincode =
+      form.values.pincode.trim();
+
+    if (
+      items.length === 0 ||
+      !/^[1-9][0-9]{5}$/.test(
+        pincode,
+      )
+    ) {
+      setPriceQuote(null);
+      setQuoteError('');
+      setQuoteLoading(false);
+      return;
+    }
+
+    setQuoteLoading(true);
+    setQuoteError('');
+
+    void apiClient
+      .getCartQuote({
+        pincode,
+        items: items.map(
+          (item) => ({
+            sku: item.sku,
+            quantity: item.quantity,
+          }),
+        ),
+      })
+      .then((quote) => {
+        if (cancelled) return;
+
+        setPriceQuote(quote);
+        setQuoteError('');
+      })
+      .catch((quoteRequestError: unknown) => {
+        if (cancelled) return;
+
+        setPriceQuote(null);
+
+        setQuoteError(
+          quoteRequestError instanceof Error &&
+          quoteRequestError.message
+            ? quoteRequestError.message
+            : 'Unable to calculate delivery pricing for this PIN code.',
+        );
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setQuoteLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    form.values.pincode,
+    items,
+  ]);
 
 
   /* ==========================================================================
@@ -745,8 +839,48 @@ export default function Checkout() {
     }
 
 
-    form.setStatus('submitting');
+    /* ================================================================
+       REFRESH SERVER-SIDE QUOTE BEFORE PAYMENT
+       ================================================================ */
 
+    setQuoteLoading(true);
+    setQuoteError('');
+
+    let latestQuote;
+
+    try {
+      latestQuote =
+        await apiClient.getCartQuote({
+          pincode:
+            form.values.pincode.trim(),
+
+          items: items.map(
+            (item) => ({
+              sku: item.sku,
+              quantity: item.quantity,
+            }),
+          ),
+        });
+
+      setPriceQuote(latestQuote);
+
+    } catch (quoteRequestError: unknown) {
+      const message =
+        quoteRequestError instanceof Error &&
+        quoteRequestError.message
+          ? quoteRequestError.message
+          : 'Unable to calculate the final price for this PIN code.';
+
+      setQuoteError(message);
+      setError(message);
+      form.setStatus('error');
+      setQuoteLoading(false);
+      return;
+    } finally {
+      setQuoteLoading(false);
+    }
+
+    form.setStatus('submitting');
     setPaymentOpening(true);
 
 
@@ -829,6 +963,24 @@ export default function Checkout() {
           'Invalid payment amount received from the server.',
         );
 
+      }
+
+      /*
+       * The quote and the payment order must agree before Razorpay opens.
+       * The backend order amount remains the final payment authority.
+       */
+      const quoteTotalInPaise =
+        Math.round(
+          latestQuote.total * 100,
+        );
+
+      if (
+        orderResponse.amount !==
+        quoteTotalInPaise
+      ) {
+        throw new Error(
+          'The final order price changed while checking out. Please refresh the price and try again.',
+        );
       }
 
 
@@ -1666,6 +1818,114 @@ export default function Checkout() {
                       placeholder="6-digit PIN code"
                     />
 
+                    {quoteLoading && (
+                      <div
+                        className="
+                          mt-3
+                          rounded-xl
+                          border
+                          border-brand-green/10
+                          bg-brand-ivory
+                          px-3
+                          py-2.5
+                          text-xs
+                          text-brand-brown/60
+                        "
+                      >
+                        Checking delivery and final price...
+                      </div>
+                    )}
+
+                    {!quoteLoading &&
+                      priceQuote && (
+                        <div
+                          className="
+                            mt-3
+                            rounded-xl
+                            border
+                            border-brand-green/10
+                            bg-brand-ivory
+                            px-3
+                            py-2.5
+                          "
+                        >
+                          <div
+                            className="
+                              flex
+                              items-center
+                              justify-between
+                              gap-3
+                            "
+                          >
+                            <span
+                              className="
+                                text-xs
+                                font-semibold
+                                text-brand-green
+                              "
+                            >
+                              {priceQuote.fulfillmentType ===
+                              'MANUAL'
+                                ? 'Local delivery'
+                                : 'Standard shipping'}
+                            </span>
+
+                            <span
+                              className="
+                                text-xs
+                                font-bold
+                                text-brand-green
+                              "
+                            >
+                              {priceQuote.shipping === 0
+                                ? 'No shipping charge'
+                                : formatPrice(
+                                    priceQuote.shipping,
+                                  )}
+                            </span>
+                          </div>
+
+                          <p
+                            className="
+                              mt-1
+                              text-[10px]
+                              leading-relaxed
+                              text-brand-brown/50
+                            "
+                          >
+                            {priceQuote.location.districtName ||
+                              priceQuote.location.stateName
+                              ? `${priceQuote.location.districtName ?? ''}${
+                                  priceQuote.location.districtName &&
+                                  priceQuote.location.stateName
+                                    ? ', '
+                                    : ''
+                                }${priceQuote.location.stateName ?? ''}`
+                              : 'PIN verified successfully.'}
+                          </p>
+                        </div>
+                      )}
+
+                    {!quoteLoading &&
+                      quoteError && (
+                        <div
+                          className="
+                            mt-3
+                            rounded-xl
+                            border
+                            border-red-200
+                            bg-red-50
+                            px-3
+                            py-2.5
+                            text-xs
+                            leading-relaxed
+                            text-red-700
+                          "
+                        >
+                          {quoteError}
+                        </div>
+                      )}
+
                   </FormContainer>
 
 
@@ -1694,8 +1954,10 @@ export default function Checkout() {
                       type="submit"
                       disabled={
                         paymentOpening ||
+                        quoteLoading ||
                         form.status ===
-                          'submitting'
+                          'submitting' ||
+                        !priceQuote
                       }
                       className="
                         group/payment
@@ -1817,8 +2079,8 @@ export default function Checkout() {
                       className="h-4 w-4"
                     />
                   }
-                  title="Free Shipping"
-                  description="Shipping included"
+                  title="Delivery Checked"
+                  description="PIN-based pricing"
                 />
 
 
@@ -1980,12 +2242,25 @@ export default function Checkout() {
                             : '';
 
 
+                        const quotedItem =
+                          priceQuote?.items.find(
+                            (quoteItem) =>
+                              quoteItem.sku ===
+                              item.sku
+                                .trim()
+                                .toUpperCase(),
+                          );
+
                         const unitPrice =
-                          skuData &&
-                          typeof skuData.websitePrice ===
+                          quotedItem &&
+                          typeof quotedItem.unitPrice ===
                             'number'
-                            ? skuData.websitePrice
-                            : 0;
+                            ? quotedItem.unitPrice
+                            : skuData &&
+                              typeof skuData.websitePrice ===
+                                'number'
+                              ? skuData.websitePrice
+                              : 0;
 
 
                         const lineTotal =
@@ -2153,7 +2428,10 @@ export default function Checkout() {
                           text-brand-brown
                         "
                       >
-                        {formatPrice(subtotal)}
+                        {formatPrice(
+                          priceQuote?.subtotal ??
+                            subtotal,
+                        )}
                       </span>
 
                     </div>
@@ -2179,11 +2457,17 @@ export default function Checkout() {
                           text-brand-green
                         "
                       >
-                        {shippingTotal === 0
-                          ? 'Free'
-                          : formatPrice(
-                              shippingTotal,
-                            )}
+                        {priceQuote
+                          ? priceQuote.shipping === 0
+                            ? 'Free'
+                            : formatPrice(
+                                priceQuote.shipping,
+                              )
+                          : shippingTotal === 0
+                            ? 'Free'
+                            : formatPrice(
+                                shippingTotal,
+                              )}
                       </span>
 
                     </div>
@@ -2231,7 +2515,10 @@ export default function Checkout() {
                               sm:text-3xl
                             "
                           >
-                            {formatPrice(total)}
+                            {formatPrice(
+                              priceQuote?.total ??
+                                total,
+                            )}
                           </p>
 
                         </div>
@@ -2299,11 +2586,15 @@ export default function Checkout() {
                           text-brand-green
                         "
                       >
-                        Free shipping included.
+                        {priceQuote?.fulfillmentType ===
+                        'MANUAL'
+                          ? 'Local fulfilment: no shipping charge.'
+                          : 'Shipping included in your checkout total.'}
                       </strong>{' '}
 
-                      Your displayed total is the
-                      amount sent for secure payment.
+                      {quoteLoading
+                        ? 'Checking your delivery price...'
+                        : 'Your server-calculated total is the amount used for secure payment.'}
 
                     </p>
 
