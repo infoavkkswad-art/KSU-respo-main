@@ -2,27 +2,27 @@
 KAWAD SWAD
 SERVER-SIDE PRICING / FULFILMENT QUOTE SERVICE
 
-Stage 2.5
+Stage 2.6
 
 Commercial rule:
-- sales-config.ts stores:
-    sellingPrice + shipping = websitePrice
-- The customer-facing ProductService intentionally exposes shipping: 0
-  because websitePrice is already final.
-- Therefore the backend quote service must NOT read shipping from
-  ProductService.
-- For the current active sales master, the shipping component is ₹47
-  for every active SKU.
-- SHIPPING order:
-    subtotal = sellingPrice
-    shipping = ₹47
-    total = websitePrice
-- MANUAL order:
-    subtotal = sellingPrice
-    shipping = ₹0
-    total = sellingPrice
 
-The backend is authoritative. Frontend prices are never trusted.
+- The website selling price is the BASE PRODUCT PRICE.
+- Shipping is NOT embedded in the product price.
+- MANUAL fulfilment:
+      subtotal = website selling price
+      shipping = ₹0
+      total = subtotal
+
+- SHIPPING fulfilment:
+      subtotal = website selling price
+      shipping = fulfilment-resolved shipping
+      total = subtotal + shipping
+
+IMPORTANT:
+- Frontend prices are NEVER trusted.
+- Backend product data is authoritative.
+- Shipping is supplied by the fulfilment layer.
+- This service must NOT invent or subtract shipping from product prices.
 """
 
 from typing import Any, Dict, List, Tuple
@@ -30,22 +30,10 @@ from typing import Any, Dict, List, Tuple
 from fastapi import HTTPException
 
 from ..models.product import find_sku_in_backend
-from .pincode_service import get_fulfillment_quote
 
-
-# ==============================================================
-# COMMERCIAL MASTER BRIDGE
-# ==============================================================
-
-# Current active src/data/sales-config.ts uses ₹47 as the shipping
-# component for all 43 active SKU records.
-#
-# We keep this value in one backend constant instead of reading the
-# customer-facing `shipping: 0` field exposed by ProductService.
-#
-# If the commercial master changes later, update the backend bridge
-# at the same time as the sales master and run the pricing validation.
-STANDARD_SHIPPING_COMPONENT = 47.0
+from .pincode_service import (
+    get_fulfillment_quote,
+)
 
 
 # ==============================================================
@@ -55,7 +43,6 @@ STANDARD_SHIPPING_COMPONENT = 47.0
 def normalize_sku(
     sku: str,
 ) -> str:
-
     clean = (
         str(sku)
         .strip()
@@ -63,7 +50,6 @@ def normalize_sku(
     )
 
     if not clean:
-
         raise HTTPException(
             status_code=400,
             detail="SKU cannot be empty.",
@@ -76,14 +62,10 @@ def normalize_quantity(
     quantity: Any,
     sku: str,
 ) -> int:
-
     try:
-        value = int(
-            quantity
-        )
+        value = int(quantity)
 
     except Exception:
-
         raise HTTPException(
             status_code=400,
             detail=(
@@ -92,7 +74,6 @@ def normalize_quantity(
         )
 
     if value <= 0:
-
         raise HTTPException(
             status_code=400,
             detail=(
@@ -102,6 +83,41 @@ def normalize_quantity(
         )
 
     return value
+
+
+def normalize_money(
+    value: Any,
+    field_name: str,
+    sku: str,
+) -> float:
+    try:
+        amount = float(value)
+
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                f"Invalid {field_name} for SKU {sku}."
+            ),
+        )
+
+    if (
+        amount < 0
+        or not amount == amount
+        or amount == float("inf")
+        or amount == float("-inf")
+    ):
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                f"Invalid {field_name} for SKU {sku}."
+            ),
+        )
+
+    return round(
+        amount,
+        2,
+    )
 
 
 # ==============================================================
@@ -114,38 +130,31 @@ def get_backend_prices(
 ) -> Tuple[
     float,
     float,
-    float,
 ]:
     """
     Resolve:
 
-        selling_price
-        shipping_component
-        website_price
+        website_selling_price
+        mrp
 
     IMPORTANT:
 
-    ProductService deliberately exposes:
-        shipping = 0
-        freeShipping = true
+    websitePrice is now the BASE WEBSITE SELLING PRICE.
 
-    because websitePrice is already the final customer-facing price.
+    It must NOT be interpreted as:
 
-    Therefore that field MUST NOT be used to determine the actual
-    shipping component here.
+        selling price + shipping
 
-    Current commercial master:
-        websitePrice = sellingPrice + ₹47
+    Shipping is resolved separately by the fulfilment layer.
     """
 
-    try:
-
-        website_price = float(
-            sku_obj["websitePrice"]
+    website_price_raw = (
+        sku_obj.get(
+            "websitePrice"
         )
+    )
 
-    except Exception:
-
+    if website_price_raw is None:
         raise HTTPException(
             status_code=500,
             detail=(
@@ -154,10 +163,13 @@ def get_backend_prices(
             ),
         )
 
-    if (
-        not website_price >= 0
-    ):
+    website_price = normalize_money(
+        website_price_raw,
+        "website price",
+        sku_code,
+    )
 
+    if website_price < 0:
         raise HTTPException(
             status_code=500,
             detail=(
@@ -166,56 +178,28 @@ def get_backend_prices(
             ),
         )
 
-    shipping_component = (
-        STANDARD_SHIPPING_COMPONENT
+    mrp_raw = sku_obj.get(
+        "mrp"
     )
 
-    selling_price = round(
-        website_price -
-        shipping_component,
-        2,
-    )
-
-    if selling_price < 0:
-
+    if mrp_raw is None:
         raise HTTPException(
             status_code=500,
             detail=(
-                f"Backend selling price resolved below zero "
+                f"Backend MRP is missing "
                 f"for SKU {sku_code}."
             ),
         )
 
-    # Commercial integrity check:
-    #
-    # Current sales-config defines:
-    # sellingPrice + shipping = websitePrice
-    expected_website_price = round(
-        selling_price +
-        shipping_component,
-        2,
+    mrp = normalize_money(
+        mrp_raw,
+        "MRP",
+        sku_code,
     )
 
-    if (
-        expected_website_price !=
-        round(
-            website_price,
-            2,
-        )
-    ):
-
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                f"Commercial price mismatch for SKU "
-                f"{sku_code}."
-            ),
-        )
-
     return (
-        selling_price,
-        shipping_component,
         website_price,
+        mrp,
     )
 
 
@@ -229,33 +213,99 @@ def validate_manual_price(
     selling_price: float,
 ):
     """
-    Current Stage 2.1 rule:
+    Manual fulfilment uses the normal approved website
+    selling price.
 
-    For 200g:
-        selling price > ₹60
-        selling price < ₹75
+    The previous Stage 2.1 restriction:
 
-    Other pack sizes are not restricted by this specific rule.
+        200g > ₹60 and < ₹75
+
+    has been REMOVED.
+
+    This is required because the approved current website
+    selling prices include:
+
+        ₹55
+        ₹60
+        ₹65
+        ₹70
+
+    for 200g products.
     """
 
-    if pack_size != 200:
-        return
-
-    if not (
-        selling_price > 60
-        and selling_price < 75
-    ):
-
+    if selling_price < 0:
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail=(
-                f"SKU {sku_code} cannot currently be sold "
-                f"through MANUAL fulfilment because its 200g "
-                f"selling price is ₹{selling_price:.2f}. "
-                "The approved range is greater than ₹60 "
-                "and less than ₹75."
+                f"Invalid selling price for SKU "
+                f"{sku_code}."
             ),
         )
+
+
+# ==============================================================
+# SHIPPING VALIDATION
+# ==============================================================
+
+def resolve_shipping_amount(
+    fulfillment: Any,
+    is_manual: bool,
+) -> float:
+    """
+    Resolve shipping from the fulfilment quote.
+
+    MANUAL:
+        Always ₹0.
+
+    SHIPPING:
+        Use the shipping amount supplied by the
+        fulfilment layer.
+
+    IMPORTANT:
+        This function does NOT use a hard-coded ₹47.
+    """
+
+    if is_manual:
+        return 0.0
+
+    shipping_raw = getattr(
+        fulfillment,
+        "shippingCharge",
+        0,
+    )
+
+    try:
+        shipping = float(
+            shipping_raw
+        )
+
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Invalid shipping amount returned "
+                "by fulfilment service."
+            ),
+        )
+
+    if (
+        shipping < 0
+        or shipping != shipping
+        or shipping == float("inf")
+        or shipping == float("-inf")
+    ):
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Invalid shipping amount returned "
+                "by fulfilment service."
+            ),
+        )
+
+    return round(
+        shipping,
+        2,
+    )
 
 
 # ==============================================================
@@ -269,18 +319,21 @@ async def calculate_cart_quote(
     """
     Calculate the complete server-side cart quote.
 
-    SHIPPING:
-        selling price + shipping component
-        = existing websitePrice
+    IMPORTANT:
+
+    Product price:
+        backend websitePrice
 
     MANUAL:
-        selling price + ₹0 shipping
+        product subtotal + ₹0
+
+    SHIPPING:
+        product subtotal + fulfilment shipping
 
     No frontend price is accepted.
     """
 
     if not items:
-
         raise HTTPException(
             status_code=400,
             detail="Cart is empty.",
@@ -297,7 +350,6 @@ async def calculate_cart_quote(
     )
 
     if not fulfillment.validPincode:
-
         raise HTTPException(
             status_code=400,
             detail=(
@@ -315,7 +367,6 @@ async def calculate_cart_quote(
         "MANUAL",
         "SHIPPING",
     ):
-
         raise HTTPException(
             status_code=500,
             detail=(
@@ -328,16 +379,32 @@ async def calculate_cart_quote(
         "MANUAL"
     )
 
-    subtotal = 0.0
-    shipping = 0.0
+    # ----------------------------------------------------------
+    # ORDER-LEVEL TOTALS
+    # ----------------------------------------------------------
 
-    item_quotes = []
+    subtotal = 0.0
+
+    item_quotes: List[
+        Dict[str, Any]
+    ] = []
 
     # ----------------------------------------------------------
     # SKU CALCULATION
     # ----------------------------------------------------------
 
     for raw_item in items:
+
+        if not isinstance(
+            raw_item,
+            dict,
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Invalid cart item."
+                ),
+            )
 
         raw_sku = raw_item.get(
             "sku"
@@ -361,7 +428,6 @@ async def calculate_cart_quote(
         )
 
         if not family or not sku_obj:
-
             raise HTTPException(
                 status_code=400,
                 detail=(
@@ -376,7 +442,6 @@ async def calculate_cart_quote(
                 True,
             )
         ):
-
             raise HTTPException(
                 status_code=400,
                 detail=(
@@ -384,17 +449,23 @@ async def calculate_cart_quote(
                 ),
             )
 
+        # ------------------------------------------------------
+        # AUTHORITATIVE PRODUCT PRICE
+        # ------------------------------------------------------
+
         (
             selling_price,
-            sku_shipping,
-            website_price,
+            mrp,
         ) = get_backend_prices(
             sku_code,
             sku_obj,
         )
 
-        try:
+        # ------------------------------------------------------
+        # PACK SIZE
+        # ------------------------------------------------------
 
+        try:
             pack_size = int(
                 sku_obj.get(
                     "packSize",
@@ -403,11 +474,9 @@ async def calculate_cart_quote(
             )
 
         except Exception:
-
             pack_size = 0
 
         if pack_size <= 0:
-
             raise HTTPException(
                 status_code=500,
                 detail=(
@@ -432,8 +501,6 @@ async def calculate_cart_quote(
                 selling_price
             )
 
-            item_shipping = 0.0
-
             pricing_mode = (
                 "LOCAL"
             )
@@ -444,27 +511,17 @@ async def calculate_cart_quote(
 
         else:
 
-            # IMPORTANT:
-            #
-            # Do NOT use websitePrice as unit price and then add
-            # shipping again. websitePrice already contains the
-            # shipping component.
-            #
-            # Instead:
-            #
-            # sellingPrice + shipping = websitePrice
-            #
             unit_price = (
                 selling_price
-            )
-
-            item_shipping = (
-                sku_shipping
             )
 
             pricing_mode = (
                 "STANDARD"
             )
+
+        # ------------------------------------------------------
+        # ITEM SUBTOTAL
+        # ------------------------------------------------------
 
         item_subtotal = round(
             unit_price *
@@ -472,21 +529,17 @@ async def calculate_cart_quote(
             2,
         )
 
-        item_shipping_total = round(
-            item_shipping *
-            quantity,
-            2,
-        )
+        if item_subtotal < 0:
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"Invalid item subtotal for SKU "
+                    f"{sku_code}."
+                ),
+            )
 
         subtotal += (
             item_subtotal
-        )
-
-        # Preserve the existing business rule:
-        # largest applicable shipping charge.
-        shipping = max(
-            shipping,
-            item_shipping_total,
         )
 
         item_quotes.append(
@@ -497,14 +550,25 @@ async def calculate_cart_quote(
                 "quantity":
                     quantity,
 
+                /*
+                 * BASE WEBSITE SELLING PRICE.
+                 *
+                 * Shipping is kept separate.
+                 */
                 "unitPrice":
                     unit_price,
 
                 "itemSubtotal":
                     item_subtotal,
 
+                /*
+                 * Shipping is resolved below at order level.
+                 *
+                 * We do NOT multiply the order shipping
+                 * by every SKU.
+                 */
                 "shipping":
-                    item_shipping_total,
+                    0.0,
 
                 "productName":
                     family.get(
@@ -516,11 +580,18 @@ async def calculate_cart_quote(
                     pack_size,
 
                 "mrp":
-                    sku_obj.get(
-                        "mrp"
-                    ),
+                    mrp,
             }
         )
+
+    # ----------------------------------------------------------
+    # ORDER SHIPPING
+    # ----------------------------------------------------------
+
+    shipping = resolve_shipping_amount(
+        fulfillment,
+        is_manual,
+    )
 
     # ----------------------------------------------------------
     # FINAL TOTAL
@@ -543,13 +614,16 @@ async def calculate_cart_quote(
     )
 
     if total <= 0:
-
         raise HTTPException(
             status_code=400,
             detail=(
                 "Order total must be greater than zero."
             ),
         )
+
+    # ----------------------------------------------------------
+    # RETURN SERVER QUOTE
+    # ----------------------------------------------------------
 
     return {
         "success":
