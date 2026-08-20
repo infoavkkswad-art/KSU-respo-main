@@ -18,6 +18,12 @@ class Settings(BaseSettings):
     razorpay_key_secret: str = "placeholder_secret"
     razorpay_webhook_secret: str = "webhook_secret_placeholder"
 
+    # India Post Sandbox API Configuration
+    india_post_base_url: str = "https://test.cept.gov.in/beextcustomer"
+    india_post_customer_id: str = "9999173774"
+    india_post_username: str = "sandbox_user_placeholder"
+    india_post_password: str = "sandbox_password_placeholder"
+
     @property
     def cors_origins_list(self) -> List[str]:
         return [
