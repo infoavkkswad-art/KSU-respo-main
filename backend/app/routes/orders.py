@@ -454,6 +454,65 @@ def assert_razorpay_amount_matches_order(
         )
 
 
+
+def get_fulfillment_status_for_paid_order(
+    order: dict,
+) -> str:
+    """
+    Convert the already-authoritative fulfillment type into the
+    post-payment processing state.
+
+    MANUAL   -> READY_LOCAL
+    SHIPPING -> READY_TO_SHIP
+
+    This is deliberately derived from the stored fulfillmentType,
+    not from frontend data or the customer's PIN again.
+    """
+
+    fulfillment_type = (
+        str(
+            order.get(
+                "fulfillmentType",
+                "SHIPPING",
+            )
+        )
+        .strip()
+        .upper()
+    )
+
+    if fulfillment_type == "MANUAL":
+        return "READY_LOCAL"
+
+    if fulfillment_type == "SHIPPING":
+        return "READY_TO_SHIP"
+
+    raise HTTPException(
+        status_code=500,
+        detail=(
+            "Order has an invalid fulfilment type."
+        ),
+    )
+
+
+def apply_paid_fulfillment_status(
+    order: dict,
+) -> str:
+    """
+    Set the operational fulfilment status after payment.
+
+    This is idempotent and safe to call from both the direct
+    payment-verification path and the Razorpay webhook path.
+    """
+
+    fulfillment_status = (
+        get_fulfillment_status_for_paid_order(
+            order
+        )
+    )
+
+    return fulfillment_status
+
+
 # ============================================================
 # CREATE ORDER
 # ============================================================
@@ -755,6 +814,20 @@ async def create_order(
             "pending",
         )
 
+        response_data[
+            "fulfillmentType"
+        ] = existing_order.get(
+            "fulfillmentType",
+            "SHIPPING",
+        )
+
+        response_data[
+            "fulfillmentStatus"
+        ] = existing_order.get(
+            "fulfillmentStatus",
+            "AWAITING_PAYMENT",
+        )
+
         print(
             "========== CREATE ORDER SUCCESS =========="
         )
@@ -957,6 +1030,14 @@ async def verify_payment(
     # 4. ATOMIC MONGODB CONFIRMATION
     # ---------------------------------------------------------
 
+    # The order's stored fulfillmentType is the authority for the
+    # post-payment operational state.
+    fulfillment_status = (
+        get_fulfillment_status_for_paid_order(
+            existing_order
+        )
+    )
+
     updated_order = (
         await db.orders.find_one_and_update(
             {
@@ -973,6 +1054,9 @@ async def verify_payment(
 
                     "status":
                         "confirmed",
+
+                    "fulfillmentStatus":
+                        fulfillment_status,
 
                     "razorpayPaymentId":
                         payload.razorpay_payment_id,
@@ -1054,6 +1138,33 @@ async def verify_payment(
         updated_order = (
             already_paid_order
         )
+
+        existing_fulfillment_status = (
+            get_fulfillment_status_for_paid_order(
+                updated_order
+            )
+        )
+
+        if updated_order.get(
+            "fulfillmentStatus"
+        ) != existing_fulfillment_status:
+
+            await db.orders.update_one(
+                {
+                    "_id":
+                        updated_order["_id"]
+                },
+                {
+                    "$set": {
+                        "fulfillmentStatus":
+                            existing_fulfillment_status
+                    }
+                },
+            )
+
+            updated_order[
+                "fulfillmentStatus"
+            ] = existing_fulfillment_status
 
         print(
             "Order was already confirmed."
@@ -1250,6 +1361,12 @@ async def verify_payment(
                     False,
                 ),
 
+            "fulfillmentStatus":
+                updated_order.get(
+                    "fulfillmentStatus",
+                    "",
+                ),
+
             "currency":
                 "INR",
 
@@ -1371,6 +1488,18 @@ async def verify_payment(
             payment_details.get(
                 "method",
                 "",
+            ),
+
+        "fulfillmentType":
+            updated_order.get(
+                "fulfillmentType",
+                "SHIPPING",
+            ),
+
+        "fulfillmentStatus":
+            updated_order.get(
+                "fulfillmentStatus",
+                "READY_TO_SHIP",
             ),
 
         "amount":
@@ -1663,6 +1792,32 @@ async def razorpay_webhook(
         "order.paid",
     }:
 
+        # The order already contains the authoritative fulfillmentType.
+        # Derive the operational state from it before marking payment paid.
+        webhook_order = (
+            await db.orders.find_one(
+                {
+                    "razorpayOrderId":
+                        razorpay_order_id,
+                }
+            )
+        )
+
+        if not webhook_order:
+            print(
+                "Webhook order lookup failed."
+            )
+            return {
+                "status":
+                    "retry_required"
+            }
+
+        webhook_fulfillment_status = (
+            get_fulfillment_status_for_paid_order(
+                webhook_order
+            )
+        )
+
         updated_order = (
             await db.orders.find_one_and_update(
                 {
@@ -1680,6 +1835,9 @@ async def razorpay_webhook(
 
                         "status":
                             "confirmed",
+
+                        "fulfillmentStatus":
+                            webhook_fulfillment_status,
 
                         "razorpayPaymentId":
                             razorpay_payment_id,
@@ -1866,6 +2024,30 @@ async def razorpay_webhook(
                     updated_order.get(
                         "total",
                         0,
+                    ),
+
+                "fulfillmentType":
+                    updated_order.get(
+                        "fulfillmentType",
+                        "",
+                    ),
+
+                "pricingMode":
+                    updated_order.get(
+                        "pricingMode",
+                        "",
+                    ),
+
+                "shippingRequired":
+                    updated_order.get(
+                        "shippingRequired",
+                        False,
+                    ),
+
+                "fulfillmentStatus":
+                    updated_order.get(
+                        "fulfillmentStatus",
+                        "",
                     ),
 
                 "currency":
