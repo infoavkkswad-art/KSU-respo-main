@@ -1,16 +1,21 @@
 """
 KAWAD SWAD
-FULFILMENT API
+FULFILMENT + PRICING API
 
-Public endpoints used by checkout.
+Stage 2.3
 
-Important:
-    These endpoints only resolve PIN/fulfilment information.
+Public endpoints:
+- PIN lookup
+- PIN fulfilment quote
+- Full cart pricing quote
 
-    Product pricing will be connected in the next stage.
+The full cart quote is server-side and never trusts frontend prices.
 """
 
+from typing import Any, Dict, List
+
 from fastapi import APIRouter
+from pydantic import BaseModel, Field
 
 from ..models.fulfillment import (
     FulfillmentQuote,
@@ -22,6 +27,10 @@ from ..services.pincode_service import (
     get_fulfillment_quote,
 )
 
+from ..services.pricing_service import (
+    calculate_cart_quote,
+)
+
 
 router = APIRouter(
     prefix="/api/fulfillment",
@@ -29,9 +38,40 @@ router = APIRouter(
 )
 
 
-# ============================================================
+# ==============================================================
+# REQUEST MODELS
+# ==============================================================
+
+class CartQuoteItem(BaseModel):
+    sku: str = Field(
+        ...,
+        min_length=1,
+    )
+
+    quantity: int = Field(
+        ...,
+        ge=1,
+    )
+
+
+class CartQuoteRequest(BaseModel):
+    pincode: str = Field(
+        ...,
+        min_length=6,
+        max_length=6,
+    )
+
+    items: List[
+        CartQuoteItem
+    ] = Field(
+        ...,
+        min_length=1,
+    )
+
+
+# ==============================================================
 # PIN LOOKUP
-# ============================================================
+# ==============================================================
 
 @router.get(
     "/pincode/{pincode}",
@@ -40,15 +80,14 @@ router = APIRouter(
 async def pincode_lookup(
     pincode: str,
 ):
-
     return await lookup_pincode(
         pincode
     )
 
 
-# ============================================================
-# FULFILMENT QUOTE
-# ============================================================
+# ==============================================================
+# PIN FULFILMENT QUOTE
+# ==============================================================
 
 @router.get(
     "/quote/{pincode}",
@@ -57,7 +96,28 @@ async def pincode_lookup(
 async def fulfillment_quote(
     pincode: str,
 ):
-
     return await get_fulfillment_quote(
         pincode
+    )
+
+
+# ==============================================================
+# FULL CART PRICE QUOTE
+# ==============================================================
+
+@router.post(
+    "/cart-quote",
+)
+async def cart_quote(
+    payload: CartQuoteRequest,
+):
+    return await calculate_cart_quote(
+        pincode=payload.pincode,
+        items=[
+            {
+                "sku": item.sku,
+                "quantity": item.quantity,
+            }
+            for item in payload.items
+        ],
     )
