@@ -1,6 +1,6 @@
 import {
   getSalesSku,
-  getFinalWebsitePrice,
+  getSellingPrice,
   type SalesSkuConfig,
 } from './sales-config';
 
@@ -20,32 +20,28 @@ export type PackSize =
  * PRODUCT SKU VIEW
  * ============================================================================
  *
- * IMPORTANT:
- *
  * sales-config.ts is the commercial master.
  *
  * It stores:
  *   MRP
  *   sellingPrice
- *   shipping
  *   availability
  *
- * This product layer exposes:
- *   websitePrice = sellingPrice + shipping
+ * IMPORTANT:
  *
- * Therefore the rest of the website can continue to use ONE customer-facing
- * number called websitePrice.
+ * websitePrice is now the BASE WEBSITE SELLING PRICE.
  *
- * Shipping is intentionally represented here as 0/free because the current
- * cart and product UI treat websitePrice as the FINAL customer-facing amount.
+ * Shipping is NOT included in websitePrice.
  *
- * Example:
+ * NEW FULFILMENT MODEL:
  *
- *   sellingPrice = ₹55
- *   shipping     = ₹47
- *   websitePrice = ₹102
+ *   MANUAL
+ *      websitePrice + ₹0 shipping
  *
- * This avoids making every UI component understand the internal pricing model.
+ *   SHIPPING
+ *      websitePrice + shipping supplied by the fulfilment system
+ *
+ * The backend remains the final pricing authority at checkout.
  * ========================================================================== */
 
 export interface Sku {
@@ -54,18 +50,28 @@ export interface Sku {
   mrp: number | null;
 
   /*
-   * FINAL customer-facing website price.
+   * BASE customer-facing website selling price.
    *
-   * This is calculated from sales-config.ts.
+   * Shipping is NOT included here.
    */
   websitePrice: number | null;
 
   /*
-   * The final website price already includes the configured shipping amount.
-   * Customer-facing UI therefore treats shipping as free/included.
+   * Compatibility field.
+   *
+   * Actual shipping is resolved separately by fulfilment.
+   *
+   * This value must NOT be used as a shipping calculation.
    */
   shipping: 0;
-  freeShipping: true;
+
+  /*
+   * false means shipping is NOT permanently included/free.
+   *
+   * MANUAL fulfilment may still result in ₹0 shipping.
+   * SHIPPING fulfilment may have a calculated shipping charge.
+   */
+  freeShipping: false;
 
   available: boolean;
 }
@@ -128,11 +134,7 @@ export const CATEGORY_LABELS: Record<
  * - Coupon calculations
  * - Offer calculations
  *
- * IMPORTANT:
- *
- * sales-config.ts stores the components of the price.
- *
- * products.ts exposes the calculated FINAL customer-facing websitePrice.
+ * websitePrice is the BASE website selling price.
  * ========================================================================== */
 
 function makeSku(
@@ -165,55 +167,67 @@ function makeSku(
     );
   }
 
-  const finalWebsitePrice =
-    getFinalWebsitePrice(
+  /*
+   * The product layer exposes the approved Website Selling Price.
+   *
+   * It does NOT add SKU shipping here.
+   */
+  const websiteSellingPrice =
+    getSellingPrice(
       skuCode,
     );
 
   /*
-   * An available SKU must have a valid final customer price.
+   * An available SKU must have a valid website selling price.
    */
   if (
     salesSku.available &&
     (
-      finalWebsitePrice === null ||
+      websiteSellingPrice === null ||
       !Number.isFinite(
-        finalWebsitePrice,
+        websiteSellingPrice,
       ) ||
-      finalWebsitePrice < 0
+      websiteSellingPrice < 0
     )
   ) {
     throw new Error(
-      `Invalid final website price for SKU: ${skuCode}`,
+      `Invalid website selling price for SKU: ${skuCode}`,
     );
   }
 
   return {
     sku: salesSku.sku,
+
     packSize:
       salesSku.packSize as PackSize,
-    mrp: salesSku.mrp,
+
+    mrp:
+      salesSku.mrp,
 
     /*
-     * IMPORTANT:
+     * BASE WEBSITE SELLING PRICE.
      *
-     * Do NOT use:
+     * Example:
      *
-     *   salesSku.sellingPrice
+     * KS-MMP-200 = ₹55
      *
-     * here.
-     *
-     * websitePrice is the FINAL price including shipping.
+     * Shipping is resolved separately.
      */
     websitePrice:
-      finalWebsitePrice,
+      websiteSellingPrice,
 
     /*
-     * The website displays the calculated final price as the product price.
-     * Existing cart/UI code therefore continues to treat shipping as included.
+     * Shipping is deliberately not embedded in the product price.
      */
     shipping: 0,
-    freeShipping: true,
+
+    /*
+     * Do not tell the UI that shipping is universally free.
+     *
+     * MANUAL may be ₹0.
+     * SHIPPING may have a charge.
+     */
+    freeShipping: false,
 
     available:
       salesSku.available,
@@ -714,16 +728,15 @@ export const products: ProductFamily[] = [
  *
  * Every product SKU must exist in the central sales configuration.
  *
- * The important distinction is:
+ * NEW MODEL:
  *
  * sales-config.ts
- *   sellingPrice + shipping
- *             ↓
- * products.ts
- *   websitePrice (FINAL)
+ *   sellingPrice = BASE WEBSITE SELLING PRICE
  *
- * This validation checks that the product layer is correctly reflecting the
- * central commercial master.
+ * products.ts
+ *   websitePrice = sellingPrice
+ *
+ * Fulfilment shipping is resolved separately.
  * ========================================================================== */
 
 export function validateProductSalesMapping(): {
@@ -820,45 +833,53 @@ export function validateProductSalesMapping(): {
       }
 
       /*
-       * websitePrice must equal the CALCULATED FINAL PRICE:
+       * NEW RULE:
        *
-       * sellingPrice + shipping
+       * websitePrice must equal the approved BASE Website Selling Price.
        *
-       * NOT sellingPrice alone.
+       * Example:
+       *
+       * KS-MMP-200
+       * sellingPrice = ₹55
+       * websitePrice = ₹55
+       *
+       * Shipping is NOT included here.
        */
-      const expectedFinalPrice =
-        getFinalWebsitePrice(
-          normalizedSku,
-        );
-
       if (
         sku.websitePrice !==
-        expectedFinalPrice
+        salesSku.sellingPrice
       ) {
         errors.push(
-          `${sku.sku}: final website price mismatch. Expected ₹${expectedFinalPrice ?? 'invalid'}, got ₹${sku.websitePrice ?? 'invalid'}.`,
+          `${sku.sku}: website selling price mismatch. Expected ₹${salesSku.sellingPrice ?? 'invalid'}, got ₹${sku.websitePrice ?? 'invalid'}.`,
         );
       }
 
       /*
-       * The current customer-facing product model treats websitePrice as the
-       * final amount and therefore exposes shipping as included/free.
+       * Product-level shipping must remain zero.
        *
-       * The actual shipping master value remains in sales-config.ts.
+       * This does NOT mean all orders have free shipping.
+       *
+       * It means shipping is resolved separately by fulfilment.
        */
       if (
         sku.shipping !== 0
       ) {
         errors.push(
-          `${sku.sku}: product-layer shipping must remain 0 because shipping is included in websitePrice.`,
+          `${sku.sku}: product-layer shipping must be 0 because shipping is resolved separately by fulfilment.`,
         );
       }
 
+      /*
+       * freeShipping must NOT be true globally.
+       *
+       * MANUAL may have ₹0 shipping.
+       * SHIPPING may have a charge.
+       */
       if (
-        sku.freeShipping !== true
+        sku.freeShipping !== false
       ) {
         errors.push(
-          `${sku.sku}: product-layer freeShipping must remain true because shipping is included in websitePrice.`,
+          `${sku.sku}: freeShipping must be false because shipping depends on fulfilment.`,
         );
       }
 
@@ -896,7 +917,7 @@ export function validateProductSalesMapping(): {
         )
       ) {
         errors.push(
-          `${sku.sku}: invalid final website price.`,
+          `${sku.sku}: invalid website selling price.`,
         );
       }
 
@@ -908,30 +929,28 @@ export function validateProductSalesMapping(): {
         )
       ) {
         errors.push(
-          `${sku.sku}: available SKU must have MRP and final website price.`,
+          `${sku.sku}: available SKU must have MRP and website selling price.`,
         );
       }
 
       /*
-       * IMPORTANT:
-       *
-       * Do NOT reject websitePrice > MRP here.
-       *
-       * The approved commercial model defines:
-       *
-       *   final websitePrice =
-       *     sellingPrice + shipping
-       *
-       * Therefore the final customer-facing amount can exceed the
-       * printed MRP in the current master for some SKUs.
-       *
-       * The commercial master is the authority for these values.
+       * Selling price should not exceed MRP.
        */
+      if (
+        sku.mrp !== null &&
+        sku.websitePrice !== null &&
+        sku.websitePrice >
+          sku.mrp
+      ) {
+        errors.push(
+          `${sku.sku}: website selling price ₹${sku.websitePrice} exceeds MRP ₹${sku.mrp}.`,
+        );
+      }
     }
   }
 
   /*
-   * The current master contains 43 active SKUs across 15 product families.
+   * The current master contains 43 active SKUs.
    */
   if (
     seenProductSkus.size !== 43
@@ -944,6 +963,7 @@ export function validateProductSalesMapping(): {
   return {
     valid:
       errors.length === 0,
+
     errors,
   };
 }
