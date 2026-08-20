@@ -8,6 +8,10 @@ import {
 import {
   getSalesSku,
   getFinalWebsitePrice,
+  getLowestPrice,
+  getManualPrice,
+  isManualPriceEligible,
+  getPriceForFulfillment,
   type SalesSkuConfig,
 } from '../data/sales-config';
 
@@ -26,6 +30,17 @@ export interface FlatProductItem {
   packSize: number | string;
   mrp: number;
   websitePrice: number;
+
+  /*
+   * Lowest product price before shipping.
+   */
+  lowestPrice: number;
+
+  /*
+   * Manual/local pricing metadata.
+   */
+  manualPrice: number | null;
+  manualPriceEligible: boolean;
 
   /*
    * Customer-facing shipping is already included in websitePrice.
@@ -73,6 +88,30 @@ export type PurchasableSku = Omit<
 > & {
   mrp: number;
   websitePrice: number;
+
+  /*
+   * Lowest product price before shipping.
+   *
+   * This is the value that will later be used by the PIN-based
+   * fulfilment/pricing engine for MANUAL orders.
+   */
+  lowestPrice: number;
+
+  /*
+   * Approved manual/local price, when the SKU currently satisfies
+   * the Stage 2.1 manual-price rule.
+   *
+   * null means the SKU needs commercial-price review before it can
+   * be used for a MANUAL order.
+   */
+  manualPrice: number | null;
+
+  manualPriceEligible: boolean;
+
+  /*
+   * Keep the existing customer-facing contract:
+   * shipping is already included in websitePrice.
+   */
   shipping: 0;
   freeShipping: true;
   available: true;
@@ -263,6 +302,30 @@ function toPurchasableSku(
     return undefined;
   }
 
+  const lowestPrice =
+    getLowestPrice(
+      sales.sku,
+    );
+
+  if (
+    lowestPrice === null ||
+    !Number.isFinite(
+      lowestPrice,
+    )
+  ) {
+    return undefined;
+  }
+
+  const manualPriceEligible =
+    isManualPriceEligible(
+      sales.sku,
+    );
+
+  const manualPrice =
+    getManualPrice(
+      sales.sku,
+    );
+
   return {
     ...sku,
 
@@ -278,6 +341,8 @@ function toPurchasableSku(
     /*
      * FINAL CUSTOMER PRICE
      *
+     * Existing public website behaviour is preserved.
+     *
      * Example:
      * ₹55 selling + ₹47 shipping = ₹102
      */
@@ -285,8 +350,27 @@ function toPurchasableSku(
       finalWebsitePrice,
 
     /*
+     * LOWEST PRODUCT PRICE
+     *
+     * This is the commercial product price before shipping.
+     * The PIN fulfilment engine will decide whether this value
+     * is applicable to the customer's order.
+     */
+    lowestPrice,
+
+    /*
+     * MANUAL / LOCAL PRICE
+     *
+     * Stage 2.1 validates the current 200g rule:
+     * > ₹60 and < ₹75
+     */
+    manualPrice,
+
+    manualPriceEligible,
+
+    /*
      * Shipping is already included in
-     * websitePrice at the customer layer.
+     * websitePrice at the existing customer layer.
      */
     shipping: 0,
 
@@ -538,6 +622,85 @@ export const ProductService = {
   },
 
   /* --------------------------------------------------------------------------
+     LOWEST PRICE
+  -------------------------------------------------------------------------- */
+
+  getLowestPrice(
+    skuCode: string,
+  ):
+    | number
+    | undefined {
+    return (
+      getLowestPrice(
+        normalizeSkuCode(
+          skuCode,
+        ),
+      ) ??
+      undefined
+    );
+  },
+
+  /* --------------------------------------------------------------------------
+     MANUAL / LOCAL PRICE
+  -------------------------------------------------------------------------- */
+
+  getManualPrice(
+    skuCode: string,
+  ):
+    | number
+    | undefined {
+    return (
+      getManualPrice(
+        normalizeSkuCode(
+          skuCode,
+        ),
+      ) ??
+      undefined
+    );
+  },
+
+  /* --------------------------------------------------------------------------
+     MANUAL PRICE ELIGIBILITY
+  -------------------------------------------------------------------------- */
+
+  isManualPriceEligible(
+    skuCode: string,
+  ): boolean {
+    return isManualPriceEligible(
+      normalizeSkuCode(
+        skuCode,
+      ),
+    );
+  },
+
+  /* --------------------------------------------------------------------------
+     PRICE FOR FULFILMENT
+     --------------------------------------------------------------------------
+     Display/calculation helper only.
+
+     The backend remains the final pricing authority at checkout.
+  -------------------------------------------------------------------------- */
+
+  getPriceForFulfillment(
+    skuCode: string,
+    fulfillmentType:
+      | 'MANUAL'
+      | 'SHIPPING',
+  ):
+    | number
+    | undefined {
+    return (
+      getPriceForFulfillment(
+        normalizeSkuCode(
+          skuCode,
+        ),
+        fulfillmentType,
+      ) ??
+      undefined
+    );
+  },
+
+  /* --------------------------------------------------------------------------
      SEARCH
   -------------------------------------------------------------------------- */
 
@@ -699,6 +862,15 @@ export const ProductService = {
 
           websitePrice:
             sku.websitePrice,
+
+          lowestPrice:
+            sku.lowestPrice,
+
+          manualPrice:
+            sku.manualPrice,
+
+          manualPriceEligible:
+            sku.manualPriceEligible,
 
           shipping: 0,
 
