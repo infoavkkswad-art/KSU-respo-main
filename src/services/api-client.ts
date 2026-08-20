@@ -94,6 +94,49 @@ export interface VerifyPaymentPayload {
 }
 
 /* ============================================================================
+ * SERVER-SIDE CART QUOTE
+ * ========================================================================== */
+
+export interface CartQuoteItem {
+  sku: string;
+  quantity: number;
+}
+
+export interface CartQuoteRequest {
+  pincode: string;
+  items: CartQuoteItem[];
+}
+
+export interface CartQuoteResponseItem {
+  sku: string;
+  quantity: number;
+  unitPrice: number;
+  itemSubtotal: number;
+  shipping: number;
+  productName?: string;
+  packSize?: number;
+  mrp?: number;
+}
+
+export interface CartQuoteResponse {
+  success: boolean;
+  pincode: string;
+  pincodeValid: boolean;
+  fulfillmentType: 'MANUAL' | 'SHIPPING';
+  shippingRequired: boolean;
+  pricingMode: 'LOCAL' | 'STANDARD';
+  shipping: number;
+  subtotal: number;
+  total: number;
+  location: {
+    officeName?: string | null;
+    districtName?: string | null;
+    stateName?: string | null;
+  };
+  items: CartQuoteResponseItem[];
+}
+
+/* ============================================================================
  * ENQUIRY TYPES
  * ========================================================================== */
 
@@ -370,6 +413,88 @@ export const apiClient = {
     return normalizeOrderResponse(
       data,
     );
+  },
+
+  /* --------------------------------------------------------------------------
+   * SERVER-SIDE CART QUOTE
+   * ------------------------------------------------------------------------ */
+
+  async getCartQuote(
+    payload: CartQuoteRequest,
+  ): Promise<CartQuoteResponse> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/fulfillment/cart-quote`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type':
+            'application/json',
+          Accept:
+            'application/json',
+        },
+        body: JSON.stringify({
+          pincode:
+            payload.pincode.trim(),
+
+          items: payload.items.map(
+            (item) => ({
+              sku: item.sku
+                .trim()
+                .toUpperCase(),
+
+              quantity: Math.max(
+                1,
+                Math.floor(
+                  item.quantity,
+                ),
+              ),
+            }),
+          ),
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        await getApiErrorMessage(
+          response,
+          'Unable to calculate delivery price for this PIN code.',
+        ),
+      );
+    }
+
+    const data =
+      (await response.json()) as CartQuoteResponse;
+
+    if (
+      data.success !== true ||
+      !data.pincodeValid ||
+      !Array.isArray(data.items)
+    ) {
+      throw new Error(
+        'Invalid pricing quote received from the server.',
+      );
+    }
+
+    if (
+      data.fulfillmentType !== 'MANUAL' &&
+      data.fulfillmentType !== 'SHIPPING'
+    ) {
+      throw new Error(
+        'Invalid fulfilment type received from the server.',
+      );
+    }
+
+    if (
+      !Number.isFinite(data.total) ||
+      data.total <= 0
+    ) {
+      throw new Error(
+        'Invalid order total received from the server.',
+      );
+    }
+
+    return data;
   },
 
   /* --------------------------------------------------------------------------
