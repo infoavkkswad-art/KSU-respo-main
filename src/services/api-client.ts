@@ -70,6 +70,22 @@ interface BackendOrderResponse {
   status: OrderStatusType;
 }
 
+/* ============================================================================
+ * RAZORPAY CHECKOUT ORDER
+ *
+ * IMPORTANT:
+ *
+ * shipping is now a NUMBER.
+ *
+ * It can be:
+ *
+ *   ₹0   for MANUAL fulfilment
+ *   ₹47  / ₹71 / ₹150 or another server-resolved amount
+ *        for SHIPPING fulfilment
+ *
+ * The backend remains the final authority.
+ * ========================================================================== */
+
 export interface RazorpayCheckoutOrder extends Order {
   razorpayOrderId?: string;
   razorpayKeyId?: string;
@@ -77,12 +93,14 @@ export interface RazorpayCheckoutOrder extends Order {
   currency?: string;
 
   /*
-   * Kept for compatibility with existing checkout code.
-   *
-   * Customer-facing shipping is always FREE.
-   * Product prices already include shipping.
+   * Actual shipping returned by the backend.
    */
-  shipping: 0;
+  shipping: number;
+
+  /*
+   * Final backend order total.
+   */
+  total: number;
 
   createdAt: string;
 }
@@ -110,9 +128,22 @@ export interface CartQuoteRequest {
 export interface CartQuoteResponseItem {
   sku: string;
   quantity: number;
+
+  /*
+   * BASE WEBSITE SELLING PRICE.
+   */
   unitPrice: number;
+
+  /*
+   * Product subtotal only.
+   */
   itemSubtotal: number;
+
+  /*
+   * Server-resolved shipping allocation, if supplied.
+   */
   shipping: number;
+
   productName?: string;
   packSize?: number;
   mrp?: number;
@@ -120,19 +151,44 @@ export interface CartQuoteResponseItem {
 
 export interface CartQuoteResponse {
   success: boolean;
+
   pincode: string;
+
   pincodeValid: boolean;
-  fulfillmentType: 'MANUAL' | 'SHIPPING';
+
+  fulfillmentType:
+    | 'MANUAL'
+    | 'SHIPPING';
+
   shippingRequired: boolean;
-  pricingMode: 'LOCAL' | 'STANDARD';
+
+  pricingMode:
+    | 'LOCAL'
+    | 'STANDARD';
+
+  /*
+   * Actual shipping calculated by the backend.
+   */
   shipping: number;
+
+  /*
+   * Product subtotal before shipping.
+   */
   subtotal: number;
+
+  /*
+   * Final:
+   *
+   * subtotal + shipping
+   */
   total: number;
+
   location: {
     officeName?: string | null;
     districtName?: string | null;
     stateName?: string | null;
   };
+
   items: CartQuoteResponseItem[];
 }
 
@@ -186,7 +242,10 @@ async function getApiErrorMessage(
       errorData.detail ??
       errorData.message;
 
-    if (typeof detail === 'string' && detail.trim()) {
+    if (
+      typeof detail === 'string' &&
+      detail.trim()
+    ) {
       return detail;
     }
 
@@ -194,7 +253,9 @@ async function getApiErrorMessage(
       detail !== undefined &&
       detail !== null
     ) {
-      return JSON.stringify(detail);
+      return JSON.stringify(
+        detail,
+      );
     }
   } catch {
     // Use fallback below.
@@ -204,57 +265,98 @@ async function getApiErrorMessage(
 }
 
 /* ============================================================================
+ * NUMBER NORMALIZATION
+ * ========================================================================== */
+
+function safeNonNegativeNumber(
+  value: unknown,
+  fallback = 0,
+): number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    value < 0
+  ) {
+    return fallback;
+  }
+
+  return value;
+}
+
+/* ============================================================================
  * NORMALIZE BACKEND ORDER
  *
  * IMPORTANT:
+ *
  * Backend remains the authority for:
+ *
  * - stock
+ * - product price
+ * - shipping
  * - final order amount
  * - Razorpay amount
  * - payment verification
  *
- * Frontend customer-facing shipping is ALWAYS 0.
+ * Frontend MUST NOT overwrite backend shipping with zero.
  * ========================================================================== */
 
 function normalizeOrderResponse(
   data: BackendOrderResponse,
 ): RazorpayCheckoutOrder {
-  const items = Array.isArray(data.items)
-    ? data.items.map((item) => ({
-        sku: item.sku,
-        quantity: Math.max(
-          1,
-          Math.floor(item.quantity),
-        ),
-        unitPrice:
-          typeof item.unitPrice === 'number' &&
-          Number.isFinite(item.unitPrice) &&
-          item.unitPrice >= 0
-            ? item.unitPrice
-            : 0,
-        productNameSnapshot:
-          item.productNameSnapshot ?? '',
-        packSizeSnapshot:
-          typeof item.packSizeSnapshot ===
-            'number' &&
-          Number.isFinite(
-            item.packSizeSnapshot,
-          )
-            ? item.packSizeSnapshot
-            : 0,
-      }))
-    : [];
+  const items =
+    Array.isArray(data.items)
+      ? data.items.map(
+          (item) => ({
+            sku:
+              item.sku,
 
-  /*
-   * Do NOT add backend shipping to the customer
-   * price. The website selling price is already the
-   * final customer-facing amount.
-   *
-   * `amount` remains untouched because it is the
-   * payment amount generated by the backend.
-   */
+            quantity:
+              Math.max(
+                1,
+                Math.floor(
+                  item.quantity,
+                ),
+              ),
+
+            unitPrice:
+              safeNonNegativeNumber(
+                item.unitPrice,
+              ),
+
+            productNameSnapshot:
+              item.productNameSnapshot ??
+              '',
+
+            packSizeSnapshot:
+              typeof item.packSizeSnapshot ===
+                'number' &&
+              Number.isFinite(
+                item.packSizeSnapshot,
+              )
+                ? item.packSizeSnapshot
+                : 0,
+          }),
+        )
+      : [];
+
+  const shipping =
+    safeNonNegativeNumber(
+      data.shipping,
+    );
+
+  const subtotal =
+    safeNonNegativeNumber(
+      data.subtotal,
+    );
+
+  const total =
+    safeNonNegativeNumber(
+      data.total,
+    );
+
   return {
-    orderId: data.orderId,
+    orderId:
+      data.orderId,
 
     razorpayOrderId:
       data.razorpayOrderId,
@@ -263,40 +365,118 @@ function normalizeOrderResponse(
       data.razorpayKeyId,
 
     amount:
-      typeof data.amount === 'number' &&
-      Number.isFinite(data.amount) &&
+      typeof data.amount ===
+        'number' &&
+      Number.isFinite(
+        data.amount,
+      ) &&
       data.amount >= 0
         ? data.amount
         : undefined,
 
     currency:
-      data.currency || 'INR',
+      data.currency ||
+      'INR',
 
-    customer: data.customer,
+    customer:
+      data.customer,
 
     items,
 
-    subtotal:
-      typeof data.subtotal === 'number' &&
-      Number.isFinite(data.subtotal)
-        ? data.subtotal
-        : 0,
+    subtotal,
 
-    totalShipping: 0,
+    /*
+     * Actual backend shipping.
+     */
+    shipping,
 
-    shipping: 0,
+    /*
+     * Compatibility field used by the
+     * existing Order model.
+     */
+    totalShipping:
+      shipping,
 
-    total:
-      typeof data.total === 'number' &&
-      Number.isFinite(data.total)
-        ? data.total
-        : 0,
+    /*
+     * Backend final total.
+     */
+    total,
 
-    timestamp: data.createdAt,
+    timestamp:
+      data.createdAt,
 
-    createdAt: data.createdAt,
+    createdAt:
+      data.createdAt,
 
-    status: data.status,
+    status:
+      data.status,
+  };
+}
+
+/* ============================================================================
+ * NORMALIZE CART QUOTE
+ * ========================================================================== */
+
+function normalizeCartQuoteResponse(
+  data: CartQuoteResponse,
+): CartQuoteResponse {
+  const shipping =
+    safeNonNegativeNumber(
+      data.shipping,
+    );
+
+  const subtotal =
+    safeNonNegativeNumber(
+      data.subtotal,
+    );
+
+  const total =
+    safeNonNegativeNumber(
+      data.total,
+    );
+
+  const items =
+    Array.isArray(data.items)
+      ? data.items.map(
+          (item) => ({
+            ...item,
+
+            quantity:
+              Math.max(
+                1,
+                Math.floor(
+                  item.quantity,
+                ),
+              ),
+
+            unitPrice:
+              safeNonNegativeNumber(
+                item.unitPrice,
+              ),
+
+            itemSubtotal:
+              safeNonNegativeNumber(
+                item.itemSubtotal,
+              ),
+
+            shipping:
+              safeNonNegativeNumber(
+                item.shipping,
+              ),
+          }),
+        )
+      : [];
+
+  return {
+    ...data,
+
+    shipping,
+
+    subtotal,
+
+    total,
+
+    items,
   };
 }
 
@@ -305,22 +485,25 @@ function normalizeOrderResponse(
  * ========================================================================== */
 
 export const apiClient = {
+
   /* --------------------------------------------------------------------------
    * HEALTH
    * ------------------------------------------------------------------------ */
 
   async checkHealth(): Promise<boolean> {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/health`,
-        {
-          method: 'GET',
-          headers: {
-            Accept:
-              'application/json',
+      const response =
+        await fetch(
+          `${API_BASE_URL}/api/health`,
+          {
+            method: 'GET',
+
+            headers: {
+              Accept:
+                'application/json',
+            },
           },
-        },
-      );
+        );
 
       if (!response.ok) {
         return false;
@@ -331,11 +514,15 @@ export const apiClient = {
           status?: string;
         };
 
-      return data.status === 'ok';
+      return (
+        data.status ===
+        'ok'
+      );
     } catch {
       return false;
     }
   },
+
 
   /* --------------------------------------------------------------------------
    * CREATE ORDER
@@ -344,49 +531,68 @@ export const apiClient = {
   async createOrder(
     payload: CreateOrderPayload,
   ): Promise<RazorpayCheckoutOrder> {
-    const response = await fetch(
-      `${API_BASE_URL}/api/orders`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type':
-            'application/json',
-          Accept:
-            'application/json',
-        },
-        body: JSON.stringify({
-          customer: payload.customer,
 
-          /*
-           * Only SKU + quantity are sent from the
-           * browser.
-           *
-           * The backend must resolve the authoritative
-           * price from its own product/sales configuration.
-           */
-          items: payload.items.map(
-            (item) => ({
-              sku: item.sku
-                .trim()
-                .toUpperCase(),
-              quantity: Math.max(
-                1,
-                Math.floor(
-                  item.quantity,
+    const response =
+      await fetch(
+        `${API_BASE_URL}/api/orders`,
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json',
+
+            Accept:
+              'application/json',
+          },
+
+          body:
+            JSON.stringify({
+              customer:
+                payload.customer,
+
+              /*
+               * ONLY SKU + quantity are sent.
+               *
+               * Browser prices are never trusted.
+               *
+               * Backend resolves:
+               *
+               * SKU
+               * ↓
+               * authoritative price
+               * ↓
+               * fulfilment shipping
+               * ↓
+               * final order amount
+               */
+              items:
+                payload.items.map(
+                  (item) => ({
+                    sku:
+                      item.sku
+                        .trim()
+                        .toUpperCase(),
+
+                    quantity:
+                      Math.max(
+                        1,
+                        Math.floor(
+                          item.quantity,
+                        ),
+                      ),
+                  }),
                 ),
-              ),
-            }),
-          ),
 
-          ...(payload.idempotencyKey
-            ? {
-                idempotencyKey:
-                  payload.idempotencyKey,
-              }
-            : {}),
-        }),
-      },
-    );
+              ...(payload.idempotencyKey
+                ? {
+                    idempotencyKey:
+                      payload.idempotencyKey,
+                  }
+                : {}),
+            }),
+        },
+      );
 
     if (!response.ok) {
       throw new Error(
@@ -398,12 +604,15 @@ export const apiClient = {
     }
 
     const data =
-      (await response.json()) as BackendOrderResponse;
+      (await response.json()) as
+        BackendOrderResponse;
 
     if (
       !data.orderId ||
       !data.customer ||
-      !Array.isArray(data.items)
+      !Array.isArray(
+        data.items,
+      )
     ) {
       throw new Error(
         'Invalid order response received from the server.',
@@ -415,6 +624,7 @@ export const apiClient = {
     );
   },
 
+
   /* --------------------------------------------------------------------------
    * SERVER-SIDE CART QUOTE
    * ------------------------------------------------------------------------ */
@@ -422,37 +632,46 @@ export const apiClient = {
   async getCartQuote(
     payload: CartQuoteRequest,
   ): Promise<CartQuoteResponse> {
-    const response = await fetch(
-      `${API_BASE_URL}/api/fulfillment/cart-quote`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type':
-            'application/json',
-          Accept:
-            'application/json',
-        },
-        body: JSON.stringify({
-          pincode:
-            payload.pincode.trim(),
 
-          items: payload.items.map(
-            (item) => ({
-              sku: item.sku
-                .trim()
-                .toUpperCase(),
+    const response =
+      await fetch(
+        `${API_BASE_URL}/api/fulfillment/cart-quote`,
+        {
+          method: 'POST',
 
-              quantity: Math.max(
-                1,
-                Math.floor(
-                  item.quantity,
+          headers: {
+            'Content-Type':
+              'application/json',
+
+            Accept:
+              'application/json',
+          },
+
+          body:
+            JSON.stringify({
+              pincode:
+                payload.pincode.trim(),
+
+              items:
+                payload.items.map(
+                  (item) => ({
+                    sku:
+                      item.sku
+                        .trim()
+                        .toUpperCase(),
+
+                    quantity:
+                      Math.max(
+                        1,
+                        Math.floor(
+                          item.quantity,
+                        ),
+                      ),
+                  }),
                 ),
-              ),
             }),
-          ),
-        }),
-      },
-    );
+        },
+      );
 
     if (!response.ok) {
       throw new Error(
@@ -464,12 +683,15 @@ export const apiClient = {
     }
 
     const data =
-      (await response.json()) as CartQuoteResponse;
+      (await response.json()) as
+        CartQuoteResponse;
 
     if (
       data.success !== true ||
       !data.pincodeValid ||
-      !Array.isArray(data.items)
+      !Array.isArray(
+        data.items,
+      )
     ) {
       throw new Error(
         'Invalid pricing quote received from the server.',
@@ -477,8 +699,10 @@ export const apiClient = {
     }
 
     if (
-      data.fulfillmentType !== 'MANUAL' &&
-      data.fulfillmentType !== 'SHIPPING'
+      data.fulfillmentType !==
+        'MANUAL' &&
+      data.fulfillmentType !==
+        'SHIPPING'
     ) {
       throw new Error(
         'Invalid fulfilment type received from the server.',
@@ -486,7 +710,31 @@ export const apiClient = {
     }
 
     if (
-      !Number.isFinite(data.total) ||
+      !Number.isFinite(
+        data.subtotal,
+      ) ||
+      data.subtotal < 0
+    ) {
+      throw new Error(
+        'Invalid subtotal received from the server.',
+      );
+    }
+
+    if (
+      !Number.isFinite(
+        data.shipping,
+      ) ||
+      data.shipping < 0
+    ) {
+      throw new Error(
+        'Invalid shipping amount received from the server.',
+      );
+    }
+
+    if (
+      !Number.isFinite(
+        data.total,
+      ) ||
       data.total <= 0
     ) {
       throw new Error(
@@ -494,8 +742,33 @@ export const apiClient = {
       );
     }
 
-    return data;
+    /*
+     * Protect against an inconsistent server response.
+     *
+     * Expected:
+     *
+     * subtotal + shipping = total
+     */
+    const expectedTotal =
+      data.subtotal +
+      data.shipping;
+
+    if (
+      Math.abs(
+        expectedTotal -
+          data.total,
+      ) > 0.01
+    ) {
+      throw new Error(
+        'The server returned an inconsistent pricing quote.',
+      );
+    }
+
+    return normalizeCartQuoteResponse(
+      data,
+    );
   },
+
 
   /* --------------------------------------------------------------------------
    * VERIFY RAZORPAY PAYMENT
@@ -508,21 +781,27 @@ export const apiClient = {
     message: string;
     orderId: string;
   }> {
-    const response = await fetch(
-      `${API_BASE_URL}/api/orders/verify-payment`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type':
-            'application/json',
-          Accept:
-            'application/json',
+
+    const response =
+      await fetch(
+        `${API_BASE_URL}/api/orders/verify-payment`,
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json',
+
+            Accept:
+              'application/json',
+          },
+
+          body:
+            JSON.stringify(
+              payload,
+            ),
         },
-        body: JSON.stringify(
-          payload,
-        ),
-      },
-    );
+      );
 
     if (!response.ok) {
       throw new Error(
@@ -553,6 +832,7 @@ export const apiClient = {
     return data;
   },
 
+
   /* --------------------------------------------------------------------------
    * TRACK ORDER
    * ------------------------------------------------------------------------ */
@@ -561,6 +841,7 @@ export const apiClient = {
     orderId: string,
     phone: string,
   ): Promise<TrackedOrder> {
+
     const cleanOrderId =
       orderId.trim();
 
@@ -583,29 +864,38 @@ export const apiClient = {
       );
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/api/orders/${encodeURIComponent(
-        cleanOrderId,
-      )}?phone=${encodeURIComponent(
-        cleanPhone,
-      )}`,
-      {
-        method: 'GET',
-        headers: {
-          Accept:
-            'application/json',
+    const response =
+      await fetch(
+        `${API_BASE_URL}/api/orders/${encodeURIComponent(
+          cleanOrderId,
+        )}?phone=${encodeURIComponent(
+          cleanPhone,
+        )}`,
+        {
+          method: 'GET',
+
+          headers: {
+            Accept:
+              'application/json',
+          },
         },
-      },
-    );
+      );
 
     if (!response.ok) {
-      if (response.status === 404) {
+
+      if (
+        response.status ===
+        404
+      ) {
         throw new Error(
           'No order found matching this Order ID and Phone number.',
         );
       }
 
-      if (response.status === 429) {
+      if (
+        response.status ===
+        429
+      ) {
         throw new Error(
           'Too many tracking attempts. Please wait a minute before trying again.',
         );
@@ -620,43 +910,63 @@ export const apiClient = {
     }
 
     const data =
-      (await response.json()) as TrackedOrder;
+      (await response.json()) as
+        TrackedOrder;
 
     /*
-     * Tracking is a customer-facing display.
+     * Tracking displays the ACTUAL
+     * backend shipping amount.
      *
-     * Shipping is shown as FREE even if an older backend
-     * record contains a legacy shipping value.
+     * Older orders may legitimately
+     * have ₹0 shipping.
      */
     return {
       ...data,
 
-      items: Array.isArray(
-        data.items,
-      )
-        ? data.items.map(
-            (item) => ({
-              ...item,
-              quantity: Math.max(
-                1,
-                Math.floor(
-                  item.quantity,
-                ),
-              ),
-              unitPrice:
-                Number.isFinite(
-                  item.unitPrice,
-                ) &&
-                item.unitPrice >= 0
-                  ? item.unitPrice
-                  : 0,
-            }),
-          )
-        : [],
+      items:
+        Array.isArray(
+          data.items,
+        )
+          ? data.items.map(
+              (item) => ({
+                ...item,
 
-      shipping: 0,
+                quantity:
+                  Math.max(
+                    1,
+                    Math.floor(
+                      item.quantity,
+                    ),
+                  ),
+
+                unitPrice:
+                  Number.isFinite(
+                    item.unitPrice,
+                  ) &&
+                  item.unitPrice >= 0
+                    ? item.unitPrice
+                    : 0,
+              }),
+            )
+          : [],
+
+      shipping:
+        safeNonNegativeNumber(
+          data.shipping,
+        ),
+
+      subtotal:
+        safeNonNegativeNumber(
+          data.subtotal,
+        ),
+
+      total:
+        safeNonNegativeNumber(
+          data.total,
+        ),
     };
   },
+
 
   /* --------------------------------------------------------------------------
    * ENQUIRY
@@ -665,21 +975,27 @@ export const apiClient = {
   async createEnquiry(
     payload: CreateEnquiryPayload,
   ): Promise<EnquiryResponse> {
-    const response = await fetch(
-      `${API_BASE_URL}/api/enquiries`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type':
-            'application/json',
-          Accept:
-            'application/json',
+
+    const response =
+      await fetch(
+        `${API_BASE_URL}/api/enquiries`,
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json',
+
+            Accept:
+              'application/json',
+          },
+
+          body:
+            JSON.stringify(
+              payload,
+            ),
         },
-        body: JSON.stringify(
-          payload,
-        ),
-      },
-    );
+      );
 
     if (!response.ok) {
       throw new Error(
@@ -691,7 +1007,8 @@ export const apiClient = {
     }
 
     const data =
-      (await response.json()) as EnquiryResponse;
+      (await response.json()) as
+        EnquiryResponse;
 
     if (
       data.success !== true ||
