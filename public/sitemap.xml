@@ -1,108 +1,234 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Main Website Pages -->
+
   <url>
     <loc>https://kawadswad.in/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+
   <url>
     <loc>https://kawadswad.in/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+
   <url>
     <loc>https://kawadswad.in/products</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
+
   <url>
     <loc>https://kawadswad.in/shop</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
+
   <url>
     <loc>https://kawadswad.in/business</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+
   <url>
     <loc>https://kawadswad.in/bulk-orders</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+
   <url>
     <loc>https://kawadswad.in/distributor</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+
   <url>
     <loc>https://kawadswad.in/manufacturing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+
   <url>
     <loc>https://kawadswad.in/work-with-us</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+
   <url>
-    <loc>https://kawadswad/gallery</loc>
+    <loc>https://kawadswad.in/gallery</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+
   <url>
-    <loc>https://kawadswad/reviews</loc>
+    <loc>https://kawadswad.in/reviews</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+
   <url>
-    <loc>https://kawadswad/blog</loc>
+    <loc>https://kawadswad.in/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
+
   <url>
-    <loc>https://kawadswad/media</loc>
+    <loc>https://kawadswad.in/media</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+
   <url>
-    <loc>https://kawadswad/contact</loc>
+    <loc>https://kawadswad.in/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+
   <url>
-    <loc>https://kawadswad/faq</loc>
+    <loc>https://kawadswad.in/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+
   <url>
-    <loc>https://kawadswad/policies</loc>
+    <loc>https://kawadswad.in/policies</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 
+
   <!-- Product Family Pages (15 Families) -->
-  <url><loc>https://kawadswad/product/moong-master-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/moong-garlic-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/moong-jeera-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/moong-pudhina-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/moong-green-chilli-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/moong-kasuri-methi-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/moong-punjabi-masala-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/chana-chotu-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/chana-garlic-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/chana-khata-mitha-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/chana-tomato-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/chana-punjabi-masala-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/urad-guru-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/urad-garlic-papad</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://kawadswad/product/kawad-swad-combo-pack</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+
+  <url>
+    <loc>https://kawadswad.in/product/moong-master-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/moong-garlic-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/moong-jeera-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/moong-pudhina-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/moong-green-chilli-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/moong-kasuri-methi-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/moong-punjabi-masala-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/chana-chotu-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/chana-garlic-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/chana-khata-mitha-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/chana-tomato-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/chana-punjabi-masala-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/urad-guru-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/urad-garlic-papad</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/product/kawad-swad-combo-pack</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
 
   <!-- Blog Articles (6 Articles) -->
-  <url><loc>https://kawadswad/blog/how-to-roast-papad-perfectly</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://kawadswad/blog/moong-vs-chana-vs-urad-papad</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://kawadswad/blog/papad-in-indian-thali-tradition</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://kawadswad/blog/jain-food-philosophy-and-papad</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://kawadswad/blog/starting-a-papad-business-in-india</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://kawadswad.in/blog/papad-topping-ideas</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+
+  <url>
+    <loc>https://kawadswad.in/blog/how-to-roast-papad-perfectly</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/blog/moong-vs-chana-vs-urad-papad</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/blog/papad-in-indian-thali-tradition</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/blog/jain-food-philosophy-and-papad</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/blog/starting-a-papad-business-in-india</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://kawadswad.in/blog/papad-topping-ideas</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
 </urlset>
