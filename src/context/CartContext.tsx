@@ -42,10 +42,30 @@ interface CartContextType {
 
   clearCart: () => void;
 
+  /*
+   * Product subtotal before fulfilment shipping.
+   */
   subtotal: number;
 
-  shippingTotal: 0;
+  /*
+   * Fulfilment shipping amount.
+   *
+   * This is a number because shipping can be:
+   *
+   * ₹0
+   * ₹47
+   * ₹71
+   * ₹150
+   *
+   * depending on the fulfilment method.
+   */
+  shippingTotal: number;
 
+  /*
+   * Final cart total:
+   *
+   * subtotal + shippingTotal
+   */
   total: number;
 
   itemCount: number;
@@ -183,8 +203,6 @@ function sanitizeCartItems(
 
     /*
      * Protect against accidental numeric overflow.
-     * This is not expected during normal use, but
-     * keeps malformed localStorage data harmless.
      */
     if (
       !Number.isSafeInteger(
@@ -455,7 +473,7 @@ export function CartProvider({
 
     /*
      * Never resurrect a deleted/unavailable
-     * or unpriced SKU.
+     * SKU.
      */
     if (
       !ProductService.isPurchasable(
@@ -512,16 +530,14 @@ export function CartProvider({
 
   /* --------------------------------------------------------------------------
      CALCULATE TOTALS
-  -------------------------------------------------------------------------- */
-
-  /*
-   * IMPORTANT:
+     --------------------------------------------------------------------------
    *
-   * CartContext does NOT calculate product prices itself.
+   * Product prices come from ProductService.
    *
-   * calculateCartTotals() resolves each SKU through
-   * ProductService, which resolves pricing through
-   * sales-config.ts.
+   * At this stage the CartContext uses ₹0 shipping by default.
+   *
+   * India Post / fulfilment shipping will be connected separately after
+   * the basic pricing/type system passes validation.
    *
    * Therefore:
    *
@@ -532,8 +548,8 @@ export function CartProvider({
    * cart-calculations
    *      ↓
    * CartContext
-   *
-   * Website price already includes shipping.
+   *      ↓
+   * Checkout
    */
 
   const {
@@ -544,6 +560,7 @@ export function CartProvider({
   } =
     calculateCartTotals(
       items,
+      0,
     );
 
   /* --------------------------------------------------------------------------
