@@ -381,8 +381,83 @@ def extract_payment_sheet_data(
 
 
 # ============================================================
+# RAZORPAY AMOUNT SAFETY
+# ============================================================
+
+def get_order_amount_in_paise(
+    order: dict,
+) -> int:
+
+    total_amount = order.get(
+        "total"
+    )
+
+    if total_amount is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Order total is missing.",
+        )
+
+    try:
+        amount_in_paise = int(
+            round(
+                float(total_amount) * 100
+            )
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Invalid order amount.",
+        )
+
+    if amount_in_paise <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Order amount must be greater than zero."
+            ),
+        )
+
+    return amount_in_paise
+
+
+def assert_razorpay_amount_matches_order(
+    razorpay_amount: Any,
+    order_amount_in_paise: int,
+) -> None:
+    """
+    Hard payment guard.
+
+    Razorpay amount must exactly equal the authoritative
+    server-side order total.
+    """
+
+    try:
+        gateway_amount = int(
+            razorpay_amount
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Invalid amount returned by Razorpay."
+            ),
+        )
+
+    if gateway_amount != order_amount_in_paise:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Razorpay amount does not match the "
+                "authoritative order total."
+            ),
+        )
+
+
+# ============================================================
 # CREATE ORDER
 # ============================================================
+
 
 @router.post(
     "/orders",
@@ -486,45 +561,11 @@ async def create_order(
         # 3. AMOUNT
         # --------------------------------------------------------
 
-        total_amount = (
-            existing_order.get(
-                "total"
+        amount_in_paise = (
+            get_order_amount_in_paise(
+                existing_order
             )
         )
-
-        if total_amount is None:
-
-            raise HTTPException(
-                status_code=500,
-                detail="Order total is missing.",
-            )
-
-        try:
-
-            amount_in_paise = int(
-                round(
-                    float(
-                        total_amount
-                    ) * 100
-                )
-            )
-
-        except Exception:
-
-            raise HTTPException(
-                status_code=500,
-                detail="Invalid order amount.",
-            )
-
-        if amount_in_paise <= 0:
-
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Order amount must be "
-                    "greater than zero."
-                ),
-            )
 
         # --------------------------------------------------------
         # 4. RAZORPAY ORDER
@@ -562,7 +603,15 @@ async def create_order(
                                 "orderId":
                                     str(
                                         order_id
-                                    )
+                                    ),
+
+                                "fulfillmentType":
+                                    str(
+                                        existing_order.get(
+                                            "fulfillmentType",
+                                            "SHIPPING",
+                                        )
+                                    ),
                             },
                         }
                     )
@@ -575,10 +624,16 @@ async def create_order(
                 )
 
                 if not razorpay_order_id:
-
                     raise Exception(
                         "Razorpay did not return an order ID."
                     )
+
+                assert_razorpay_amount_matches_order(
+                    rzp_order.get(
+                        "amount"
+                    ),
+                    amount_in_paise,
+                )
 
                 await db.orders.update_one(
                     {
@@ -589,6 +644,9 @@ async def create_order(
                         "$set": {
                             "razorpayOrderId":
                                 razorpay_order_id,
+
+                            "razorpayOrderAmount":
+                                amount_in_paise,
 
                             "paymentStatus":
                                 "pending",
@@ -602,7 +660,6 @@ async def create_order(
                 )
 
             except HTTPException:
-
                 raise
 
             except Exception as e:
@@ -622,6 +679,48 @@ async def create_order(
                     detail=(
                         "Failed to initialize payment "
                         "gateway order."
+                    ),
+                )
+
+        else:
+
+            # Existing Razorpay orders must still match the
+            # current authoritative MongoDB total.
+            try:
+
+                gateway_order = (
+                    razorpay_client.order.fetch(
+                        razorpay_order_id
+                    )
+                )
+
+                assert_razorpay_amount_matches_order(
+                    gateway_order.get(
+                        "amount"
+                    ),
+                    amount_in_paise,
+                )
+
+            except HTTPException:
+                raise
+
+            except Exception as e:
+
+                print(
+                    "========== RAZORPAY EXISTING ORDER CHECK ERROR =========="
+                )
+
+                print(
+                    f"{type(e).__name__}: {str(e)}"
+                )
+
+                traceback.print_exc()
+
+                raise HTTPException(
+                    status_code=500,
+                    detail=(
+                        "Unable to verify the existing "
+                        "payment gateway order."
                     ),
                 )
 
@@ -792,6 +891,38 @@ async def verify_payment(
             f"Razorpay payment status: "
             f"{payment_status}"
         )
+
+        expected_amount = (
+            get_order_amount_in_paise(
+                existing_order
+            )
+        )
+
+        assert_razorpay_amount_matches_order(
+            payment_details.get(
+                "amount"
+            ),
+            expected_amount,
+        )
+
+        payment_order_id = (
+            payment_details.get(
+                "order_id"
+            )
+        )
+
+        if (
+            payment_order_id
+            and payment_order_id
+            != payload.razorpay_order_id
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Payment is linked to a different "
+                    "Razorpay order."
+                ),
+            )
 
         if payment_status != "captured":
 
@@ -1099,6 +1230,24 @@ async def verify_payment(
                 updated_order.get(
                     "total",
                     0,
+                ),
+
+            "fulfillmentType":
+                updated_order.get(
+                    "fulfillmentType",
+                    "",
+                ),
+
+            "pricingMode":
+                updated_order.get(
+                    "pricingMode",
+                    "",
+                ),
+
+            "shippingRequired":
+                updated_order.get(
+                    "shippingRequired",
+                    False,
                 ),
 
             "currency":
