@@ -7,7 +7,7 @@ import {
 
 import {
   getSalesSku,
-  getFinalWebsitePrice,
+  getSellingPrice,
   getLowestPrice,
   getManualPrice,
   isManualPriceEligible,
@@ -15,8 +15,22 @@ import {
   type SalesSkuConfig,
 } from '../data/sales-config';
 
+
 /* ============================================================================
  * CUSTOMER-FACING FLAT PRODUCT
+ * ============================================================================
+ *
+ * IMPORTANT:
+ *
+ * websitePrice = BASE WEBSITE SELLING PRICE
+ *
+ * Shipping is NOT included here.
+ *
+ * MANUAL:
+ *   websitePrice + ₹0 shipping
+ *
+ * SHIPPING:
+ *   websitePrice + fulfilment-calculated shipping
  * ========================================================================== */
 
 export interface FlatProductItem {
@@ -26,13 +40,19 @@ export interface FlatProductItem {
   hindiName: string;
   category: ProductCategory;
   description: string;
+
   sku: string;
   packSize: number | string;
+
   mrp: number;
+
+  /*
+   * BASE WEBSITE SELLING PRICE.
+   */
   websitePrice: number;
 
   /*
-   * Lowest product price before shipping.
+   * Lowest/base product price before fulfilment shipping.
    */
   lowestPrice: number;
 
@@ -43,14 +63,24 @@ export interface FlatProductItem {
   manualPriceEligible: boolean;
 
   /*
-   * Customer-facing shipping is already included in websitePrice.
+   * Product catalogue does not contain shipping.
+   *
+   * Actual shipping is resolved by fulfilment.
    */
-  shipping: 0;
-  freeShipping: true;
-  available: true;
+  shipping: number;
+
+  /*
+   * This describes the current catalogue object only.
+   *
+   * It must not be interpreted as "shipping is always free".
+   */
+  freeShipping: boolean;
+
+  available: boolean;
 
   featured?: boolean;
 }
+
 
 /* ============================================================================
  * PRODUCT RESULT TYPES
@@ -61,66 +91,63 @@ export interface ProductSkuResult {
   skuObj: Sku;
 }
 
-/*
- * Customer-facing purchasable SKU.
+
+/* ============================================================================
+ * CUSTOMER-FACING PURCHASABLE SKU
+ * ============================================================================
  *
- * IMPORTANT:
+ * websitePrice is the BASE WEBSITE SELLING PRICE.
  *
- * websitePrice is the FINAL customer-facing price.
+ * It is NOT:
  *
- * The central sales master internally stores:
+ *     sellingPrice + shipping
  *
- * sellingPrice + shipping
- * -----------------------
- * final website price
- *
- * The customer-facing Sku continues to use:
- *
- * shipping: 0
- * freeShipping: true
- *
- * because shipping is already included in the final website price.
- */
+ * Shipping is resolved separately after PIN/fulfilment determination.
+ * ========================================================================== */
 
 export type PurchasableSku = Omit<
   Sku,
   'mrp' | 'websitePrice' | 'available'
 > & {
   mrp: number;
+
+  /*
+   * BASE website selling price.
+   */
   websitePrice: number;
 
   /*
-   * Lowest product price before shipping.
-   *
-   * This is the value that will later be used by the PIN-based
-   * fulfilment/pricing engine for MANUAL orders.
+   * Lowest/base product price before shipping.
    */
   lowestPrice: number;
 
   /*
-   * Approved manual/local price, when the SKU currently satisfies
-   * the Stage 2.1 manual-price rule.
-   *
-   * null means the SKU needs commercial-price review before it can
-   * be used for a MANUAL order.
+   * Approved manual/local price.
    */
   manualPrice: number | null;
 
   manualPriceEligible: boolean;
 
   /*
-   * Keep the existing customer-facing contract:
-   * shipping is already included in websitePrice.
+   * Shipping is supplied separately by fulfilment.
    */
-  shipping: 0;
-  freeShipping: true;
+  shipping: number;
+
+  /*
+   * True only when the CURRENT resolved fulfilment
+   * has zero shipping.
+   */
+  freeShipping: boolean;
+
   available: true;
 };
+
 
 export interface PurchasableProductSkuResult {
   family: ProductFamily;
   skuObj: PurchasableSku;
 }
+
 
 /* ============================================================================
  * NORMALIZATION
@@ -133,6 +160,7 @@ function normalizeSkuCode(
     .trim()
     .toUpperCase();
 }
+
 
 /* ============================================================================
  * SALES CONFIG RESOLUTION
@@ -148,12 +176,15 @@ function getSalesConfig(
   );
 }
 
+
 /* ============================================================================
  * RESOLVE SKU
  *
- * General catalog resolution.
+ * General catalogue resolution.
  *
- * Customer-facing websitePrice is ALWAYS the calculated final price.
+ * IMPORTANT:
+ *
+ * websitePrice is now the BASE website selling price.
  * ========================================================================== */
 
 function resolveSku(
@@ -166,10 +197,20 @@ function resolveSku(
     return undefined;
   }
 
-  const finalWebsitePrice =
-    getFinalWebsitePrice(
+  const websiteSellingPrice =
+    getSellingPrice(
       sales.sku,
     );
+
+  if (
+    websiteSellingPrice ===
+      null ||
+    !Number.isFinite(
+      websiteSellingPrice,
+    )
+  ) {
+    return undefined;
+  }
 
   return {
     ...sku,
@@ -184,27 +225,25 @@ function resolveSku(
       sales.mrp,
 
     /*
-     * IMPORTANT:
+     * BASE WEBSITE SELLING PRICE.
      *
-     * This is:
-     *
-     * sellingPrice + shipping
+     * Shipping is intentionally NOT added here.
      */
     websitePrice:
-      finalWebsitePrice,
+      websiteSellingPrice,
 
     /*
-     * Shipping is already included in
-     * customer-facing websitePrice.
+     * Shipping is resolved separately.
      */
     shipping: 0,
 
-    freeShipping: true,
+    freeShipping: false,
 
     available:
       sales.available,
   };
 }
+
 
 /* ============================================================================
  * PURCHASABLE SKU CHECK
@@ -249,23 +288,32 @@ function isPurchasableSku(
     return false;
   }
 
-  const finalWebsitePrice =
-    getFinalWebsitePrice(
+  /*
+   * New model:
+   *
+   * websitePrice = sellingPrice
+   *
+   * No SKU-level shipping is added.
+   */
+  const websiteSellingPrice =
+    getSellingPrice(
       sales.sku,
     );
 
   if (
-    finalWebsitePrice === null ||
+    websiteSellingPrice ===
+      null ||
     !Number.isFinite(
-      finalWebsitePrice,
+      websiteSellingPrice,
     ) ||
-    finalWebsitePrice < 0
+    websiteSellingPrice < 0
   ) {
     return false;
   }
 
   return true;
 }
+
 
 /* ============================================================================
  * CONVERT TO PURCHASABLE SKU
@@ -291,13 +339,17 @@ function toPurchasableSku(
     return undefined;
   }
 
-  const finalWebsitePrice =
-    getFinalWebsitePrice(
+  const websiteSellingPrice =
+    getSellingPrice(
       sales.sku,
     );
 
   if (
-    finalWebsitePrice === null
+    websiteSellingPrice ===
+      null ||
+    !Number.isFinite(
+      websiteSellingPrice,
+    )
   ) {
     return undefined;
   }
@@ -339,52 +391,50 @@ function toPurchasableSku(
       sales.mrp,
 
     /*
-     * FINAL CUSTOMER PRICE
-     *
-     * Existing public website behaviour is preserved.
+     * BASE CUSTOMER PRODUCT PRICE.
      *
      * Example:
-     * ₹55 selling + ₹47 shipping = ₹102
+     *
+     * KS-MMP-200 → ₹55
+     *
+     * NOT ₹102.
      */
     websitePrice:
-      finalWebsitePrice,
+      websiteSellingPrice,
 
     /*
-     * LOWEST PRODUCT PRICE
-     *
-     * This is the commercial product price before shipping.
-     * The PIN fulfilment engine will decide whether this value
-     * is applicable to the customer's order.
+     * Base product price before shipping.
      */
     lowestPrice,
 
-    /*
-     * MANUAL / LOCAL PRICE
-     *
-     * Stage 2.1 validates the current 200g rule:
-     * > ₹60 and < ₹75
-     */
     manualPrice,
 
     manualPriceEligible,
 
     /*
-     * Shipping is already included in
-     * websitePrice at the existing customer layer.
+     * No shipping is attached at catalogue level.
      */
     shipping: 0,
 
-    freeShipping: true,
+    /*
+     * Do not claim universal free shipping.
+     *
+     * MANUAL may become ₹0 shipping.
+     * SHIPPING may receive a charge.
+     */
+    freeShipping: false,
 
     available: true,
   };
 }
+
 
 /* ============================================================================
  * PRODUCT SERVICE
  * ========================================================================== */
 
 export const ProductService = {
+
   /* --------------------------------------------------------------------------
      ALL PRODUCTS
   -------------------------------------------------------------------------- */
@@ -393,6 +443,7 @@ export const ProductService = {
     ProductFamily[] {
     return products;
   },
+
 
   /* --------------------------------------------------------------------------
      PRODUCT BY SLUG
@@ -414,6 +465,7 @@ export const ProductService = {
         normalizedSlug,
     );
   },
+
 
   /* --------------------------------------------------------------------------
      PRODUCTS BY CATEGORY
@@ -442,6 +494,7 @@ export const ProductService = {
     );
   },
 
+
   /* --------------------------------------------------------------------------
      FEATURED PRODUCTS
   -------------------------------------------------------------------------- */
@@ -453,6 +506,7 @@ export const ProductService = {
         product.featured,
     );
   },
+
 
   /* --------------------------------------------------------------------------
      PRODUCT BY SKU
@@ -472,7 +526,9 @@ export const ProductService = {
       return undefined;
     }
 
-    for (const product of products) {
+    for (
+      const product of products
+    ) {
       const sourceSku =
         product.skus.find(
           (sku) =>
@@ -503,6 +559,7 @@ export const ProductService = {
     return undefined;
   },
 
+
   /* --------------------------------------------------------------------------
      PURCHASABLE PRODUCT BY SKU
   -------------------------------------------------------------------------- */
@@ -521,7 +578,9 @@ export const ProductService = {
       return undefined;
     }
 
-    for (const product of products) {
+    for (
+      const product of products
+    ) {
       const sourceSku =
         product.skus.find(
           (sku) =>
@@ -552,6 +611,7 @@ export const ProductService = {
     return undefined;
   },
 
+
   /* --------------------------------------------------------------------------
      AVAILABLE SKUS FOR A PRODUCT
   -------------------------------------------------------------------------- */
@@ -559,11 +619,13 @@ export const ProductService = {
   getAvailableSkus(
     product: ProductFamily,
   ): PurchasableSku[] {
-    const available: PurchasableSku[] =
-      [];
+    const available:
+      PurchasableSku[] = [];
 
-    for (const sku of
-      product.skus) {
+    for (
+      const sku of
+      product.skus
+    ) {
       const resolved =
         toPurchasableSku(
           sku,
@@ -579,8 +641,9 @@ export const ProductService = {
     return available;
   },
 
+
   /* --------------------------------------------------------------------------
-     FINAL WEBSITE PRICE
+     BASE WEBSITE PRICE
   -------------------------------------------------------------------------- */
 
   getWebsitePrice(
@@ -599,9 +662,10 @@ export const ProductService = {
       .websitePrice;
   },
 
+
   /* --------------------------------------------------------------------------
-     INTERNAL SELLING PRICE
-     ========================================================================== */
+     BASE SELLING PRICE
+  -------------------------------------------------------------------------- */
 
   getSellingPrice(
     skuCode: string,
@@ -620,6 +684,7 @@ export const ProductService = {
       undefined
     );
   },
+
 
   /* --------------------------------------------------------------------------
      LOWEST PRICE
@@ -640,6 +705,7 @@ export const ProductService = {
     );
   },
 
+
   /* --------------------------------------------------------------------------
      MANUAL / LOCAL PRICE
   -------------------------------------------------------------------------- */
@@ -659,6 +725,7 @@ export const ProductService = {
     );
   },
 
+
   /* --------------------------------------------------------------------------
      MANUAL PRICE ELIGIBILITY
   -------------------------------------------------------------------------- */
@@ -673,12 +740,16 @@ export const ProductService = {
     );
   },
 
+
   /* --------------------------------------------------------------------------
      PRICE FOR FULFILMENT
      --------------------------------------------------------------------------
-     Display/calculation helper only.
+     IMPORTANT:
+     For SHIPPING, the actual shipping charge must be supplied by the
+     fulfilment system/backend.
 
-     The backend remains the final pricing authority at checkout.
+     This frontend helper therefore returns the base price for MANUAL and
+     the base price plus any explicitly supplied shipping charge for SHIPPING.
   -------------------------------------------------------------------------- */
 
   getPriceForFulfillment(
@@ -686,6 +757,7 @@ export const ProductService = {
     fulfillmentType:
       | 'MANUAL'
       | 'SHIPPING',
+    shippingCharge = 0,
   ):
     | number
     | undefined {
@@ -695,10 +767,12 @@ export const ProductService = {
           skuCode,
         ),
         fulfillmentType,
+        shippingCharge,
       ) ??
       undefined
     );
   },
+
 
   /* --------------------------------------------------------------------------
      SEARCH
@@ -762,6 +836,7 @@ export const ProductService = {
     );
   },
 
+
   /* --------------------------------------------------------------------------
      RELATED PRODUCTS
   -------------------------------------------------------------------------- */
@@ -807,8 +882,12 @@ export const ProductService = {
     return [
       ...sameCategory,
       ...otherCategory,
-    ].slice(0, count);
+    ].slice(
+      0,
+      count,
+    );
   },
+
 
   /* --------------------------------------------------------------------------
      FLAT CUSTOMER-FACING CATALOG
@@ -819,10 +898,13 @@ export const ProductService = {
     const list:
       FlatProductItem[] = [];
 
-    for (const family of
-      products) {
-      for (const sourceSku of
-        family.skus) {
+    for (
+      const family of products
+    ) {
+      for (
+        const sourceSku of
+        family.skus
+      ) {
         const sku =
           toPurchasableSku(
             sourceSku,
@@ -860,6 +942,9 @@ export const ProductService = {
           mrp:
             sku.mrp,
 
+          /*
+           * BASE WEBSITE SELLING PRICE.
+           */
           websitePrice:
             sku.websitePrice,
 
@@ -872,9 +957,15 @@ export const ProductService = {
           manualPriceEligible:
             sku.manualPriceEligible,
 
+          /*
+           * No shipping is attached at catalogue level.
+           */
           shipping: 0,
 
-          freeShipping: true,
+          /*
+           * Do not claim universal free shipping.
+           */
+          freeShipping: false,
 
           available: true,
 
@@ -886,6 +977,7 @@ export const ProductService = {
 
     return list;
   },
+
 
   /* --------------------------------------------------------------------------
      PRODUCTS WITH AT LEAST ONE PURCHASABLE SKU
@@ -904,6 +996,7 @@ export const ProductService = {
     );
   },
 
+
   /* --------------------------------------------------------------------------
      IS PURCHASABLE
   -------------------------------------------------------------------------- */
@@ -919,6 +1012,7 @@ export const ProductService = {
     );
   },
 
+
   /* --------------------------------------------------------------------------
      VALIDATE PRODUCT DATA
   -------------------------------------------------------------------------- */
@@ -933,10 +1027,13 @@ export const ProductService = {
     const seenSkus =
       new Set<string>();
 
-    for (const product of
-      products) {
-      for (const sku of
-        product.skus) {
+    for (
+      const product of products
+    ) {
+      for (
+        const sku of
+        product.skus
+      ) {
         const normalizedSku =
           normalizeSkuCode(
             sku.sku,
@@ -1010,7 +1107,7 @@ export const ProductService = {
           );
         }
 
-        /* Selling price */
+        /* Base website selling price */
 
         if (
           sales.sellingPrice !==
@@ -1024,19 +1121,6 @@ export const ProductService = {
         ) {
           errors.push(
             `${sku.sku}: invalid selling price`,
-          );
-        }
-
-        /* Shipping */
-
-        if (
-          !Number.isFinite(
-            sales.shipping,
-          ) ||
-          sales.shipping < 0
-        ) {
-          errors.push(
-            `${sku.sku}: invalid shipping`,
           );
         }
 
@@ -1062,20 +1146,16 @@ export const ProductService = {
             );
           }
 
-          const finalPrice =
-            getFinalWebsitePrice(
-              sales.sku,
-            );
-
+          /*
+           * Product websitePrice must exactly equal the
+           * approved BASE selling price.
+           */
           if (
-            finalPrice ===
-              null ||
-            !Number.isFinite(
-              finalPrice,
-            )
+            sku.websitePrice !==
+            sales.sellingPrice
           ) {
             errors.push(
-              `${sku.sku}: final website price cannot be calculated`,
+              `${sku.sku}: websitePrice must equal approved sellingPrice. Expected ₹${sales.sellingPrice ?? 'invalid'}, got ₹${sku.websitePrice ?? 'invalid'}.`,
             );
           }
         }
@@ -1085,6 +1165,7 @@ export const ProductService = {
     return {
       valid:
         errors.length === 0,
+
       errors,
     };
   },
