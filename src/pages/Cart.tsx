@@ -1539,33 +1539,114 @@ export default function Cart() {
                   </div>
 
 
-                  {/* CHECKOUT */}
+                  {/* ============================================================
+                      CHECKOUT CTA
+                      ============================================================
+                      
+                      The total is repeated inside the button intentionally.
+                      This makes the primary action immediately clear on mobile.
+                  ============================================================= */}
 
                   <Link
                     to="/checkout"
+                    aria-label={`Proceed to checkout for ${formatPrice(total)}`}
                     className="
-                      btn-buy
                       group/checkout
                       mt-5
-                      min-h-[52px]
+                      flex
+                      min-h-[58px]
                       w-full
-                      px-5
+                      items-center
+                      justify-between
+                      gap-3
+                      rounded-2xl
+                      bg-brand-green
+                      px-4
                       py-3
+                      text-white
+                      shadow-[0_10px_24px_rgba(22,67,54,0.18)]
+                      transition-all
+                      duration-200
+                      hover:-translate-y-0.5
+                      hover:bg-brand-green/95
+                      hover:shadow-[0_14px_30px_rgba(22,67,54,0.24)]
+                      active:translate-y-0
+                      active:scale-[0.99]
+                      focus:outline-none
+                      focus:ring-2
+                      focus:ring-brand-green
+                      focus:ring-offset-2
+                      sm:min-h-[60px]
+                      sm:px-5
                     "
                   >
 
-                    Proceed to Checkout
-
-                    <ArrowRight
+                    <span
                       className="
-                        h-4
-                        w-4
-                        transition-transform
-                        duration-200
-                        group-hover/checkout:translate-x-1
+                        flex
+                        min-w-0
+                        flex-col
+                        items-start
+                        leading-none
                       "
-                      aria-hidden="true"
-                    />
+                    >
+
+                      <span
+                        className="
+                          text-[10px]
+                          font-semibold
+                          uppercase
+                          tracking-[0.11em]
+                          text-white/65
+                        "
+                      >
+                        Your Total
+                      </span>
+
+
+                      <span
+                        className="
+                          mt-1
+                          font-serif
+                          text-lg
+                          font-bold
+                          text-white
+                          sm:text-xl
+                        "
+                      >
+                        {formatPrice(total)}
+                      </span>
+
+                    </span>
+
+
+                    <span
+                      className="
+                        flex
+                        items-center
+                        gap-2
+                        whitespace-nowrap
+                        text-sm
+                        font-bold
+                        sm:text-base
+                      "
+                    >
+
+                      Proceed to Checkout
+
+                      <ArrowRight
+                        className="
+                          h-5
+                          w-5
+                          shrink-0
+                          transition-transform
+                          duration-200
+                          group-hover/checkout:translate-x-1
+                        "
+                        aria-hidden="true"
+                      />
+
+                    </span>
 
                   </Link>
 
