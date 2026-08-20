@@ -13,6 +13,7 @@ from ..models.order import (
     PublicCustomerSnapshot,
 )
 from .google_sheets_service import post_to_google_apps_script
+from .pricing_service import calculate_cart_quote
 
 
 # ==============================================================
@@ -49,35 +50,14 @@ async def process_and_save_order(
     payload: CreateOrderRequest,
 ):
     """
-    Create and save a new order in MongoDB.
+    Create and save a new order using the authoritative server-side
+    fulfilment and pricing quote.
 
-    IMPORTANT PRICING RULE:
+    Frontend prices are never trusted.
 
-    Backend SKU websitePrice is the FINAL customer-facing price.
-
-    The commercial pricing master calculates:
-
-        sellingPrice + commercial shipping
-        --------------------------------
-        final websitePrice
-
-    Therefore this service MUST NOT add shipping again.
-
-    Frontend prices are NOT trusted.
-
-    Pricing authority:
-
-        Backend SKU catalogue
-              ↓
-        websitePrice
-              ↓
-        order subtotal
-              ↓
-        final total
-
-    Razorpay is created later by routes/orders.py.
-
-    Google Sheets failure must NEVER prevent checkout.
+    The same quote engine used by Checkout is recalculated here before
+    the order is saved. This guarantees that MANUAL and SHIPPING orders
+    receive the same commercial treatment at order creation time.
     """
 
     db = get_database()
@@ -101,13 +81,17 @@ async def process_and_save_order(
 
         existing = await orders_collection.find_one(
             {
-                "idempotencyKey": payload.idempotencyKey
+                "idempotencyKey":
+                    payload.idempotencyKey
             }
         )
 
         if existing:
 
-            existing.pop("_id", None)
+            existing.pop(
+                "_id",
+                None,
+            )
 
             existing.setdefault(
                 "paymentStatus",
@@ -122,35 +106,206 @@ async def process_and_save_order(
             return existing
 
     # ==========================================================
-    # 3. SERVER-SIDE PRICE CALCULATION
+    # 3. AUTHORITATIVE SERVER-SIDE QUOTE
     # ==========================================================
 
-    subtotal = 0.0
+    try:
+
+        quote = await calculate_cart_quote(
+            pincode=payload.customer.pincode,
+            items=[
+                {
+                    "sku": item.sku,
+                    "quantity": item.quantity,
+                }
+                for item in payload.items
+            ],
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        print(
+            "========== ORDER QUOTE ERROR =========="
+        )
+
+        print(
+            f"TYPE: {type(e).__name__}"
+        )
+
+        print(
+            f"MESSAGE: {str(e)}"
+        )
+
+        print(
+            "========================================"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Unable to calculate the final order price."
+            ),
+        )
 
     # ==========================================================
-    # CUSTOMER-FACING SHIPPING
-    #
-    # Shipping is already included in websitePrice.
-    #
-    # Therefore:
-    #
-    # shipping = 0
-    #
-    # NEVER add another shipping amount here.
+    # 4. VALIDATE QUOTE
     # ==========================================================
 
-    shipping = 0.0
+    if not quote.get(
+        "success",
+        False,
+    ):
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Invalid server pricing quote."
+            ),
+        )
+
+    fulfillment_type = (
+        str(
+            quote.get(
+                "fulfillmentType",
+                "SHIPPING",
+            )
+        )
+        .strip()
+        .upper()
+    )
+
+    if fulfillment_type not in {
+        "MANUAL",
+        "SHIPPING",
+    }:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Invalid server fulfilment type."
+            ),
+        )
+
+    try:
+
+        subtotal = round(
+            float(
+                quote["subtotal"]
+            ),
+            2,
+        )
+
+        shipping = round(
+            float(
+                quote["shipping"]
+            ),
+            2,
+        )
+
+        final_total = round(
+            float(
+                quote["total"]
+            ),
+            2,
+        )
+
+    except Exception:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Invalid server pricing values."
+            ),
+        )
+
+    if (
+        subtotal < 0
+        or shipping < 0
+        or final_total <= 0
+    ):
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Server pricing calculation is invalid."
+            ),
+        )
+
+    expected_total = round(
+        subtotal + shipping,
+        2,
+    )
+
+    if final_total != expected_total:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Server pricing quote total is inconsistent."
+            ),
+        )
+
+    if (
+        fulfillment_type == "MANUAL"
+        and shipping != 0
+    ):
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "MANUAL fulfilment cannot contain a shipping charge."
+            ),
+        )
+
+    # ==========================================================
+    # 5. BUILD ITEM SNAPSHOTS FROM SERVER QUOTE
+    # ==========================================================
+
+    quote_items_by_sku = {}
+
+    for quote_item in quote.get(
+        "items",
+        [],
+    ):
+
+        quote_sku = str(
+            quote_item.get(
+                "sku",
+                "",
+            )
+        ).strip().upper()
+
+        if quote_sku:
+            quote_items_by_sku[
+                quote_sku
+            ] = quote_item
 
     item_snapshots = []
 
     for item in payload.items:
 
-        # ------------------------------------------------------
-        # Find SKU in backend product catalogue
-        # ------------------------------------------------------
+        sku_code = str(
+            item.sku
+        ).strip().upper()
+
+        quote_item = quote_items_by_sku.get(
+            sku_code
+        )
+
+        if not quote_item:
+
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"Server quote is missing SKU {sku_code}."
+                ),
+            )
 
         family, sku_obj = find_sku_in_backend(
-            item.sku
+            sku_code
         )
 
         if not family or not sku_obj:
@@ -158,14 +313,9 @@ async def process_and_save_order(
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    f"Invalid or unknown SKU: "
-                    f"{item.sku}"
+                    f"Invalid or unknown SKU: {sku_code}"
                 ),
             )
-
-        # ------------------------------------------------------
-        # Availability validation
-        # ------------------------------------------------------
 
         if not sku_obj.get(
             "available",
@@ -176,13 +326,9 @@ async def process_and_save_order(
                 status_code=400,
                 detail=(
                     f"Product is currently unavailable: "
-                    f"{item.sku}"
+                    f"{sku_code}"
                 ),
             )
-
-        # ------------------------------------------------------
-        # Quantity validation
-        # ------------------------------------------------------
 
         try:
 
@@ -190,33 +336,32 @@ async def process_and_save_order(
                 item.quantity
             )
 
-        except Exception:
-
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Invalid quantity for SKU "
-                    f"{item.sku}."
-                ),
+            quoted_quantity = int(
+                quote_item["quantity"]
             )
 
-        if quantity <= 0:
-
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Quantity must be greater than zero."
+            unit_price = round(
+                float(
+                    quote_item["unitPrice"]
                 ),
+                2,
             )
 
-        # ------------------------------------------------------
-        # Backend final customer price
-        # ------------------------------------------------------
+            item_shipping = round(
+                float(
+                    quote_item.get(
+                        "shipping",
+                        0,
+                    )
+                ),
+                2,
+            )
 
-        try:
-
-            unit_price = float(
-                sku_obj["websitePrice"]
+            item_subtotal = round(
+                float(
+                    quote_item["itemSubtotal"]
+                ),
+                2,
             )
 
         except Exception:
@@ -224,188 +369,173 @@ async def process_and_save_order(
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    f"Backend price is missing for SKU "
-                    f"{item.sku}."
+                    f"Invalid server quote for SKU {sku_code}."
                 ),
             )
 
-        # ------------------------------------------------------
-        # Validate backend price
-        # ------------------------------------------------------
-
         if (
-            unit_price < 0
-            or not (
-                unit_price == unit_price
-            )
+            quantity <= 0
+            or quantity != quoted_quantity
+            or unit_price < 0
+            or item_shipping < 0
+            or item_subtotal < 0
         ):
 
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    f"Backend price is invalid for SKU "
-                    f"{item.sku}."
+                    f"Server quote validation failed for SKU {sku_code}."
                 ),
             )
-
-        # ------------------------------------------------------
-        # Calculate item total
-        #
-        # websitePrice already includes the commercial
-        # shipping component.
-        #
-        # Therefore:
-        #
-        # item total = final website price × quantity
-        #
-        # NEVER add shipping here.
-        # ------------------------------------------------------
-
-        item_total = (
-            unit_price * quantity
-        )
-
-        if (
-            item_total < 0
-            or not (
-                item_total == item_total
-            )
-        ):
-
-            raise HTTPException(
-                status_code=500,
-                detail=(
-                    f"Invalid calculated total for SKU "
-                    f"{item.sku}."
-                ),
-            )
-
-        subtotal += item_total
-
-        # ------------------------------------------------------
-        # Snapshot item
-        # ------------------------------------------------------
 
         item_snapshots.append(
             {
                 "sku": sku_obj.get(
                     "sku",
-                    item.sku,
+                    sku_code,
                 ),
 
-                "quantity": quantity,
+                "quantity":
+                    quantity,
 
-                # * This is the FINAL customer-facing
-# * unit price, not the pre-shipping price.
-                "unitPrice": unit_price,
+                "unitPrice":
+                    unit_price,
 
-                "productNameSnapshot": family.get(
-                    "name",
-                    "Kawad Swad Product",
-                ),
+                "itemShipping":
+                    item_shipping,
 
-                "packSizeSnapshot": int(
-                    sku_obj.get(
-                        "packSize",
-                        0,
-                    )
-                ),
+                "itemSubtotal":
+                    item_subtotal,
+
+                "productNameSnapshot":
+                    family.get(
+                        "name",
+                        "Kawad Swad Product",
+                    ),
+
+                "packSizeSnapshot":
+                    int(
+                        sku_obj.get(
+                            "packSize",
+                            0,
+                        )
+                    ),
             }
         )
 
     # ==========================================================
-    # 4. FINAL TOTAL
-    # ==========================================================
-
-    # * Shipping is already included in each websitePrice.
-# *
-# * Therefore:
-# *
-# * final_total = subtotal
-
-    final_total = round(
-        subtotal,
-        2,
-    )
-
-    if final_total <= 0:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Order total must be greater than zero."
-            ),
-        )
-
-    # ==========================================================
-    # 5. GENERATE UNIQUE ORDER ID
+    # 6. GENERATE UNIQUE ORDER ID
     # ==========================================================
 
     order_id = generate_backend_order_id()
 
     while await orders_collection.find_one(
         {
-            "orderId": order_id
+            "orderId":
+                order_id
         }
     ):
 
         order_id = generate_backend_order_id()
 
     # ==========================================================
-    # 6. CREATE MONGODB DOCUMENT
+    # 7. CREATE MONGODB DOCUMENT
     # ==========================================================
 
     now = datetime.utcnow()
 
     customer_data = {
-        "fullName": payload.customer.fullName,
+        "fullName":
+            payload.customer.fullName,
 
-        "phone": payload.customer.phone,
+        "phone":
+            payload.customer.phone,
 
-        "email": (
-            str(payload.customer.email)
-            if payload.customer.email
-            else ""
-        ),
+        "email":
+            (
+                str(
+                    payload.customer.email
+                )
+                if payload.customer.email
+                else ""
+            ),
 
-        "address": payload.customer.address,
+        "address":
+            payload.customer.address,
 
-        "city": payload.customer.city,
+        "city":
+            payload.customer.city,
 
-        "state": payload.customer.state,
+        "state":
+            payload.customer.state,
 
-        "pincode": payload.customer.pincode,
+        "pincode":
+            payload.customer.pincode,
     }
 
     order_doc = {
-        "orderId": order_id,
+        "orderId":
+            order_id,
 
-        # Newly created orders always begin as pending.
-        # Razorpay verification changes this later.
-        "paymentStatus": "pending",
+        "paymentStatus":
+            "pending",
 
-        "status": "pending",
+        "status":
+            "pending",
 
-        "customer": customer_data,
+        "customer":
+            customer_data,
 
-        "items": item_snapshots,
+        "items":
+            item_snapshots,
 
-        "subtotal": subtotal,
+        "subtotal":
+            subtotal,
 
-        # * Customer-facing shipping is FREE because
-# * commercial shipping is already included in
-# * websitePrice.
-        "shipping": 0.0,
+        "shipping":
+            shipping,
 
-        "total": final_total,
+        "total":
+            final_total,
 
-        "createdAt": now,
+        "fulfillmentType":
+            fulfillment_type,
 
-        "idempotencyKey": payload.idempotencyKey,
+        "pricingMode":
+            quote.get(
+                "pricingMode",
+                (
+                    "LOCAL"
+                    if fulfillment_type ==
+                    "MANUAL"
+                    else "STANDARD"
+                ),
+            ),
+
+        "shippingRequired":
+            bool(
+                quote.get(
+                    "shippingRequired",
+                    fulfillment_type ==
+                    "SHIPPING",
+                )
+            ),
+
+        "fulfillmentLocation":
+            quote.get(
+                "location",
+                {},
+            ),
+
+        "createdAt":
+            now,
+
+        "idempotencyKey":
+            payload.idempotencyKey,
     }
 
     # ==========================================================
-    # 7. INSERT INTO MONGODB
+    # 8. INSERT INTO MONGODB
     # ==========================================================
 
     try:
@@ -430,11 +560,13 @@ async def process_and_save_order(
 
         if payload.idempotencyKey:
 
-            existing = await orders_collection.find_one(
-                {
-                    "idempotencyKey":
-                        payload.idempotencyKey
-                }
+            existing = (
+                await orders_collection.find_one(
+                    {
+                        "idempotencyKey":
+                            payload.idempotencyKey
+                    }
+                )
             )
 
             if existing:
@@ -490,7 +622,7 @@ async def process_and_save_order(
         )
 
     # ==========================================================
-    # 8. GOOGLE SHEETS SYNC
+    # 9. GOOGLE SHEETS SYNC
     # ==========================================================
 
     try:
@@ -534,7 +666,9 @@ async def process_and_save_order(
 
                 "email":
                     (
-                        str(payload.customer.email)
+                        str(
+                            payload.customer.email
+                        )
                         if payload.customer.email
                         else ""
                     ),
@@ -548,13 +682,34 @@ async def process_and_save_order(
                 "subtotal":
                     subtotal,
 
-                # * Shipping is already included in
-# * websitePrice.
                 "shipping":
-                    0.0,
+                    shipping,
 
                 "total":
                     final_total,
+
+                "fulfillmentType":
+                    fulfillment_type,
+
+                "pricingMode":
+                    quote.get(
+                        "pricingMode",
+                        (
+                            "LOCAL"
+                            if fulfillment_type ==
+                            "MANUAL"
+                            else "STANDARD"
+                        ),
+                    ),
+
+                "shippingRequired":
+                    bool(
+                        quote.get(
+                            "shippingRequired",
+                            fulfillment_type ==
+                            "SHIPPING",
+                        )
+                    ),
 
                 "paymentStatus":
                     "pending",
@@ -581,7 +736,7 @@ async def process_and_save_order(
         # Sheets failure must NEVER stop checkout.
 
     # ==========================================================
-    # 9. RETURN CLEAN ORDER DATA
+    # 10. RETURN CLEAN ORDER DATA
     # ==========================================================
 
     order_doc.pop(
@@ -592,7 +747,6 @@ async def process_and_save_order(
     return order_doc
 
 
-# ==============================================================
 # ORDER TRACKING
 # ==============================================================
 
