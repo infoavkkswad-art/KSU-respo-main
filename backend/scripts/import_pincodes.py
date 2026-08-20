@@ -1,362 +1,212 @@
 """
 KAWAD SWAD
-INDIA PINCODE IMPORTER
+ONE-TIME INDIA PIN DIRECTORY IMPORTER
 
-Purpose:
-    Import the complete India PIN directory into MongoDB.
+Stage 2.4.1
 
-Source:
-    All-India-Pincode-Directory dataset.
+Run from the backend project directory:
 
-Input:
-    backend/data/pincode/all-india-pincode.csv
+    python scripts/import_pincodes.py
 
-Collections:
-    pincodes
+Expected CSV:
+    backend/data/pincode/all-india-pincode-html-csv.csv
 
-Important:
-    This script imports postal directory data only.
+The importer:
+- Reads the CSV once.
+- Normalizes the source headers.
+- Converts rows into the MongoDB schema used by pincode_service.py.
+- Deduplicates by PIN code.
+- Upserts the PIN records.
+- Creates a NON-UNIQUE index on pincode.
 
-    It does NOT decide:
-        - MANUAL
-        - SHIPPING
-        - pricing
-        - shipping charges
-
-Those are Kawad Swad business rules and are stored separately.
+Why deduplicate?
+The source directory can contain multiple postal-office rows for
+one PIN. Checkout only needs one representative postal record for
+district/state display, while the business fulfilment rule remains
+separate and keyed by PIN.
 """
 
 import asyncio
 import csv
-import os
+import re
 import sys
 from pathlib import Path
-
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import UpdateOne
+from typing import Dict, Iterable, Optional
 
 
-# ============================================================
-# PATHS
-# ============================================================
+# Make "from app..." imports work when this script is run as:
+# python scripts/import_pincodes.py
+BACKEND_DIR = Path(__file__).resolve().parents[1]
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(
+        0,
+        str(BACKEND_DIR),
+    )
+
+
+from app.database import get_database  # noqa: E402
+
 
 CSV_PATH = (
-    PROJECT_ROOT
+    BACKEND_DIR
     / "data"
     / "pincode"
-    / "all-india-pincode.csv"
+    / "all-india-pincode-html-csv.csv"
 )
 
+COLLECTION_NAME = "pincodes"
 
-# ============================================================
-# ENVIRONMENT
-# ============================================================
-
-MONGODB_URI = os.getenv(
-    "MONGODB_URI",
-    "mongodb://localhost:27017",
-)
-
-MONGODB_DATABASE = os.getenv(
-    "MONGODB_DATABASE",
-    "kawad_swad_db",
-)
+BATCH_SIZE = 2000
 
 
 # ============================================================
-# CSV HEADER NORMALIZATION
+# HEADER HELPERS
 # ============================================================
 
-HEADER_ALIASES = {
-    "officename": "officeName",
-    "officeName": "officeName",
+def normalize_header(
+    value: str,
+) -> str:
 
-    "pincode": "pincode",
-    "PINCODE": "pincode",
-
-    "officetype": "officeType",
-    "officeType": "officeType",
-
-    "deliverystatus": "deliveryStatus",
-    "Deliverystatus": "deliveryStatus",
-    "DELIVERYSTATUS": "deliveryStatus",
-
-    "divisionname": "divisionName",
-    "divisionName": "divisionName",
-
-    "regionname": "regionName",
-    "regionName": "regionName",
-
-    "circlename": "circleName",
-    "circlename ": "circleName",
-    "circleName": "circleName",
-
-    "taluk": "taluk",
-    "Taluk": "taluk",
-
-    "districtname": "districtName",
-    "Districtname": "districtName",
-
-    "statename": "stateName",
-    "statename ": "stateName",
-    "STATE": "stateName",
-
-    "telephone": "telephone",
-    "Telephone": "telephone",
-
-    "relatedsuboffice": "relatedSuboffice",
-    "relatedSuboffice": "relatedSuboffice",
-
-    "relatedheadoffice": "relatedHeadOffice",
-    "relatedHeadoffice": "relatedHeadOffice",
-}
-
-
-def normalize_header(value: str) -> str:
-    value = (
-        str(value)
-        .strip()
-    )
-
-    return HEADER_ALIASES.get(
-        value,
-        value,
+    return re.sub(
+        r"[^a-z0-9]",
+        "",
+        str(value).strip().lower(),
     )
 
 
+def find_column(
+    headers: Iterable[str],
+    *candidates: str,
+) -> Optional[str]:
+
+    normalized = {
+        normalize_header(header): header
+        for header in headers
+    }
+
+    for candidate in candidates:
+
+        key = normalize_header(
+            candidate
+        )
+
+        if key in normalized:
+            return normalized[key]
+
+    return None
+
+
 # ============================================================
-# VALUE NORMALIZATION
+# VALUE HELPERS
 # ============================================================
 
-def clean_value(value):
+def clean_value(
+    value,
+) -> Optional[str]:
+
     if value is None:
-        return ""
+        return None
 
-    return (
-        str(value)
-        .strip()
+    value = str(value).strip()
+
+    if not value:
+        return None
+
+    return value
+
+
+def clean_pincode(
+    value,
+) -> Optional[str]:
+
+    value = clean_value(
+        value
     )
 
+    if not value:
+        return None
 
-def normalize_pincode(value):
-    value = clean_value(value)
+    # Handles values such as 451225.0 if a source/export
+    # has represented the PIN numerically.
+    if value.endswith(".0"):
+        value = value[:-2]
 
-    digits = "".join(
-        char
-        for char in value
-        if char.isdigit()
+    digits = re.sub(
+        r"\D",
+        "",
+        value,
     )
 
-    if len(digits) != 6:
+    if (
+        len(digits) != 6
+        or digits.startswith("0")
+    ):
         return None
 
     return digits
 
 
 # ============================================================
-# ROW CONVERSION
+# CSV ROW CONVERSION
 # ============================================================
 
-def convert_row(row: dict):
-    normalized = {}
+def row_to_record(
+    row: Dict[str, str],
+    columns: Dict[str, Optional[str]],
+) -> Optional[dict]:
 
-    for key, value in row.items():
-
-        clean_key = normalize_header(
-            key
+    pincode = clean_pincode(
+        row.get(
+            columns["pincode"]
         )
-
-        normalized[
-            clean_key
-        ] = clean_value(value)
-
-    pincode = normalize_pincode(
-        normalized.get(
-            "pincode"
-        )
+        if columns["pincode"]
+        else None
     )
 
     if not pincode:
         return None
 
+    office_name = clean_value(
+        row.get(
+            columns["officeName"]
+        )
+        if columns["officeName"]
+        else None
+    )
+
+    district_name = clean_value(
+        row.get(
+            columns["districtName"]
+        )
+        if columns["districtName"]
+        else None
+    )
+
+    state_name = clean_value(
+        row.get(
+            columns["stateName"]
+        )
+        if columns["stateName"]
+        else None
+    )
+
+    delivery_status = clean_value(
+        row.get(
+            columns["deliveryStatus"]
+        )
+        if columns["deliveryStatus"]
+        else None
+    )
+
     return {
         "pincode": pincode,
-
-        "officeName":
-            normalized.get(
-                "officeName",
-                "",
-            ),
-
-        "officeType":
-            normalized.get(
-                "officeType",
-                "",
-            ),
-
-        "deliveryStatus":
-            normalized.get(
-                "deliveryStatus",
-                "",
-            ),
-
-        "divisionName":
-            normalized.get(
-                "divisionName",
-                "",
-            ),
-
-        "regionName":
-            normalized.get(
-                "regionName",
-                "",
-            ),
-
-        "circleName":
-            normalized.get(
-                "circleName",
-                "",
-            ),
-
-        "taluk":
-            normalized.get(
-                "taluk",
-                "",
-            ),
-
-        "districtName":
-            normalized.get(
-                "districtName",
-                "",
-            ),
-
-        "stateName":
-            normalized.get(
-                "stateName",
-                "",
-            ),
-
-        "telephone":
-            normalized.get(
-                "telephone",
-                "",
-            ),
-
-        "relatedSuboffice":
-            normalized.get(
-                "relatedSuboffice",
-                "",
-            ),
-
-        "relatedHeadOffice":
-            normalized.get(
-                "relatedHeadOffice",
-                "",
-            ),
+        "officeName": office_name,
+        "districtName": district_name,
+        "stateName": state_name,
+        "deliveryStatus": delivery_status,
+        "source": "all-india-pincode-directory",
     }
-
-
-# ============================================================
-# CSV READER
-# ============================================================
-
-def read_csv_rows():
-    if not CSV_PATH.exists():
-
-        raise FileNotFoundError(
-            "\nIndia PIN CSV not found.\n\n"
-            f"Expected:\n{CSV_PATH}\n\n"
-            "Download the repository CSV and place it "
-            "at that exact path.\n"
-        )
-
-    print(
-        "================================================="
-    )
-
-    print(
-        "KAWAD SWAD PINCODE IMPORT"
-    )
-
-    print(
-        "================================================="
-    )
-
-    print(
-        f"Source: {CSV_PATH}"
-    )
-
-    print()
-
-    # --------------------------------------------------------
-    # Try UTF-8 first.
-    # Fall back to cp1252/latin1 because some historical
-    # postal datasets contain non-UTF8 characters.
-    # --------------------------------------------------------
-
-    encodings = [
-        "utf-8-sig",
-        "cp1252",
-        "latin1",
-    ]
-
-    last_error = None
-
-    for encoding in encodings:
-
-        try:
-
-            with open(
-                CSV_PATH,
-                "r",
-                encoding=encoding,
-                newline="",
-            ) as file:
-
-                reader = csv.DictReader(
-                    file
-                )
-
-                if not reader.fieldnames:
-
-                    raise ValueError(
-                        "CSV has no header row."
-                    )
-
-                print(
-                    "CSV columns detected:"
-                )
-
-                print(
-                    ", ".join(
-                        reader.fieldnames
-                    )
-                )
-
-                print()
-
-                for row in reader:
-
-                    converted = convert_row(
-                        row
-                    )
-
-                    if converted:
-                        yield converted
-
-            return
-
-        except UnicodeDecodeError as error:
-
-            last_error = error
-
-            continue
-
-    raise RuntimeError(
-        "Unable to decode the PIN CSV."
-    ) from last_error
 
 
 # ============================================================
@@ -365,761 +215,220 @@ def read_csv_rows():
 
 async def import_pincodes():
 
-    client = AsyncIOMotorClient(
-        MONGODB_URI,
-        serverSelectionTimeoutMS=10000,
-    )
-
-    db = client[
-        MONGODB_DATABASE
-    ]
-
-    collection = db[
-        "pincodes"
-    ]
-
-    try:
-
-        await client.admin.command(
-            "ping"
-        )
-
-        print(
-            "MongoDB connection: OK"
-        )
-
-        print()
-
-        # ----------------------------------------------------
-        # We replace the imported directory.
-        #
-        # This prevents stale records from previous imports.
-        # ----------------------------------------------------
-
-        print(
-            "Clearing previous PIN directory..."
-        )
-
-        await collection.delete_many({})
-
-        operations = []
-
-        total_rows = 0
-        inserted_candidates = 0
-
-        for row in read_csv_rows():
-
-            total_rows += 1
-
-            operations.append(
-                UpdateOne(
-                    {
-                        "pincode":
-                            row["pincode"],
-
-                        "officeName":
-                            row["officeName"],
-                    },
-                    {
-                        "$set":
-                            row
-                    },
-                    upsert=True,
-                )
-            )
-
-            inserted_candidates += 1
-
-            # ------------------------------------------------
-            # Bulk write every 1000 records.
-            # ------------------------------------------------
-
-            if len(operations) >= 1000:
-
-                await collection.bulk_write(
-                    operations,
-                    ordered=False,
-                )
-
-                operations = []
-
-                print(
-                    f"Imported approximately "
-                    f"{total_rows:,} records..."
-                )
-
-        if operations:
-
-            await collection.bulk_write(
-                operations,
-                ordered=False,
-            )
-
-        # ----------------------------------------------------
-        # INDEXES
-        # ----------------------------------------------------
-
-        print()
-
-        print(
-            "Creating PIN indexes..."
-        )
-
-        await collection.create_index(
-            "pincode"
-        )
-
-        await collection.create_index(
-            [
-                ("pincode", 1),
-                ("deliveryStatus", 1),
-            ]
-        )
-
-        await collection.create_index(
-            [
-                ("stateName", 1),
-                ("districtName", 1),
-            ]
-        )
-
-        # ----------------------------------------------------
-        # Stats
-        # ----------------------------------------------------
-
-        total_documents = (
-            await collection.count_documents({})
-        )
-
-        unique_pincodes = len(
-            await collection.distinct(
-                "pincode"
-            )
-        )
-
-        print()
-
-        print(
-            "================================================="
-        )
-
-        print(
-            "IMPORT COMPLETE"
-        )
-
-        print(
-            "================================================="
-        )
-
-        print(
-            f"Postal-office records: "
-            f"{total_documents:,}"
-        )
-
-        print(
-            f"Unique PIN codes: "
-            f"{unique_pincodes:,}"
-        )
-
-        print()
-
-    finally:
-
-        client.close()
-
-
-# ============================================================
-# ENTRY POINT
-# ============================================================
-
-if __name__ == "__main__":
-
-    try:
-
-        asyncio.run(
-            import_pincodes()
-        )
-
-    except KeyboardInterrupt:
-
-        print(
-            "\nImport cancelled."
-        )
-
-        sys.exit(1)
-
-    except Exception as error:
-
-        print()
-
-        print(
-            "PIN IMPORT FAILED"
-        )
-
-        print(
-            str(error)
-        )
-
-        sys.exit(1)"""
-KAWAD SWAD
-INDIA PINCODE IMPORTER
-
-Purpose:
-    Import the complete India PIN directory into MongoDB.
-
-Source:
-    All-India-Pincode-Directory dataset.
-
-Input:
-    backend/data/pincode/all-india-pincode.csv
-
-Collections:
-    pincodes
-
-Important:
-    This script imports postal directory data only.
-
-    It does NOT decide:
-        - MANUAL
-        - SHIPPING
-        - pricing
-        - shipping charges
-
-Those are Kawad Swad business rules and are stored separately.
-"""
-
-import asyncio
-import csv
-import os
-import sys
-from pathlib import Path
-
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import UpdateOne
-
-
-# ============================================================
-# PATHS
-# ============================================================
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-CSV_PATH = (
-    PROJECT_ROOT
-    / "data"
-    / "pincode"
-    / "all-india-pincode.csv"
-)
-
-
-# ============================================================
-# ENVIRONMENT
-# ============================================================
-
-MONGODB_URI = os.getenv(
-    "MONGODB_URI",
-    "mongodb://localhost:27017",
-)
-
-MONGODB_DATABASE = os.getenv(
-    "MONGODB_DATABASE",
-    "kawad_swad_db",
-)
-
-
-# ============================================================
-# CSV HEADER NORMALIZATION
-# ============================================================
-
-HEADER_ALIASES = {
-    "officename": "officeName",
-    "officeName": "officeName",
-
-    "pincode": "pincode",
-    "PINCODE": "pincode",
-
-    "officetype": "officeType",
-    "officeType": "officeType",
-
-    "deliverystatus": "deliveryStatus",
-    "Deliverystatus": "deliveryStatus",
-    "DELIVERYSTATUS": "deliveryStatus",
-
-    "divisionname": "divisionName",
-    "divisionName": "divisionName",
-
-    "regionname": "regionName",
-    "regionName": "regionName",
-
-    "circlename": "circleName",
-    "circlename ": "circleName",
-    "circleName": "circleName",
-
-    "taluk": "taluk",
-    "Taluk": "taluk",
-
-    "districtname": "districtName",
-    "Districtname": "districtName",
-
-    "statename": "stateName",
-    "statename ": "stateName",
-    "STATE": "stateName",
-
-    "telephone": "telephone",
-    "Telephone": "telephone",
-
-    "relatedsuboffice": "relatedSuboffice",
-    "relatedSuboffice": "relatedSuboffice",
-
-    "relatedheadoffice": "relatedHeadOffice",
-    "relatedHeadoffice": "relatedHeadOffice",
-}
-
-
-def normalize_header(value: str) -> str:
-    value = (
-        str(value)
-        .strip()
-    )
-
-    return HEADER_ALIASES.get(
-        value,
-        value,
-    )
-
-
-# ============================================================
-# VALUE NORMALIZATION
-# ============================================================
-
-def clean_value(value):
-    if value is None:
-        return ""
-
-    return (
-        str(value)
-        .strip()
-    )
-
-
-def normalize_pincode(value):
-    value = clean_value(value)
-
-    digits = "".join(
-        char
-        for char in value
-        if char.isdigit()
-    )
-
-    if len(digits) != 6:
-        return None
-
-    return digits
-
-
-# ============================================================
-# ROW CONVERSION
-# ============================================================
-
-def convert_row(row: dict):
-    normalized = {}
-
-    for key, value in row.items():
-
-        clean_key = normalize_header(
-            key
-        )
-
-        normalized[
-            clean_key
-        ] = clean_value(value)
-
-    pincode = normalize_pincode(
-        normalized.get(
-            "pincode"
-        )
-    )
-
-    if not pincode:
-        return None
-
-    return {
-        "pincode": pincode,
-
-        "officeName":
-            normalized.get(
-                "officeName",
-                "",
-            ),
-
-        "officeType":
-            normalized.get(
-                "officeType",
-                "",
-            ),
-
-        "deliveryStatus":
-            normalized.get(
-                "deliveryStatus",
-                "",
-            ),
-
-        "divisionName":
-            normalized.get(
-                "divisionName",
-                "",
-            ),
-
-        "regionName":
-            normalized.get(
-                "regionName",
-                "",
-            ),
-
-        "circleName":
-            normalized.get(
-                "circleName",
-                "",
-            ),
-
-        "taluk":
-            normalized.get(
-                "taluk",
-                "",
-            ),
-
-        "districtName":
-            normalized.get(
-                "districtName",
-                "",
-            ),
-
-        "stateName":
-            normalized.get(
-                "stateName",
-                "",
-            ),
-
-        "telephone":
-            normalized.get(
-                "telephone",
-                "",
-            ),
-
-        "relatedSuboffice":
-            normalized.get(
-                "relatedSuboffice",
-                "",
-            ),
-
-        "relatedHeadOffice":
-            normalized.get(
-                "relatedHeadOffice",
-                "",
-            ),
-    }
-
-
-# ============================================================
-# CSV READER
-# ============================================================
-
-def read_csv_rows():
     if not CSV_PATH.exists():
 
         raise FileNotFoundError(
-            "\nIndia PIN CSV not found.\n\n"
-            f"Expected:\n{CSV_PATH}\n\n"
-            "Download the repository CSV and place it "
-            "at that exact path.\n"
+            f"PIN CSV not found: {CSV_PATH}"
         )
 
     print(
-        "================================================="
+        f"Reading PIN directory: {CSV_PATH}"
     )
 
-    print(
-        "KAWAD SWAD PINCODE IMPORT"
-    )
-
-    print(
-        "================================================="
-    )
-
-    print(
-        f"Source: {CSV_PATH}"
-    )
-
-    print()
-
-    # --------------------------------------------------------
-    # Try UTF-8 first.
-    # Fall back to cp1252/latin1 because some historical
-    # postal datasets contain non-UTF8 characters.
-    # --------------------------------------------------------
-
-    encodings = [
-        "utf-8-sig",
-        "cp1252",
-        "latin1",
-    ]
-
-    last_error = None
-
-    for encoding in encodings:
-
-        try:
-
-            with open(
-                CSV_PATH,
-                "r",
-                encoding=encoding,
-                newline="",
-            ) as file:
-
-                reader = csv.DictReader(
-                    file
-                )
-
-                if not reader.fieldnames:
-
-                    raise ValueError(
-                        "CSV has no header row."
-                    )
-
-                print(
-                    "CSV columns detected:"
-                )
-
-                print(
-                    ", ".join(
-                        reader.fieldnames
-                    )
-                )
-
-                print()
-
-                for row in reader:
-
-                    converted = convert_row(
-                        row
-                    )
-
-                    if converted:
-                        yield converted
-
-            return
-
-        except UnicodeDecodeError as error:
-
-            last_error = error
-
-            continue
-
-    raise RuntimeError(
-        "Unable to decode the PIN CSV."
-    ) from last_error
-
-
-# ============================================================
-# IMPORT
-# ============================================================
-
-async def import_pincodes():
-
-    client = AsyncIOMotorClient(
-        MONGODB_URI,
-        serverSelectionTimeoutMS=10000,
-    )
-
-    db = client[
-        MONGODB_DATABASE
-    ]
+    db = get_database()
 
     collection = db[
-        "pincodes"
+        COLLECTION_NAME
     ]
 
-    try:
+    # --------------------------------------------------------
+    # Read all rows and keep one representative record per PIN.
+    # Prefer a record with richer location information.
+    # --------------------------------------------------------
 
-        await client.admin.command(
-            "ping"
+    records: Dict[str, dict] = {}
+
+    with CSV_PATH.open(
+        "r",
+        encoding="utf-8-sig",
+        newline="",
+    ) as csv_file:
+
+        reader = csv.DictReader(
+            csv_file
         )
+
+        if not reader.fieldnames:
+            raise RuntimeError(
+                "PIN CSV has no header row."
+            )
+
+        columns = {
+            "pincode": find_column(
+                reader.fieldnames,
+                "pincode",
+                "pin code",
+                "pincode",
+            ),
+
+            "officeName": find_column(
+                reader.fieldnames,
+                "officename",
+                "office name",
+                "officename",
+            ),
+
+            "districtName": find_column(
+                reader.fieldnames,
+                "districtname",
+                "district name",
+            ),
+
+            "stateName": find_column(
+                reader.fieldnames,
+                "statename",
+                "state name",
+            ),
+
+            "deliveryStatus": find_column(
+                reader.fieldnames,
+                "deliverystatus",
+                "delivery status",
+            ),
+        }
+
+        if not columns["pincode"]:
+            raise RuntimeError(
+                "Could not find the PIN code column in the CSV."
+            )
 
         print(
-            "MongoDB connection: OK"
+            "Detected columns:",
+            columns,
         )
 
-        print()
+        for row in reader:
 
-        # ----------------------------------------------------
-        # We replace the imported directory.
-        #
-        # This prevents stale records from previous imports.
-        # ----------------------------------------------------
+            record = row_to_record(
+                row,
+                columns,
+            )
 
-        print(
-            "Clearing previous PIN directory..."
-        )
+            if not record:
+                continue
 
-        await collection.delete_many({})
+            existing = records.get(
+                record["pincode"]
+            )
 
-        operations = []
+            if existing is None:
+                records[
+                    record["pincode"]
+                ] = record
+                continue
 
-        total_rows = 0
-        inserted_candidates = 0
-
-        for row in read_csv_rows():
-
-            total_rows += 1
-
-            operations.append(
-                UpdateOne(
-                    {
-                        "pincode":
-                            row["pincode"],
-
-                        "officeName":
-                            row["officeName"],
-                    },
-                    {
-                        "$set":
-                            row
-                    },
-                    upsert=True,
+            # Prefer the richer record.
+            existing_score = sum(
+                bool(
+                    existing.get(field)
+                )
+                for field in (
+                    "officeName",
+                    "districtName",
+                    "stateName",
+                    "deliveryStatus",
                 )
             )
 
-            inserted_candidates += 1
-
-            # ------------------------------------------------
-            # Bulk write every 1000 records.
-            # ------------------------------------------------
-
-            if len(operations) >= 1000:
-
-                await collection.bulk_write(
-                    operations,
-                    ordered=False,
+            new_score = sum(
+                bool(
+                    record.get(field)
                 )
-
-                operations = []
-
-                print(
-                    f"Imported approximately "
-                    f"{total_rows:,} records..."
+                for field in (
+                    "officeName",
+                    "districtName",
+                    "stateName",
+                    "deliveryStatus",
                 )
-
-        if operations:
-
-            await collection.bulk_write(
-                operations,
-                ordered=False,
             )
 
-        # ----------------------------------------------------
-        # INDEXES
-        # ----------------------------------------------------
+            if new_score > existing_score:
+                records[
+                    record["pincode"]
+                ] = record
 
-        print()
-
-        print(
-            "Creating PIN indexes..."
+    if not records:
+        raise RuntimeError(
+            "No valid PIN records were found in the CSV."
         )
 
-        await collection.create_index(
-            "pincode"
-        )
+    print(
+        f"Unique PIN codes prepared: {len(records):,}"
+    )
 
-        await collection.create_index(
-            [
-                ("pincode", 1),
-                ("deliveryStatus", 1),
-            ]
-        )
+    # --------------------------------------------------------
+    # Upsert in batches.
+    # --------------------------------------------------------
 
-        await collection.create_index(
-            [
-                ("stateName", 1),
-                ("districtName", 1),
-            ]
-        )
+    items = list(
+        records.values()
+    )
 
-        # ----------------------------------------------------
-        # Stats
-        # ----------------------------------------------------
+    imported = 0
 
-        total_documents = (
-            await collection.count_documents({})
-        )
+    for start in range(
+        0,
+        len(items),
+        BATCH_SIZE,
+    ):
 
-        unique_pincodes = len(
-            await collection.distinct(
-                "pincode"
+        batch = items[
+            start:
+            start + BATCH_SIZE
+        ]
+
+        for record in batch:
+
+            await collection.update_one(
+                {
+                    "pincode":
+                        record["pincode"]
+                },
+                {
+                    "$set":
+                        record
+                },
+                upsert=True,
             )
-        )
 
-        print()
-
-        print(
-            "================================================="
+        imported += len(
+            batch
         )
 
         print(
-            "IMPORT COMPLETE"
+            f"Imported/upserted {imported:,}/{len(items):,}"
         )
 
-        print(
-            "================================================="
-        )
+    # --------------------------------------------------------
+    # IMPORTANT:
+    # pincode is NOT unique because source data can contain
+    # multiple offices for the same PIN.
+    #
+    # We intentionally use a normal index.
+    # --------------------------------------------------------
 
-        print(
-            f"Postal-office records: "
-            f"{total_documents:,}"
-        )
+    await collection.create_index(
+        [
+            (
+                "pincode",
+                1,
+            )
+        ],
+        unique=False,
+        name="pincode_lookup",
+    )
 
-        print(
-            f"Unique PIN codes: "
-            f"{unique_pincodes:,}"
-        )
+    print(
+        "MongoDB index ready: pincode_lookup"
+    )
 
-        print()
+    print(
+        "PIN directory import completed successfully."
+    )
 
-    finally:
-
-        client.close()
-
-
-# ============================================================
-# ENTRY POINT
-# ============================================================
 
 if __name__ == "__main__":
 
-    try:
-
-        asyncio.run(
-            import_pincodes()
-        )
-
-    except KeyboardInterrupt:
-
-        print(
-            "\nImport cancelled."
-        )
-
-        sys.exit(1)
-
-    except Exception as error:
-
-        print()
-
-        print(
-            "PIN IMPORT FAILED"
-        )
-
-        print(
-            str(error)
-        )
-
-        sys.exit(1)
+    asyncio.run(
+        import_pincodes()
+    )
