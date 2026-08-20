@@ -31,7 +31,7 @@ export type PackSize =
  *
  * websitePrice is now the BASE WEBSITE SELLING PRICE.
  *
- * Shipping is NOT included in websitePrice.
+ * Shipping is NOT included here.
  *
  * NEW FULFILMENT MODEL:
  *
@@ -60,18 +60,16 @@ export interface Sku {
    * Compatibility field.
    *
    * Actual shipping is resolved separately by fulfilment.
-   *
-   * This value must NOT be used as a shipping calculation.
    */
-  shipping: 0;
+  shipping: number;
 
   /*
-   * false means shipping is NOT permanently included/free.
+   * Indicates whether the CURRENT resolved order has free shipping.
    *
-   * MANUAL fulfilment may still result in ₹0 shipping.
-   * SHIPPING fulfilment may have a calculated shipping charge.
+   * This must remain a boolean because MANUAL and SHIPPING
+   * fulfilment can have different outcomes.
    */
-  freeShipping: false;
+  freeShipping: boolean;
 
   available: boolean;
 }
@@ -222,10 +220,7 @@ function makeSku(
     shipping: 0,
 
     /*
-     * Do not tell the UI that shipping is universally free.
-     *
-     * MANUAL may be ₹0.
-     * SHIPPING may have a charge.
+     * Catalog base state is false.
      */
     freeShipping: false,
 
@@ -724,19 +719,6 @@ export const products: ProductFamily[] = [
 
 /* ============================================================================
  * SALES CONFIGURATION VALIDATION
- * ============================================================================
- *
- * Every product SKU must exist in the central sales configuration.
- *
- * NEW MODEL:
- *
- * sales-config.ts
- *   sellingPrice = BASE WEBSITE SELLING PRICE
- *
- * products.ts
- *   websitePrice = sellingPrice
- *
- * Fulfilment shipping is resolved separately.
  * ========================================================================== */
 
 export function validateProductSalesMapping(): {
@@ -832,19 +814,6 @@ export function validateProductSalesMapping(): {
         );
       }
 
-      /*
-       * NEW RULE:
-       *
-       * websitePrice must equal the approved BASE Website Selling Price.
-       *
-       * Example:
-       *
-       * KS-MMP-200
-       * sellingPrice = ₹55
-       * websitePrice = ₹55
-       *
-       * Shipping is NOT included here.
-       */
       if (
         sku.websitePrice !==
         salesSku.sellingPrice
@@ -854,13 +823,6 @@ export function validateProductSalesMapping(): {
         );
       }
 
-      /*
-       * Product-level shipping must remain zero.
-       *
-       * This does NOT mean all orders have free shipping.
-       *
-       * It means shipping is resolved separately by fulfilment.
-       */
       if (
         sku.shipping !== 0
       ) {
@@ -869,17 +831,11 @@ export function validateProductSalesMapping(): {
         );
       }
 
-      /*
-       * freeShipping must NOT be true globally.
-       *
-       * MANUAL may have ₹0 shipping.
-       * SHIPPING may have a charge.
-       */
       if (
         sku.freeShipping !== false
       ) {
         errors.push(
-          `${sku.sku}: freeShipping must be false because shipping depends on fulfilment.`,
+          `${sku.sku}: freeShipping must be false by default because shipping depends on fulfilment.`,
         );
       }
 
@@ -933,9 +889,6 @@ export function validateProductSalesMapping(): {
         );
       }
 
-      /*
-       * Selling price should not exceed MRP.
-       */
       if (
         sku.mrp !== null &&
         sku.websitePrice !== null &&
@@ -949,9 +902,6 @@ export function validateProductSalesMapping(): {
     }
   }
 
-  /*
-   * The current master contains 43 active SKUs.
-   */
   if (
     seenProductSkus.size !== 43
   ) {
