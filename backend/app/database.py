@@ -4,19 +4,26 @@ from .config import settings
 
 
 class Database:
+
     client: AsyncIOMotorClient = None
+
     db = None
 
 
 db = Database()
 
 
+# ============================================================
+# CONNECT
+# ============================================================
+
 async def connect_to_mongo():
-    # Add serverSelectionTimeoutMS to prevent indefinite blocking
-    # during startup timeout on Render.
+
     db.client = AsyncIOMotorClient(
         settings.mongodb_uri,
+
         serverSelectionTimeoutMS=5000,
+
         connectTimeoutMS=5000,
     )
 
@@ -24,26 +31,36 @@ async def connect_to_mongo():
         settings.mongodb_database
     ]
 
-    # Ping with try/except to prevent startup crash if
-    # network/DNS experiences temporary latency.
+    # --------------------------------------------------------
+    # DATABASE PING
+    # --------------------------------------------------------
+
     try:
-        await db.client.admin.command("ping")
+
+        await db.client.admin.command(
+            "ping"
+        )
 
     except Exception as e:
+
         print(
             "Warning: MongoDB initial ping failed "
             f"or timed out: {str(e)}"
         )
 
-    # Ensure indexes for orders, enquiries,
-    # webhook events, and product reviews.
+    # --------------------------------------------------------
+    # INDEXES
+    # --------------------------------------------------------
+
     try:
 
-        # =========================================================
+        # ====================================================
         # ORDERS
-        # =========================================================
+        # ====================================================
 
-        orders_col = db.db["orders"]
+        orders_col = db.db[
+            "orders"
+        ]
 
         await orders_col.create_index(
             "orderId",
@@ -62,11 +79,13 @@ async def connect_to_mongo():
             sparse=True,
         )
 
-        # =========================================================
+        # ====================================================
         # ENQUIRIES
-        # =========================================================
+        # ====================================================
 
-        enquiries_col = db.db["enquiries"]
+        enquiries_col = db.db[
+            "enquiries"
+        ]
 
         await enquiries_col.create_index(
             "enquiryId",
@@ -83,9 +102,9 @@ async def connect_to_mongo():
             sparse=True,
         )
 
-        # =========================================================
+        # ====================================================
         # RAZORPAY WEBHOOK EVENTS
-        # =========================================================
+        # ====================================================
 
         webhooks_col = db.db[
             "webhook_events"
@@ -96,53 +115,90 @@ async def connect_to_mongo():
             unique=True,
         )
 
-        # =========================================================
+        # ====================================================
         # PRODUCT REVIEWS
-        # =========================================================
+        # ====================================================
 
-        reviews_col = db.db["reviews"]
+        reviews_col = db.db[
+            "reviews"
+        ]
 
-        # Every review gets one unique public/internal ID.
         await reviews_col.create_index(
             "reviewId",
             unique=True,
         )
 
-        # Main lookup:
-        # product -> reviews
         await reviews_col.create_index(
             "productId",
         )
 
-        # SKU-level lookup is required for
-        # verified-purchase checking.
         await reviews_col.create_index(
             "sku",
         )
 
-        # Order-level lookup prevents the same
-        # purchase from being used repeatedly.
         await reviews_col.create_index(
             "orderId",
         )
 
-        # Used when displaying only approved reviews.
         await reviews_col.create_index(
             "status",
         )
 
-        # Newest reviews first.
         await reviews_col.create_index(
             "createdAt",
         )
 
-        # Fast lookup for:
-        # approved reviews belonging to a product.
         await reviews_col.create_index(
             [
                 ("productId", 1),
                 ("status", 1),
                 ("createdAt", -1),
+            ],
+        )
+
+        # ====================================================
+        # INDIA PIN DIRECTORY
+        # ====================================================
+
+        pincodes_col = db.db[
+            "pincodes"
+        ]
+
+        await pincodes_col.create_index(
+            "pincode",
+        )
+
+        await pincodes_col.create_index(
+            [
+                ("pincode", 1),
+                ("deliveryStatus", 1),
+            ],
+        )
+
+        await pincodes_col.create_index(
+            [
+                ("stateName", 1),
+                ("districtName", 1),
+            ],
+        )
+
+        # ====================================================
+        # KAWAD SWAD FULFILMENT RULES
+        # ====================================================
+
+        fulfillment_col = db.db[
+            "fulfillment_rules"
+        ]
+
+        await fulfillment_col.create_index(
+            "pincode",
+            unique=True,
+        )
+
+        await fulfillment_col.create_index(
+            [
+                ("fulfillmentType", 1),
+                ("active", 1),
             ],
         )
 
@@ -159,6 +215,10 @@ async def connect_to_mongo():
         )
 
 
+# ============================================================
+# CLOSE
+# ============================================================
+
 async def close_mongo_connection():
 
     if db.client:
@@ -170,5 +230,10 @@ async def close_mongo_connection():
         )
 
 
+# ============================================================
+# DATABASE ACCESS
+# ============================================================
+
 def get_database():
+
     return db.db
