@@ -8,15 +8,16 @@ Commercial rule:
 
 - The website selling price is the BASE PRODUCT PRICE.
 - Shipping is NOT embedded in the product price.
-- MANUAL fulfilment:
-      subtotal = website selling price
-      shipping = ₹0
-      total = subtotal
 
-- SHIPPING fulfilment:
-      subtotal = website selling price
-      shipping = fulfilment-resolved shipping
-      total = subtotal + shipping
+MANUAL fulfilment:
+    subtotal = website selling price
+    shipping = ₹0
+    total = subtotal
+
+SHIPPING fulfilment:
+    subtotal = website selling price
+    shipping = fulfilment-resolved shipping
+    total = subtotal + shipping
 
 IMPORTANT:
 - Frontend prices are NEVER trusted.
@@ -139,7 +140,7 @@ def get_backend_prices(
 
     IMPORTANT:
 
-    websitePrice is now the BASE WEBSITE SELLING PRICE.
+    websitePrice is the BASE WEBSITE SELLING PRICE.
 
     It must NOT be interpreted as:
 
@@ -216,21 +217,7 @@ def validate_manual_price(
     Manual fulfilment uses the normal approved website
     selling price.
 
-    The previous Stage 2.1 restriction:
-
-        200g > ₹60 and < ₹75
-
-    has been REMOVED.
-
-    This is required because the approved current website
-    selling prices include:
-
-        ₹55
-        ₹60
-        ₹65
-        ₹70
-
-    for 200g products.
+    No artificial minimum or maximum price is imposed here.
     """
 
     if selling_price < 0:
@@ -262,7 +249,8 @@ def resolve_shipping_amount(
         fulfilment layer.
 
     IMPORTANT:
-        This function does NOT use a hard-coded ₹47.
+        This function does NOT use a hard-coded shipping
+        amount such as ₹47.
     """
 
     if is_manual:
@@ -486,7 +474,7 @@ async def calculate_cart_quote(
             )
 
         # ------------------------------------------------------
-        # MANUAL
+        # PRICING MODE
         # ------------------------------------------------------
 
         if is_manual:
@@ -504,10 +492,6 @@ async def calculate_cart_quote(
             pricing_mode = (
                 "LOCAL"
             )
-
-        # ------------------------------------------------------
-        # SHIPPING
-        # ------------------------------------------------------
 
         else:
 
@@ -550,23 +534,16 @@ async def calculate_cart_quote(
                 "quantity":
                     quantity,
 
-                /*
-                 * BASE WEBSITE SELLING PRICE.
-                 *
-                 * Shipping is kept separate.
-                 */
+                # BASE WEBSITE SELLING PRICE.
+                # Shipping is kept separate.
                 "unitPrice":
                     unit_price,
 
                 "itemSubtotal":
                     item_subtotal,
 
-                /*
-                 * Shipping is resolved below at order level.
-                 *
-                 * We do NOT multiply the order shipping
-                 * by every SKU.
-                 */
+                # Shipping is resolved at order level.
+                # It is never multiplied by every SKU.
                 "shipping":
                     0.0,
 
