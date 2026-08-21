@@ -2,10 +2,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List
 from uuid import uuid4
 
-import httpx
 from fastapi import APIRouter, HTTPException, Query, status
 
-from ..config import settings
 from ..database import get_database
 from ..models.review import (
     CreateReviewRequest,
@@ -14,6 +12,7 @@ from ..models.review import (
     ReviewSummary,
 )
 from ..services.google_sheets_service import (
+    get_reviews_from_google_sheets,
     post_to_google_apps_script,
 )
 
@@ -343,82 +342,27 @@ async def get_reviews_from_google_sheet(
 ) -> List[Dict[str, Any]]:
     """
     Read approved reviews from the private Google Sheet
-    through the existing Google Apps Script endpoint.
+    through the existing shared Google Apps Script service.
 
-    The Google Sheet itself is never exposed to the frontend.
+    The Google Sheet is never exposed directly to the frontend.
     """
 
-    url = getattr(
-        settings,
-        "google_apps_script_url",
-        None,
-    )
-
-    token = getattr(
-        settings,
-        "google_apps_script_token",
-        None,
-    )
-
-    if not url:
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "Google review storage is not configured."
-            ),
-        )
-
-    if not token:
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "Google review storage authentication is not configured."
-            ),
-        )
-
     request_data = {
-        "productId":
-            product_id,
-
-        "sku":
-            sku or "",
-
-        "limit":
-            limit,
-
-        "skip":
-            skip,
-    }
-
-    body = {
-        "type":
-            "review_read",
-
-        "token":
-            token,
-
-        "data":
-            request_data,
+        "productId": product_id,
+        "sku": sku or "",
+        "limit": limit,
+        "skip": skip,
     }
 
     try:
-
-        async with httpx.AsyncClient(
-            timeout=15.0,
-            follow_redirects=True,
-        ) as client:
-
-            response = await client.post(
-                url,
-                json=body,
-            )
+        result = await get_reviews_from_google_sheets(
+            request_data
+        )
 
     except Exception as exc:
-
         print(
             "Google Sheets review read failed:"
         )
-
         print(
             f"{type(exc).__name__}: {str(exc)}"
         )
@@ -430,26 +374,7 @@ async def get_reviews_from_google_sheet(
             ),
         )
 
-    if response.status_code != 200:
-
-        print(
-            "Google Sheets review read returned HTTP",
-            response.status_code,
-        )
-
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "Unable to load product reviews right now."
-            ),
-        )
-
-    try:
-
-        result = response.json()
-
-    except Exception:
-
+    if not isinstance(result, dict):
         raise HTTPException(
             status_code=503,
             detail=(
@@ -457,23 +382,7 @@ async def get_reviews_from_google_sheet(
             ),
         )
 
-    if not isinstance(
-        result,
-        dict,
-    ):
-
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "Google review service returned an invalid response."
-            ),
-        )
-
-    if not result.get(
-        "success",
-        False,
-    ):
-
+    if not result.get("success", False):
         print(
             "Google review read unsuccessful:",
             result,
@@ -491,21 +400,13 @@ async def get_reviews_from_google_sheet(
         [],
     )
 
-    if not isinstance(
-        reviews,
-        list,
-    ):
+    if not isinstance(reviews, list):
         return []
 
     return [
-        normalize_google_sheet_review(
-            review
-        )
+        normalize_google_sheet_review(review)
         for review in reviews
-        if isinstance(
-            review,
-            dict,
-        )
+        if isinstance(review, dict)
     ]
 
 
