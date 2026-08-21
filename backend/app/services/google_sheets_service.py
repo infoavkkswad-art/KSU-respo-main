@@ -449,3 +449,19 @@ async def sync_webhook_to_google_sheets(
                 data,
         }
     )
+async def get_reviews_from_google_sheets(
+    data: Dict[str, Any],
+) -> dict:
+    """
+    Read approved product reviews from Google Sheets.
+    """
+
+    return await post_to_google_apps_script(
+        {
+            "type":
+                "review_read",
+
+            "data":
+                data,
+        }
+    )
