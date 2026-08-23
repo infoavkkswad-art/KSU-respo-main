@@ -24,10 +24,12 @@ type TranslationKey = string;
 
 interface LanguageContextValue {
   language: Language;
-  setLanguage: (language: Language) => void;
+  setLanguage: (
+    language: Language
+  ) => void;
   t: (
     key: TranslationKey,
-    variables?: TranslationVariables,
+    variables?: TranslationVariables
   ) => string;
 }
 
@@ -187,9 +189,9 @@ const translations: Record<
    ========================================================================== */
 
 const LanguageContext =
-  createContext<LanguageContextValue | undefined>(
-    undefined,
-  );
+  createContext<
+    LanguageContextValue | undefined
+  >(undefined);
 
 
 /* ==========================================================================
@@ -215,7 +217,7 @@ export function LanguageProvider({
 
     const savedLanguage =
       window.localStorage.getItem(
-        'kawad-swad-language',
+        'kawad-swad-language'
       );
 
     if (
@@ -228,14 +230,14 @@ export function LanguageProvider({
   });
 
 
-  /* ------------------------------------------------------------------------
+  /* ==========================================================================
      SAVE LANGUAGE PREFERENCE
-     ------------------------------------------------------------------------ */
+     ======================================================================== */
 
   useEffect(() => {
     window.localStorage.setItem(
       'kawad-swad-language',
-      language,
+      language
     );
 
     document.documentElement.lang =
@@ -243,26 +245,26 @@ export function LanguageProvider({
   }, [language]);
 
 
-  /* ------------------------------------------------------------------------
+  /* ==========================================================================
      LANGUAGE SWITCHER
-     ------------------------------------------------------------------------ */
+     ======================================================================== */
 
   const setLanguage = (
-    nextLanguage: Language,
+    nextLanguage: Language
   ) => {
     setLanguageState(
-      nextLanguage,
+      nextLanguage
     );
   };
 
 
-  /* ------------------------------------------------------------------------
+  /* ==========================================================================
      TRANSLATION FUNCTION
-     ------------------------------------------------------------------------ */
+     ======================================================================== */
 
   const t = (
     key: TranslationKey,
-    variables?: TranslationVariables,
+    variables?: TranslationVariables
   ): string => {
     const currentTranslations =
       translations[language];
@@ -277,23 +279,27 @@ export function LanguageProvider({
 
     if (variables) {
       Object.entries(
-        variables,
+        variables
       ).forEach(
         ([variable, replacement]) => {
           value = value.replace(
             new RegExp(
               `\\{${variable}\\}`,
-              'g',
+              'g'
             ),
-            String(replacement),
+            String(replacement)
           );
-        },
+        }
       );
     }
 
     return value;
   };
 
+
+  /* ==========================================================================
+     CONTEXT VALUE
+     ======================================================================== */
 
   const contextValue =
     useMemo<LanguageContextValue>(
@@ -302,9 +308,13 @@ export function LanguageProvider({
         setLanguage,
         t,
       }),
-      [language],
+      [language]
     );
 
+
+  /* ==========================================================================
+     PROVIDER
+     ======================================================================== */
 
   return (
     <LanguageContext.Provider
@@ -317,7 +327,7 @@ export function LanguageProvider({
 
 
 /* ==========================================================================
-   HOOK
+   LANGUAGE HOOK
    ========================================================================== */
 
 export function useLanguage() {
@@ -326,7 +336,7 @@ export function useLanguage() {
 
   if (!context) {
     throw new Error(
-      'useLanguage must be used inside LanguageProvider',
+      'useLanguage must be used inside LanguageProvider'
     );
   }
 
