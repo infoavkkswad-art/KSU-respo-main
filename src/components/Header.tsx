@@ -26,25 +26,13 @@ import {
 
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
+import { useLanguage } from '@/context/LanguageContext';
 
 
 /* ==========================================================================
    KAWAD SWAD 2.0
    CENTRAL HEADER / NAVIGATION SYSTEM
-
-   Hierarchy:
-   BRAND → DISCOVER → SEARCH → CART → SHOP
-
-   Design goals:
-   - Compact vertical footprint
-   - Strong logo presence
-   - Clean navigation rhythm
-   - Consistent brand colors
-   - Mobile-first touch targets
-   - No unnecessary top whitespace
-   - Preserve all existing functionality
    ========================================================================== */
-
 
 export function Header() {
   const [
@@ -74,6 +62,7 @@ export function Header() {
   const navigate = useNavigate();
 
   const { itemCount } = useCart();
+  const { language, setLanguage, t } = useLanguage();
 
 
   /* ==========================================================================
@@ -287,7 +276,7 @@ export function Header() {
               sm:tracking-widest
             "
           >
-            Nimad's Own Papad
+            {t('header.trust.nimadsOwnPapad')}
 
             <span
               className="
@@ -356,9 +345,7 @@ export function Header() {
             "
           >
 
-            {/* ================================================================
-                BRAND
-                ============================================================= */}
+            {/* BRAND */}
 
             <div
               className="
@@ -383,9 +370,7 @@ export function Header() {
             </div>
 
 
-            {/* ================================================================
-                DESKTOP NAVIGATION
-                ============================================================= */}
+            {/* DESKTOP NAVIGATION */}
 
             <nav
               className="
@@ -396,7 +381,7 @@ export function Header() {
                 gap-0.5
                 lg:flex
               "
-              aria-label="Main navigation"
+              aria-label={t('header.mainNavigation')}
             >
               {navLinks.map(
                 (link) => (
@@ -439,7 +424,14 @@ export function Header() {
                       isActive,
                     }) => (
                       <>
-                        {link.label}
+                        {t(
+                          `nav.${
+                            link.path.replace(
+                              '/',
+                              '',
+                            ) || 'home'
+                          }`,
+                        )}
 
                         <span
                           aria-hidden="true"
@@ -476,9 +468,7 @@ export function Header() {
             </nav>
 
 
-            {/* ================================================================
-                HEADER ACTIONS
-                ============================================================= */}
+            {/* HEADER ACTIONS */}
 
             <div
               className="
@@ -491,9 +481,81 @@ export function Header() {
               "
             >
 
-              {/* --------------------------------------------------------------
-                  SEARCH
-                  -------------------------------------------------------------- */}
+              {/* LANGUAGE */}
+
+              <div
+                className="
+                  hidden
+                  items-center
+                  gap-1
+                  rounded-full
+                  border
+                  border-brand-green/10
+                  bg-white
+                  p-1
+                  shadow-soft
+                  sm:flex
+                "
+                role="group"
+                aria-label={t('header.language')}
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLanguage('en')
+                  }
+                  aria-pressed={
+                    language === 'en'
+                  }
+                  className={`
+                    rounded-full
+                    px-2.5
+                    py-1
+                    text-xs
+                    font-semibold
+                    transition-all
+                    duration-200
+
+                    ${
+                      language === 'en'
+                        ? 'bg-brand-green text-white'
+                        : 'text-brand-brown/70 hover:text-brand-green'
+                    }
+                  `}
+                >
+                  EN
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLanguage('hi')
+                  }
+                  aria-pressed={
+                    language === 'hi'
+                  }
+                  className={`
+                    rounded-full
+                    px-2.5
+                    py-1
+                    text-xs
+                    font-semibold
+                    transition-all
+                    duration-200
+
+                    ${
+                      language === 'hi'
+                        ? 'bg-brand-green text-white'
+                        : 'text-brand-brown/70 hover:text-brand-green'
+                    }
+                  `}
+                >
+                  हिन्दी
+                </button>
+              </div>
+
+
+              {/* SEARCH */}
 
               <button
                 type="button"
@@ -520,8 +582,8 @@ export function Header() {
                 "
                 aria-label={
                   searchOpen
-                    ? 'Close search'
-                    : 'Search products'
+                    ? t('header.closeSearch')
+                    : t('header.searchProducts')
                 }
                 aria-expanded={
                   searchOpen
@@ -548,9 +610,7 @@ export function Header() {
               </button>
 
 
-              {/* --------------------------------------------------------------
-                  CART
-                  -------------------------------------------------------------- */}
+              {/* CART */}
 
               <Link
                 to="/cart"
@@ -581,7 +641,10 @@ export function Header() {
                   focus-visible:ring-2
                   focus-visible:ring-brand-saffron
                 "
-                aria-label={`Cart with ${itemCount} items`}
+                aria-label={t(
+                  'header.cartAria',
+                  { count: itemCount },
+                )}
               >
                 <ShoppingBag
                   className="
@@ -623,9 +686,7 @@ export function Header() {
               </Link>
 
 
-              {/* --------------------------------------------------------------
-                  SHOP CTA
-                  -------------------------------------------------------------- */}
+              {/* SHOP CTA */}
 
               <Link
                 to="/shop"
@@ -644,7 +705,7 @@ export function Header() {
                 "
               >
                 <span>
-                  Shop Papads
+                  {t('header.shopPapads')}
                 </span>
 
                 <ArrowRight
@@ -660,9 +721,7 @@ export function Header() {
               </Link>
 
 
-              {/* --------------------------------------------------------------
-                  MOBILE MENU
-                  -------------------------------------------------------------- */}
+              {/* MOBILE MENU */}
 
               <button
                 type="button"
@@ -687,8 +746,8 @@ export function Header() {
                 "
                 aria-label={
                   mobileOpen
-                    ? 'Close menu'
-                    : 'Open menu'
+                    ? t('header.closeMenu')
+                    : t('header.openMenu')
                 }
                 aria-expanded={
                   mobileOpen
@@ -719,9 +778,7 @@ export function Header() {
         </div>
 
 
-        {/* ======================================================================
-            SEARCH PANEL
-            =================================================================== */}
+        {/* SEARCH PANEL */}
 
         <div
           id="header-search"
@@ -775,7 +832,7 @@ export function Header() {
                 htmlFor="header-search-input"
                 className="sr-only"
               >
-                Search products
+                {t('header.searchProducts')}
               </label>
 
               <input
@@ -788,7 +845,9 @@ export function Header() {
                     event.target.value,
                   )
                 }
-                placeholder="Search papads..."
+                placeholder={t(
+                  'header.searchPlaceholder',
+                )}
                 className="
                   input-field
                   min-h-[42px]
@@ -813,7 +872,7 @@ export function Header() {
                   sm:px-6
                 "
               >
-                Search
+                {t('header.search')}
               </button>
 
             </form>
@@ -823,9 +882,7 @@ export function Header() {
       </header>
 
 
-      {/* ======================================================================
-          MOBILE NAVIGATION
-          =================================================================== */}
+      {/* MOBILE NAVIGATION */}
 
       {mobileOpen && (
         <div
@@ -837,9 +894,7 @@ export function Header() {
           "
         >
 
-          {/* ------------------------------------------------------------------
-              BACKDROP
-              ------------------------------------------------------------------ */}
+          {/* BACKDROP */}
 
           <button
             type="button"
@@ -853,17 +908,19 @@ export function Header() {
               bg-brand-green/25
               backdrop-blur-sm
             "
-            aria-label="Close mobile menu"
+            aria-label={t(
+              'header.closeMobileMenu',
+            )}
           />
 
 
-          {/* ------------------------------------------------------------------
-              DRAWER
-              ------------------------------------------------------------------ */}
+          {/* DRAWER */}
 
           <nav
             id="mobile-navigation"
-            aria-label="Mobile navigation"
+            aria-label={t(
+              'header.mobileNavigation',
+            )}
             className="
               absolute
               right-0
@@ -883,9 +940,7 @@ export function Header() {
             "
           >
 
-            {/* ================================================================
-                DRAWER HEADER
-                ============================================================= */}
+            {/* DRAWER HEADER */}
 
             <div
               className="
@@ -933,7 +988,9 @@ export function Header() {
                   focus-visible:ring-2
                   focus-visible:ring-brand-saffron
                 "
-                aria-label="Close menu"
+                aria-label={t(
+                  'header.closeMenu',
+                )}
               >
                 <X
                   className="
@@ -947,9 +1004,83 @@ export function Header() {
             </div>
 
 
-            {/* ================================================================
-                MOBILE NAV LINKS
-                ============================================================= */}
+            {/* MOBILE LANGUAGE */}
+
+            <div
+              className="
+                mb-3
+                flex
+                items-center
+                justify-between
+                rounded-xl
+                border
+                border-brand-green/10
+                bg-white
+                p-1
+                shadow-soft
+              "
+              role="group"
+              aria-label={t('header.language')}
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  setLanguage('en')
+                }
+                aria-pressed={
+                  language === 'en'
+                }
+                className={`
+                  min-h-[40px]
+                  flex-1
+                  rounded-lg
+                  px-3
+                  py-2
+                  text-sm
+                  font-semibold
+                  transition-all
+
+                  ${
+                    language === 'en'
+                      ? 'bg-brand-green text-white'
+                      : 'text-brand-brown/70 hover:text-brand-green'
+                  }
+                `}
+              >
+                English
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setLanguage('hi')
+                }
+                aria-pressed={
+                  language === 'hi'
+                }
+                className={`
+                  min-h-[40px]
+                  flex-1
+                  rounded-lg
+                  px-3
+                  py-2
+                  text-sm
+                  font-semibold
+                  transition-all
+
+                  ${
+                    language === 'hi'
+                      ? 'bg-brand-green text-white'
+                      : 'text-brand-brown/70 hover:text-brand-green'
+                  }
+                `}
+              >
+                हिन्दी
+              </button>
+            </div>
+
+
+            {/* MOBILE NAV LINKS */}
 
             <div
               className="
@@ -1007,7 +1138,14 @@ export function Header() {
                     }) => (
                       <>
                         <span>
-                          {link.label}
+                          {t(
+                            `nav.${
+                              link.path.replace(
+                                '/',
+                                '',
+                              ) || 'home'
+                            }`,
+                          )}
                         </span>
 
                         {isActive && (
@@ -1030,9 +1168,7 @@ export function Header() {
             </div>
 
 
-            {/* ================================================================
-                MOBILE COMMERCE
-                ============================================================= */}
+            {/* MOBILE COMMERCE */}
 
             <div
               className="
@@ -1059,7 +1195,7 @@ export function Header() {
                 "
               >
                 <span>
-                  Shop Papads
+                  {t('header.shopPapads')}
                 </span>
 
                 <ArrowRight
@@ -1113,7 +1249,7 @@ export function Header() {
                   aria-hidden="true"
                 />
 
-                Cart
+                {t('header.cart')}
 
                 {itemCount > 0 && (
                   <span
