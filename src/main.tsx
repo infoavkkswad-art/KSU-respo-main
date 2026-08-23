@@ -1,7 +1,12 @@
+```tsx
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+
 import App from './App.tsx';
 import './index.css';
+
+import { LanguageProvider } from '@/context/LanguageContext';
+
 
 const redirectPath = sessionStorage.getItem(
   'github-pages-redirect'
@@ -17,7 +22,10 @@ if (redirectPath) {
     window.location.search +
     window.location.hash;
 
-  if (currentPath === '/' && redirectPath !== '/') {
+  if (
+    currentPath === '/' &&
+    redirectPath !== '/'
+  ) {
     window.history.replaceState(
       null,
       '',
@@ -26,10 +34,14 @@ if (redirectPath) {
   }
 }
 
+
 createRoot(
   document.getElementById('root')!
 ).render(
   <StrictMode>
-    <App />
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
   </StrictMode>
 );
+```
