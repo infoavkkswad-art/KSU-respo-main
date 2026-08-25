@@ -103,8 +103,6 @@ export function ProductCard({
   product,
   className = '',
 }: ProductCardProps) {
-  const { t } = useTranslation();
-
   const { addItem } = useCart();
 
   const navigate = useNavigate();
