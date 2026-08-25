@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import {
   Search,
   Package,
@@ -96,7 +96,7 @@ export default function TrackOrder() {
     useState<TrackedOrder | null>(null);
 
   const handleTrack = async (
-    e: React.FormEvent<HTMLFormElement>,
+    e: FormEvent<HTMLFormElement>,
   ) => {
     e.preventDefault();
 
@@ -158,13 +158,6 @@ export default function TrackOrder() {
             (typeof STATUS_STEPS)[number],
         )
       : -1;
-
-  /*
-   * Customer-facing shipping is always FREE.
-   * apiClient already normalizes legacy/backend
-   * shipping values to zero.
-   */
-  const shippingTotal = 0;
 
   const displayedSubtotal =
     orderData &&

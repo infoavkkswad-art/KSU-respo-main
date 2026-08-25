@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Check,
   Factory,
-  Mail,
   MessageCircle,
   Package,
   Phone,
