@@ -1,0 +1,67 @@
+{
+  "common": {
+    "language": "भाषा",
+    "selectLanguage": "भाषा चुनें",
+    "english": "English",
+    "hindi": "हिंदी",
+    "gujarati": "ગુજરાતી",
+    "search": "खोजें",
+    "cart": "कार्ट",
+    "shopPapads": "पापड़ खरीदें",
+    "viewCart": "कार्ट देखें",
+    "checkout": "चेकआउट",
+    "viewFullCart": "पूरा कार्ट देखें",
+    "freeShipping": "निःशुल्क शिपिंग",
+    "addToCart": "कार्ट में जोड़ें",
+    "buyNow": "अभी खरीदें",
+    "added": "जोड़ा गया",
+    "noReviews": "अभी कोई समीक्षा नहीं",
+    "loadingReviews": "समीक्षाएँ लोड हो रही हैं...",
+    "viewProduct": "उत्पाद देखें"
+  },
+  "header": {
+    "home": "होम",
+    "shop": "दुकान",
+    "ourStory": "हमारी कहानी",
+    "making": "निर्माण",
+    "journal": "जर्नल",
+    "contact": "संपर्क",
+    "searchProducts": "उत्पाद खोजें",
+    "closeSearch": "खोज बंद करें",
+    "cartWithItems": "कार्ट में {{count}} आइटम",
+    "mainNavigation": "मुख्य नेविगेशन",
+    "nimadsOwnPapad": "निमाड़ का अपना पापड़"
+  },
+  "footer": {
+    "stayConnected": "जुड़े रहें",
+    "keepSwad": "स्वाद का सफर जारी रखें।",
+    "updates": "कवाड़ स्वाद से उत्पाद अपडेट, रेसिपी और विशेष ऑफ़र पाएँ।",
+    "emailAddress": "ईमेल पता",
+    "subscribe": "सब्सक्राइब करें",
+    "thankYou": "सब्सक्राइब करने के लिए धन्यवाद!"
+  },
+  "reviews": {
+    "customerReviews": "ग्राहक समीक्षाएँ",
+    "whatCustomersSay": "ग्राहक क्या कहते हैं",
+    "reviewSubmitted": "समीक्षा भेज दी गई",
+    "thankYouApproval": "धन्यवाद। आपकी समीक्षा अनुमोदन के लिए भेज दी गई है।",
+    "writeReview": "अपनी समीक्षा लिखें",
+    "shareExperience": "इस उत्पाद के साथ अपना ईमानदार अनुभव साझा करें।",
+    "yourName": "आपका नाम",
+    "yourRating": "आपकी रेटिंग",
+    "reviewTitle": "समीक्षा शीर्षक",
+    "optional": "वैकल्पिक",
+    "yourReview": "आपकी समीक्षा",
+    "cancel": "रद्द करें",
+    "submitting": "भेजा जा रहा है...",
+    "temporarilyUnavailable": "समीक्षाएँ अभी उपलब्ध नहीं हैं। कृपया बाद में फिर प्रयास करें।",
+    "verifiedPurchase": "सत्यापित खरीद",
+    "beFirst": "इस उत्पाद के साथ अपना अनुभव साझा करने वाले पहले ग्राहक बनें।",
+    "writeFirst": "पहली समीक्षा लिखें"
+  },
+  "product": {
+    "choosePack": "पैक चुनें",
+    "productImageSoon": "उत्पाद की तस्वीर जल्द उपलब्ध होगी",
+    "pendingAsset": "एसेट लंबित"
+  }
+}

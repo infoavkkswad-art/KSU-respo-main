@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowRight,
   ShoppingBag,
@@ -37,6 +38,7 @@ export function FloatingCart() {
   } = useCart();
 
   const location = useLocation();
+  const { t } = useTranslation();
 
 
   /* ==========================================================================
@@ -342,7 +344,7 @@ export function FloatingCart() {
           "
         >
           <span>
-            View full cart
+            {t('common.viewFullCart')}
           </span>
 
           <ArrowRight

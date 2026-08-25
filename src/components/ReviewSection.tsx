@@ -21,6 +21,7 @@ import type {
 } from '../types/reviews';
 
 import { StarRating } from './StarRating';
+import { useTranslation } from 'react-i18next';
 
 
 /* ==========================================================================
@@ -69,6 +70,7 @@ export function ReviewSection({
   orderId,
   className = '',
 }: ReviewSectionProps) {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState<ReviewSummary>({
     ...EMPTY_SUMMARY,
     productId,
@@ -321,7 +323,7 @@ export function ReviewSection({
       >
         <div className="min-w-0">
           <p className="type-eyebrow mb-2">
-            Customer Reviews
+            {t('reviews.customerReviews')}
           </p>
 
           <h2
@@ -331,7 +333,7 @@ export function ReviewSection({
               text-brand-brown
             "
           >
-            What customers say
+            {t('reviews.whatCustomersSay')}
           </h2>
         </div>
 
@@ -541,7 +543,7 @@ export function ReviewSection({
 
           <div>
             <p className="font-semibold">
-              Review submitted
+              {t('reviews.reviewSubmitted')}
             </p>
 
             <p className="mt-0.5 text-green-700/80">
@@ -574,7 +576,7 @@ export function ReviewSection({
                 text-brand-brown
               "
             >
-              Write your review
+              {t('reviews.writeReview')}
             </h3>
 
             <p
@@ -601,7 +603,7 @@ export function ReviewSection({
                 htmlFor={`review-name-${productId}`}
                 className="label-field"
               >
-                Your Name
+                {t('reviews.yourName')}
               </label>
 
               <input
@@ -633,7 +635,7 @@ export function ReviewSection({
                   text-brand-brown
                 "
               >
-                Your Rating
+                {t('reviews.yourRating')}
               </span>
 
               <div
@@ -744,7 +746,7 @@ export function ReviewSection({
                 htmlFor={`review-title-${productId}`}
                 className="label-field"
               >
-                Review Title
+                {t('reviews.reviewTitle')}
                 <span
                   className="
                     ml-1
@@ -752,7 +754,7 @@ export function ReviewSection({
                     text-brand-brown/40
                   "
                 >
-                  Optional
+                  {t('reviews.optional')}
                 </span>
               </label>
 
@@ -779,7 +781,7 @@ export function ReviewSection({
                 htmlFor={`review-comment-${productId}`}
                 className="label-field"
               >
-                Your Review
+                {t('reviews.yourReview')}
               </label>
 
               <textarea
@@ -866,7 +868,7 @@ export function ReviewSection({
                   disabled:opacity-50
                 "
               >
-                Cancel
+                {t('reviews.cancel')}
               </button>
 
               <button
@@ -888,7 +890,7 @@ export function ReviewSection({
                       "
                       aria-hidden="true"
                     />
-                    Submitting...
+                    {t('reviews.submitting')}
                   </>
                 ) : (
                   'Submit Review'
@@ -998,7 +1000,7 @@ export function ReviewSection({
                               className="h-3 w-3"
                               aria-hidden="true"
                             />
-                            Verified Purchase
+                            {t('reviews.verifiedPurchase')}
                           </span>
                         )}
                       </div>
@@ -1139,7 +1141,7 @@ export function ReviewSection({
                   px-5
                 "
               >
-                Write the First Review
+                {t('reviews.writeFirst')}
               </button>
             )}
           </div>

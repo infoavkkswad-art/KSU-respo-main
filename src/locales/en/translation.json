@@ -1,0 +1,67 @@
+{
+  "common": {
+    "language": "Language",
+    "selectLanguage": "Select language",
+    "english": "English",
+    "hindi": "हिंदी",
+    "gujarati": "ગુજરાતી",
+    "search": "Search",
+    "cart": "Cart",
+    "shopPapads": "Shop Papads",
+    "viewCart": "View Cart",
+    "checkout": "Checkout",
+    "viewFullCart": "View full cart",
+    "freeShipping": "Free shipping",
+    "addToCart": "Add to Cart",
+    "buyNow": "Buy Now",
+    "added": "Added",
+    "noReviews": "No reviews yet",
+    "loadingReviews": "Loading reviews...",
+    "viewProduct": "View product"
+  },
+  "header": {
+    "home": "Home",
+    "shop": "Shop",
+    "ourStory": "Our Story",
+    "making": "Making",
+    "journal": "Journal",
+    "contact": "Contact",
+    "searchProducts": "Search products",
+    "closeSearch": "Close search",
+    "cartWithItems": "Cart with {{count}} items",
+    "mainNavigation": "Main navigation",
+    "nimadsOwnPapad": "Nimad's Own Papad"
+  },
+  "footer": {
+    "stayConnected": "Stay Connected",
+    "keepSwad": "Keep the Swad coming.",
+    "updates": "Get product updates, recipes and special offers from Kawad Swad.",
+    "emailAddress": "Email address",
+    "subscribe": "Subscribe",
+    "thankYou": "Thank you for subscribing!"
+  },
+  "reviews": {
+    "customerReviews": "Customer Reviews",
+    "whatCustomersSay": "What customers say",
+    "reviewSubmitted": "Review submitted",
+    "thankYouApproval": "Thank you. Your review has been submitted for approval.",
+    "writeReview": "Write your review",
+    "shareExperience": "Share your honest experience with this product.",
+    "yourName": "Your Name",
+    "yourRating": "Your Rating",
+    "reviewTitle": "Review Title",
+    "optional": "Optional",
+    "yourReview": "Your Review",
+    "cancel": "Cancel",
+    "submitting": "Submitting...",
+    "temporarilyUnavailable": "Reviews are temporarily unavailable. Please try again later.",
+    "verifiedPurchase": "Verified Purchase",
+    "beFirst": "Be the first customer to share your experience with this product.",
+    "writeFirst": "Write the First Review"
+  },
+  "product": {
+    "choosePack": "Choose your pack",
+    "productImageSoon": "Product image coming soon",
+    "pendingAsset": "Pending Asset"
+  }
+}

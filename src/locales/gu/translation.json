@@ -1,0 +1,67 @@
+{
+  "common": {
+    "language": "ભાષા",
+    "selectLanguage": "ભાષા પસંદ કરો",
+    "english": "English",
+    "hindi": "હિન્દી",
+    "gujarati": "ગુજરાતી",
+    "search": "શોધો",
+    "cart": "કાર્ટ",
+    "shopPapads": "પાપડ ખરીદો",
+    "viewCart": "કાર્ટ જુઓ",
+    "checkout": "ચેકઆઉટ",
+    "viewFullCart": "પૂર્ણ કાર્ટ જુઓ",
+    "freeShipping": "મફત શિપિંગ",
+    "addToCart": "કાર્ટમાં ઉમેરો",
+    "buyNow": "હમણાં ખરીદો",
+    "added": "ઉમેરાયું",
+    "noReviews": "હજી કોઈ સમીક્ષા નથી",
+    "loadingReviews": "સમીક્ષાઓ લોડ થઈ રહી છે...",
+    "viewProduct": "ઉત્પાદન જુઓ"
+  },
+  "header": {
+    "home": "હોમ",
+    "shop": "દુકાન",
+    "ourStory": "અમારી વાર્તા",
+    "making": "નિર્માણ",
+    "journal": "જર્નલ",
+    "contact": "સંપર્ક",
+    "searchProducts": "ઉત્પાદન શોધો",
+    "closeSearch": "શોધ બંધ કરો",
+    "cartWithItems": "કાર્ટમાં {{count}} વસ્તુઓ",
+    "mainNavigation": "મુખ્ય નેવિગેશન",
+    "nimadsOwnPapad": "નિમાડનો પોતાનો પાપડ"
+  },
+  "footer": {
+    "stayConnected": "જોડાયેલા રહો",
+    "keepSwad": "સ્વાદનો સફર ચાલુ રાખો.",
+    "updates": "કવાડ સ્વાદ તરફથી ઉત્પાદન અપડેટ, રેસીપી અને ખાસ ઓફર મેળવો.",
+    "emailAddress": "ઈમેલ સરનામું",
+    "subscribe": "સબ્સ્ક્રાઇબ કરો",
+    "thankYou": "સબ્સ્ક્રાઇબ કરવા બદલ આભાર!"
+  },
+  "reviews": {
+    "customerReviews": "ગ્રાહક સમીક્ષાઓ",
+    "whatCustomersSay": "ગ્રાહકો શું કહે છે",
+    "reviewSubmitted": "સમીક્ષા મોકલાઈ",
+    "thankYouApproval": "આભાર. તમારી સમીક્ષા મંજૂરી માટે મોકલાઈ છે.",
+    "writeReview": "તમારી સમીક્ષા લખો",
+    "shareExperience": "આ ઉત્પાદન સાથેનો તમારો નિષ્ઠાવાન અનુભવ શેર કરો.",
+    "yourName": "તમારું નામ",
+    "yourRating": "તમારી રેટિંગ",
+    "reviewTitle": "સમીક્ષા શીર્ષક",
+    "optional": "વૈકલ્પિક",
+    "yourReview": "તમારી સમીક્ષા",
+    "cancel": "રદ કરો",
+    "submitting": "મોકલી રહ્યા છીએ...",
+    "temporarilyUnavailable": "સમીક્ષાઓ હાલમાં ઉપલબ્ધ નથી. કૃપા કરીને પછી ફરી પ્રયાસ કરો.",
+    "verifiedPurchase": "ચકાસાયેલ ખરીદી",
+    "beFirst": "આ ઉત્પાદન સાથેનો અનુભવ શેર કરનાર પ્રથમ ગ્રાહક બનો.",
+    "writeFirst": "પ્રથમ સમીક્ષા લખો"
+  },
+  "product": {
+    "choosePack": "તમારો પેક પસંદ કરો",
+    "productImageSoon": "ઉત્પાદનની તસવીર ટૂંક સમયમાં ઉપલબ્ધ થશે",
+    "pendingAsset": "એસ્ટ બાકી"
+  }
+}
