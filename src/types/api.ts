@@ -237,7 +237,7 @@ export interface EnquiryRequest {
   email: string;
   phone: string;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface EnquiryResponse {
@@ -338,7 +338,7 @@ export interface APIError {
   success: false;
   error: string;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   status_code: number;
 }
 
@@ -385,6 +385,6 @@ export function isSuccessResponse<T>(
 /**
  * Check if response is an error response
  */
-export function isErrorResponse(response: any): response is APIError {
-  return response.success === false;
+export function isErrorResponse(response: unknown): response is APIError {
+  return typeof response === 'object' && response !== null && (response as Record<string, unknown>).success === false;
 }

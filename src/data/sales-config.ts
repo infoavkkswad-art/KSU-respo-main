@@ -919,8 +919,9 @@ export function calculateFulfillmentPrice(
  * Shipping must come from the fulfilment service.
  */
 export function getShippingCharge(
-  _sku: string,
+  _sku?: string,
 ): number {
+  void _sku;
   return 0;
 }
 

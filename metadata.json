@@ -1,0 +1,6 @@
+{
+  "name": "Kawad Swad",
+  "description": "Traditional papads handcrafted with authentic recipes from Nimar, Madhya Pradesh. E-commerce store with catalog, cart, checkout, order tracking, and reviews.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
