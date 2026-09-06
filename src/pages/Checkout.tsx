@@ -819,6 +819,8 @@ export default function Checkout() {
 
         setPriceQuote(quote);
         setQuoteError('');
+
+        return null;
       })
       .catch((quoteRequestError: unknown) => {
         if (cancelled) return null;
@@ -831,6 +833,8 @@ export default function Checkout() {
             ? quoteRequestError.message
             : 'Unable to calculate delivery pricing for this PIN code.',
         );
+
+        return null;
       })
       .finally(() => {
         if (!cancelled) {
