@@ -815,13 +815,13 @@ export default function Checkout() {
         ),
       })
       .then((quote) => {
-        if (cancelled) return;
+        if (cancelled) return null;
 
         setPriceQuote(quote);
         setQuoteError('');
       })
       .catch((quoteRequestError: unknown) => {
-        if (cancelled) return;
+        if (cancelled) return null;
 
         setPriceQuote(null);
 

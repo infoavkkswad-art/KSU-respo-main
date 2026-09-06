@@ -320,7 +320,7 @@ export default function TrackOrder() {
                   text-red-700
                 "
               >
-                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
 
                 <span>
                   {error}
@@ -404,9 +404,9 @@ export default function TrackOrder() {
               <div className="flex items-start gap-3 rounded-xl border border-brand-brown/10 bg-brand-sand/50 p-4">
                 {orderData.status ===
                 'cancelled' ? (
-                  <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-brand-red" />
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-brand-red" />
                 ) : (
-                  <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-brand-red" />
+                  <Clock className="mt-0.5 h-5 w-5 shrink-0 text-brand-red" />
                 )}
 
                 <div>

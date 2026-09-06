@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import { randomBytes, randomInt } from 'node:crypto';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { products } from './src/data/products';
@@ -383,11 +384,11 @@ app.post('/api/orders', (req: Request, res: Response) => {
 
     const shipping = isManual ? 0 : maxShipping;
     const total = subtotal + shipping;
-    const orderNum = Math.floor(1000 + Math.random() * 9000);
+    const orderNum = randomInt(1000, 10000);
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const orderId = `KS-${dateStr}-${orderNum}`;
     const amountInPaise = Math.round(total * 100);
-    const razorpayOrderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const razorpayOrderId = `order_${Date.now()}_${randomBytes(4).toString('hex')}`;
     const razorpayKeyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_mock';
 
     const newOrder: StoredOrder = {

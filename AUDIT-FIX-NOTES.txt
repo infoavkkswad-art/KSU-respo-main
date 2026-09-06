@@ -1,0 +1,20 @@
+KSU AUDIT FIX PATCH
+
+Source audited:
+- KSU-respo-main-main (16).zip
+- infoavkkswad-art_KSU-respo-main.xlsx
+
+Fixed actionable High/Major findings:
+1. server.ts: replaced Math.random() in order/Razorpay mock ID generation with node:crypto randomInt/randomBytes.
+2. src/components/Form.tsx: removed promise-executor return-value antipattern.
+3. src/pages/Checkout.tsx: promise callbacks now return explicit values where required.
+4. src/pages/TrackOrder.tsx: replaced flex-shrink-0 with shrink-0.
+5. .github/workflows/typecheck.yml: added read-only workflow permissions.
+6. package.json: raised PostCSS to 8.5.28, Vite to 5.4.21, react-router-dom to 6.30.6 to clear the versions flagged in the supplied SCA report.
+
+NOT intentionally changed:
+- sales-config empty SALES_OFFERS/COUPONS/CAMPAIGNS are feature placeholders; changing them would alter business behavior.
+- duplicate-code/minor Tailwind findings were not bulk-rewritten because they are non-breaking and would create unnecessary UI risk.
+- legacy Express review storage was not removed because this repository's runtime/API wiring may still depend on it; production Google Sheets review backend remains separate.
+
+After replacing these files, run the GitHub Frontend Typecheck workflow. Then run the production build before deployment.
