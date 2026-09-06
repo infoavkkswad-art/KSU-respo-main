@@ -201,7 +201,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 
 // 2. Fulfillment Pincode Lookup
 app.get('/api/fulfillment/pincode/:pincode', (req: Request, res: Response) => {
-  const info = resolvePincode(req.params.pincode);
+  const info = resolvePincode(String(req.params.pincode));
   if (!info) {
     return res.status(400).json({ detail: 'Please enter a valid 6-digit Indian PIN code.' });
   }
@@ -217,7 +217,7 @@ app.get('/api/fulfillment/pincode/:pincode', (req: Request, res: Response) => {
 
 // 3. Fulfillment Quote
 app.get('/api/fulfillment/quote/:pincode', (req: Request, res: Response) => {
-  const info = resolvePincode(req.params.pincode);
+  const info = resolvePincode(String(req.params.pincode));
   if (!info) {
     return res.status(400).json({ detail: 'Please enter a valid 6-digit Indian PIN code.' });
   }
@@ -483,7 +483,7 @@ app.post('/api/orders/payment-dismissed', (req: Request, res: Response) => {
 
 // 8. Track Order by ID and Phone
 app.get('/api/orders/:orderId', (req: Request, res: Response) => {
-  const { orderId } = req.params;
+  const orderId = String(req.params.orderId);
   const phone = String(req.query.phone || '').trim();
 
   const order = ordersStore.get(orderId);
