@@ -631,9 +631,13 @@ export async function simulateSubmit(
   _data: unknown,
   delay = 1200,
 ): Promise<void> {
-  await new Promise<void>((resolve) => {
-    window.setTimeout(resolve, delay);
-  });
+  return new Promise(
+    (resolve) =>
+      setTimeout(
+        resolve,
+        delay,
+      ),
+  );
 }
 
 

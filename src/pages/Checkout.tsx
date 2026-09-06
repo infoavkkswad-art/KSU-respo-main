@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useRef,
   useState,
   type FormEvent,
   type ReactNode,
@@ -604,77 +603,6 @@ function SectionHeading({
 
 
 /* ==========================================================================
-   PAYMENT DISMISSAL NOTIFICATION
-   ========================================================================== */
-
-async function notifyPaymentDismissed(
-  razorpayOrderId: string,
-): Promise<{
-  success: boolean;
-  paymentStatus?: string;
-  status?: string;
-  message?: string;
-}> {
-  const apiBaseUrl =
-    import.meta.env.VITE_API_BASE_URL ||
-    'http://localhost:8000';
-
-  const response = await fetch(
-    `${apiBaseUrl}/api/orders/payment-dismissed`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type':
-          'application/json',
-        Accept:
-          'application/json',
-      },
-      body: JSON.stringify({
-        razorpayOrderId,
-      }),
-    },
-  );
-
-  let data: {
-    success?: boolean;
-    paymentStatus?: string;
-    status?: string;
-    message?: string;
-    detail?: unknown;
-  } = {};
-
-  try {
-    data = await response.json();
-  } catch {
-    // Keep the fallback error below.
-  }
-
-  if (!response.ok) {
-    const detail =
-      typeof data.detail === 'string'
-        ? data.detail
-        : data.message;
-
-    throw new Error(
-      detail ||
-        'Unable to update the payment status. Please try again.',
-    );
-  }
-
-  return {
-    success:
-      data.success === true,
-    paymentStatus:
-      data.paymentStatus,
-    status:
-      data.status,
-    message:
-      data.message,
-  };
-}
-
-
-/* ==========================================================================
    CHECKOUT PAGE
    ========================================================================== */
 
@@ -712,14 +640,6 @@ export default function Checkout() {
     paymentOpening,
     setPaymentOpening,
   ] = useState(false);
-
-
-  /*
-   * Prevent Razorpay's modal dismissal callback from
-   * treating a payment-success flow as a cancelled payment.
-   */
-  const paymentCompletedRef =
-    useRef(false);
 
 
   /* ==========================================================================
@@ -815,15 +735,14 @@ export default function Checkout() {
         ),
       })
       .then((quote) => {
-        if (cancelled) return null;
+        if (cancelled) return;
 
         setPriceQuote(quote);
         setQuoteError('');
-
         return null;
       })
       .catch((quoteRequestError: unknown) => {
-        if (cancelled) return null;
+        if (cancelled) return;
 
         setPriceQuote(null);
 
@@ -833,7 +752,6 @@ export default function Checkout() {
             ? quoteRequestError.message
             : 'Unable to calculate delivery pricing for this PIN code.',
         );
-
         return null;
       })
       .finally(() => {
@@ -1092,8 +1010,6 @@ export default function Checkout() {
          RAZORPAY
          ================================================================ */
 
-      paymentCompletedRef.current = false;
-
       const options: RazorpayOptions = {
 
         key:
@@ -1141,14 +1057,6 @@ export default function Checkout() {
           async (
             paymentResponse,
           ) => {
-
-            /*
-             * Razorpay has returned a payment response.
-             * Do not let ondismiss classify this checkout
-             * as a customer cancellation while verification
-             * is taking place.
-             */
-            paymentCompletedRef.current = true;
 
             try {
 
@@ -1269,104 +1177,13 @@ export default function Checkout() {
 
           ondismiss: () => {
 
-            /*
-             * If Razorpay already returned a payment response,
-             * the handler owns the flow and server verification
-             * is in progress or already completed.
-             */
-            if (
-              paymentCompletedRef.current
-            ) {
-              return;
-            }
+            form.setStatus('idle');
 
-            const currentRazorpayOrderId =
-              orderResponse.razorpayOrderId;
+            setPaymentOpening(false);
 
-            if (
-              !currentRazorpayOrderId
-            ) {
-              form.setStatus('error');
-              setPaymentOpening(false);
-              setError(
-                'Payment window closed, but the payment order could not be identified. Please try again.',
-              );
-              return;
-            }
-
-            /*
-             * Do not mark the order cancelled merely because
-             * the browser modal closed.
-             *
-             * The backend checks Razorpay first:
-             * - captured  -> paid
-             * - processing -> remains pending
-             * - nothing    -> payment_cancelled
-             */
-            void notifyPaymentDismissed(
-              currentRazorpayOrderId,
-            )
-              .then((dismissalResult) => {
-
-                if (
-                  dismissalResult.paymentStatus ===
-                  'paid'
-                ) {
-                  /*
-                   * A payment was actually captured.
-                   * Do not show a cancellation message.
-                   * The customer should retry only after
-                   * server verification if needed.
-                   */
-                  setError(
-                    'Payment was received. We are verifying your order. Please wait a moment.',
-                  );
-
-                  return;
-                }
-
-                if (
-                  dismissalResult.paymentStatus ===
-                  'pending' ||
-                  dismissalResult.paymentStatus ===
-                  'authorized' ||
-                  dismissalResult.paymentStatus ===
-                  'created'
-                ) {
-                  setError(
-                    'Payment is still being processed. Your order has not been cancelled.',
-                  );
-
-                  return;
-                }
-
-                form.setStatus('idle');
-
-                setError(
-                  'Payment was cancelled or dismissed. You can retry anytime.',
-                );
-              })
-              .catch((dismissalError: unknown) => {
-
-                console.error(
-                  'PAYMENT DISMISSAL SYNC ERROR:',
-                  dismissalError,
-                );
-
-                /*
-                 * Important: if the backend could not verify
-                 * Razorpay, it deliberately does NOT cancel
-                 * the order. The customer can safely retry.
-                 */
-                form.setStatus('error');
-
-                setError(
-                  'We could not confirm the payment status. Your order was not cancelled. Please try again.',
-                );
-              })
-              .finally(() => {
-                setPaymentOpening(false);
-              });
+            setError(
+              'Payment was cancelled or dismissed. You can retry anytime.',
+            );
 
           },
 

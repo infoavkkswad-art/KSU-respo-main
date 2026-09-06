@@ -26,8 +26,6 @@ import {
 
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
-import { LanguageSelector } from '@/components/LanguageSelector';
-import { useTranslation } from 'react-i18next';
 
 
 /* ==========================================================================
@@ -76,7 +74,6 @@ export function Header() {
   const navigate = useNavigate();
 
   const { itemCount } = useCart();
-  const { t } = useTranslation();
 
 
   /* ==========================================================================
@@ -290,7 +287,7 @@ export function Header() {
               sm:tracking-widest
             "
           >
-            {t('header.nimadsOwnPapad')}
+            Nimad's Own Papad
 
             <span
               className="
@@ -399,7 +396,7 @@ export function Header() {
                 gap-0.5
                 lg:flex
               "
-              aria-label={t('header.mainNavigation')}
+              aria-label="Main navigation"
             >
               {navLinks.map(
                 (link) => (
@@ -442,19 +439,7 @@ export function Header() {
                       isActive,
                     }) => (
                       <>
-                        {t(`header.${
-                          link.label === 'Home'
-                            ? 'home'
-                            : link.label === 'Shop'
-                              ? 'shop'
-                              : link.label === 'Our Story'
-                                ? 'ourStory'
-                                : link.label === 'Making'
-                                  ? 'making'
-                                  : link.label === 'Journal'
-                                    ? 'journal'
-                                    : 'contact'
-                        }`)}
+                        {link.label}
 
                         <span
                           aria-hidden="true"
@@ -505,8 +490,6 @@ export function Header() {
                 sm:gap-1.5
               "
             >
-              <LanguageSelector />
-
 
               {/* --------------------------------------------------------------
                   SEARCH
@@ -537,8 +520,8 @@ export function Header() {
                 "
                 aria-label={
                   searchOpen
-                    ? t('header.closeSearch')
-                    : t('header.searchProducts')
+                    ? 'Close search'
+                    : 'Search products'
                 }
                 aria-expanded={
                   searchOpen
@@ -598,7 +581,7 @@ export function Header() {
                   focus-visible:ring-2
                   focus-visible:ring-brand-saffron
                 "
-                aria-label={t('header.cartWithItems', { count: itemCount })}
+                aria-label={`Cart with ${itemCount} items`}
               >
                 <ShoppingBag
                   className="
@@ -1024,19 +1007,7 @@ export function Header() {
                     }) => (
                       <>
                         <span>
-                          {t(`header.${
-                          link.label === 'Home'
-                            ? 'home'
-                            : link.label === 'Shop'
-                              ? 'shop'
-                              : link.label === 'Our Story'
-                                ? 'ourStory'
-                                : link.label === 'Making'
-                                  ? 'making'
-                                  : link.label === 'Journal'
-                                    ? 'journal'
-                                    : 'contact'
-                        }`)}
+                          {link.label}
                         </span>
 
                         {isActive && (

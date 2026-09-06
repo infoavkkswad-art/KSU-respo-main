@@ -24,7 +24,6 @@ import {
 } from '@/data/brand';
 
 import { Logo } from '@/components/Logo';
-import { useTranslation } from 'react-i18next';
 
 
 /* ==========================================================================
@@ -51,8 +50,6 @@ import { useTranslation } from 'react-i18next';
 
 export function Footer() {
   const [email, setEmail] = useState('');
-  const { t } = useTranslation();
-
   const [submitted, setSubmitted] =
     useState(false);
 
@@ -235,7 +232,7 @@ export function Footer() {
                   text-brand-saffron-light
                 "
               >
-                {t('footer.stayConnected')}
+                Stay Connected
               </span>
 
               <h3
@@ -250,7 +247,7 @@ export function Footer() {
                   lg:text-[1.65rem]
                 "
               >
-                {t('footer.keepSwad')}
+                Keep the Swad coming.
               </h3>
 
               <p
@@ -263,7 +260,8 @@ export function Footer() {
                   sm:text-sm
                 "
               >
-                {t('footer.updates')}
+                Get product updates, recipes and special
+                offers from Kawad Swad.
               </p>
 
             </div>
@@ -296,7 +294,7 @@ export function Footer() {
                   htmlFor="footer-newsletter-email"
                   className="sr-only"
                 >
-                  {t('footer.emailAddress')}
+                  Email address
                 </label>
 
                 <input
@@ -351,7 +349,7 @@ export function Footer() {
                     aria-hidden="true"
                   />
 
-                  {t('footer.subscribe')}
+                  Subscribe
 
                 </button>
 
@@ -383,7 +381,7 @@ export function Footer() {
                     aria-hidden="true"
                   />
 
-                  {t('footer.thankYou')}
+                  Thank you for subscribing!
 
                 </div>
               )}
