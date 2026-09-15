@@ -22,6 +22,7 @@ from .pincode_service import (
 )
 
 from .parcel_tariff import (
+    INVALID_PIN_DETAIL,
     billed_weight_grams,
     calculate_shipping_charge,
     is_free_shipping_pin,
@@ -265,6 +266,12 @@ async def calculate_cart_quote(
             detail="Cart is empty.",
         )
 
+    if not str(pincode or "").strip():
+        raise HTTPException(
+            status_code=400,
+            detail=INVALID_PIN_DETAIL,
+        )
+
     pin_record = await lookup_pincode(
         pincode
     )
@@ -272,9 +279,7 @@ async def calculate_cart_quote(
     if not pin_record.valid:
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Please enter a valid Indian PIN code."
-            ),
+            detail=INVALID_PIN_DETAIL,
         )
 
     is_free_pin = is_free_shipping_pin(

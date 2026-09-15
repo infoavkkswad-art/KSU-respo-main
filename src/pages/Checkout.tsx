@@ -616,8 +616,6 @@ export default function Checkout() {
   const {
     items,
     subtotal,
-    shippingTotal,
-    total,
     clearCart,
   } = useCart();
 
@@ -726,6 +724,7 @@ export default function Checkout() {
       return;
     }
 
+    setPriceQuote(null);
     setQuoteLoading(true);
     setQuoteError('');
 
@@ -1965,7 +1964,8 @@ export default function Checkout() {
                         quoteLoading ||
                         form.status ===
                           'submitting' ||
-                        !priceQuote
+                        !priceQuote ||
+                        Boolean(quoteError)
                       }
                       className="
                         group/payment
@@ -2471,7 +2471,7 @@ export default function Checkout() {
                             : formatPrice(
                                 priceQuote.shipping,
                               )
-                          : 'Enter PIN'}
+                          : 'Calculated after PIN'}
                       </span>
 
                     </div>
@@ -2520,8 +2520,8 @@ export default function Checkout() {
                             "
                           >
                             {formatPrice(
-                              priceQuote?.total ??
-                                total,
+                          priceQuote?.total ??
+                            subtotal,
                             )}
                           </p>
 

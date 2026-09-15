@@ -32,7 +32,8 @@ from ..models.fulfillment import (
 )
 
 from .parcel_tariff import (
-    UNCLASSIFIABLE_DETAIL,
+    DELIVERY_UNAVAILABLE_DETAIL,
+    INVALID_PIN_DETAIL,
     is_free_shipping_pin,
     is_madhya_pradesh,
 )
@@ -58,9 +59,7 @@ def normalize_pincode(
     ):
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Please enter a valid 6-digit PIN code."
-            ),
+            detail=INVALID_PIN_DETAIL,
         )
 
     return clean
@@ -216,7 +215,7 @@ async def get_fulfillment_quote(
 
     raise HTTPException(
         status_code=400,
-        detail=UNCLASSIFIABLE_DETAIL,
+        detail=DELIVERY_UNAVAILABLE_DETAIL,
     )
 
 

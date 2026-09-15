@@ -190,6 +190,7 @@ export default function Cart() {
       return;
     }
 
+    setPriceQuote(null);
     setQuoteLoading(true);
     setQuoteError('');
 
@@ -530,8 +531,8 @@ export default function Cart() {
                     className="h-4 w-4"
                   />
                 }
-                title="Free Shipping"
-                description="Shipping included."
+                title="Shipping at checkout"
+                description="Calculated after PIN."
               />
 
 
@@ -1602,7 +1603,7 @@ export default function Cart() {
                             : formatPrice(
                                 displayShipping,
                               )
-                          : 'Enter PIN'}
+                          : 'Calculated after PIN'}
                       </span>
                     </div>
 

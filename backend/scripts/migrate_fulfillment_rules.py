@@ -34,11 +34,12 @@ if str(BACKEND_DIR) not in sys.path:
 from app.database import get_database  # noqa: E402
 from app.services.fulfillment_seed_plan import (  # noqa: E402
     extra_manual_free_pins,
+    missing_required_directory_pins,
     planned_rule_writes,
+    required_directory_pins,
 )
 from app.services.parcel_tariff import (  # noqa: E402
     FREE_SHIPPING_PINS,
-    ORIGIN_PIN,
 )
 
 
@@ -61,20 +62,25 @@ async def migrate_fulfillment_rules() -> None:
             "Run python scripts/import_pincodes.py before this migration."
         )
 
-    required_pins = sorted(
-        set(FREE_SHIPPING_PINS) | {ORIGIN_PIN}
-    )
+    required_pins = required_directory_pins()
+    found: list[str] = []
 
     for pin in required_pins:
         exists = await pincodes.find_one(
             {"pincode": pin},
             {"_id": 1},
         )
-        if not exists:
-            raise RuntimeError(
-                f"Required PIN {pin} is missing from pincodes. "
-                "Re-run the India PIN directory import."
-            )
+        if exists:
+            found.append(pin)
+
+    missing = missing_required_directory_pins(found)
+
+    if missing:
+        raise RuntimeError(
+            "Required PIN(s) missing from pincodes: "
+            + ", ".join(missing)
+            + ". Re-run the India PIN directory import."
+        )
 
     for write in planned_rule_writes():
         await rules.update_one(

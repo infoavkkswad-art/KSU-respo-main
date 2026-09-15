@@ -3,21 +3,27 @@ India Post Parcel CONTRACTUAL tariff (approved Kawad Swad card).
 
 Does not use retail parcel, Speed Post, or the old ₹47/₹71/₹150 SKU table.
 
-Zone/Metro and Local are on the rate card but are never guessed.
-Existing PIN data only supports:
-- exact free-shipping PIN list
-- Within State when destination state is Madhya Pradesh
-
-Any other destination fails closed.
+Destinations:
+- exact free-shipping PIN list → ₹0
+- Madhya Pradesh (directory state) → Within State slabs
+- owner-supplied CSV rows (when present) → LOCAL / ZONE_METRO /
+  OTHER_STATES / WITHIN_STATE without guessing
+- otherwise fail closed with a customer-facing unavailable message
 """
 
 from __future__ import annotations
 
 import math
 import re
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from fastapi import HTTPException
+
+from .parcel_zones import (
+    ALLOWED_PARCEL_ZONES,
+    ParcelZoneRow,
+    load_parcel_zone_table,
+)
 
 
 ORIGIN_PIN = "451225"
@@ -38,8 +44,6 @@ ZONE_LOCAL = "LOCAL"
 ZONE_METRO = "ZONE_METRO"
 ZONE_OTHER_STATES = "OTHER_STATES"
 
-# Approved contractual Parcel rates (₹). Local / Zone-Metro are stored
-# only so the card is complete; classify_zone never returns them.
 TARIFF_SLABS: List[Tuple[int, Dict[str, int]]] = [
     (500, {"LOCAL": 27, "WITHIN_STATE": 31, "ZONE_METRO": 34, "OTHER_STATES": 35}),
     (1000, {"LOCAL": 31, "WITHIN_STATE": 44, "ZONE_METRO": 51, "OTHER_STATES": 57}),
@@ -57,11 +61,10 @@ EXTRA_KG: Dict[str, int] = {
     "OTHER_STATES": 30,
 }
 
-UNCLASSIFIABLE_DETAIL = (
-    "Unable to calculate India Post Parcel contractual shipping "
-    "for this PIN. Destination zone cannot be classified as Local, "
-    "Within State, Zone/Metro, or Other States from existing PIN "
-    "directory data. Shipping was not charged."
+INVALID_PIN_DETAIL = "Please enter a valid Indian PIN code."
+
+DELIVERY_UNAVAILABLE_DETAIL = (
+    "Delivery is currently unavailable for that PIN."
 )
 
 
@@ -123,7 +126,18 @@ def billed_weight_grams(items: Iterable[Dict[str, Any]]) -> int:
     return total
 
 
-def classify_zone(pincode: str, state_name: str | None) -> str:
+def _unavailable() -> HTTPException:
+    return HTTPException(
+        status_code=400,
+        detail=DELIVERY_UNAVAILABLE_DETAIL,
+    )
+
+
+def classify_zone(
+    pincode: str,
+    state_name: str | None,
+    zone_table: Optional[Dict[str, ParcelZoneRow]] = None,
+) -> str:
     pin = normalize_pincode(pincode)
 
     if pin in FREE_SHIPPING_PINS:
@@ -132,19 +146,35 @@ def classify_zone(pincode: str, state_name: str | None) -> str:
             detail="Free-shipping PINs must not be zone-classified.",
         )
 
+    table = (
+        zone_table
+        if zone_table is not None
+        else load_parcel_zone_table()
+    )
+    row = table.get(pin)
+
+    if row is not None:
+        if (
+            not row.active
+            or row.origin_pincode != ORIGIN_PIN
+            or row.parcel_zone not in ALLOWED_PARCEL_ZONES
+        ):
+            raise _unavailable()
+
+        if row.parcel_zone == ZONE_WITHIN_STATE and not is_madhya_pradesh(
+            state_name or ""
+        ):
+            raise _unavailable()
+
+        return row.parcel_zone
+
     if not state_name or not str(state_name).strip():
-        raise HTTPException(
-            status_code=400,
-            detail=UNCLASSIFIABLE_DETAIL,
-        )
+        raise _unavailable()
 
     if is_madhya_pradesh(state_name):
         return ZONE_WITHIN_STATE
 
-    raise HTTPException(
-        status_code=400,
-        detail=UNCLASSIFIABLE_DETAIL,
-    )
+    raise _unavailable()
 
 
 def contractual_rate(zone: str, billed_grams: int) -> int:
@@ -175,6 +205,7 @@ def calculate_shipping_charge(
     pincode: str,
     billed_grams: int,
     destination_state: str | None,
+    zone_table: Optional[Dict[str, ParcelZoneRow]] = None,
 ) -> Dict[str, Any]:
     pin = normalize_pincode(pincode)
 
@@ -186,7 +217,7 @@ def calculate_shipping_charge(
             "shippingCharge": 0,
         }
 
-    zone = classify_zone(pin, destination_state)
+    zone = classify_zone(pin, destination_state, zone_table=zone_table)
     charge = contractual_rate(zone, billed_grams)
 
     return {

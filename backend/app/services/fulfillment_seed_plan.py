@@ -30,6 +30,19 @@ LEGACY_MANUAL_PINS_TO_REVOKE = frozenset(
 )
 
 
+def required_directory_pins() -> Tuple[str, ...]:
+    return tuple(sorted(set(FREE_SHIPPING_PINS) | {ORIGIN_PIN}))
+
+
+def missing_required_directory_pins(
+    existing_pins: Iterable[str],
+) -> Tuple[str, ...]:
+    have = {str(pin).strip() for pin in existing_pins}
+    return tuple(
+        pin for pin in required_directory_pins() if pin not in have
+    )
+
+
 def planned_rule_writes() -> List[Dict[str, Any]]:
     writes: List[Dict[str, Any]] = []
 
