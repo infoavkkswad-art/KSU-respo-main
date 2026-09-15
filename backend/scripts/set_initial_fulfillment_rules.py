@@ -2,11 +2,10 @@
 KAWAD SWAD
 INITIAL FULFILMENT RULES
 
-First configured local/manual PIN:
-    451225
+First configured origin booking PIN is 451225 (not free shipping).
 
-All other valid Indian PINs remain SHIPPING
-until a Kawad Swad rule is explicitly created.
+Live payable shipping does not use this seed for rates.
+Free-shipping PINs are listed in parcel_tariff.py.
 """
 
 import asyncio
@@ -29,7 +28,7 @@ MONGODB_DATABASE = os.getenv(
 INITIAL_RULES = [
     {
         "pincode": "451225",
-        "fulfillmentType": "MANUAL",
+        "fulfillmentType": "SHIPPING",
         "shippingCharge": 0,
         "active": True,
     },

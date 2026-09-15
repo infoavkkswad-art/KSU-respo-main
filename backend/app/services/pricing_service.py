@@ -2,27 +2,13 @@
 KAWAD SWAD
 SERVER-SIDE PRICING / FULFILMENT QUOTE SERVICE
 
-Stage 2.6
-
 Commercial rule:
 
-- The website selling price is the BASE PRODUCT PRICE.
-- Shipping is NOT embedded in the product price.
-- MANUAL fulfilment:
-      subtotal = website selling price
-      shipping = ₹0
-      total = subtotal
-
-- SHIPPING fulfilment:
-      subtotal = website selling price
-      shipping = fulfilment-resolved shipping
-      total = subtotal + shipping
-
-IMPORTANT:
+- websitePrice is PRODUCT SELLING PRICE ONLY.
+- Shipping is India Post Parcel CONTRACTUAL tariff (PIN + billed weight).
+- Free shipping (₹0) only for the approved PIN list.
+- Payable = product subtotal + shipping.
 - Frontend prices are NEVER trusted.
-- Backend product data is authoritative.
-- Shipping is supplied by the fulfilment layer.
-- This service must NOT invent or subtract shipping from product prices.
 """
 
 from typing import Any, Dict, List, Tuple
@@ -32,7 +18,13 @@ from fastapi import HTTPException
 from ..models.product import find_sku_in_backend
 
 from .pincode_service import (
-    get_fulfillment_quote,
+    lookup_pincode,
+)
+
+from .parcel_tariff import (
+    billed_weight_grams,
+    calculate_shipping_charge,
+    is_free_shipping_pin,
 )
 
 
@@ -244,71 +236,6 @@ def validate_manual_price(
 
 
 # ==============================================================
-# SHIPPING VALIDATION
-# ==============================================================
-
-def resolve_shipping_amount(
-    fulfillment: Any,
-    is_manual: bool,
-) -> float:
-    """
-    Resolve shipping from the fulfilment quote.
-
-    MANUAL:
-        Always ₹0.
-
-    SHIPPING:
-        Use the shipping amount supplied by the
-        fulfilment layer.
-
-    IMPORTANT:
-        This function does NOT use a hard-coded ₹47.
-    """
-
-    if is_manual:
-        return 0.0
-
-    shipping_raw = getattr(
-        fulfillment,
-        "shippingCharge",
-        0,
-    )
-
-    try:
-        shipping = float(
-            shipping_raw
-        )
-
-    except Exception:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Invalid shipping amount returned "
-                "by fulfilment service."
-            ),
-        )
-
-    if (
-        shipping < 0
-        or shipping != shipping
-        or shipping == float("inf")
-        or shipping == float("-inf")
-    ):
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Invalid shipping amount returned "
-                "by fulfilment service."
-            ),
-        )
-
-    return round(
-        shipping,
-        2,
-    )
-
-
-# ==============================================================
 # CART QUOTE
 # ==============================================================
 
@@ -322,13 +249,12 @@ async def calculate_cart_quote(
     IMPORTANT:
 
     Product price:
-        backend websitePrice
+        backend websitePrice (product selling only)
 
-    MANUAL:
-        product subtotal + ₹0
-
-    SHIPPING:
-        product subtotal + fulfilment shipping
+    Shipping:
+        approved free PIN → ₹0
+        Madhya Pradesh → Parcel contractual Within State
+        otherwise → fail closed (no Zone/Metro guess)
 
     No frontend price is accepted.
     """
@@ -339,17 +265,11 @@ async def calculate_cart_quote(
             detail="Cart is empty.",
         )
 
-    # ----------------------------------------------------------
-    # PIN / FULFILMENT
-    # ----------------------------------------------------------
-
-    fulfillment = (
-        await get_fulfillment_quote(
-            pincode
-        )
+    pin_record = await lookup_pincode(
+        pincode
     )
 
-    if not fulfillment.validPincode:
+    if not pin_record.valid:
         raise HTTPException(
             status_code=400,
             detail=(
@@ -357,26 +277,14 @@ async def calculate_cart_quote(
             ),
         )
 
-    fulfillment_type = (
-        fulfillment.fulfillmentType.value
-        if fulfillment.fulfillmentType
-        else "SHIPPING"
+    is_free_pin = is_free_shipping_pin(
+        pin_record.pincode
     )
 
-    if fulfillment_type not in (
-        "MANUAL",
-        "SHIPPING",
-    ):
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Invalid fulfilment type."
-            ),
-        )
-
-    is_manual = (
-        fulfillment_type ==
+    fulfillment_type = (
         "MANUAL"
+        if is_free_pin
+        else "SHIPPING"
     )
 
     # ----------------------------------------------------------
@@ -485,39 +393,13 @@ async def calculate_cart_quote(
                 ),
             )
 
-        # ------------------------------------------------------
-        # MANUAL
-        # ------------------------------------------------------
+        unit_price = selling_price
 
-        if is_manual:
-
-            validate_manual_price(
-                sku_code,
-                pack_size,
-                selling_price,
-            )
-
-            unit_price = (
-                selling_price
-            )
-
-            pricing_mode = (
-                "LOCAL"
-            )
-
-        # ------------------------------------------------------
-        # SHIPPING
-        # ------------------------------------------------------
-
-        else:
-
-            unit_price = (
-                selling_price
-            )
-
-            pricing_mode = (
-                "STANDARD"
-            )
+        validate_manual_price(
+            sku_code,
+            pack_size,
+            selling_price,
+        )
 
         # ------------------------------------------------------
         # ITEM SUBTOTAL
@@ -584,9 +466,32 @@ async def calculate_cart_quote(
     # ORDER SHIPPING
     # ----------------------------------------------------------
 
-    shipping = resolve_shipping_amount(
-        fulfillment,
-        is_manual,
+    weight_items = [
+        {
+            "packSize": item["packSize"],
+            "quantity": item["quantity"],
+        }
+        for item in item_quotes
+    ]
+
+    billed_grams = billed_weight_grams(
+        weight_items
+    )
+
+    shipping_quote = calculate_shipping_charge(
+        pin_record.pincode,
+        billed_grams,
+        pin_record.stateName,
+    )
+
+    shipping = float(
+        shipping_quote["shippingCharge"]
+    )
+
+    pricing_mode = (
+        "FREE"
+        if is_free_pin
+        else "PARCEL_CONTRACTUAL"
     )
 
     # ----------------------------------------------------------
@@ -626,7 +531,7 @@ async def calculate_cart_quote(
             True,
 
         "pincode":
-            fulfillment.pincode,
+            pin_record.pincode,
 
         "pincodeValid":
             True,
@@ -635,10 +540,16 @@ async def calculate_cart_quote(
             fulfillment_type,
 
         "shippingRequired":
-            not is_manual,
+            not is_free_pin,
 
         "pricingMode":
             pricing_mode,
+
+        "shippingZone":
+            shipping_quote["zone"],
+
+        "billedWeightGrams":
+            billed_grams,
 
         "shipping":
             shipping,
@@ -651,13 +562,13 @@ async def calculate_cart_quote(
 
         "location": {
             "officeName":
-                fulfillment.officeName,
+                pin_record.officeName,
 
             "districtName":
-                fulfillment.districtName,
+                pin_record.districtName,
 
             "stateName":
-                fulfillment.stateName,
+                pin_record.stateName,
         },
 
         "items":

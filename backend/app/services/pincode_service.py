@@ -31,6 +31,12 @@ from ..models.fulfillment import (
     FulfillmentQuote,
 )
 
+from .parcel_tariff import (
+    UNCLASSIFIABLE_DETAIL,
+    is_free_shipping_pin,
+    is_madhya_pradesh,
+)
+
 
 # ============================================================
 # INPUT NORMALIZATION
@@ -187,95 +193,30 @@ async def get_fulfillment_quote(
             ),
         )
 
-    # --------------------------------------------------------
-    # IMPORTANT BUSINESS RULE
-    #
-    # A valid Indian PIN defaults to SHIPPING.
-    #
-    # Only an active Kawad Swad rule can make it MANUAL.
-    #
-    # This prevents an accidental zero-shipping price from
-    # being granted to an unconfigured PIN.
-    # --------------------------------------------------------
-
-    rule = (
-        await lookup_fulfillment_rule(
-            clean_pincode
-        )
-    )
-
-    if not rule:
-
+    if is_free_shipping_pin(clean_pincode):
         return FulfillmentQuote(
             validPincode=True,
             pincode=clean_pincode,
-            fulfillmentType=(
-                FulfillmentType.SHIPPING
-            ),
+            fulfillmentType=FulfillmentType.MANUAL,
             shippingCharge=0,
-            officeName=(
-                pin_record.officeName
-            ),
-            districtName=(
-                pin_record.districtName
-            ),
-            stateName=(
-                pin_record.stateName
-            ),
-            message=(
-                "Delivery available."
-            ),
+            officeName=pin_record.officeName,
+            districtName=pin_record.districtName,
+            stateName=pin_record.stateName,
+            message="Free shipping PIN.",
         )
 
-    fulfillment_value = (
-        rule.get(
-            "fulfillmentType"
-        )
-    )
-
-    try:
-
-        fulfillment_type = (
-            FulfillmentType(
-                fulfillment_value
-            )
-        )
-
-    except ValueError:
-
+    if is_madhya_pradesh(pin_record.stateName or ""):
         raise HTTPException(
-            status_code=500,
+            status_code=400,
             detail=(
-                "Invalid Kawad Swad fulfilment rule."
+                "India Post Parcel contractual shipping "
+                "requires cart weight. Use the cart quote."
             ),
         )
 
-    shipping_charge = int(
-        rule.get(
-            "shippingCharge",
-            0,
-        )
-    )
-
-    return FulfillmentQuote(
-        validPincode=True,
-        pincode=clean_pincode,
-        fulfillmentType=(
-            fulfillment_type
-        ),
-        shippingCharge=shipping_charge,
-        officeName=(
-            pin_record.officeName
-        ),
-        districtName=(
-            pin_record.districtName
-        ),
-        stateName=(
-            pin_record.stateName
-        ),
-        message=(
-            "Delivery available."
-        ),
+    raise HTTPException(
+        status_code=400,
+        detail=UNCLASSIFIABLE_DETAIL,
     )
 
 

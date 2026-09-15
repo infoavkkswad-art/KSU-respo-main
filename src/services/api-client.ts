@@ -75,13 +75,8 @@ interface BackendOrderResponse {
  *
  * IMPORTANT:
  *
- * shipping is now a NUMBER.
- *
- * It can be:
- *
- *   ₹0   for MANUAL fulfilment
- *   ₹47  / ₹71 / ₹150 or another server-resolved amount
- *        for SHIPPING fulfilment
+ * shipping is a NUMBER (₹0 for approved free PINs, otherwise
+ * India Post Parcel contractual tariff).
  *
  * The backend remains the final authority.
  * ========================================================================== */

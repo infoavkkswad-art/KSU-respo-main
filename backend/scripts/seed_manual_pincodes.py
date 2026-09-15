@@ -1,17 +1,12 @@
 """
 KAWAD SWAD
-SEED MANUAL / LOCAL FULFILMENT PIN CODES
+SEED FREE-SHIPPING PIN CODES
 
-Stage 2.8
+Approved free-shipping PINs only (shippingCharge = ₹0).
 
-Run once from the backend project directory:
+Origin booking PIN 451225 is NOT free shipping.
 
-    python scripts/seed_manual_pincodes.py
-
-This creates/updates the approved Kawad Swad MANUAL fulfilment
-rules in MongoDB.
-
-The India PIN directory remains separate.
+Do not seed other historic MANUAL PINs as free shipping.
 """
 
 import asyncio
@@ -38,19 +33,12 @@ from app.database import get_database  # noqa: E402
 # ============================================================
 
 MANUAL_PINCODES = [
-    "451225",
-    "451224",
-    "451221",
-    "451228",
     "451220",
-    "454331",
-    "451111",
-    "451001",
-    "453441",
+    "451221",
+    "451224",
+    "451113",
     "451115",
-    "454001",
-    "452001",
-    "450001",
+    "451001",
 ]
 
 
