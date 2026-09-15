@@ -44,11 +44,16 @@ import {
   type CustomerInfo,
 } from '@/context/OrderContext';
 
+import { apiClient } from '@/services/api-client';
+
 import { ProductService } from '@/services/product-service';
 
 import { PACK_LABELS } from '@/data/products';
 
-import { apiClient } from '@/services/api-client';
+import {
+  readStoredShippingPin,
+  writeStoredShippingPin,
+} from '@/utils/shipping-pin';
 
 
 /* ==========================================================================
@@ -63,7 +68,7 @@ const initialCustomer: CustomerInfo = {
   address: '',
   city: '',
   state: '',
-  pincode: '',
+  pincode: readStoredShippingPin(),
 };
 
 
@@ -611,8 +616,6 @@ export default function Checkout() {
   const {
     items,
     subtotal,
-    shippingTotal,
-    total,
     clearCart,
   } = useCart();
 
@@ -709,18 +712,36 @@ export default function Checkout() {
     const pincode =
       form.values.pincode.trim();
 
-    if (
-      items.length === 0 ||
-      !/^[1-9][0-9]{5}$/.test(
-        pincode,
-      )
-    ) {
+    if (items.length === 0) {
       setPriceQuote(null);
       setQuoteError('');
       setQuoteLoading(false);
       return;
     }
 
+    if (!pincode) {
+      setPriceQuote(null);
+      setQuoteError('');
+      setQuoteLoading(false);
+      return;
+    }
+
+    if (
+      !/^[1-9][0-9]{5}$/.test(
+        pincode,
+      )
+    ) {
+      setPriceQuote(null);
+      setQuoteError(
+        pincode.length === 6
+          ? 'Please enter a valid Indian PIN code.'
+          : '',
+      );
+      setQuoteLoading(false);
+      return;
+    }
+
+    setPriceQuote(null);
     setQuoteLoading(true);
     setQuoteError('');
 
@@ -737,6 +758,7 @@ export default function Checkout() {
       .then((quote) => {
         if (cancelled) return;
 
+        writeStoredShippingPin(pincode);
         setPriceQuote(quote);
         setQuoteError('');
         return null;
@@ -880,6 +902,16 @@ export default function Checkout() {
       return;
     } finally {
       setQuoteLoading(false);
+    }
+
+    if (!latestQuote) {
+      const message =
+        'Delivery is currently unavailable for that PIN.';
+      setPriceQuote(null);
+      setQuoteError(message);
+      setError(message);
+      form.setStatus('error');
+      return;
     }
 
     form.setStatus('submitting');
@@ -1959,7 +1991,8 @@ export default function Checkout() {
                         quoteLoading ||
                         form.status ===
                           'submitting' ||
-                        !priceQuote
+                        !priceQuote ||
+                        Boolean(quoteError)
                       }
                       className="
                         group/payment
@@ -2459,17 +2492,13 @@ export default function Checkout() {
                           text-brand-green
                         "
                       >
-                        {priceQuote
+                          {priceQuote
                           ? priceQuote.shipping === 0
                             ? 'Free'
                             : formatPrice(
                                 priceQuote.shipping,
                               )
-                          : shippingTotal === 0
-                            ? 'Free'
-                            : formatPrice(
-                                shippingTotal,
-                              )}
+                          : 'Calculated after PIN'}
                       </span>
 
                     </div>
@@ -2518,8 +2547,8 @@ export default function Checkout() {
                             "
                           >
                             {formatPrice(
-                              priceQuote?.total ??
-                                total,
+                          priceQuote?.total ??
+                            subtotal,
                             )}
                           </p>
 
@@ -2588,10 +2617,10 @@ export default function Checkout() {
                           text-brand-green
                         "
                       >
-                        {priceQuote?.fulfillmentType ===
+                          {priceQuote?.fulfillmentType ===
                         'MANUAL'
-                          ? 'Local fulfilment: no shipping charge.'
-                          : 'Shipping included in your checkout total.'}
+                          ? 'No shipping charge for this PIN.'
+                          : 'India Post Parcel contractual shipping is added at checkout. The server total is the amount charged.'}
                       </strong>{' '}
 
                       {quoteLoading

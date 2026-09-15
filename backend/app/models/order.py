@@ -18,7 +18,7 @@ class CustomerSchema(BaseModel):
     address: str = Field(..., min_length=1, max_length=300)
     city: str = Field(..., min_length=1, max_length=100)
     state: str = Field(..., min_length=1, max_length=100)
-    pincode: str = Field(..., pattern=r"^\d{6}$")
+    pincode: str = Field(..., pattern=r"^[1-9][0-9]{5}$")
 
 class CartItemInput(BaseModel):
     sku: str = Field(..., min_length=1)

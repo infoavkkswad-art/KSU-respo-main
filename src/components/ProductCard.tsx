@@ -1083,7 +1083,7 @@ export function ProductCard({
                 text-brand-green
               "
             >
-              Free shipping
+            Shipping calculated at checkout
             </strong>
 
           </p>

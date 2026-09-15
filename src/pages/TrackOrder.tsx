@@ -160,11 +160,13 @@ export default function TrackOrder() {
       : -1;
 
   /*
-   * Customer-facing shipping is always FREE.
-   * apiClient already normalizes legacy/backend
-   * shipping values to zero.
+   * Display the stored server shipping amount.
    */
-  const shippingTotal = 0;
+  const shippingTotal =
+    orderData &&
+    Number.isFinite(orderData.shipping)
+      ? orderData.shipping
+      : 0;
 
   const displayedSubtotal =
     orderData &&
@@ -646,7 +648,11 @@ export default function TrackOrder() {
                   </span>
 
                   <span className="font-semibold">
-                    Free
+                    {shippingTotal === 0
+                      ? 'Free'
+                      : formatPrice(
+                          shippingTotal,
+                        )}
                   </span>
                 </div>
 
@@ -669,9 +675,9 @@ export default function TrackOrder() {
 
               <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center">
                 <p className="text-xs font-semibold text-green-700">
-                  Free shipping is included
-                  in your displayed product
-                  prices.
+                  {shippingTotal === 0
+                    ? 'No shipping charge on this order.'
+                    : 'Shipping is the India Post Parcel contractual charge stored with this order.'}
                 </p>
               </div>
 

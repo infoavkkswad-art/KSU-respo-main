@@ -66,13 +66,7 @@ export default function OrderSuccess() {
     );
 
   /*
-   * Customer-facing pricing rule:
-   *
-   * The website selling price is already the final
-   * price paid by the customer and includes shipping.
-   *
-   * Therefore OrderSuccess must NEVER add or display
-   * a separate shipping charge.
+   * Shipping is a separate charge from product selling price.
    */
   const customerTotal =
     Number.isFinite(lastOrder.total)
@@ -281,7 +275,10 @@ export default function OrderSuccess() {
                 </span>
 
                 <span className="font-semibold">
-                  Free
+                  {Number.isFinite(lastOrder.totalShipping) &&
+                  lastOrder.totalShipping > 0
+                    ? formatPrice(lastOrder.totalShipping)
+                    : 'Free'}
                 </span>
               </div>
 
@@ -326,8 +323,10 @@ export default function OrderSuccess() {
               "
             >
               <p className="text-xs font-semibold text-green-700">
-                Free shipping included in your
-                displayed product prices.
+                {Number.isFinite(lastOrder.totalShipping) &&
+                lastOrder.totalShipping > 0
+                  ? 'Payable amount charged at payment.'
+                  : 'No shipping charge for this order.'}
               </p>
             </div>
           </div>

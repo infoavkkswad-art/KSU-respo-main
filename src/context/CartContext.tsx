@@ -48,16 +48,7 @@ interface CartContextType {
   subtotal: number;
 
   /*
-   * Fulfilment shipping amount.
-   *
-   * This is a number because shipping can be:
-   *
-   * ₹0
-   * ₹47
-   * ₹71
-   * ₹150
-   *
-   * depending on the fulfilment method.
+   * Fulfilment shipping amount from the server quote when applied.
    */
   shippingTotal: number;
 

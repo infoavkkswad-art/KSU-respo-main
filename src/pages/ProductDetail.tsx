@@ -1281,7 +1281,7 @@ export default function ProductDetail() {
                         aria-hidden="true"
                       />
 
-                      Free Shipping
+                      Shipping at checkout
 
                     </div>
 
