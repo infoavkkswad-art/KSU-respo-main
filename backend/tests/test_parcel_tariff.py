@@ -173,5 +173,78 @@ class ProductPriceTests(unittest.TestCase):
             self.assertEqual(price, selling, sku)
 
 
+class FulfillmentSeedHygieneTests(unittest.TestCase):
+    def test_legacy_manual_pins_are_not_free(self):
+        from app.services.fulfillment_seed_plan import (
+            LEGACY_MANUAL_PINS_TO_REVOKE,
+        )
+
+        overlap = LEGACY_MANUAL_PINS_TO_REVOKE & FREE_SHIPPING_PINS
+        self.assertEqual(overlap, set())
+        self.assertIn(ORIGIN_PIN, LEGACY_MANUAL_PINS_TO_REVOKE)
+
+    def test_seed_list_matches_free_pins(self):
+        from app.services.fulfillment_seed_plan import planned_rule_writes
+
+        free_writes = [
+            row["pincode"]
+            for row in planned_rule_writes()
+            if row["freeShipping"]
+        ]
+        self.assertEqual(set(free_writes), set(FREE_SHIPPING_PINS))
+
+    def test_classify_zone_never_guesses_metro_or_other(self):
+        zone = classify_zone("452001", "MADHYA PRADESH")
+        self.assertEqual(zone, "WITHIN_STATE")
+
+        with self.assertRaises(HTTPException):
+            classify_zone("400001", "MAHARASHTRA")
+        with self.assertRaises(HTTPException):
+            classify_zone("110001", "DELHI")
+        with self.assertRaises(HTTPException):
+            classify_zone("560001", "KARNATAKA")
+
+    def test_revokes_extra_manual_free_rules(self):
+        from app.services.fulfillment_seed_plan import (
+            extra_manual_free_pins,
+        )
+
+        extras = extra_manual_free_pins(
+            [
+                {
+                    "pincode": "451220",
+                    "fulfillmentType": "MANUAL",
+                    "shippingCharge": 0,
+                    "active": True,
+                },
+                {
+                    "pincode": "451228",
+                    "fulfillmentType": "MANUAL",
+                    "shippingCharge": 0,
+                    "active": True,
+                },
+                {
+                    "pincode": ORIGIN_PIN,
+                    "fulfillmentType": "MANUAL",
+                    "shippingCharge": 0,
+                    "active": True,
+                },
+            ]
+        )
+        self.assertEqual(extras, ("451225", "451228"))
+
+    def test_planned_writes_cover_free_pins_and_origin(self):
+        from app.services.fulfillment_seed_plan import planned_rule_writes
+
+        writes = planned_rule_writes()
+        by_pin = {row["pincode"]: row for row in writes}
+        self.assertEqual(len(by_pin), len(FREE_SHIPPING_PINS) + 1)
+        for pin in FREE_SHIPPING_PINS:
+            self.assertTrue(by_pin[pin]["freeShipping"])
+            self.assertEqual(by_pin[pin]["fulfillmentType"], "MANUAL")
+        self.assertFalse(by_pin[ORIGIN_PIN]["freeShipping"])
+        self.assertEqual(by_pin[ORIGIN_PIN]["fulfillmentType"], "SHIPPING")
+
+
 if __name__ == "__main__":
     unittest.main()

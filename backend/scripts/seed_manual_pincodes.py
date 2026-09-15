@@ -26,20 +26,13 @@ if str(BACKEND_DIR) not in sys.path:
 
 
 from app.database import get_database  # noqa: E402
+from app.services.parcel_tariff import (  # noqa: E402
+    FREE_SHIPPING_PINS,
+)
 
 
-# ============================================================
-# OFFICIAL KAWAD SWAD MANUAL PIN LIST
-# ============================================================
-
-MANUAL_PINCODES = [
-    "451220",
-    "451221",
-    "451224",
-    "451113",
-    "451115",
-    "451001",
-]
+# Keep in lockstep with parcel_tariff.FREE_SHIPPING_PINS.
+MANUAL_PINCODES = sorted(FREE_SHIPPING_PINS)
 
 
 # ============================================================
