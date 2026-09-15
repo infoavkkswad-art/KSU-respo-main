@@ -245,6 +245,12 @@ class FulfillmentSeedHygieneTests(unittest.TestCase):
         self.assertFalse(by_pin[ORIGIN_PIN]["freeShipping"])
         self.assertEqual(by_pin[ORIGIN_PIN]["fulfillmentType"], "SHIPPING")
 
+    def test_seed_script_does_not_use_a_weaker_pin_list(self):
+        from scripts.seed_manual_pincodes import MANUAL_PINCODES
+
+        self.assertEqual(set(MANUAL_PINCODES), set(FREE_SHIPPING_PINS))
+        self.assertNotIn(ORIGIN_PIN, MANUAL_PINCODES)
+
 
 if __name__ == "__main__":
     unittest.main()
