@@ -239,6 +239,15 @@ export default function Cart() {
   const displayTotal =
     priceQuote?.total ?? subtotal;
 
+  const checkoutBlockedByShipping =
+    Boolean(quoteError) ||
+    (
+      quoteLoading &&
+      /^[1-9][0-9]{5}$/.test(
+        shippingPin.trim(),
+      )
+    );
+
 
   /* ==========================================================================
      RESOLVE CART ITEMS
@@ -1692,7 +1701,13 @@ export default function Cart() {
                   <Link
                     to="/checkout"
                     aria-label={`Proceed to checkout for ${formatPrice(displayTotal)}`}
-                    className="
+                    aria-disabled={checkoutBlockedByShipping}
+                    onClick={(event) => {
+                      if (checkoutBlockedByShipping) {
+                        event.preventDefault();
+                      }
+                    }}
+                    className={`
                       group/checkout
                       mt-5
                       flex
@@ -1720,7 +1735,8 @@ export default function Cart() {
                       focus:ring-offset-2
                       sm:min-h-[60px]
                       sm:px-5
-                    "
+                      ${checkoutBlockedByShipping ? 'pointer-events-none opacity-60' : ''}
+                    `}
                   >
 
                     <span

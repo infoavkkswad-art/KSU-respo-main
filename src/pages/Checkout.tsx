@@ -887,6 +887,16 @@ export default function Checkout() {
       setQuoteLoading(false);
     }
 
+    if (!latestQuote) {
+      const message =
+        'Delivery is currently unavailable for that PIN.';
+      setPriceQuote(null);
+      setQuoteError(message);
+      setError(message);
+      form.setStatus('error');
+      return;
+    }
+
     form.setStatus('submitting');
     setPaymentOpening(true);
 
