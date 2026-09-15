@@ -712,14 +712,31 @@ export default function Checkout() {
     const pincode =
       form.values.pincode.trim();
 
+    if (items.length === 0) {
+      setPriceQuote(null);
+      setQuoteError('');
+      setQuoteLoading(false);
+      return;
+    }
+
+    if (!pincode) {
+      setPriceQuote(null);
+      setQuoteError('');
+      setQuoteLoading(false);
+      return;
+    }
+
     if (
-      items.length === 0 ||
       !/^[1-9][0-9]{5}$/.test(
         pincode,
       )
     ) {
       setPriceQuote(null);
-      setQuoteError('');
+      setQuoteError(
+        pincode.length === 6
+          ? 'Please enter a valid Indian PIN code.'
+          : '',
+      );
       setQuoteLoading(false);
       return;
     }

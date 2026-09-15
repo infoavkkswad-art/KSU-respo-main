@@ -180,12 +180,27 @@ export default function Cart() {
 
     writeStoredShippingPin(pincode);
 
-    if (
-      items.length === 0 ||
-      !/^[1-9][0-9]{5}$/.test(pincode)
-    ) {
+    if (items.length === 0) {
       setPriceQuote(null);
       setQuoteError('');
+      setQuoteLoading(false);
+      return;
+    }
+
+    if (!pincode) {
+      setPriceQuote(null);
+      setQuoteError('');
+      setQuoteLoading(false);
+      return;
+    }
+
+    if (!/^[1-9][0-9]{5}$/.test(pincode)) {
+      setPriceQuote(null);
+      setQuoteError(
+        pincode.length === 6
+          ? 'Please enter a valid Indian PIN code.'
+          : '',
+      );
       setQuoteLoading(false);
       return;
     }
