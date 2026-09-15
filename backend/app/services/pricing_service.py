@@ -550,23 +550,19 @@ async def calculate_cart_quote(
                 "quantity":
                     quantity,
 
-                /*
-                 * BASE WEBSITE SELLING PRICE.
-                 *
-                 * Shipping is kept separate.
-                 */
+                # BASE WEBSITE SELLING PRICE.
+                #
+                # Shipping is kept separate.
                 "unitPrice":
                     unit_price,
 
                 "itemSubtotal":
                     item_subtotal,
 
-                /*
-                 * Shipping is resolved below at order level.
-                 *
-                 * We do NOT multiply the order shipping
-                 * by every SKU.
-                 */
+                # Shipping is resolved below at order level.
+                #
+                # We do NOT multiply the order shipping
+                # by every SKU.
                 "shipping":
                     0.0,
 
