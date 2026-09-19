@@ -5,7 +5,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .config import settings
+from .config import (
+    assert_runtime_secrets,
+    settings,
+)
 
 from .database import (
     connect_to_mongo,
@@ -49,6 +52,8 @@ async def lifespan(
     # --------------------------------------------------------
     # STARTUP
     # --------------------------------------------------------
+
+    assert_runtime_secrets(settings)
 
     await connect_to_mongo()
 
