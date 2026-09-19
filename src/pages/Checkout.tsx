@@ -39,10 +39,9 @@ import {
   useCart,
 } from '@/context/CartContext';
 
-import {
-  useOrder,
-  type CustomerInfo,
-} from '@/context/OrderContext';
+import { type CustomerInfo } from '@/context/OrderContext';
+
+import { saveOrderLookup } from '@/utils/order-lookup';
 
 import { ProductService } from '@/services/product-service';
 
@@ -617,11 +616,6 @@ export default function Checkout() {
   } = useCart();
 
 
-  const {
-    setCompletedOrder,
-  } = useOrder();
-
-
   const navigate =
     useNavigate();
 
@@ -1088,36 +1082,15 @@ export default function Checkout() {
 
 
               /* ========================================================
-                 SAVE COMPLETED ORDER
+                 LOOKUP ONLY — backend is the source of the receipt
                  ======================================================== */
 
-              setCompletedOrder({
+              const serverOrderId =
+                verification.orderId.trim();
 
-                orderId:
-                  verification.orderId ||
-                  orderResponse.orderId,
-
-                customer:
-                  orderResponse.customer,
-
-                items:
-                  orderResponse.items,
-
-                subtotal:
-                  orderResponse.subtotal,
-
-                totalShipping:
-                  orderResponse.shipping,
-
-                total:
-                  orderResponse.total,
-
-                timestamp:
-                  orderResponse.createdAt,
-
-                status:
-                  'confirmed',
-
+              saveOrderLookup({
+                orderId: serverOrderId,
+                phone: form.values.phone.trim(),
               });
 
 
@@ -1134,7 +1107,9 @@ export default function Checkout() {
 
 
               navigate(
-                '/order-success',
+                `/order-success?orderId=${encodeURIComponent(
+                  serverOrderId,
+                )}`,
                 {
                   replace: true,
                 },
