@@ -63,11 +63,15 @@ interface StoredEnquiry {
 interface StoredReview {
   reviewId: string;
   productId: string;
+  sku?: string;
   rating: number;
+  title?: string;
   userName: string;
+  customerName: string;
   userLocation: string;
   comment: string;
   verifiedPurchase: boolean;
+  status: string;
   createdAt: string;
 }
 
@@ -88,41 +92,57 @@ const reviewsStore: StoredReview[] = [
   {
     reviewId: 'rev-1',
     productId: 'moong-master-papad',
+    sku: 'KS-MMP-200',
     rating: 5,
+    title: 'Authentic Nimar Taste',
     userName: 'Rajesh Sharma',
+    customerName: 'Rajesh Sharma',
     userLocation: 'Indore, MP',
     comment: 'Authentic Nimar taste! The crispness and pepper blend are just perfect.',
     verifiedPurchase: true,
+    status: 'approved',
     createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
   },
   {
     reviewId: 'rev-2',
     productId: 'chana-garlic-papad',
+    sku: 'KS-CGP-200',
     rating: 5,
+    title: 'Rich Garlic Flavor',
     userName: 'Anjali Verma',
+    customerName: 'Anjali Verma',
     userLocation: 'Bhopal, MP',
     comment: 'Rich garlic flavor and traditional crunch. Reminds me of homemade papads.',
     verifiedPurchase: true,
+    status: 'approved',
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
   },
   {
     reviewId: 'rev-3',
     productId: 'urad-guru-papad',
+    sku: 'KS-UGP-200',
     rating: 5,
+    title: 'Excellent Quality',
     userName: 'Sunil Patel',
+    customerName: 'Sunil Patel',
     userLocation: 'Ahmedabad, Gujarat',
     comment: 'Excellent quality urad papad with genuine spices. Fast delivery too.',
     verifiedPurchase: true,
+    status: 'approved',
     createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
   },
   {
     reviewId: 'rev-4',
     productId: 'combo-235',
+    sku: 'KS-COMBO-235',
     rating: 5,
+    title: 'Great Variety Pack',
     userName: 'Priya Rathore',
+    customerName: 'Priya Rathore',
     userLocation: 'Khandwa, MP',
     comment: 'Great combo pack to try all classic varieties in one purchase!',
     verifiedPurchase: true,
+    status: 'approved',
     createdAt: new Date(Date.now() - 86400000).toISOString(),
   }
 ];
@@ -570,23 +590,25 @@ app.get('/api/orders/:orderId', (req: Request, res: Response) => {
 app.post('/api/enquiries', (req: Request, res: Response) => {
   try {
     const payload = req.body;
-    if (!payload.contactPerson || !payload.email || !payload.message) {
-      return res.status(400).json({ detail: 'Please fill in all required enquiry fields.' });
+    const contactPerson = (payload.contactPerson || payload.name || payload.fullName || '').trim();
+    const email = (payload.email || '').trim();
+    if (!contactPerson || !email) {
+      return res.status(400).json({ detail: 'Please fill in your name and email address.' });
     }
 
     const enquiryId = `ENQ-${Date.now().toString().slice(-8)}`;
     const newEnquiry: StoredEnquiry = {
       enquiryId,
       type: payload.type || 'general',
-      businessName: payload.businessName,
-      contactPerson: payload.contactPerson,
-      phone: payload.phone,
-      email: payload.email,
-      businessType: payload.businessType,
+      businessName: payload.businessName || '',
+      contactPerson,
+      phone: payload.phone || '',
+      email,
+      businessType: payload.businessType || '',
       location: payload.location || '',
-      productsOfInterest: payload.productsOfInterest,
-      quantity: payload.quantity,
-      message: payload.message,
+      productsOfInterest: payload.productsOfInterest || '',
+      quantity: payload.quantity || '',
+      message: payload.message || 'General Enquiry',
       createdAt: new Date().toISOString(),
     };
 
@@ -614,7 +636,14 @@ app.get('/api/reviews/:productId', (req: Request, res: Response) => {
     r => r.productId === productId || productId === 'all'
   );
 
-  const paginated = matched.slice(skip, skip + limit);
+  const paginated = matched.slice(skip, skip + limit).map(r => ({
+    ...r,
+    customerName: r.customerName || r.userName,
+    userName: r.userName || r.customerName,
+    title: r.title || null,
+    sku: r.sku || '',
+    status: r.status || 'approved',
+  }));
   res.json(paginated);
 });
 
@@ -637,6 +666,7 @@ app.get('/api/reviews/:productId/summary', (req: Request, res: Response) => {
   res.json({
     productId,
     averageRating,
+    reviewCount: totalReviews,
     totalReviews,
     ratingCounts,
   });
@@ -644,20 +674,25 @@ app.get('/api/reviews/:productId/summary', (req: Request, res: Response) => {
 
 app.post('/api/reviews', (req: Request, res: Response) => {
   try {
-    const { productId, rating, userName, userLocation, comment } = req.body;
-    if (!productId || !userName || !comment) {
-      return res.status(400).json({ detail: 'Please provide all review details.' });
+    const { productId, rating, userName, customerName, userLocation, comment, title, sku } = req.body;
+    const author = (customerName || userName || '').trim();
+    if (!productId || !author || !comment) {
+      return res.status(400).json({ detail: 'Please provide all review details (name, rating, and feedback).' });
     }
 
     const reviewId = `rev-${Date.now()}`;
     const newReview: StoredReview = {
       reviewId,
       productId,
+      sku: sku || '',
       rating: Number(rating) || 5,
-      userName,
+      title: title || '',
+      userName: author,
+      customerName: author,
       userLocation: userLocation || 'India',
       comment,
       verifiedPurchase: true,
+      status: 'approved',
       createdAt: new Date().toISOString(),
     };
 

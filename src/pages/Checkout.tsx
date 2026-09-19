@@ -987,22 +987,45 @@ export default function Checkout() {
 
 
       /* ================================================================
-         LOAD RAZORPAY
+         LOAD RAZORPAY OR TEST SIMULATION
          ================================================================ */
+
+      if (orderResponse.razorpayKeyId === 'rzp_test_mock') {
+        const mockPaymentId = `pay_test_${Date.now()}`;
+        const verification = await apiClient.verifyPayment({
+          razorpay_order_id: orderResponse.razorpayOrderId,
+          razorpay_payment_id: mockPaymentId,
+          razorpay_signature: 'mock_signature',
+        });
+
+        setCompletedOrder({
+          orderId: verification.orderId || orderResponse.orderId,
+          customer: orderResponse.customer,
+          items: orderResponse.items,
+          subtotal: orderResponse.subtotal,
+          totalShipping: orderResponse.shipping,
+          total: orderResponse.total,
+          timestamp: orderResponse.createdAt,
+          status: 'confirmed',
+        });
+
+        clearCart();
+        form.setStatus('success');
+        setPaymentOpening(false);
+        navigate('/order-success', { replace: true });
+        return;
+      }
 
       const loaded =
         await loadRazorpayScript();
-
 
       if (
         !loaded ||
         !window.Razorpay
       ) {
-
         throw new Error(
           'Razorpay payment gateway could not be loaded. Please try again.',
         );
-
       }
 
 
