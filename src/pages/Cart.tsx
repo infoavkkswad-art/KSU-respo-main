@@ -440,8 +440,8 @@ export default function Cart() {
                     className="h-4 w-4"
                   />
                 }
-                title="Free Shipping"
-                description="Shipping included."
+                title="Pan-India dispatch"
+                description="Quoted at checkout."
               />
 
 
@@ -1090,7 +1090,7 @@ export default function Cart() {
                                 aria-hidden="true"
                               />
 
-                              Free shipping included
+                              Shipping calculated at checkout
 
                             </div>
 
@@ -1462,7 +1462,7 @@ export default function Cart() {
                           font-semibold
                         "
                       >
-                        Free shipping included
+                        Shipping calculated at checkout
                       </span>
 
                     </div>
@@ -1529,7 +1529,7 @@ export default function Cart() {
                             text-brand-saffron-dark
                           "
                         >
-                          Shipping Included
+                          Plus shipping at checkout
                         </span>
 
                       </div>

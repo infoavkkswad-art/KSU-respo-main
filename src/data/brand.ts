@@ -2,7 +2,7 @@ export const brand = {
   name: 'KAWAD SWAD',
   hindiName: 'कवाड़ स्वाद',
   manufacturer: 'Kawad Swad Udhyog',
-  tagline: 'निमाड़ का अपना पापड़',
+  tagline: 'निमाड़ का अपना पापड़',
   taglineEnglish: 'The Taste of Nimar, Made with Tradition',
   region: 'Nimar, Madhya Pradesh, India',
   fssai: '21425890001224',

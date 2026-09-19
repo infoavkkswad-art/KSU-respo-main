@@ -101,7 +101,7 @@ export function Footer() {
     focus-visible:ring-2
     focus-visible:ring-brand-saffron
     focus-visible:ring-offset-2
-    focus-visible:ring-offset-brand-brown
+    focus-visible:ring-offset-brand-green
     sm:text-sm
   `;
 
@@ -112,7 +112,7 @@ export function Footer() {
         relative
         mt-4
         overflow-hidden
-        bg-brand-brown
+        bg-brand-green
         text-brand-cream
         sm:mt-6
         lg:mt-8
@@ -310,7 +310,7 @@ export function Footer() {
                   required
                   autoComplete="email"
                   className="
-                    min-h-[42px]
+            min-h-12
                     min-w-0
                     flex-1
                     rounded-full
@@ -336,7 +336,7 @@ export function Footer() {
                   type="submit"
                   className="
                     btn-yellow
-                    min-h-[42px]
+                    min-h-12
                     w-full
                     shrink-0
                     px-5
@@ -798,7 +798,7 @@ function SocialLink({
         focus-visible:ring-2
         focus-visible:ring-brand-saffron
         focus-visible:ring-offset-2
-        focus-visible:ring-offset-brand-brown
+        focus-visible:ring-offset-brand-green
         sm:h-12
         sm:w-12
       "
@@ -1114,7 +1114,7 @@ function ContactItem({
         focus-visible:ring-2
         focus-visible:ring-brand-saffron
         focus-visible:ring-offset-2
-        focus-visible:ring-offset-brand-brown
+        focus-visible:ring-offset-brand-green
         sm:text-sm
       "
     >

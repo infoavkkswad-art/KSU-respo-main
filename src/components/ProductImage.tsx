@@ -520,7 +520,7 @@ export function ProductImage({
                 text-5xl
                 font-bold
                 leading-none
-                text-brand-red/20
+                text-brand-terracotta/20
                 sm:text-6xl
                 lg:text-7xl
               "

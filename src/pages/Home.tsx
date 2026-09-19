@@ -1,15 +1,15 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Leaf,
-  ShieldCheck,
   Sparkles,
   Utensils,
 } from 'lucide-react';
 
 import { SEO, organizationSchema } from '@/components/SEO';
 import { ProductCard } from '@/components/ProductCard';
-import { PlaceholderImage } from '@/components/Section';
+import { EmptyCatalog } from '@/components/EmptyCatalog';
 import {
   Reveal,
   CTABanner,
@@ -38,6 +38,26 @@ export default function Home() {
   const featured =
     ProductService.getFeaturedProducts();
 
+  const [reduceMotion, setReduceMotion] =
+    useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    );
+
+    const sync = () => {
+      setReduceMotion(media.matches);
+    };
+
+    sync();
+    media.addEventListener('change', sync);
+
+    return () => {
+      media.removeEventListener('change', sync);
+    };
+  }, []);
+
 
   /* ==========================================================================
      HERO VIDEO
@@ -61,14 +81,14 @@ export default function Home() {
       description: 'Made for the whole table',
     },
     {
-      icon: ShieldCheck,
-      title: 'FSSAI Registered',
-      description: `Licence ${brand.fssai}`,
+      icon: Utensils,
+      title: 'From Nimar',
+      description: 'Madhya Pradesh kitchens',
     },
     {
-      icon: Utensils,
-      title: 'Traditional Recipe',
-      description: 'Rooted in Nimar',
+      icon: Sparkles,
+      title: 'Traditional recipe',
+      description: 'Crisp, everyday papad',
     },
   ];
 
@@ -97,10 +117,10 @@ export default function Home() {
           relative
           overflow-hidden
           bg-brand-ivory
-          py-5
-          sm:py-7
-          lg:py-9
-          xl:py-11
+          py-6
+          sm:py-10
+          lg:py-14
+          xl:py-16
         "
       >
 
@@ -219,25 +239,21 @@ export default function Home() {
                   sm:mb-3
                 "
               >
-                Nimar · Since 2025
+                Kawad Swad · Nimar
               </span>
 
 
               <h1
                 className="
                   max-w-3xl
-                  font-serif
+                  font-devanagari
                   text-display-sm
                   font-bold
-                  leading-[0.94]
+                  leading-[1.12]
                   text-brand-green
                 "
               >
-                Nimar's own
-                <br />
-                <span className="text-brand-saffron">
-                  papad.
-                </span>
+                {brand.tagline}
               </h1>
 
 
@@ -247,15 +263,15 @@ export default function Home() {
                   max-w-xl
                   text-base
                   leading-relaxed
-                  text-brand-brown/70
+                  text-brand-brown-light
                   sm:mt-5
                   sm:text-lg
                   lg:max-w-[560px]
                 "
               >
-                Traditional flavour, made with care.
-                Discover crisp, authentic papads rooted
-                in the taste and food culture of Nimar.
+                {brand.taglineEnglish}.
+                Crisp papad from Nimar kitchens,
+                packed for everyday meals.
               </p>
 
 
@@ -345,8 +361,8 @@ export default function Home() {
                 "
               >
 
-                <span>
-                  निमाड़ का अपना पापड़
+                <span className="font-devanagari">
+                  {brand.tagline}
                 </span>
 
                 <span
@@ -436,21 +452,36 @@ export default function Home() {
                   "
                 >
 
+                  {reduceMotion ? (
+                    <img
+                      src={posterSrc}
+                      alt=""
+                      className="
+                        absolute
+                        inset-0
+                        h-full
+                        w-full
+                        object-contain
+                        object-center
+                      "
+                    />
+                  ) : (
                   <video
                     className="
                       absolute
                       inset-0
                       h-full
                       w-full
-                      object-cover
+                      object-contain
+                      object-center
                     "
                     autoPlay
                     muted
                     loop
                     playsInline
-                    preload="auto"
+                    preload="metadata"
                     poster={posterSrc}
-                    aria-label="Kawad Swad welcoming papad mascot hero video"
+                    aria-label="Kawad Swad papad mascot welcome"
                   >
 
                     <source
@@ -458,21 +489,10 @@ export default function Home() {
                       type="video/mp4"
                     />
 
-                    <img
-                      src={posterSrc}
-                      alt="Kawad Swad welcoming mascot"
-                      className="
-                        absolute
-                        inset-0
-                        h-full
-                        w-full
-                        object-cover
-                      "
-                    />
-
                     Your browser does not support the hero video.
 
                   </video>
+                  )}
 
 
                   {/* ----------------------------------------------------------
@@ -758,7 +778,7 @@ export default function Home() {
           </Reveal>
 
 
-          {featured.length > 0 && (
+          {featured.length > 0 ? (
             <div
               className="
                 mt-8
@@ -792,6 +812,15 @@ export default function Home() {
                 ),
               )}
 
+            </div>
+          ) : (
+            <div className="mt-8 sm:mt-10">
+              <EmptyCatalog
+                title="Shop is being stocked"
+                description="Live papad listings will appear here as soon as the catalogue is ready. No placeholder products."
+                actionLabel="Visit the shop"
+                actionTo="/shop"
+              />
             </div>
           )}
 
@@ -963,9 +992,10 @@ export default function Home() {
                 "
               >
 
-                <div
+                  <div
                   className="
                     image-premium
+                    aspect-[4/3]
                     border
                     border-brand-ivory/10
                     bg-brand-green-dark
@@ -973,13 +1003,18 @@ export default function Home() {
                   "
                 >
 
-                  <PlaceholderImage
-                    label="Papad texture and crisp moment"
-                    aspect="aspect-[4/3]"
+                  <img
+                    src="/images/pages/home-trust.png"
+                    alt="Kawad Swad papad texture"
                     className="
+                      h-full
+                      w-full
                       rounded-3xl
-                      bg-brand-green-dark
+                      object-contain
+                      object-center
                     "
+                    loading="lazy"
+                    decoding="async"
                   />
 
                 </div>
@@ -1040,11 +1075,26 @@ export default function Home() {
 
             <Reveal className="lg:col-span-6">
 
-              <PlaceholderImage
-                label="Kawad Swad heritage and making"
-                aspect="aspect-[4/3]"
-                className="rounded-3xl"
-              />
+              <div
+                className="
+                  image-premium
+                  aspect-[4/3]
+                  bg-brand-ivory-dark
+                "
+              >
+                <img
+                  src="/images/pages/home-manufacturing.png"
+                  alt="Kawad Swad making papad in Nimar"
+                  className="
+                    h-full
+                    w-full
+                    object-contain
+                    object-center
+                  "
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
 
             </Reveal>
 

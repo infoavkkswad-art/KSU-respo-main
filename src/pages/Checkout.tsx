@@ -1068,7 +1068,7 @@ export default function Checkout() {
         },
 
         theme: {
-          color: '#C88A2A',
+          color: '#1B4D3E',
         },
 
 

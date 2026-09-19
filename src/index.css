@@ -47,8 +47,8 @@
     min-width: 0;
     overflow-x: hidden;
 
-    background: #F7F2E8;
-    color: #5A4035;
+    background: #FDFBF7;
+    color: #2C221E;
 
     font-family:
       'Poppins',
@@ -111,7 +111,7 @@
   input,
   select,
   textarea {
-    color: #5A4035;
+    color: #2C221E;
   }
 
   textarea {
@@ -134,8 +134,29 @@
      ------------------------------------------------------------------------ */
 
   ::selection {
-    background: #173C32;
+    background: #1B4D3E;
     color: #FFFFFF;
+  }
+
+  :focus-visible {
+    outline: 2px solid #D97706;
+    outline-offset: 3px;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -100%;
+    z-index: 1000;
+    border-radius: 999px;
+    background: #1B4D3E;
+    color: #FFFFFF;
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+  }
+
+  .skip-link:focus {
+    top: 1rem;
   }
 }
 
@@ -190,7 +211,7 @@
      ======================================================================== */
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold transition-all duration-200;
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold transition-all duration-200;
   }
 
   .btn-primary {
@@ -257,7 +278,7 @@
     @apply rounded-2xl bg-white;
 
     border:
-      1px solid rgba(23, 60, 50, 0.1);
+      1px solid rgba(27, 77, 62, 0.12);
   }
 
 
@@ -301,7 +322,7 @@
   }
 
   .input-field {
-    @apply block w-full min-h-[46px] rounded-xl border border-brand-brown/15 bg-white px-4 py-2.5 text-sm text-brand-brown shadow-sm outline-none transition-all duration-200 placeholder:text-brand-brown/35;
+    @apply block w-full min-h-12 rounded-xl border border-brand-brown/15 bg-white px-4 py-2.5 text-sm text-brand-brown shadow-sm outline-none transition-all duration-200 placeholder:text-brand-brown-light;
   }
 
   .input-field:hover {
@@ -543,10 +564,10 @@
     background:
       linear-gradient(
         90deg,
-        rgba(23, 60, 50, 0.62) 0%,
-        rgba(23, 60, 50, 0.38) 38%,
-        rgba(23, 60, 50, 0.12) 70%,
-        rgba(23, 60, 50, 0.02) 100%
+        rgba(27, 77, 62, 0.72) 0%,
+        rgba(27, 77, 62, 0.42) 38%,
+        rgba(27, 77, 62, 0.12) 70%,
+        rgba(27, 77, 62, 0.02) 100%
       );
   }
 
@@ -599,6 +620,32 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgba(27, 77, 62, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(27, 77, 62, 0.07) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .bg-dots {
+    background-image: radial-gradient(rgba(44, 34, 30, 0.14) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  .bg-warm-glow {
+    background-image:
+      radial-gradient(ellipse at 18% 0%, rgba(200, 90, 23, 0.22), transparent 52%),
+      radial-gradient(ellipse at 88% 100%, rgba(230, 159, 36, 0.16), transparent 46%);
+  }
+
+  .price-emphasis {
+    @apply font-serif font-bold tracking-tight text-brand-green;
+  }
+
+  .touch-target {
+    @apply inline-flex min-h-12 min-w-12 items-center justify-center;
   }
 }
 
@@ -659,10 +706,10 @@
     background:
       linear-gradient(
         90deg,
-        rgba(23, 60, 50, 0.60) 0%,
-        rgba(23, 60, 50, 0.34) 40%,
-        rgba(23, 60, 50, 0.10) 72%,
-        rgba(23, 60, 50, 0.02) 100%
+        rgba(27, 77, 62, 0.62) 0%,
+        rgba(27, 77, 62, 0.36) 40%,
+        rgba(27, 77, 62, 0.10) 72%,
+        rgba(27, 77, 62, 0.02) 100%
       );
   }
 }
@@ -720,10 +767,10 @@
     background:
       linear-gradient(
         90deg,
-        rgba(23, 60, 50, 0.58) 0%,
-        rgba(23, 60, 50, 0.30) 42%,
-        rgba(23, 60, 50, 0.08) 74%,
-        rgba(23, 60, 50, 0) 100%
+        rgba(27, 77, 62, 0.60) 0%,
+        rgba(27, 77, 62, 0.32) 42%,
+        rgba(27, 77, 62, 0.08) 74%,
+        rgba(27, 77, 62, 0) 100%
       );
   }
 }
@@ -744,5 +791,9 @@
     scroll-behavior: auto !important;
 
     transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
   }
 }

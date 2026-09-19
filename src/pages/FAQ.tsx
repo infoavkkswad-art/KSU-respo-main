@@ -50,7 +50,7 @@ const faqSections: {
       },
       {
         q: 'What are the shipping charges?',
-        a: 'Shipping is FREE on all products and pack sizes. The displayed website price is the final customer price, with no separate shipping charge added at checkout.',
+        a: 'Shipping is calculated at checkout from your PIN code. We do not promise a universal free-shipping rate on this site.',
       },
       {
         q: 'Do you ship across India?',
@@ -58,7 +58,7 @@ const faqSections: {
       },
       {
         q: 'How is my order confirmed?',
-        a: 'When you place an order through our website, it creates an order request. We will contact you on your phone number to confirm the next steps. Online payment is not connected yet.',
+        a: 'When you place an order, you pay securely with Razorpay. You will also receive order details on the success page and by the contact information you share.',
       },
       {
         q: 'Can I change or cancel my order?',

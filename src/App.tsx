@@ -95,8 +95,8 @@ function PageLoader() {
           w-10
           h-10
           border-3
-          border-brand-red/20
-          border-t-brand-red
+          border-brand-green/20
+          border-t-brand-terracotta
           rounded-full
           animate-spin
         "
@@ -114,7 +114,7 @@ function NotFound() {
           text-6xl
           font-serif
           font-bold
-          text-brand-red/20
+          text-brand-terracotta/25
           mb-4
         "
       >
@@ -152,9 +152,13 @@ export default function App() {
           <ScrollToTop />
 
           <div className="min-h-screen flex flex-col">
+            <a href="#main-content" className="skip-link">
+              Skip to content
+            </a>
+
             <Header />
 
-            <main className="flex-1">
+            <main id="main-content" className="flex-1" tabIndex={-1}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route

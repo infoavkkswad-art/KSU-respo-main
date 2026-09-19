@@ -667,9 +667,8 @@ export default function TrackOrder() {
 
               <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center">
                 <p className="text-xs font-semibold text-green-700">
-                  Free shipping is included
-                  in your displayed product
-                  prices.
+                  Shipping is quoted at checkout
+                  from your delivery PIN.
                 </p>
               </div>
 

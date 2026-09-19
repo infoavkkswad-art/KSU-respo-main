@@ -27,6 +27,8 @@ import {
   Reveal,
 } from '@/components/Reveal';
 
+import { EmptyCatalog } from '@/components/EmptyCatalog';
+
 import {
   ProductService,
 } from '@/services/product-service';
@@ -1558,7 +1560,16 @@ export default function Shop() {
                   EMPTY STATE
                   ============================================================= */}
 
-              {filtered.length ===
+              {catalogProducts.length === 0 ? (
+
+                <EmptyCatalog
+                  title="Catalogue is being prepared"
+                  description="Papad listings will appear here when the live catalogue is ready. We do not show invented products."
+                  actionLabel="Contact Kawad Swad"
+                  actionTo="/contact"
+                />
+
+              ) : filtered.length ===
               0 ? (
 
                 <Reveal>

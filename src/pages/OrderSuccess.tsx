@@ -326,8 +326,8 @@ export default function OrderSuccess() {
               "
             >
               <p className="text-xs font-semibold text-green-700">
-                Free shipping included in your
-                displayed product prices.
+                Shipping for this order is shown
+                as quoted at checkout.
               </p>
             </div>
           </div>

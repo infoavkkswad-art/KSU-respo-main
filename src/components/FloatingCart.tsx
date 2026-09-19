@@ -202,7 +202,7 @@ export function FloatingCart() {
             to="/cart"
             className="
               hidden
-              min-h-[42px]
+              min-h-12
               shrink-0
               items-center
               justify-center
@@ -243,7 +243,7 @@ export function FloatingCart() {
             className="
               btn-primary
               group/checkout
-              min-h-[42px]
+              min-h-12
               shrink-0
               gap-1
               whitespace-nowrap

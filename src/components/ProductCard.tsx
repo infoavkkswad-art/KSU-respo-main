@@ -947,7 +947,7 @@ export function ProductCard({
                       handlePackChange
                     }
                     className="
-                      min-h-[40px]
+                      min-h-12
                       w-full
                       appearance-none
                       cursor-pointer
@@ -1056,36 +1056,14 @@ export function ProductCard({
           <p
             className="
               mb-3
-              flex
-              items-center
-              gap-1.5
               text-[9px]
               leading-relaxed
-              text-brand-brown/55
+              text-brand-brown-light
               sm:mb-3.5
               sm:text-2xs
             "
           >
-
-            <Check
-              className="
-                h-3
-                w-3
-                shrink-0
-                text-brand-green
-              "
-              aria-hidden="true"
-            />
-
-            <strong
-              className="
-                font-semibold
-                text-brand-green
-              "
-            >
-              Free shipping
-            </strong>
-
+            Shipping is calculated at checkout
           </p>
 
 
@@ -1116,7 +1094,7 @@ export function ProductCard({
             className={`
               relative
               flex
-              min-h-[46px]
+              min-h-12
               items-center
               justify-center
               gap-1.5
@@ -1196,7 +1174,7 @@ export function ProductCard({
               group/buy
               relative
               flex
-              min-h-[46px]
+              min-h-12
               items-center
               justify-center
               gap-1.5
