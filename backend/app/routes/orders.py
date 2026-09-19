@@ -32,6 +32,16 @@ from ..services.google_sheets_service import (
     sync_payment_to_google_sheets,
     sync_webhook_to_google_sheets,
 )
+from ..services.webhook_events import (
+    STATUS_IGNORED,
+    STATUS_PROCESSED,
+    capture_may_mark_paid,
+    failure_may_mark_failed,
+    get_recorded_event,
+    is_terminal_event_record,
+    paid_order_may_be_overwritten,
+    record_webhook_event,
+)
 
 
 router = APIRouter(
@@ -1673,6 +1683,21 @@ async def razorpay_webhook(
         f"{razorpay_payment_id}"
     )
 
+    recorded_event = await get_recorded_event(
+        db,
+        event_id,
+    )
+
+    if is_terminal_event_record(recorded_event):
+        print(
+            "Duplicate Razorpay webhook event ignored."
+        )
+        return {
+            "status": "duplicate",
+            "event": event_type,
+            "eventId": recorded_event.get("eventId"),
+        }
+
     # ---------------------------------------------------------
     # 6. LOG WEBHOOK TO GOOGLE SHEETS
     # ---------------------------------------------------------
@@ -1761,6 +1786,14 @@ async def razorpay_webhook(
             f"{event_type}"
         )
 
+        await record_webhook_event(
+            db,
+            event_id=event_id,
+            event_type=event_type,
+            razorpay_order_id=razorpay_order_id,
+            status=STATUS_IGNORED,
+        )
+
         return {
             "status":
                 "ignored",
@@ -1773,6 +1806,14 @@ async def razorpay_webhook(
 
         print(
             "Webhook missing Razorpay order ID."
+        )
+
+        await record_webhook_event(
+            db,
+            event_id=event_id,
+            event_type=event_type,
+            razorpay_order_id=razorpay_order_id,
+            status=STATUS_IGNORED,
         )
 
         return {
@@ -1807,9 +1848,64 @@ async def razorpay_webhook(
             print(
                 "Webhook order lookup failed."
             )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    "Order is not yet available. "
+                    "Retry this webhook."
+                ),
+            )
+
+        if not paid_order_may_be_overwritten(
+            webhook_order.get("paymentStatus")
+        ):
+            await record_webhook_event(
+                db,
+                event_id=event_id,
+                event_type=event_type,
+                razorpay_order_id=razorpay_order_id,
+                status=STATUS_PROCESSED,
+            )
+
+            print(
+                "Paid order left unchanged by webhook."
+            )
+
+            print(
+                "========== RAZORPAY WEBHOOK COMPLETE =========="
+            )
+
             return {
                 "status":
-                    "retry_required"
+                    "ok",
+                "event":
+                    event_type,
+                "orderId":
+                    webhook_order.get("orderId"),
+                "paymentStatus":
+                    "paid",
+                "orderStatus":
+                    webhook_order.get("status"),
+            }
+
+        if not capture_may_mark_paid(
+            webhook_order.get("paymentStatus")
+        ):
+            await record_webhook_event(
+                db,
+                event_id=event_id,
+                event_type=event_type,
+                razorpay_order_id=razorpay_order_id,
+                status=STATUS_IGNORED,
+            )
+
+            return {
+                "status":
+                    "ignored",
+                "event":
+                    event_type,
+                "reason":
+                    "payment_status_not_updatable",
             }
 
         webhook_fulfillment_status = (
@@ -1824,8 +1920,12 @@ async def razorpay_webhook(
                     "razorpayOrderId":
                         razorpay_order_id,
 
-                    "paymentStatus":
-                        "pending",
+                    "paymentStatus": {
+                        "$in": [
+                            "pending",
+                            "failed",
+                        ]
+                    },
                 },
                 {
                     "$set": {
@@ -1853,7 +1953,7 @@ async def razorpay_webhook(
 
         if not updated_order:
 
-            updated_order = (
+            raced_paid_order = (
                 await db.orders.find_one(
                     {
                         "razorpayOrderId":
@@ -1865,17 +1965,40 @@ async def razorpay_webhook(
                 )
             )
 
-        if not updated_order:
+            if raced_paid_order:
+                await record_webhook_event(
+                    db,
+                    event_id=event_id,
+                    event_type=event_type,
+                    razorpay_order_id=razorpay_order_id,
+                    status=STATUS_PROCESSED,
+                )
+
+                return {
+                    "status":
+                        "ok",
+                    "event":
+                        event_type,
+                    "orderId":
+                        raced_paid_order.get("orderId"),
+                    "paymentStatus":
+                        "paid",
+                    "orderStatus":
+                        raced_paid_order.get("status"),
+                }
 
             print(
                 "Webhook received before the order "
                 "was available in MongoDB."
             )
 
-            return {
-                "status":
-                    "retry_required"
-            }
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    "Order is not yet available. "
+                    "Retry this webhook."
+                ),
+            )
 
         # -----------------------------------------------------
         # 9. STORE COMPLETE PAYMENT DETAILS
@@ -2143,6 +2266,14 @@ async def razorpay_webhook(
             "========== RAZORPAY WEBHOOK COMPLETE =========="
         )
 
+        await record_webhook_event(
+            db,
+            event_id=event_id,
+            event_type=event_type,
+            razorpay_order_id=razorpay_order_id,
+            status=STATUS_PROCESSED,
+        )
+
         return {
 
             "status":
@@ -2169,6 +2300,56 @@ async def razorpay_webhook(
 
     if event_type == "payment.failed":
 
+        failed_order = (
+            await db.orders.find_one(
+                {
+                    "razorpayOrderId":
+                        razorpay_order_id,
+                }
+            )
+        )
+
+        if not failed_order:
+            print(
+                "Failed webhook received before the order "
+                "was available in MongoDB."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    "Order is not yet available. "
+                    "Retry this webhook."
+                ),
+            )
+
+        if not failure_may_mark_failed(
+            failed_order.get("paymentStatus")
+        ):
+            await record_webhook_event(
+                db,
+                event_id=event_id,
+                event_type=event_type,
+                razorpay_order_id=razorpay_order_id,
+                status=STATUS_PROCESSED,
+            )
+
+            print(
+                "Paid order not overwritten by payment.failed."
+            )
+
+            return {
+                "status":
+                    "ok",
+
+                "event":
+                    event_type,
+
+                "paymentStatus":
+                    failed_order.get(
+                        "paymentStatus"
+                    ),
+            }
+
         await db.orders.update_one(
             {
                 "razorpayOrderId":
@@ -2185,6 +2366,14 @@ async def razorpay_webhook(
             },
         )
 
+        await record_webhook_event(
+            db,
+            event_id=event_id,
+            event_type=event_type,
+            razorpay_order_id=razorpay_order_id,
+            status=STATUS_PROCESSED,
+        )
+
         print(
             "Payment failure recorded."
         )
@@ -2199,6 +2388,14 @@ async def razorpay_webhook(
             "paymentStatus":
                 "failed",
         }
+
+    await record_webhook_event(
+        db,
+        event_id=event_id,
+        event_type=event_type,
+        razorpay_order_id=razorpay_order_id,
+        status=STATUS_IGNORED,
+    )
 
     return {
         "status":
