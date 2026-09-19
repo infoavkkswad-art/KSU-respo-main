@@ -150,7 +150,6 @@ def get_backend_prices(
 
     website_price_raw = sku_obj.get(
         "selling_price",
-        sku_obj.get("websitePrice"),
     )
 
     if website_price_raw is None:
@@ -457,10 +456,7 @@ async def calculate_cart_quote(
             pack_size = int(
                 sku_obj.get(
                     "weight_g",
-                    sku_obj.get(
-                        "packSize",
-                        0,
-                    ),
+                    0,
                 )
             )
 

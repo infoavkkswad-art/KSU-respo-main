@@ -2258,11 +2258,7 @@ export default function Checkout() {
                           typeof quotedItem.unitPrice ===
                             'number'
                             ? quotedItem.unitPrice
-                            : skuData &&
-                              typeof skuData.websitePrice ===
-                                'number'
-                              ? skuData.websitePrice
-                              : 0;
+                            : 0;
 
 
                         const lineTotal =

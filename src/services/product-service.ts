@@ -6,16 +6,6 @@ import {
 } from '../data/products';
 
 import {
-  getSalesSku,
-  getSellingPrice,
-  getLowestPrice,
-  getManualPrice,
-  isManualPriceEligible,
-  getPriceForFulfillment,
-  type SalesSkuConfig,
-} from '../data/sales-config';
-
-import {
   getMasterSku,
   isProductMasterReady,
 } from './product-master-store';
@@ -252,17 +242,6 @@ function overlayFamily(
 /* ============================================================================
  * SALES CONFIG RESOLUTION
  * ========================================================================== */
-
-function getSalesConfig(
-  sku: Sku,
-): SalesSkuConfig | undefined {
-  return getSalesSku(
-    normalizeSkuCode(
-      sku.sku,
-    ),
-  );
-}
-
 
 /* ============================================================================
  * RESOLVE SKU
@@ -781,22 +760,13 @@ export const ProductService = {
 
         const matchesSku =
           product.skus.some(
-            (sku) => {
-              const sales =
-                getSalesConfig(
-                  sku,
-                );
-
-              return (
-                sku.sku
-                  .toLowerCase()
-                  .includes(q) ||
-                String(
-                  sales?.packSize ??
-                    sku.packSize,
-                ).includes(q)
-              );
-            },
+            (sku) =>
+              sku.sku
+                .toLowerCase()
+                .includes(q) ||
+              String(
+                sku.packSize,
+              ).includes(q),
           );
 
         return (
@@ -1026,111 +996,21 @@ export const ProductService = {
           normalizedSku,
         );
 
-        /* Central sales configuration */
-
-        const sales =
-          getSalesConfig(
-            sku,
-          );
-
-        if (!sales) {
-          errors.push(
-            `${sku.sku}: missing from central sales configuration`,
-          );
-          continue;
-        }
-
-        /* SKU identity */
-
         if (
-          sales.sku !==
-          normalizedSku
+          sku.websitePrice !==
+          null
         ) {
           errors.push(
-            `${sku.sku}: sales configuration SKU mismatch`,
+            `${sku.sku}: presentation catalogue must not store websitePrice`,
           );
-        }
-
-        /* Pack size */
-
-        if (
-          sales.packSize !==
-          sku.packSize
-        ) {
-          errors.push(
-            `${sku.sku}: pack size mismatch`,
-          );
-        }
-
-        /* MRP */
-
-        if (
-          sales.mrp !== null &&
-          (
-            !Number.isFinite(
-              sales.mrp,
-            ) ||
-            sales.mrp < 0
-          )
-        ) {
-          errors.push(
-            `${sku.sku}: invalid MRP`,
-          );
-        }
-
-        /* Base website selling price */
-
-        if (
-          sales.sellingPrice !==
-            null &&
-          (
-            !Number.isFinite(
-              sales.sellingPrice,
-            ) ||
-            sales.sellingPrice < 0
-          )
-        ) {
-          errors.push(
-            `${sku.sku}: invalid selling price`,
-          );
-        }
-
-        /* Available SKU */
-
-        if (
-          sales.available
-        ) {
-          if (
-            sales.mrp === null
-          ) {
-            errors.push(
-              `${sku.sku}: available SKU has no MRP`,
-            );
-          }
-
-          if (
-            sales.sellingPrice ===
-            null
-          ) {
-            errors.push(
-              `${sku.sku}: available SKU has no selling price`,
-            );
-          }
-
-          /*
-           * Product websitePrice must exactly equal the
-           * approved BASE selling price.
-           */
-          if (
-            sku.websitePrice !==
-            sales.sellingPrice
-          ) {
-            errors.push(
-              `${sku.sku}: websitePrice must equal approved sellingPrice. Expected ₹${sales.sellingPrice ?? 'invalid'}, got ₹${sku.websitePrice ?? 'invalid'}.`,
-            );
-          }
         }
       }
+    }
+
+    if (seenSkus.size !== 43) {
+      errors.push(
+        `Expected 43 product SKUs but found ${seenSkus.size}.`,
+      );
     }
 
     return {
