@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import {
@@ -24,6 +25,13 @@ import { ProductService } from '../services/product-service';
 import { PACK_LABELS } from '../data/products';
 
 import { ProductImage } from '../components/ProductImage';
+
+import { apiClient } from '../services/api-client';
+
+import {
+  readStoredShippingPin,
+  writeStoredShippingPin,
+} from '../utils/shipping-pin';
 
 
 /* ==========================================================================
@@ -142,11 +150,118 @@ export default function Cart() {
   const {
     items,
     subtotal,
-    total,
     updateQuantity,
     removeItem,
     addItem,
   } = useCart();
+
+  const [shippingPin, setShippingPin] =
+    useState(readStoredShippingPin);
+
+  const [priceQuote, setPriceQuote] =
+    useState<
+      Awaited<
+        ReturnType<
+          typeof apiClient.getCartQuote
+        >
+      > | null
+    >(null);
+
+  const [quoteError, setQuoteError] =
+    useState('');
+
+  const [quoteLoading, setQuoteLoading] =
+    useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const pincode = shippingPin.trim();
+
+    writeStoredShippingPin(pincode);
+
+    if (items.length === 0) {
+      setPriceQuote(null);
+      setQuoteError('');
+      setQuoteLoading(false);
+      return;
+    }
+
+    if (!pincode) {
+      setPriceQuote(null);
+      setQuoteError('');
+      setQuoteLoading(false);
+      return;
+    }
+
+    if (!/^[1-9][0-9]{5}$/.test(pincode)) {
+      setPriceQuote(null);
+      setQuoteError(
+        pincode.length === 6
+          ? 'Please enter a valid Indian PIN code.'
+          : '',
+      );
+      setQuoteLoading(false);
+      return;
+    }
+
+    setPriceQuote(null);
+    setQuoteLoading(true);
+    setQuoteError('');
+
+    void apiClient
+      .getCartQuote({
+        pincode,
+        items: items.map((item) => ({
+          sku: item.sku,
+          quantity: item.quantity,
+        })),
+      })
+      .then((quote) => {
+        if (cancelled) return;
+        setPriceQuote(quote);
+        setQuoteError('');
+        return null;
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setPriceQuote(null);
+        setQuoteError(
+          error instanceof Error &&
+            error.message
+            ? error.message
+            : 'Unable to calculate shipping for this PIN code.',
+        );
+        return null;
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setQuoteLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shippingPin, items]);
+
+  const displaySubtotal =
+    priceQuote?.subtotal ?? subtotal;
+
+  const displayShipping =
+    priceQuote?.shipping;
+
+  const displayTotal =
+    priceQuote?.total ?? subtotal;
+
+  const checkoutBlockedByShipping =
+    Boolean(quoteError) ||
+    (
+      quoteLoading &&
+      /^[1-9][0-9]{5}$/.test(
+        shippingPin.trim(),
+      )
+    );
 
 
   /* ==========================================================================
@@ -440,8 +555,8 @@ export default function Cart() {
                     className="h-4 w-4"
                   />
                 }
-                title="Free Shipping"
-                description="Shipping included."
+                title="Shipping at checkout"
+                description="Calculated after PIN."
               />
 
 
@@ -1090,7 +1205,7 @@ export default function Cart() {
                                 aria-hidden="true"
                               />
 
-                              Free shipping included
+                              Shipping at checkout
 
                             </div>
 
@@ -1426,45 +1541,94 @@ export default function Cart() {
                         "
                       >
                         {formatPrice(
-                          subtotal,
+                          displaySubtotal,
                         )}
                       </span>
 
                     </div>
 
+                    <label
+                      className="
+                        block
+                        space-y-1.5
+                        text-sm
+                        text-brand-brown/60
+                      "
+                    >
+                      <span>
+                        Delivery PIN
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={shippingPin}
+                        onChange={(event) =>
+                          setShippingPin(
+                            event.target.value.replace(
+                              /\D/g,
+                              '',
+                            ).slice(0, 6),
+                          )
+                        }
+                        placeholder="6-digit PIN"
+                        className="
+                          w-full
+                          rounded-xl
+                          border
+                          border-brand-green/15
+                          bg-white
+                          px-3
+                          py-2
+                          text-sm
+                          font-semibold
+                          text-brand-brown
+                          outline-none
+                          focus:border-brand-green/40
+                        "
+                      />
+                    </label>
+
+                    {quoteError ? (
+                      <p className="text-xs font-medium text-brand-red">
+                        {quoteError}
+                      </p>
+                    ) : null}
+
+                    {quoteLoading ? (
+                      <p className="text-xs text-brand-brown/50">
+                        Calculating shipping…
+                      </p>
+                    ) : null}
 
                     <div
                       className="
                         flex
-                        items-center
-                        gap-2
-                        rounded-xl
-                        bg-brand-green/5
-                        px-3
-                        py-2.5
-                        text-brand-green
+                        justify-between
+                        gap-4
+                        text-sm
+                        text-brand-brown/60
                       "
                     >
-
-                      <Truck
-                        className="
-                          h-4
-                          w-4
-                          shrink-0
-                        "
-                        aria-hidden="true"
-                      />
-
-
+                      <span>
+                        Shipping
+                      </span>
                       <span
                         className="
-                          text-xs
+                          whitespace-nowrap
                           font-semibold
+                          text-brand-brown
                         "
                       >
-                        Free shipping included
+                        {typeof displayShipping ===
+                        'number'
+                          ? displayShipping === 0
+                            ? 'Free'
+                            : formatPrice(
+                                displayShipping,
+                              )
+                          : 'Calculated after PIN'}
                       </span>
-
                     </div>
 
 
@@ -1511,7 +1675,7 @@ export default function Cart() {
                             "
                           >
                             {formatPrice(
-                              total,
+                              displayTotal,
                             )}
                           </p>
 
@@ -1529,7 +1693,9 @@ export default function Cart() {
                             text-brand-saffron-dark
                           "
                         >
-                          Shipping Included
+                          {priceQuote
+                            ? 'Server total'
+                            : 'Product total'}
                         </span>
 
                       </div>
@@ -1549,8 +1715,14 @@ export default function Cart() {
 
                   <Link
                     to="/checkout"
-                    aria-label={`Proceed to checkout for ${formatPrice(total)}`}
-                    className="
+                    aria-label={`Proceed to checkout for ${formatPrice(displayTotal)}`}
+                    aria-disabled={checkoutBlockedByShipping}
+                    onClick={(event) => {
+                      if (checkoutBlockedByShipping) {
+                        event.preventDefault();
+                      }
+                    }}
+                    className={`
                       group/checkout
                       mt-5
                       flex
@@ -1578,7 +1750,8 @@ export default function Cart() {
                       focus:ring-offset-2
                       sm:min-h-[60px]
                       sm:px-5
-                    "
+                      ${checkoutBlockedByShipping ? 'pointer-events-none opacity-60' : ''}
+                    `}
                   >
 
                     <span
@@ -1614,7 +1787,7 @@ export default function Cart() {
                           sm:text-xl
                         "
                       >
-                        {formatPrice(total)}
+                        {formatPrice(displayTotal)}
                       </span>
 
                     </span>

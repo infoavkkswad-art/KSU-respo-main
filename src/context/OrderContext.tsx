@@ -212,18 +212,13 @@ function isValidOrder(
     return false;
   }
 
-  /*
-   * Customer-facing shipping is always FREE.
-   * Historical orders are normalized to zero so
-   * stale localStorage data cannot reintroduce
-   * a separate shipping charge.
-   */
   if (
     typeof order.totalShipping !==
       'number' ||
     !Number.isFinite(
       order.totalShipping,
-    )
+    ) ||
+    order.totalShipping < 0
   ) {
     return false;
   }
@@ -263,17 +258,16 @@ function isValidOrder(
 function normalizeOrder(
   order: Order,
 ): Order {
-  return {
-    ...order,
+    return {
+        ...order,
 
-    /*
-     * Shipping is included in the final product
-     * selling price and is therefore always zero
-     * as a separate order charge.
-     */
-    totalShipping: 0,
+        totalShipping: Number.isFinite(
+          order.totalShipping,
+        ) && order.totalShipping >= 0
+          ? order.totalShipping
+          : 0,
 
-    items: order.items.map(
+        items: order.items.map(
       (item) => ({
         ...item,
         quantity: Math.floor(

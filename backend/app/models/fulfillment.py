@@ -61,6 +61,8 @@ class FulfillmentRule(BaseModel):
 
     fulfillmentType: FulfillmentType
 
+    # Legacy Mongo field. Live payable shipping is NOT read from this
+    # collection; cart-quote uses Parcel contractual tariff / free PIN list.
     shippingCharge: int = Field(
         ...,
         ge=0,

@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
   type FormEvent,
   type ReactNode,
@@ -39,16 +40,26 @@ import {
   useCart,
 } from '@/context/CartContext';
 
-import {
-  useOrder,
-  type CustomerInfo,
-} from '@/context/OrderContext';
+import { type CustomerInfo } from '@/context/OrderContext';
+
+import { saveOrderLookup } from '@/utils/order-lookup';
+
+import { apiClient } from '@/services/api-client';
 
 import { ProductService } from '@/services/product-service';
 
 import { PACK_LABELS } from '@/data/products';
 
-import { apiClient } from '@/services/api-client';
+import {
+  readStoredShippingPin,
+  writeStoredShippingPin,
+} from '@/utils/shipping-pin';
+
+import {
+  PAY_DEBOUNCE_MS,
+  checkoutSessionFingerprint,
+  createIdempotencyKey,
+} from '@/utils/checkout-idempotency';
 
 
 /* ==========================================================================
@@ -63,7 +74,7 @@ const initialCustomer: CustomerInfo = {
   address: '',
   city: '',
   state: '',
-  pincode: '',
+  pincode: readStoredShippingPin(),
 };
 
 
@@ -399,27 +410,6 @@ function validateCustomer(
 
 
 /* ==========================================================================
-   IDEMPOTENCY
-   ========================================================================== */
-
-function createIdempotencyKey(): string {
-
-  if (
-    typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID === 'function'
-  ) {
-
-    return `ks-${crypto.randomUUID()}`;
-  }
-
-
-  return `ks-${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2, 12)}`;
-}
-
-
-/* ==========================================================================
    TRUST ITEM
    ========================================================================== */
 
@@ -611,15 +601,8 @@ export default function Checkout() {
   const {
     items,
     subtotal,
-    shippingTotal,
-    total,
     clearCart,
   } = useCart();
-
-
-  const {
-    setCompletedOrder,
-  } = useOrder();
 
 
   const navigate =
@@ -640,6 +623,46 @@ export default function Checkout() {
     paymentOpening,
     setPaymentOpening,
   ] = useState(false);
+
+  const payInFlightRef = useRef(false);
+  const lastPayAcceptedAtRef = useRef(0);
+  const idempotencyKeyRef = useRef<string | null>(
+    null,
+  );
+  const idempotencyFingerprintRef = useRef<
+    string | null
+  >(null);
+
+  const releasePayLock = () => {
+    payInFlightRef.current = false;
+    setPaymentOpening(false);
+  };
+
+  const clearIdempotencySession = () => {
+    idempotencyKeyRef.current = null;
+    idempotencyFingerprintRef.current = null;
+  };
+
+  const sessionIdempotencyKey = () => {
+    const fingerprint =
+      checkoutSessionFingerprint(
+        form.values,
+        items,
+      );
+
+    if (
+      !idempotencyKeyRef.current ||
+      idempotencyFingerprintRef.current !==
+        fingerprint
+    ) {
+      idempotencyKeyRef.current =
+        createIdempotencyKey();
+      idempotencyFingerprintRef.current =
+        fingerprint;
+    }
+
+    return idempotencyKeyRef.current;
+  };
 
 
   /* ==========================================================================
@@ -709,18 +732,36 @@ export default function Checkout() {
     const pincode =
       form.values.pincode.trim();
 
-    if (
-      items.length === 0 ||
-      !/^[1-9][0-9]{5}$/.test(
-        pincode,
-      )
-    ) {
+    if (items.length === 0) {
       setPriceQuote(null);
       setQuoteError('');
       setQuoteLoading(false);
       return;
     }
 
+    if (!pincode) {
+      setPriceQuote(null);
+      setQuoteError('');
+      setQuoteLoading(false);
+      return;
+    }
+
+    if (
+      !/^[1-9][0-9]{5}$/.test(
+        pincode,
+      )
+    ) {
+      setPriceQuote(null);
+      setQuoteError(
+        pincode.length === 6
+          ? 'Please enter a valid Indian PIN code.'
+          : '',
+      );
+      setQuoteLoading(false);
+      return;
+    }
+
+    setPriceQuote(null);
     setQuoteLoading(true);
     setQuoteError('');
 
@@ -737,6 +778,7 @@ export default function Checkout() {
       .then((quote) => {
         if (cancelled) return;
 
+        writeStoredShippingPin(pincode);
         setPriceQuote(quote);
         setQuoteError('');
         return null;
@@ -780,13 +822,29 @@ export default function Checkout() {
     event.preventDefault();
 
 
+    if (items.length === 0) {
+      return;
+    }
+
     if (
-      items.length === 0 ||
+      payInFlightRef.current ||
       paymentOpening ||
       form.status === 'submitting'
     ) {
       return;
     }
+
+    const now = Date.now();
+
+    if (
+      now - lastPayAcceptedAtRef.current <
+      PAY_DEBOUNCE_MS
+    ) {
+      return;
+    }
+
+    lastPayAcceptedAtRef.current = now;
+    payInFlightRef.current = true;
 
 
     setError('');
@@ -837,6 +895,8 @@ export default function Checkout() {
 
       form.setStatus('error');
 
+      releasePayLock();
+
       return;
     }
 
@@ -877,9 +937,20 @@ export default function Checkout() {
       setError(message);
       form.setStatus('error');
       setQuoteLoading(false);
+      releasePayLock();
       return;
     } finally {
       setQuoteLoading(false);
+    }
+
+    if (!latestQuote) {
+      const message =
+        'Delivery is currently unavailable for that PIN.';
+      setPriceQuote(null);
+      setQuoteError(message);
+      setError(message);
+      form.setStatus('error');
+      return;
     }
 
     form.setStatus('submitting');
@@ -925,7 +996,7 @@ export default function Checkout() {
           items,
 
           idempotencyKey:
-            createIdempotencyKey(),
+            sessionIdempotencyKey(),
 
         });
 
@@ -1088,36 +1159,15 @@ export default function Checkout() {
 
 
               /* ========================================================
-                 SAVE COMPLETED ORDER
+                 LOOKUP ONLY — backend is the source of the receipt
                  ======================================================== */
 
-              setCompletedOrder({
+              const serverOrderId =
+                verification.orderId.trim();
 
-                orderId:
-                  verification.orderId ||
-                  orderResponse.orderId,
-
-                customer:
-                  orderResponse.customer,
-
-                items:
-                  orderResponse.items,
-
-                subtotal:
-                  orderResponse.subtotal,
-
-                totalShipping:
-                  orderResponse.shipping,
-
-                total:
-                  orderResponse.total,
-
-                timestamp:
-                  orderResponse.createdAt,
-
-                status:
-                  'confirmed',
-
+              saveOrderLookup({
+                orderId: serverOrderId,
+                phone: form.values.phone.trim(),
               });
 
 
@@ -1130,11 +1180,15 @@ export default function Checkout() {
 
               form.setStatus('success');
 
-              setPaymentOpening(false);
+              clearIdempotencySession();
+
+              releasePayLock();
 
 
               navigate(
-                '/order-success',
+                `/order-success?orderId=${encodeURIComponent(
+                  serverOrderId,
+                )}`,
                 {
                   replace: true,
                 },
@@ -1162,7 +1216,7 @@ export default function Checkout() {
 
               form.setStatus('error');
 
-              setPaymentOpening(false);
+              releasePayLock();
 
             }
 
@@ -1179,7 +1233,7 @@ export default function Checkout() {
 
             form.setStatus('idle');
 
-            setPaymentOpening(false);
+            releasePayLock();
 
             setError(
               'Payment was cancelled or dismissed. You can retry anytime.',
@@ -1220,7 +1274,7 @@ export default function Checkout() {
 
       form.setStatus('error');
 
-      setPaymentOpening(false);
+      releasePayLock();
 
     }
 
@@ -1959,7 +2013,8 @@ export default function Checkout() {
                         quoteLoading ||
                         form.status ===
                           'submitting' ||
-                        !priceQuote
+                        !priceQuote ||
+                        Boolean(quoteError)
                       }
                       className="
                         group/payment
@@ -2459,17 +2514,13 @@ export default function Checkout() {
                           text-brand-green
                         "
                       >
-                        {priceQuote
+                          {priceQuote
                           ? priceQuote.shipping === 0
                             ? 'Free'
                             : formatPrice(
                                 priceQuote.shipping,
                               )
-                          : shippingTotal === 0
-                            ? 'Free'
-                            : formatPrice(
-                                shippingTotal,
-                              )}
+                          : 'Calculated after PIN'}
                       </span>
 
                     </div>
@@ -2518,8 +2569,8 @@ export default function Checkout() {
                             "
                           >
                             {formatPrice(
-                              priceQuote?.total ??
-                                total,
+                          priceQuote?.total ??
+                            subtotal,
                             )}
                           </p>
 
@@ -2588,10 +2639,10 @@ export default function Checkout() {
                           text-brand-green
                         "
                       >
-                        {priceQuote?.fulfillmentType ===
+                          {priceQuote?.fulfillmentType ===
                         'MANUAL'
-                          ? 'Local fulfilment: no shipping charge.'
-                          : 'Shipping included in your checkout total.'}
+                          ? 'No shipping charge for this PIN.'
+                          : 'India Post Parcel contractual shipping is added at checkout. The server total is the amount charged.'}
                       </strong>{' '}
 
                       {quoteLoading

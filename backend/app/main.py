@@ -1,9 +1,14 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from .config import settings
+from .config import (
+    assert_runtime_secrets,
+    settings,
+)
 
 from .database import (
     connect_to_mongo,
@@ -30,6 +35,10 @@ from .routes.fulfillment import (
     router as fulfillment_router,
 )
 
+from .services.parcel_tariff import (
+    INVALID_PIN_DETAIL,
+)
+
 
 # ============================================================
 # APPLICATION LIFESPAN
@@ -43,6 +52,8 @@ async def lifespan(
     # --------------------------------------------------------
     # STARTUP
     # --------------------------------------------------------
+
+    assert_runtime_secrets(settings)
 
     await connect_to_mongo()
 
@@ -108,6 +119,27 @@ app.include_router(
 app.include_router(
     fulfillment_router
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(
+    _request: Request,
+    exc: RequestValidationError,
+):
+    for error in exc.errors():
+        location = error.get("loc") or ()
+        if "pincode" in location:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": INVALID_PIN_DETAIL},
+            )
+
+    first = exc.errors()[0] if exc.errors() else {}
+    message = str(first.get("msg") or "Please check your details.")
+    return JSONResponse(
+        status_code=400,
+        content={"detail": message},
+    )
 
 
 # ============================================================
