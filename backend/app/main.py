@@ -3,7 +3,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import settings
+from .config import (
+    assert_runtime_secrets,
+    settings,
+)
 
 from .database import (
     connect_to_mongo,
@@ -43,6 +46,8 @@ async def lifespan(
     # --------------------------------------------------------
     # STARTUP
     # --------------------------------------------------------
+
+    assert_runtime_secrets(settings)
 
     await connect_to_mongo()
 
