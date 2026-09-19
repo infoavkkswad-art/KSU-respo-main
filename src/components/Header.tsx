@@ -287,7 +287,7 @@ export function Header() {
               sm:tracking-widest
             "
           >
-            Nimad's Own Papad
+            Nimar's Own Papad
 
             <span
               className="

@@ -10,31 +10,31 @@ export default {
       colors: {
         brand: {
           ivory: '#F7F2E8',
-          'ivory-light': '#FCFAF5',
-          'ivory-dark': '#EDE3D2',
+          'ivory-light': '#FFFFFF',
+          'ivory-dark': '#F7F3EB',
 
           green: '#173C32',
-          'green-light': '#2E5A4D',
-          'green-dark': '#0F2A23',
+          'green-light': '#2E6655',
+          'green-dark': '#12372C',
 
           saffron: '#C88A2A',
-          'saffron-light': '#DDA84B',
-          'saffron-dark': '#A96F18',
+          'saffron-light': '#E69F24',
+          'saffron-dark': '#B85E08',
 
           red: '#A93624',
-          'red-dark': '#842719',
-          'red-light': '#C95742',
+          'red-dark': '#9E4312',
+          'red-light': '#D87843',
 
           brown: '#5A4035',
-          'brown-light': '#765B4E',
-          'brown-dark': '#3D2A23',
+          'brown-light': '#5C524E',
+          'brown-dark': '#1F1815',
 
           cream: '#F7F2E8',
-          'cream-dark': '#EDE3D2',
+          'cream-dark': '#F7F3EB',
 
           yellow: '#C88A2A',
-          'yellow-dark': '#A96F18',
-          'yellow-light': '#DDA84B',
+          'yellow-dark': '#B85E08',
+          'yellow-light': '#F1B84B',
 
           white: '#FFFFFF',
           black: '#11110F',
@@ -184,7 +184,9 @@ export default {
 
         glow: '0 0 28px -6px rgba(200, 138, 42, 0.28)',
 
-        'green-glow': '0 12px 35px rgba(23, 60, 50, 0.20)',
+        'green-glow': '0 12px 35px rgba(27, 77, 62, 0.20)',
+
+        'gold-glow': '0 8px 22px rgba(217, 119, 6, 0.24)',
 
         'inner-soft': 'inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(23,60,50,0.04)',
       },

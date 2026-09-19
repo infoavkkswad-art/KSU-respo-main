@@ -1,0 +1,379 @@
+/*
+ * Kawad Swad 2.0
+ * Final visual polish layer.
+ *
+ * This file is intentionally presentation-only:
+ * - no product/commercial data
+ * - no API logic
+ * - no checkout logic
+ * - no shipping logic
+ * - no backend changes
+ *
+ * Loaded after index.css so these refinements can safely elevate
+ * the existing components without rebuilding the application.
+ */
+
+:root {
+  --ks-green: #1B4D3E;
+  --ks-terracotta: #C85A17;
+  --ks-saffron: #D97706;
+  --ks-mustard: #E69F24;
+  --ks-ivory: #FDFBF7;
+  --ks-surface: #FFFFFF;
+  --ks-surface-alt: #F7F3EB;
+  --ks-ink: #2C221E;
+  --ks-muted: #5C524E;
+  --ks-border: rgba(27, 77, 62, 0.11);
+  --ks-shadow: 0 18px 55px rgba(44, 34, 30, 0.08);
+  --ks-shadow-hover: 0 24px 70px rgba(27, 77, 62, 0.14);
+  --ks-radius: 24px;
+}
+
+html {
+  background: var(--ks-ivory);
+}
+
+body {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(230, 159, 36, 0.08), transparent 28rem),
+    radial-gradient(circle at 92% 12%, rgba(200, 90, 23, 0.055), transparent 30rem),
+    var(--ks-ivory);
+  color: var(--ks-ink);
+}
+
+::selection {
+  background: var(--ks-green);
+  color: #fff;
+}
+
+/* --------------------------------------------------------------------------
+   Missing decorative utilities already referenced by the existing UI.
+   -------------------------------------------------------------------------- */
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(27, 77, 62, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(27, 77, 62, 0.055) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.bg-dots {
+  background-image: radial-gradient(rgba(27, 77, 62, 0.16) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.bg-warm-glow {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(230, 159, 36, 0.22), transparent 28%),
+    radial-gradient(circle at 84% 78%, rgba(200, 90, 23, 0.14), transparent 30%);
+}
+
+/* --------------------------------------------------------------------------
+   Layout rhythm
+   -------------------------------------------------------------------------- */
+
+.container-max {
+  width: min(100%, 80rem);
+}
+
+main {
+  isolation: isolate;
+}
+
+section {
+  scroll-margin-top: 88px;
+}
+
+.section-eyebrow {
+  color: var(--ks-saffron);
+  letter-spacing: 0.18em;
+}
+
+.section-title {
+  color: var(--ks-ink);
+  letter-spacing: -0.02em;
+}
+
+.section-description {
+  color: var(--ks-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Buttons
+   -------------------------------------------------------------------------- */
+
+.btn {
+  min-height: 48px;
+  border-radius: 999px;
+  letter-spacing: -0.01em;
+  box-shadow: 0 6px 20px rgba(44, 34, 30, 0.06);
+}
+
+.btn-primary {
+  background: var(--ks-green);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(27, 77, 62, 0.17);
+}
+
+.btn-primary:hover {
+  background: #164437;
+  box-shadow: 0 18px 38px rgba(27, 77, 62, 0.22);
+}
+
+.btn-outline {
+  border-color: rgba(27, 77, 62, 0.22);
+  color: var(--ks-green);
+  background: rgba(255,255,255,0.62);
+}
+
+.btn-outline:hover {
+  border-color: rgba(27, 77, 62, 0.38);
+  background: rgba(27, 77, 62, 0.055);
+}
+
+.btn-yellow {
+  background: var(--ks-saffron);
+}
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+
+header.sticky {
+  border-color: rgba(27, 77, 62, 0.09);
+  background: rgba(253, 251, 247, 0.94);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+header.sticky + * {
+  position: relative;
+}
+
+header.sticky nav a {
+  letter-spacing: -0.01em;
+}
+
+header.sticky nav a[aria-current="page"] {
+  color: var(--ks-green);
+}
+
+@media (min-width: 1024px) {
+  header.sticky > div > div {
+    min-height: 76px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Hero / editorial surfaces
+   -------------------------------------------------------------------------- */
+
+.page-hero {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(230, 159, 36, 0.12), transparent 24rem),
+    var(--ks-surface-alt);
+}
+
+.page-hero-overlay {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(27, 77, 62, 0.72) 0%,
+      rgba(27, 77, 62, 0.36) 44%,
+      rgba(27, 77, 62, 0.05) 78%,
+      transparent 100%
+    );
+}
+
+.image-premium {
+  border-radius: 28px;
+  box-shadow: var(--ks-shadow);
+}
+
+/* --------------------------------------------------------------------------
+   Cards
+   -------------------------------------------------------------------------- */
+
+.card,
+.card-flat,
+.product-card {
+  border-radius: var(--ks-radius);
+}
+
+.card {
+  box-shadow: var(--ks-shadow);
+}
+
+.card-flat {
+  border-color: var(--ks-border);
+}
+
+.product-card {
+  border-color: rgba(27, 77, 62, 0.10);
+  background: var(--ks-surface);
+  box-shadow: 0 12px 36px rgba(44, 34, 30, 0.075);
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(27, 77, 62, 0.17);
+  box-shadow: var(--ks-shadow-hover);
+}
+
+.product-card-media {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(230, 159, 36, 0.08), transparent 48%),
+    var(--ks-surface-alt);
+}
+
+.product-card .product-visual {
+  padding: 7%;
+}
+
+.product-card .product-card-media img {
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-card:hover .product-card-media img {
+  transform: translateY(-3px) scale(1.018);
+}
+
+/* --------------------------------------------------------------------------
+   Product imagery
+   -------------------------------------------------------------------------- */
+
+.product-image-stage-card,
+.product-image-stage-detail,
+.product-image-stage-hero {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.95), transparent 54%),
+    var(--ks-surface-alt);
+}
+
+.product-image-stage-card img,
+.product-image-stage-detail img,
+.product-image-stage-hero img {
+  filter: drop-shadow(0 16px 18px rgba(44, 34, 30, 0.12));
+}
+
+.product-image-stage-card::after,
+.product-image-stage-detail::after,
+.product-image-stage-hero::after {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 5%;
+  height: 5%;
+  border-radius: 50%;
+  background: rgba(44, 34, 30, 0.09);
+  filter: blur(12px);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Forms
+   -------------------------------------------------------------------------- */
+
+.input-field {
+  min-height: 48px;
+  border-color: rgba(44, 34, 30, 0.14);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.94);
+  color: var(--ks-ink);
+}
+
+.input-field:focus {
+  border-color: rgba(27, 77, 62, 0.45);
+  box-shadow: 0 0 0 4px rgba(27, 77, 62, 0.08);
+}
+
+@media (max-width: 639px) {
+  .input-field {
+    font-size: 16px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Floating cart
+   -------------------------------------------------------------------------- */
+
+[role="region"][aria-label="Shopping cart"] > div {
+  border-color: rgba(27, 77, 62, 0.14);
+  background: rgba(255,255,255,0.97);
+  box-shadow: 0 22px 65px rgba(27, 77, 62, 0.16);
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+footer {
+  background:
+    radial-gradient(circle at 80% 10%, rgba(230, 159, 36, 0.10), transparent 24rem),
+    var(--ks-green);
+}
+
+footer a:hover {
+  color: var(--ks-mustard);
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility
+   -------------------------------------------------------------------------- */
+
+:focus-visible {
+  outline: 3px solid rgba(217, 119, 6, 0.55);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card:hover,
+  .product-card:hover .product-card-media img {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile polish
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 639px) {
+  .container-px {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .section {
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+
+  .section-lg {
+    padding-top: 64px;
+    padding-bottom: 64px;
+  }
+
+  .section-xl {
+    padding-top: 72px;
+    padding-bottom: 72px;
+  }
+
+  .product-card {
+    border-radius: 20px;
+  }
+
+  .product-card-media {
+    border-radius: 20px 20px 0 0;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .btn-outline {
+    width: 100%;
+  }
+}

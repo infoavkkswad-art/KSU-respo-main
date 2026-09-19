@@ -564,7 +564,7 @@ export function ProductImage({
                   sm:tracking-wider
                 "
               >
-                Product image coming soon
+                Product artwork coming soon
               </p>
 
             </div>
