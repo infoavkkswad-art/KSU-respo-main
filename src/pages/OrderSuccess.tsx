@@ -143,6 +143,7 @@ export default function OrderSuccess() {
           </p>
 
           <form
+            id="order-success-lookup-form"
             onSubmit={submitPhone}
             className="mx-auto mt-8 max-w-sm text-left"
           >
