@@ -239,7 +239,7 @@ export function CTABanner({
             relative
             overflow-hidden
             rounded-3xl
-            bg-brand-brown
+            bg-brand-green
             px-5
             py-8
             text-center
@@ -409,9 +409,9 @@ export function CTABanner({
               <a
                 href={primaryLink}
                 className="
-                  btn-primary
+                  btn-yellow
                   group/primary
-                  min-h-[46px]
+                  min-h-12
                   w-full
                   px-6
                   shadow-lift
@@ -443,7 +443,7 @@ export function CTABanner({
                     href={secondaryLink}
                     className="
                       btn-outline
-                      min-h-[46px]
+                      min-h-12
                       w-full
                       border-brand-cream/25
                       px-6

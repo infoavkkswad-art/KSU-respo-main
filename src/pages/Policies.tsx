@@ -8,7 +8,7 @@ const sections = [
     title: 'Shipping Policy',
     content: [
       'We ship across India. Orders are processed and dispatched after confirmation.',
-      'Shipping is FREE on all products and pack sizes. The displayed website price is the final customer price, with no separate shipping charge added at checkout.',
+      'Shipping is calculated at checkout from the delivery PIN. Product prices on the site are selling prices; they do not invent a free-shipping promise.',
       'Delivery times vary by location and will be communicated when your order is confirmed.',
       'For any shipping-related queries, please contact us at ' +
         brand.phone +

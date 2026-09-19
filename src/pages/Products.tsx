@@ -6,6 +6,7 @@ import { SEO, breadcrumbSchema } from '../components/SEO';
 import { ProductCard } from '../components/ProductCard';
 import { PageHero } from '../components/Section';
 import { Reveal } from '../components/Reveal';
+import { EmptyCatalog } from '../components/EmptyCatalog';
 import { ProductService } from '../services/product-service';
 import {
   CATEGORY_LABELS,
@@ -805,6 +806,12 @@ export default function Products() {
                 ============================================================= */}
 
             {filtered.length === 0 ? (
+              ProductService.getAllProducts().length === 0 ? (
+                <EmptyCatalog
+                  title="Catalogue is being prepared"
+                  description="Papad listings will appear here when the live catalogue is ready. We do not show invented products."
+                />
+              ) : (
               <div
                 className="
                   card
@@ -827,13 +834,14 @@ export default function Products() {
                   onClick={clearFilters}
                   className="
                     font-medium
-                    text-brand-red
+                    text-brand-terracotta
                     hover:underline
                   "
                 >
                   Clear filters
                 </button>
               </div>
+              )
             ) : (
 
               /* ==============================================================

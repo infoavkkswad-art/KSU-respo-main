@@ -9,35 +9,41 @@ export default {
     extend: {
       colors: {
         brand: {
-          ivory: '#F7F2E8',
-          'ivory-light': '#FCFAF5',
-          'ivory-dark': '#EDE3D2',
+          ivory: '#FDFBF7',
+          'ivory-light': '#FFFFFF',
+          'ivory-dark': '#F7F3EB',
 
-          green: '#173C32',
-          'green-light': '#2E5A4D',
-          'green-dark': '#0F2A23',
+          green: '#1B4D3E',
+          'green-light': '#2A6B56',
+          'green-dark': '#12352B',
 
-          saffron: '#C88A2A',
-          'saffron-light': '#DDA84B',
-          'saffron-dark': '#A96F18',
+          terracotta: '#C85A17',
+          'terracotta-dark': '#A34812',
+          'terracotta-light': '#E06C28',
 
-          red: '#A93624',
-          'red-dark': '#842719',
-          'red-light': '#C95742',
+          saffron: '#D97706',
+          'saffron-light': '#E69F24',
+          'saffron-dark': '#B45309',
 
-          brown: '#5A4035',
-          'brown-light': '#765B4E',
-          'brown-dark': '#3D2A23',
+          mustard: '#E69F24',
 
-          cream: '#F7F2E8',
-          'cream-dark': '#EDE3D2',
+          red: '#C85A17',
+          'red-dark': '#A34812',
+          'red-light': '#E06C28',
 
-          yellow: '#C88A2A',
-          'yellow-dark': '#A96F18',
-          'yellow-light': '#DDA84B',
+          brown: '#2C221E',
+          'brown-light': '#5C524E',
+          'brown-dark': '#1A1412',
+
+          cream: '#FDFBF7',
+          'cream-dark': '#F7F3EB',
+
+          yellow: '#D97706',
+          'yellow-dark': '#B45309',
+          'yellow-light': '#E69F24',
 
           white: '#FFFFFF',
-          black: '#11110F',
+          black: '#2C221E',
         },
       },
 
@@ -168,25 +174,27 @@ export default {
       },
 
       boxShadow: {
-        soft: '0 2px 10px -3px rgba(23, 60, 50, 0.08), 0 8px 24px -8px rgba(23, 60, 50, 0.08)',
+        soft: '0 2px 10px -3px rgba(27, 77, 62, 0.08), 0 8px 24px -8px rgba(27, 77, 62, 0.08)',
 
-        card: '0 10px 30px rgba(63, 41, 29, 0.08)',
+        card: '0 12px 32px rgba(44, 34, 30, 0.08)',
 
-        'card-hover': '0 18px 45px rgba(63, 41, 29, 0.13)',
+        'card-hover': '0 20px 48px rgba(44, 34, 30, 0.13)',
 
-        lift: '0 18px 48px -12px rgba(23, 60, 50, 0.20), 0 6px 16px -6px rgba(23, 60, 50, 0.10)',
+        lift: '0 18px 48px -12px rgba(27, 77, 62, 0.20), 0 6px 16px -6px rgba(200, 90, 23, 0.10)',
 
-        product: '0 22px 38px rgba(63, 41, 29, 0.17)',
+        product: '0 22px 38px rgba(44, 34, 30, 0.16)',
 
-        floating: '0 24px 60px rgba(23, 60, 50, 0.15)',
+        floating: '0 24px 60px rgba(27, 77, 62, 0.15)',
 
-        modal: '0 30px 90px rgba(23, 60, 50, 0.20)',
+        modal: '0 30px 90px rgba(27, 77, 62, 0.20)',
 
-        glow: '0 0 28px -6px rgba(200, 138, 42, 0.28)',
+        glow: '0 0 28px -6px rgba(217, 119, 6, 0.32)',
 
-        'green-glow': '0 12px 35px rgba(23, 60, 50, 0.20)',
+        'gold-glow': '0 8px 22px rgba(230, 159, 36, 0.35)',
 
-        'inner-soft': 'inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(23,60,50,0.04)',
+        'green-glow': '0 12px 35px rgba(27, 77, 62, 0.22)',
+
+        'inner-soft': 'inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(27,77,62,0.04)',
       },
 
       perspective: {

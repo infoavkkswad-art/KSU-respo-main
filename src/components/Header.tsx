@@ -273,33 +273,35 @@ export function Header() {
             items-center
             justify-center
             text-center
-            sm:min-h-[26px]
+            sm:min-h-[28px]
           "
         >
           <span
             className="
-              text-[8px]
+              font-devanagari
+              text-[11px]
               font-medium
-              uppercase
               leading-none
-              tracking-[0.09em]
-              sm:text-2xs
-              sm:tracking-widest
+              tracking-[0.04em]
+              sm:text-xs
             "
           >
-            Nimad's Own Papad
+            {brand.tagline}
 
             <span
               className="
                 mx-1.5
-                text-brand-saffron/70
+                font-sans
+                text-brand-mustard
               "
               aria-hidden="true"
             >
               ·
             </span>
 
-            FSSAI {brand.fssai}
+            <span className="font-sans uppercase tracking-[0.12em]">
+              100% Vegetarian
+            </span>
           </span>
         </div>
       </div>
@@ -346,13 +348,13 @@ export function Header() {
           <div
             className="
               flex
-              min-h-[56px]
+              min-h-[64px]
               w-full
               items-center
               justify-between
               gap-2
-              sm:min-h-[64px]
-              lg:min-h-[70px]
+              sm:min-h-[68px]
+              lg:min-h-[76px]
             "
           >
 
@@ -500,8 +502,8 @@ export function Header() {
                 onClick={toggleSearch}
                 className="
                   flex
-                  min-h-[40px]
-                  min-w-[40px]
+                  min-h-12
+                  min-w-12
                   items-center
                   justify-center
                   rounded-full
@@ -558,8 +560,8 @@ export function Header() {
                   group
                   relative
                   flex
-                  min-h-[42px]
-                  min-w-[42px]
+                  min-h-12
+                  min-w-12
                   items-center
                   justify-center
                   rounded-full
@@ -634,7 +636,7 @@ export function Header() {
                   group
                   ml-1
                   hidden
-                  min-h-[40px]
+                  min-h-12
                   px-4
                   py-2
                   text-sm
@@ -669,8 +671,8 @@ export function Header() {
                 onClick={toggleMobile}
                 className="
                   flex
-                  min-h-[40px]
-                  min-w-[40px]
+                  min-h-12
+                  min-w-12
                   items-center
                   justify-center
                   rounded-full
@@ -791,7 +793,7 @@ export function Header() {
                 placeholder="Search papads..."
                 className="
                   input-field
-                  min-h-[42px]
+                  min-h-12
                   min-w-0
                   flex-1
                   bg-white/80
@@ -807,7 +809,7 @@ export function Header() {
                 type="submit"
                 className="
                   btn-primary
-                  min-h-[42px]
+                  min-h-12
                   shrink-0
                   px-4
                   sm:px-6
@@ -918,8 +920,8 @@ export function Header() {
                 onClick={closeMobileMenu}
                 className="
                   flex
-                  min-h-[40px]
-                  min-w-[40px]
+                  min-h-12
+                  min-w-12
                   shrink-0
                   items-center
                   justify-center
@@ -971,7 +973,7 @@ export function Header() {
                     }) =>
                       `
                         flex
-                        min-h-[46px]
+                        min-h-12
                         w-full
                         items-center
                         justify-between
@@ -982,7 +984,6 @@ export function Header() {
                         font-medium
                         transition-all
                         duration-200
-                        sm:min-h-[48px]
                         sm:text-lg
 
                         ${
@@ -1083,7 +1084,7 @@ export function Header() {
                 className="
                   mt-2
                   inline-flex
-                  min-h-[46px]
+                  min-h-12
                   w-full
                   items-center
                   justify-center
