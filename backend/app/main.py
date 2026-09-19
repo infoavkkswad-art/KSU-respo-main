@@ -8,6 +8,11 @@ from .config import settings
 from .database import (
     connect_to_mongo,
     close_mongo_connection,
+    check_mongo_health,
+)
+
+from .routes.products import (
+    router as products_router,
 )
 
 from .routes.orders import (
@@ -90,6 +95,10 @@ app.add_middleware(
 # ============================================================
 
 app.include_router(
+    products_router
+)
+
+app.include_router(
     orders_router
 )
 
@@ -117,8 +126,15 @@ app.include_router(
 @app.get(
     "/api/health"
 )
+@app.get(
+    "/health"
+)
+@app.get(
+    "/healthz"
+)
 async def health_check():
-
+    mongo_ok = await check_mongo_health()
     return {
-        "status": "ok"
+        "status": "ok",
+        "mongodb": "connected" if mongo_ok else "disconnected",
     }
