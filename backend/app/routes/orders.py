@@ -1745,6 +1745,31 @@ async def razorpay_webhook(
         )
 
     # ---------------------------------------------------------
+    # 6B. PERSIST WEBHOOK EVENT IN MONGODB
+    # ---------------------------------------------------------
+
+    if event_id:
+
+        try:
+
+            await db.webhook_events.update_one(
+                {
+                    "eventId": event_id
+                },
+                {
+                    "$setOnInsert": webhook_sheet_data
+                },
+                upsert=True,
+            )
+
+        except Exception as webhook_mongo_err:
+
+            print(
+                f"Warning: Failed to persist webhook event {event_id} in Mongo: "
+                f"{str(webhook_mongo_err)}"
+            )
+
+    # ---------------------------------------------------------
     # 7. IGNORE UNSUPPORTED EVENTS
     # ---------------------------------------------------------
 

@@ -9,6 +9,8 @@ class Database:
 
     db = None
 
+    critical_indexes_ready: bool = False
+
 
 db = Database()
 
@@ -202,6 +204,24 @@ async def connect_to_mongo():
             ],
         )
 
+        # ====================================================
+        # PRODUCTS
+        # ====================================================
+
+        products_col = db.db[
+            "products"
+        ]
+
+        await products_col.create_index(
+            "sku",
+            unique=True,
+        )
+
+        await products_col.create_index(
+            "active",
+        )
+
+        db.critical_indexes_ready = True
         print(
             "Connected to MongoDB & indexes "
             "verified successfully!"
@@ -209,8 +229,9 @@ async def connect_to_mongo():
 
     except Exception as idx_err:
 
+        db.critical_indexes_ready = False
         print(
-            "Warning: Index creation deferred "
+            "Warning: Critical index creation deferred "
             f"or failed: {str(idx_err)}"
         )
 
@@ -247,3 +268,8 @@ async def check_mongo_health() -> bool:
         return True
     except Exception:
         return False
+
+
+def are_critical_indexes_ready() -> bool:
+    return bool(db.critical_indexes_ready)
+

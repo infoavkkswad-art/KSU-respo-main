@@ -1,6 +1,10 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import (
+    FastAPI,
+    status,
+)
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
@@ -134,7 +138,15 @@ app.include_router(
 )
 async def health_check():
     mongo_ok = await check_mongo_health()
+    if not mongo_ok:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "status": "error",
+                "mongodb": "disconnected",
+            },
+        )
     return {
         "status": "ok",
-        "mongodb": "connected" if mongo_ok else "disconnected",
+        "mongodb": "connected",
     }
