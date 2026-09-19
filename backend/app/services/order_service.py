@@ -6,7 +6,6 @@ from fastapi import HTTPException
 from pymongo.errors import DuplicateKeyError
 
 from ..database import get_database
-from ..models.product import find_sku_in_backend
 from ..models.order import (
     CreateOrderRequest,
     OrderTrackingResponse,
@@ -304,32 +303,6 @@ async def process_and_save_order(
                 ),
             )
 
-        family, sku_obj = find_sku_in_backend(
-            sku_code
-        )
-
-        if not family or not sku_obj:
-
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Invalid or unknown SKU: {sku_code}"
-                ),
-            )
-
-        if not sku_obj.get(
-            "available",
-            True,
-        ):
-
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Product is currently unavailable: "
-                    f"{sku_code}"
-                ),
-            )
-
         try:
 
             quantity = int(
@@ -390,10 +363,7 @@ async def process_and_save_order(
 
         item_snapshots.append(
             {
-                "sku": sku_obj.get(
-                    "sku",
-                    sku_code,
-                ),
+                "sku": sku_code,
 
                 "quantity":
                     quantity,
@@ -408,14 +378,16 @@ async def process_and_save_order(
                     item_subtotal,
 
                 "productNameSnapshot":
-                    family.get(
-                        "name",
-                        "Kawad Swad Product",
+                    str(
+                        quote_item.get(
+                            "productName",
+                            "Kawad Swad Product",
+                        )
                     ),
 
                 "packSizeSnapshot":
                     int(
-                        sku_obj.get(
+                        quote_item.get(
                             "packSize",
                             0,
                         )

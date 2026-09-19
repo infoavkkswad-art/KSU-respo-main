@@ -1,25 +1,9 @@
-# Authoritative backend replica of the 43 SKUs across 15 product families.
+# Retired packed-in catalogue (legacy websitePrice includes old ₹47/₹71/₹150
+# SKU shipping). Phase 1 checkout prices MUST come from the Mongo product
+# master seeded from src/data/sales-config.ts — never from these values.
 #
-# IMPORTANT:
-# The backend must mirror the final customer-facing website sales master.
-#
-# Customer-facing rules:
-# - websitePrice = final selling price
-# - shipping = 0
-# - freeShipping = True
-# - MRP = product/pack reference MRP
-#
-# The backend remains the final authority for:
-# - order pricing
-# - order totals
-# - Razorpay amount
-#
-# Therefore this file MUST remain synchronized with:
-#
-#   src/data/sales-config.ts
-#
-# Do not put factory cost, dealer price, distributor price,
-# manufacturing cost, or profit information here.
+# This file is kept so existing imports do not break. Do not use
+# BACKEND_PRODUCTS websitePrice for quotes, orders, or GET /api/products.
 
 
 BACKEND_PRODUCTS = [

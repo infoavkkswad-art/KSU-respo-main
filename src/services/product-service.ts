@@ -15,6 +15,11 @@ import {
   type SalesSkuConfig,
 } from '../data/sales-config';
 
+import {
+  getMasterSku,
+  isProductMasterReady,
+} from './product-master-store';
+
 
 /* ============================================================================
  * CUSTOMER-FACING FLAT PRODUCT
@@ -162,6 +167,88 @@ function normalizeSkuCode(
 }
 
 
+function applyMasterPrices(
+  sku: Sku,
+): Sku | undefined {
+  if (
+    !isProductMasterReady()
+  ) {
+    return undefined;
+  }
+
+  const master =
+    getMasterSku(
+      sku.sku,
+    );
+
+  if (
+    !master ||
+    !master.active
+  ) {
+    return undefined;
+  }
+
+  if (
+    !Number.isFinite(
+      master.selling_price,
+    ) ||
+    master.selling_price < 0 ||
+    !Number.isFinite(
+      master.mrp,
+    ) ||
+    master.mrp < 0 ||
+    !Number.isFinite(
+      master.weight_g,
+    ) ||
+    master.weight_g <= 0
+  ) {
+    return undefined;
+  }
+
+  return {
+    ...sku,
+
+    sku:
+      master.sku,
+
+    packSize:
+      master.weight_g as Sku['packSize'],
+
+    mrp:
+      master.mrp,
+
+    websitePrice:
+      master.selling_price,
+
+    shipping: 0,
+
+    freeShipping: false,
+
+    available:
+      master.active,
+  };
+}
+
+
+function overlayFamily(
+  product: ProductFamily,
+): ProductFamily {
+  return {
+    ...product,
+    skus: product.skus.map(
+      (sku) =>
+        applyMasterPrices(
+          sku,
+        ) ?? {
+          ...sku,
+          websitePrice: null,
+          available: false,
+        },
+    ),
+  };
+}
+
+
 /* ============================================================================
  * SALES CONFIG RESOLUTION
  * ========================================================================== */
@@ -190,58 +277,7 @@ function getSalesConfig(
 function resolveSku(
   sku: Sku,
 ): Sku | undefined {
-  const sales =
-    getSalesConfig(sku);
-
-  if (!sales) {
-    return undefined;
-  }
-
-  const websiteSellingPrice =
-    getSellingPrice(
-      sales.sku,
-    );
-
-  if (
-    websiteSellingPrice ===
-      null ||
-    !Number.isFinite(
-      websiteSellingPrice,
-    )
-  ) {
-    return undefined;
-  }
-
-  return {
-    ...sku,
-
-    sku:
-      sales.sku,
-
-    packSize:
-      sales.packSize,
-
-    mrp:
-      sales.mrp,
-
-    /*
-     * BASE WEBSITE SELLING PRICE.
-     *
-     * Shipping is intentionally NOT added here.
-     */
-    websitePrice:
-      websiteSellingPrice,
-
-    /*
-     * Shipping is resolved separately.
-     */
-    shipping: 0,
-
-    freeShipping: false,
-
-    available:
-      sales.available,
-  };
+  return applyMasterPrices(sku);
 }
 
 
@@ -252,66 +288,7 @@ function resolveSku(
 function isPurchasableSku(
   sku: Sku,
 ): boolean {
-  const sales =
-    getSalesConfig(sku);
-
-  if (!sales) {
-    return false;
-  }
-
-  if (!sales.available) {
-    return false;
-  }
-
-  if (
-    sales.mrp === null ||
-    sales.sellingPrice === null
-  ) {
-    return false;
-  }
-
-  if (
-    !Number.isFinite(
-      sales.mrp,
-    ) ||
-    !Number.isFinite(
-      sales.sellingPrice,
-    )
-  ) {
-    return false;
-  }
-
-  if (
-    sales.mrp < 0 ||
-    sales.sellingPrice < 0
-  ) {
-    return false;
-  }
-
-  /*
-   * New model:
-   *
-   * websitePrice = sellingPrice
-   *
-   * No SKU-level shipping is added.
-   */
-  const websiteSellingPrice =
-    getSellingPrice(
-      sales.sku,
-    );
-
-  if (
-    websiteSellingPrice ===
-      null ||
-    !Number.isFinite(
-      websiteSellingPrice,
-    ) ||
-    websiteSellingPrice < 0
-  ) {
-    return false;
-  }
-
-  return true;
+  return applyMasterPrices(sku) !== undefined;
 }
 
 
@@ -322,27 +299,17 @@ function isPurchasableSku(
 function toPurchasableSku(
   sku: Sku,
 ): PurchasableSku | undefined {
-  if (
-    !isPurchasableSku(sku)
-  ) {
-    return undefined;
-  }
+  const resolved =
+    applyMasterPrices(
+      sku,
+    );
 
-  const sales =
-    getSalesConfig(sku);
-
-  if (
-    !sales ||
-    sales.mrp === null ||
-    sales.sellingPrice === null
-  ) {
+  if (!resolved) {
     return undefined;
   }
 
   const websiteSellingPrice =
-    getSellingPrice(
-      sales.sku,
-    );
+    resolved.websitePrice;
 
   if (
     websiteSellingPrice ===
@@ -354,74 +321,36 @@ function toPurchasableSku(
     return undefined;
   }
 
-  const lowestPrice =
-    getLowestPrice(
-      sales.sku,
-    );
+  const mrp =
+    resolved.mrp;
 
   if (
-    lowestPrice === null ||
+    mrp === null ||
     !Number.isFinite(
-      lowestPrice,
+      mrp,
     )
   ) {
     return undefined;
   }
 
-  const manualPriceEligible =
-    isManualPriceEligible(
-      sales.sku,
-    );
-
-  const manualPrice =
-    getManualPrice(
-      sales.sku,
-    );
-
   return {
-    ...sku,
+    ...resolved,
 
-    sku:
-      sales.sku,
+    mrp,
 
-    packSize:
-      sales.packSize,
-
-    mrp:
-      sales.mrp,
-
-    /*
-     * BASE CUSTOMER PRODUCT PRICE.
-     *
-     * Example:
-     *
-     * KS-MMP-200 → ₹55
-     *
-     * NOT ₹102.
-     */
     websitePrice:
       websiteSellingPrice,
 
-    /*
-     * Base product price before shipping.
-     */
-    lowestPrice,
+    lowestPrice:
+      websiteSellingPrice,
 
-    manualPrice,
+    manualPrice:
+      websiteSellingPrice,
 
-    manualPriceEligible,
+    manualPriceEligible: true,
 
-    /*
-     * No shipping is attached at catalogue level.
-     */
     shipping: 0,
 
-    /*
-     * Do not claim universal free shipping.
-     *
-     * MANUAL may become ₹0 shipping.
-     * SHIPPING may receive a charge.
-     */
     freeShipping: false,
 
     available: true,
@@ -441,7 +370,9 @@ export const ProductService = {
 
   getAllProducts():
     ProductFamily[] {
-    return products;
+    return products.map(
+      overlayFamily,
+    );
   },
 
 
@@ -459,11 +390,18 @@ export const ProductService = {
         .trim()
         .toLowerCase();
 
-    return products.find(
-      (product) =>
-        product.slug.toLowerCase() ===
-        normalizedSlug,
-    );
+    const product =
+      products.find(
+        (item) =>
+          item.slug.toLowerCase() ===
+          normalizedSlug,
+      );
+
+    return product
+      ? overlayFamily(
+          product,
+        )
+      : undefined;
   },
 
 
@@ -484,14 +422,20 @@ export const ProductService = {
       normalizedCategory ===
         'all'
     ) {
-      return products;
+      return products.map(
+        overlayFamily,
+      );
     }
 
-    return products.filter(
-      (product) =>
-        product.category ===
-        normalizedCategory,
-    );
+    return products
+      .filter(
+        (product) =>
+          product.category ===
+          normalizedCategory,
+      )
+      .map(
+        overlayFamily,
+      );
   },
 
 
@@ -501,10 +445,14 @@ export const ProductService = {
 
   getFeaturedProducts():
     ProductFamily[] {
-    return products.filter(
-      (product) =>
-        product.featured,
-    );
+    return products
+      .filter(
+        (product) =>
+          product.featured,
+      )
+      .map(
+        overlayFamily,
+      );
   },
 
 
@@ -551,7 +499,10 @@ export const ProductService = {
       }
 
       return {
-        family: product,
+        family:
+          overlayFamily(
+            product,
+          ),
         skuObj: resolvedSku,
       };
     }
@@ -603,7 +554,10 @@ export const ProductService = {
       }
 
       return {
-        family: product,
+        family:
+          overlayFamily(
+            product,
+          ),
         skuObj,
       };
     }
@@ -672,17 +626,22 @@ export const ProductService = {
   ):
     | number
     | undefined {
-    const sales =
-      getSalesSku(
+    const master =
+      getMasterSku(
         normalizeSkuCode(
           skuCode,
         ),
       );
 
-    return (
-      sales?.sellingPrice ??
-      undefined
-    );
+    if (
+      !isProductMasterReady() ||
+      !master ||
+      !master.active
+    ) {
+      return undefined;
+    }
+
+    return master.selling_price;
   },
 
 
@@ -695,13 +654,8 @@ export const ProductService = {
   ):
     | number
     | undefined {
-    return (
-      getLowestPrice(
-        normalizeSkuCode(
-          skuCode,
-        ),
-      ) ??
-      undefined
+    return ProductService.getSellingPrice(
+      skuCode,
     );
   },
 
@@ -715,13 +669,8 @@ export const ProductService = {
   ):
     | number
     | undefined {
-    return (
-      getManualPrice(
-        normalizeSkuCode(
-          skuCode,
-        ),
-      ) ??
-      undefined
+    return ProductService.getSellingPrice(
+      skuCode,
     );
   },
 
@@ -733,10 +682,10 @@ export const ProductService = {
   isManualPriceEligible(
     skuCode: string,
   ): boolean {
-    return isManualPriceEligible(
-      normalizeSkuCode(
+    return (
+      ProductService.getSellingPrice(
         skuCode,
-      ),
+      ) !== undefined
     );
   },
 
@@ -761,15 +710,37 @@ export const ProductService = {
   ):
     | number
     | undefined {
-    return (
-      getPriceForFulfillment(
-        normalizeSkuCode(
-          skuCode,
-        ),
-        fulfillmentType,
-        shippingCharge,
-      ) ??
+    const sellingPrice =
+      ProductService.getSellingPrice(
+        skuCode,
+      );
+
+    if (
+      sellingPrice ===
       undefined
+    ) {
+      return undefined;
+    }
+
+    if (
+      fulfillmentType ===
+      'MANUAL'
+    ) {
+      return sellingPrice;
+    }
+
+    if (
+      !Number.isFinite(
+        shippingCharge,
+      ) ||
+      shippingCharge < 0
+    ) {
+      return undefined;
+    }
+
+    return (
+      sellingPrice +
+      shippingCharge
     );
   },
 

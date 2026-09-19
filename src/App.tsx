@@ -15,6 +15,7 @@ import { FloatingCart } from '@/components/FloatingCart';
 
 import { CartProvider } from '@/context/CartContext';
 import { OrderProvider } from '@/context/OrderContext';
+import { ProductMasterProvider } from '@/context/ProductMasterContext';
 
 // Lazy-loaded pages
 const Home = lazy(() => import('@/pages/Home'));
@@ -147,8 +148,9 @@ function NotFound() {
 export default function App() {
   return (
     <BrowserRouter>
-      <CartProvider>
-        <OrderProvider>
+      <ProductMasterProvider>
+        <CartProvider>
+          <OrderProvider>
           <ScrollToTop />
 
           <div className="min-h-screen flex flex-col">
@@ -281,8 +283,9 @@ export default function App() {
 
             <WhatsAppButton />
           </div>
-        </OrderProvider>
-      </CartProvider>
+          </OrderProvider>
+        </CartProvider>
+      </ProductMasterProvider>
     </BrowserRouter>
   );
 }

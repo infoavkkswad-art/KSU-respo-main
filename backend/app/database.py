@@ -195,6 +195,19 @@ async def connect_to_mongo():
             unique=True,
         )
 
+        # ====================================================
+        # COMMERCIAL PRODUCT MASTER
+        # ====================================================
+
+        products_col = db.db[
+            "products"
+        ]
+
+        await products_col.create_index(
+            "sku",
+            unique=True,
+        )
+
         await fulfillment_col.create_index(
             [
                 ("fulfillmentType", 1),
