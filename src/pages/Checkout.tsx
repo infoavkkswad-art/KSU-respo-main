@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
   type FormEvent,
   type ReactNode,
@@ -49,6 +50,12 @@ import { ProductService } from '@/services/product-service';
 import { PACK_LABELS } from '@/data/products';
 
 import { apiClient } from '@/services/api-client';
+
+import {
+  PAY_DEBOUNCE_MS,
+  checkoutSessionFingerprint,
+  createIdempotencyKey,
+} from '@/utils/checkout-idempotency';
 
 
 /* ==========================================================================
@@ -399,27 +406,6 @@ function validateCustomer(
 
 
 /* ==========================================================================
-   IDEMPOTENCY
-   ========================================================================== */
-
-function createIdempotencyKey(): string {
-
-  if (
-    typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID === 'function'
-  ) {
-
-    return `ks-${crypto.randomUUID()}`;
-  }
-
-
-  return `ks-${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2, 12)}`;
-}
-
-
-/* ==========================================================================
    TRUST ITEM
    ========================================================================== */
 
@@ -641,6 +627,46 @@ export default function Checkout() {
     setPaymentOpening,
   ] = useState(false);
 
+  const payInFlightRef = useRef(false);
+  const lastPayAcceptedAtRef = useRef(0);
+  const idempotencyKeyRef = useRef<string | null>(
+    null,
+  );
+  const idempotencyFingerprintRef = useRef<
+    string | null
+  >(null);
+
+  const releasePayLock = () => {
+    payInFlightRef.current = false;
+    setPaymentOpening(false);
+  };
+
+  const clearIdempotencySession = () => {
+    idempotencyKeyRef.current = null;
+    idempotencyFingerprintRef.current = null;
+  };
+
+  const sessionIdempotencyKey = () => {
+    const fingerprint =
+      checkoutSessionFingerprint(
+        form.values,
+        items,
+      );
+
+    if (
+      !idempotencyKeyRef.current ||
+      idempotencyFingerprintRef.current !==
+        fingerprint
+    ) {
+      idempotencyKeyRef.current =
+        createIdempotencyKey();
+      idempotencyFingerprintRef.current =
+        fingerprint;
+    }
+
+    return idempotencyKeyRef.current;
+  };
+
 
   /* ==========================================================================
      SERVER-SIDE PRICE QUOTE
@@ -780,13 +806,29 @@ export default function Checkout() {
     event.preventDefault();
 
 
+    if (items.length === 0) {
+      return;
+    }
+
     if (
-      items.length === 0 ||
+      payInFlightRef.current ||
       paymentOpening ||
       form.status === 'submitting'
     ) {
       return;
     }
+
+    const now = Date.now();
+
+    if (
+      now - lastPayAcceptedAtRef.current <
+      PAY_DEBOUNCE_MS
+    ) {
+      return;
+    }
+
+    lastPayAcceptedAtRef.current = now;
+    payInFlightRef.current = true;
 
 
     setError('');
@@ -837,6 +879,8 @@ export default function Checkout() {
 
       form.setStatus('error');
 
+      releasePayLock();
+
       return;
     }
 
@@ -877,6 +921,7 @@ export default function Checkout() {
       setError(message);
       form.setStatus('error');
       setQuoteLoading(false);
+      releasePayLock();
       return;
     } finally {
       setQuoteLoading(false);
@@ -925,7 +970,7 @@ export default function Checkout() {
           items,
 
           idempotencyKey:
-            createIdempotencyKey(),
+            sessionIdempotencyKey(),
 
         });
 
@@ -1130,7 +1175,9 @@ export default function Checkout() {
 
               form.setStatus('success');
 
-              setPaymentOpening(false);
+              clearIdempotencySession();
+
+              releasePayLock();
 
 
               navigate(
@@ -1162,7 +1209,7 @@ export default function Checkout() {
 
               form.setStatus('error');
 
-              setPaymentOpening(false);
+              releasePayLock();
 
             }
 
@@ -1179,7 +1226,7 @@ export default function Checkout() {
 
             form.setStatus('idle');
 
-            setPaymentOpening(false);
+            releasePayLock();
 
             setError(
               'Payment was cancelled or dismissed. You can retry anytime.',
@@ -1220,7 +1267,7 @@ export default function Checkout() {
 
       form.setStatus('error');
 
-      setPaymentOpening(false);
+      releasePayLock();
 
     }
 
