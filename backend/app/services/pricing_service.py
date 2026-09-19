@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Tuple
 
 from fastapi import HTTPException
 
-from ..models.product import find_sku_in_backend
+from .product_master import get_product_by_sku
 
 from .pincode_service import (
     get_fulfillment_quote,
@@ -148,24 +148,23 @@ def get_backend_prices(
     Shipping is resolved separately by the fulfilment layer.
     """
 
-    website_price_raw = (
-        sku_obj.get(
-            "websitePrice"
-        )
+    website_price_raw = sku_obj.get(
+        "selling_price",
+        sku_obj.get("websitePrice"),
     )
 
     if website_price_raw is None:
         raise HTTPException(
             status_code=500,
             detail=(
-                f"Backend website price is missing "
+                f"Product master selling price is missing "
                 f"for SKU {sku_code}."
             ),
         )
 
     website_price = normalize_money(
         website_price_raw,
-        "website price",
+        "selling price",
         sku_code,
     )
 
@@ -321,8 +320,8 @@ async def calculate_cart_quote(
 
     IMPORTANT:
 
-    Product price:
-        backend websitePrice
+    Product unit price:
+        product master selling_price
 
     MANUAL:
         product subtotal + ₹0
@@ -421,25 +420,14 @@ async def calculate_cart_quote(
             sku_code,
         )
 
-        family, sku_obj = (
-            find_sku_in_backend(
-                sku_code
-            )
+        sku_obj = await get_product_by_sku(
+            sku_code
         )
-
-        if not family or not sku_obj:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Invalid or unavailable SKU: "
-                    f"{sku_code}"
-                ),
-            )
 
         if not bool(
             sku_obj.get(
-                "available",
-                True,
+                "active",
+                False,
             )
         ):
             raise HTTPException(
@@ -468,8 +456,11 @@ async def calculate_cart_quote(
         try:
             pack_size = int(
                 sku_obj.get(
-                    "packSize",
-                    0,
+                    "weight_g",
+                    sku_obj.get(
+                        "packSize",
+                        0,
+                    ),
                 )
             )
 
@@ -567,7 +558,7 @@ async def calculate_cart_quote(
                     0.0,
 
                 "productName":
-                    family.get(
+                    sku_obj.get(
                         "name",
                         "Kawad Swad Product",
                     ),
