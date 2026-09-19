@@ -164,8 +164,6 @@ export default function TrackOrder() {
    * apiClient already normalizes legacy/backend
    * shipping values to zero.
    */
-  const shippingTotal = 0;
-
   const displayedSubtotal =
     orderData &&
     Number.isFinite(

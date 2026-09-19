@@ -3,7 +3,7 @@ import { randomBytes, randomInt } from 'node:crypto';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { products } from './src/data/products';
-import { getSalesSku, getSellingPrice } from './src/data/sales-config';
+import { getSalesSku, getSellingPrice, SALES_SKUS } from './src/data/sales-config';
 
 const app = express();
 const PORT = 3000;
@@ -197,6 +197,57 @@ function resolvePincode(pincode: string) {
 // 1. Health
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
+});
+
+// Products Master
+app.get('/api/products', (_req: Request, res: Response) => {
+  const masterCatalog: Array<{
+    sku: string;
+    name: string;
+    weight_g: number;
+    mrp: number;
+    selling_price: number;
+    active: boolean;
+  }> = [];
+
+  for (const [skuKey, config] of Object.entries(SALES_SKUS)) {
+    let productName = 'Kawad Swad Papad';
+    for (const prod of products) {
+      if (prod.skus.some(s => s.sku.toUpperCase() === skuKey.toUpperCase())) {
+        productName = prod.name;
+        break;
+      }
+    }
+    masterCatalog.push({
+      sku: config.sku,
+      name: productName,
+      weight_g: config.packSize,
+      mrp: config.mrp ?? 0,
+      selling_price: config.sellingPrice ?? 0,
+      active: config.available,
+    });
+  }
+
+  res.json({
+    success: true,
+    products: masterCatalog,
+  });
+});
+
+// India Post Webhooks
+app.get('/api/webhooks/indiapost', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    service: 'Kawad Swad India Post Webhook',
+    status: 'ready',
+  });
+});
+
+app.post('/api/webhooks/indiapost', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    message: 'India Post webhook received successfully.',
+  });
 });
 
 // 2. Fulfillment Pincode Lookup

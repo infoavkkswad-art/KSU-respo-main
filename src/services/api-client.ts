@@ -1,9 +1,10 @@
 import type { CustomerInfo, Order } from '../context/OrderContext';
 import type { CartItem } from '../context/CartContext';
+import type { ProductMasterItem } from './product-master-store';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  'https://api.kawadswad.in';
+  '';
 
 /* ============================================================================
  * ORDER TYPES
@@ -1021,5 +1022,38 @@ export const apiClient = {
     }
 
     return data;
+  },
+
+  /* --------------------------------------------------------------------------
+   * GET PRODUCTS (PRODUCT MASTER)
+   * ------------------------------------------------------------------------ */
+
+  async getProducts(): Promise<ProductMasterItem[]> {
+    const response = await fetch(`${API_BASE_URL}/api/products`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        await getApiErrorMessage(
+          response,
+          'Failed to load products.',
+        ),
+      );
+    }
+
+    const data = (await response.json()) as {
+      success?: boolean;
+      products?: ProductMasterItem[];
+    };
+
+    if (!Array.isArray(data.products)) {
+      throw new Error('Invalid products catalog response received from the server.');
+    }
+
+    return data.products;
   },
 };
