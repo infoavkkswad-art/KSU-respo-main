@@ -1,10 +1,27 @@
 services:
   - type: web
-    name: kawad-swad
-    runtime: node
-    plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm run start
+    name: ksu-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
     envVars:
-      - key: NODE_ENV
-        value: production
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DATABASE
+        value: kawad_swad_db
+      - key: CORS_ORIGINS
+        value: https://kawadswad.in,https://www.kawadswad.in
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: GOOGLE_APPS_SCRIPT_URL
+        sync: false
+      - key: GOOGLE_APPS_SCRIPT_TOKEN
+        sync: false
