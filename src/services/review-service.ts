@@ -4,9 +4,10 @@ import type {
   CreateReviewPayload,
 } from '../types/reviews';
 
-const API_BASE_URL =
+const RAW_API_BASE =
   import.meta.env.VITE_API_BASE_URL ||
   '';
+const API_BASE_URL = RAW_API_BASE.replace(/\/+$/, '');
 
 export const ReviewService = {
   async getReviews(

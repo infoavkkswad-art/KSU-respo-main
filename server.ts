@@ -6,7 +6,18 @@ import { products } from './src/data/products';
 import { getSalesSku, getSellingPrice, SALES_SKUS } from './src/data/sales-config';
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
+
+// Enable CORS for frontend clients hosted on different origins/domains (e.g. Render Static Site)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use(express.json());
 
@@ -215,7 +226,7 @@ function resolvePincode(pincode: string) {
 // -------------------------------------------------------------
 
 // 1. Health
-app.get('/api/health', (_req: Request, res: Response) => {
+app.get(['/api/health', '/health', '/healthz'], (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 

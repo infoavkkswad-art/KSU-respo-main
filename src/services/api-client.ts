@@ -2,9 +2,10 @@ import type { CustomerInfo, Order } from '../context/OrderContext';
 import type { CartItem } from '../context/CartContext';
 import type { ProductMasterItem } from './product-master-store';
 
-const API_BASE_URL =
+const RAW_API_BASE =
   import.meta.env.VITE_API_BASE_URL ||
   '';
+const API_BASE_URL = RAW_API_BASE.replace(/\/+$/, '');
 
 /* ============================================================================
  * ORDER TYPES
