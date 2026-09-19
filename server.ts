@@ -2,8 +2,6 @@ import express, { Request, Response } from 'express';
 import { randomBytes, randomInt } from 'node:crypto';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { products } from './src/data/products';
-import { getSalesSku, getSellingPrice } from './src/data/sales-config';
 
 const app = express();
 const PORT = 3000;
@@ -127,12 +125,11 @@ const reviewsStore: StoredReview[] = [
   }
 ];
 
-// Shipping rate by pack size
-const SHIPPING_BY_PACK_SIZE: Record<number, number> = {
-  200: 47,
-  235: 47,
-  500: 71,
-  1000: 150,
+// Checkout unit prices are owned by FastAPI GET /api/products + cart-quote.
+// This Express process must not quote or charge from sales-config.
+const CHECKOUT_NOT_AUTHORITATIVE = {
+  detail:
+    'Checkout prices are owned by the FastAPI product master. Use GET /api/products and POST /api/fulfillment/cart-quote on the FastAPI backend.',
 };
 
 // Pincode helpers
@@ -233,206 +230,13 @@ app.get('/api/fulfillment/quote/:pincode', (req: Request, res: Response) => {
 });
 
 // 4. Cart Quote
-app.post('/api/fulfillment/cart-quote', (req: Request, res: Response) => {
-  try {
-    const { pincode, items } = req.body;
-    if (!pincode || typeof pincode !== 'string') {
-      return res.status(400).json({ detail: 'Pincode is required.' });
-    }
-    const info = resolvePincode(pincode);
-    if (!info) {
-      return res.status(400).json({ detail: 'Please enter a valid Indian PIN code.' });
-    }
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ detail: 'Cart is empty.' });
-    }
-
-    const isManual = info.fulfillmentType === 'MANUAL';
-    let subtotal = 0;
-    let maxShipping = 0;
-    const itemQuotes: ItemQuote[] = [];
-
-    for (const item of items) {
-      const skuCode = String(item.sku || '').trim().toUpperCase();
-      const quantity = Math.max(1, Math.floor(Number(item.quantity) || 1));
-
-      // Find product family and sales config
-      const salesConfig = getSalesSku(skuCode);
-      let productName = 'Kawad Swad Product';
-      const packSize = salesConfig?.packSize || 200;
-      const mrp = salesConfig?.mrp || 100;
-      const sellingPrice = getSellingPrice(skuCode) ?? 55;
-
-      for (const prod of products) {
-        const found = prod.skus.find(s => s.sku.toUpperCase() === skuCode);
-        if (found) {
-          productName = prod.name;
-          break;
-        }
-      }
-
-      const itemSubtotal = sellingPrice * quantity;
-      const skuShippingRate = SHIPPING_BY_PACK_SIZE[packSize] || 47;
-      const itemShipping = isManual ? 0 : skuShippingRate * quantity;
-
-      subtotal += itemSubtotal;
-      if (itemShipping > maxShipping) {
-        maxShipping = itemShipping;
-      }
-
-      itemQuotes.push({
-        sku: skuCode,
-        quantity,
-        unitPrice: sellingPrice,
-        itemSubtotal,
-        shipping: isManual ? 0 : itemShipping,
-        productName,
-        packSize,
-        mrp,
-      });
-    }
-
-    const finalShipping = isManual ? 0 : maxShipping;
-    const finalTotal = subtotal + finalShipping;
-
-    res.json({
-      success: true,
-      pincode: info.pincode,
-      pincodeValid: true,
-      fulfillmentType: info.fulfillmentType,
-      shippingRequired: !isManual,
-      pricingMode: isManual ? 'LOCAL' : 'STANDARD',
-      shipping: finalShipping,
-      subtotal,
-      total: finalTotal,
-      location: {
-        officeName: info.officeName,
-        districtName: info.districtName,
-        stateName: info.stateName,
-      },
-      items: itemQuotes,
-    });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Error calculating cart quote';
-    res.status(500).json({ detail: message });
-  }
+app.post('/api/fulfillment/cart-quote', (_req: Request, res: Response) => {
+  return res.status(410).json(CHECKOUT_NOT_AUTHORITATIVE);
 });
 
 // 5. Create Order
-app.post('/api/orders', (req: Request, res: Response) => {
-  try {
-    const { customer, items } = req.body;
-    if (!customer || !customer.fullName || !customer.phone) {
-      return res.status(400).json({ detail: 'Customer details are incomplete.' });
-    }
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ detail: 'Cart items cannot be empty.' });
-    }
-
-    const pincode = customer.pincode || '451001';
-    const info = resolvePincode(pincode) || {
-      fulfillmentType: 'SHIPPING' as const,
-      officeName: '',
-      districtName: '',
-      stateName: '',
-    };
-    const isManual = info.fulfillmentType === 'MANUAL';
-
-    let subtotal = 0;
-    let maxShipping = 0;
-    const processedItems: Array<{
-      sku: string;
-      quantity: number;
-      unitPrice: number;
-      productNameSnapshot: string;
-      packSizeSnapshot: number;
-    }> = [];
-
-    for (const item of items) {
-      const skuCode = String(item.sku || '').trim().toUpperCase();
-      const quantity = Math.max(1, Math.floor(Number(item.quantity) || 1));
-      const salesConfig = getSalesSku(skuCode);
-      let productName = 'Kawad Swad Product';
-      const packSize = salesConfig?.packSize || 200;
-      const sellingPrice = getSellingPrice(skuCode) ?? 55;
-
-      for (const prod of products) {
-        const found = prod.skus.find(s => s.sku.toUpperCase() === skuCode);
-        if (found) {
-          productName = prod.name;
-          break;
-        }
-      }
-
-      const itemSubtotal = sellingPrice * quantity;
-      const skuShippingRate = SHIPPING_BY_PACK_SIZE[packSize] || 47;
-      const itemShipping = isManual ? 0 : skuShippingRate * quantity;
-
-      subtotal += itemSubtotal;
-      if (itemShipping > maxShipping) {
-        maxShipping = itemShipping;
-      }
-
-      processedItems.push({
-        sku: skuCode,
-        quantity,
-        unitPrice: sellingPrice,
-        productNameSnapshot: productName,
-        packSizeSnapshot: packSize,
-      });
-    }
-
-    const shipping = isManual ? 0 : maxShipping;
-    const total = subtotal + shipping;
-    const orderNum = randomInt(1000, 10000);
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const orderId = `KS-${dateStr}-${orderNum}`;
-    const amountInPaise = Math.round(total * 100);
-    const razorpayOrderId = `order_${Date.now()}_${randomBytes(4).toString('hex')}`;
-    const razorpayKeyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_mock';
-
-    const newOrder: StoredOrder = {
-      orderId,
-      razorpayOrderId,
-      razorpayPaymentId: '',
-      amount: amountInPaise,
-      currency: 'INR',
-      customer,
-      items: processedItems,
-      subtotal,
-      shipping,
-      total,
-      status: 'pending',
-      paymentStatus: 'pending',
-      fulfillmentType: info.fulfillmentType,
-      fulfillmentStatus: isManual ? 'READY_LOCAL' : 'AWAITING_PAYMENT',
-      createdAt: new Date().toISOString(),
-    };
-
-    ordersStore.set(orderId, newOrder);
-    ordersStore.set(razorpayOrderId, newOrder);
-
-    res.status(201).json({
-      orderId,
-      razorpayOrderId,
-      razorpayKeyId,
-      amount: amountInPaise,
-      currency: 'INR',
-      customer,
-      items: processedItems,
-      subtotal,
-      shipping,
-      total,
-      createdAt: newOrder.createdAt,
-      status: 'pending',
-      paymentStatus: 'pending',
-      fulfillmentType: info.fulfillmentType,
-      fulfillmentStatus: newOrder.fulfillmentStatus,
-    });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to create order.';
-    res.status(500).json({ detail: message });
-  }
+app.post('/api/orders', (_req: Request, res: Response) => {
+  return res.status(410).json(CHECKOUT_NOT_AUTHORITATIVE);
 });
 
 // 6. Verify Payment

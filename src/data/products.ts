@@ -1,6 +1,5 @@
 import {
   getSalesSku,
-  getSellingPrice,
   type SalesSkuConfig,
 } from './sales-config';
 
@@ -20,18 +19,10 @@ export type PackSize =
  * PRODUCT SKU VIEW
  * ============================================================================
  *
- * sales-config.ts is the commercial master.
+ * sales-config.ts is the approved seed file (SKU identity + pack weight).
  *
- * It stores:
- *   MRP
- *   sellingPrice
- *   availability
- *
- * IMPORTANT:
- *
- * websitePrice is now the BASE WEBSITE SELLING PRICE.
- *
- * Shipping is NOT included here.
+ * Checkout selling price and MRP are NOT stored here.
+ * They come from GET /api/products (backend product master).
  *
  * NEW FULFILMENT MODEL:
  *
@@ -165,67 +156,21 @@ function makeSku(
     );
   }
 
-  /*
-   * The product layer exposes the approved Website Selling Price.
-   *
-   * It does NOT add SKU shipping here.
-   */
-  const websiteSellingPrice =
-    getSellingPrice(
-      skuCode,
-    );
-
-  /*
-   * An available SKU must have a valid website selling price.
-   */
-  if (
-    salesSku.available &&
-    (
-      websiteSellingPrice === null ||
-      !Number.isFinite(
-        websiteSellingPrice,
-      ) ||
-      websiteSellingPrice < 0
-    )
-  ) {
-    throw new Error(
-      `Invalid website selling price for SKU: ${skuCode}`,
-    );
-  }
-
   return {
     sku: salesSku.sku,
 
     packSize:
       salesSku.packSize as PackSize,
 
-    mrp:
-      salesSku.mrp,
+    mrp: null,
 
-    /*
-     * BASE WEBSITE SELLING PRICE.
-     *
-     * Example:
-     *
-     * KS-MMP-200 = ₹55
-     *
-     * Shipping is resolved separately.
-     */
-    websitePrice:
-      websiteSellingPrice,
+    websitePrice: null,
 
-    /*
-     * Shipping is deliberately not embedded in the product price.
-     */
     shipping: 0,
 
-    /*
-     * Catalog base state is false.
-     */
     freeShipping: false,
 
-    available:
-      salesSku.available,
+    available: false,
   };
 }
 
@@ -806,20 +751,17 @@ export function validateProductSalesMapping(): {
       }
 
       if (
-        sku.mrp !==
-        salesSku.mrp
+        sku.websitePrice !==
+        null
       ) {
         errors.push(
-          `${sku.sku}: MRP mismatch.`,
+          `${sku.sku}: presentation catalogue must not store a checkout websitePrice.`,
         );
       }
 
-      if (
-        sku.websitePrice !==
-        salesSku.sellingPrice
-      ) {
+      if (sku.mrp !== null) {
         errors.push(
-          `${sku.sku}: website selling price mismatch. Expected ₹${salesSku.sellingPrice ?? 'invalid'}, got ₹${sku.websitePrice ?? 'invalid'}.`,
+          `${sku.sku}: presentation catalogue must not store MRP.`,
         );
       }
 
@@ -839,64 +781,9 @@ export function validateProductSalesMapping(): {
         );
       }
 
-      if (
-        sku.available !==
-        salesSku.available
-      ) {
+      if (sku.available !== false) {
         errors.push(
-          `${sku.sku}: availability mismatch.`,
-        );
-      }
-
-      if (
-        sku.mrp !== null &&
-        (
-          !Number.isFinite(
-            sku.mrp,
-          ) ||
-          sku.mrp < 0
-        )
-      ) {
-        errors.push(
-          `${sku.sku}: invalid MRP.`,
-        );
-      }
-
-      if (
-        sku.websitePrice !==
-          null &&
-        (
-          !Number.isFinite(
-            sku.websitePrice,
-          ) ||
-          sku.websitePrice < 0
-        )
-      ) {
-        errors.push(
-          `${sku.sku}: invalid website selling price.`,
-        );
-      }
-
-      if (
-        sku.available &&
-        (
-          sku.mrp === null ||
-          sku.websitePrice === null
-        )
-      ) {
-        errors.push(
-          `${sku.sku}: available SKU must have MRP and website selling price.`,
-        );
-      }
-
-      if (
-        sku.mrp !== null &&
-        sku.websitePrice !== null &&
-        sku.websitePrice >
-          sku.mrp
-      ) {
-        errors.push(
-          `${sku.sku}: website selling price ₹${sku.websitePrice} exceeds MRP ₹${sku.mrp}.`,
+          `${sku.sku}: presentation availability must stay false until the product master loads.`,
         );
       }
     }
