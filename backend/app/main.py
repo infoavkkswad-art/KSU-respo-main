@@ -30,10 +30,6 @@ from .routes.fulfillment import (
     router as fulfillment_router,
 )
 
-from .routes.products import (
-    router as products_router,
-)
-
 
 # ============================================================
 # APPLICATION LIFESPAN
@@ -111,10 +107,6 @@ app.include_router(
 
 app.include_router(
     fulfillment_router
-)
-
-app.include_router(
-    products_router
 )
 
 
