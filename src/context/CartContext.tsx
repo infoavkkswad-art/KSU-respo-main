@@ -29,6 +29,7 @@ interface CartContextType {
   addItem: (
     sku: string,
     quantity?: number,
+    openDrawerOnAdd?: boolean,
   ) => void;
 
   removeItem: (
@@ -49,15 +50,6 @@ interface CartContextType {
 
   /*
    * Fulfilment shipping amount.
-   *
-   * This is a number because shipping can be:
-   *
-   * ₹0
-   * ₹47
-   * ₹71
-   * ₹150
-   *
-   * depending on the fulfilment method.
    */
   shippingTotal: number;
 
@@ -69,6 +61,14 @@ interface CartContextType {
   total: number;
 
   itemCount: number;
+
+  /*
+   * Cart drawer state & actions
+   */
+  isDrawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
+  toggleDrawer: () => void;
 }
 
 /* ============================================================================
@@ -287,6 +287,12 @@ export function CartProvider({
       readStoredCart,
     );
 
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const openDrawer = () => setIsDrawerOpen(true);
+  const closeDrawer = () => setIsDrawerOpen(false);
+  const toggleDrawer = () => setIsDrawerOpen((prev) => !prev);
+
   /* --------------------------------------------------------------------------
      PERSIST CART
   -------------------------------------------------------------------------- */
@@ -320,6 +326,7 @@ export function CartProvider({
   const addItem = (
     sku: string,
     quantity = 1,
+    openDrawerOnAdd = true,
   ) => {
     if (
       typeof sku !== 'string'
@@ -402,6 +409,10 @@ export function CartProvider({
         );
       },
     );
+
+    if (openDrawerOnAdd) {
+      setIsDrawerOpen(true);
+    }
   };
 
   /* --------------------------------------------------------------------------
@@ -587,6 +598,11 @@ export function CartProvider({
         total,
 
         itemCount,
+
+        isDrawerOpen,
+        openDrawer,
+        closeDrawer,
+        toggleDrawer,
       }}
     >
       {children}

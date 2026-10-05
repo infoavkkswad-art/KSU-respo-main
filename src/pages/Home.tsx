@@ -5,17 +5,20 @@ import {
   ShieldCheck,
   Sparkles,
   Utensils,
+  Star,
+  Clock,
+  Smile,
 } from 'lucide-react';
 
 import { SEO, organizationSchema } from '@/components/SEO';
 import { ProductCard } from '@/components/ProductCard';
-import { PlaceholderImage } from '@/components/Section';
 import {
   Reveal,
   CTABanner,
 } from '@/components/Reveal';
 import { ProductService } from '@/services/product-service';
 import { brand } from '@/data/brand';
+import { blogPosts } from '@/data/blog';
 
 
 /* ==========================================================================
@@ -757,6 +760,40 @@ export default function Home() {
 
           </Reveal>
 
+          {/* ==================================================================
+              CATEGORY DISCOVERY CARDS (Amazon-style fast visual navigation)
+              ================================================================== */}
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+            {[
+              { name: 'Moong Family', sub: 'Traditional Crisp', category: 'moong', count: '13 SKUs', badge: 'Classic' },
+              { name: 'Chana Family', sub: 'Hearty Crunch', category: 'chana', count: '10 SKUs', badge: 'Popular' },
+              { name: 'Urad Family', sub: 'Bold & Spiced', category: 'urad', count: '16 SKUs', badge: 'Special' },
+              { name: 'Combo Packs', sub: 'Family Assortment', category: 'combo', count: '4 SKUs', badge: 'Best Value' },
+            ].map((cat) => (
+              <Link
+                key={cat.category}
+                to={`/shop?category=${cat.category}`}
+                className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-brand-green/10 bg-white p-4 shadow-soft transition-all duration-200 hover:-translate-y-1 hover:border-brand-saffron/40 hover:shadow-card"
+              >
+                <div>
+                  <span className="inline-block rounded-full bg-brand-green/5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-green">
+                    {cat.badge}
+                  </span>
+                  <h3 className="mt-2 font-serif text-base font-bold text-brand-green group-hover:text-brand-saffron transition-colors">
+                    {cat.name}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-brand-brown/60">
+                    {cat.sub}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center justify-between border-t border-brand-green/5 pt-2 text-xs font-semibold text-brand-brown/50 group-hover:text-brand-green">
+                  <span>{cat.count}</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                </div>
+              </Link>
+            ))}
+          </div>
+
 
           {featured.length > 0 && (
             <div
@@ -970,16 +1007,20 @@ export default function Home() {
                     border-brand-ivory/10
                     bg-brand-green-dark
                     shadow-lift
+                    overflow-hidden
+                    rounded-3xl
                   "
                 >
 
-                  <PlaceholderImage
-                    label="Papad texture and crisp moment"
-                    aspect="aspect-[4/3]"
+                  <img
+                    src="/images/pages/product-showcase.png"
+                    alt="Authentic Kawad Swad papads texture and crisp presentation"
                     className="
-                      rounded-3xl
-                      bg-brand-green-dark
+                      aspect-[4/3]
+                      w-full
+                      object-cover
                     "
+                    loading="lazy"
                   />
 
                 </div>
@@ -1040,11 +1081,18 @@ export default function Home() {
 
             <Reveal className="lg:col-span-6">
 
-              <PlaceholderImage
-                label="Kawad Swad heritage and making"
-                aspect="aspect-[4/3]"
-                className="rounded-3xl"
-              />
+              <div className="overflow-hidden rounded-3xl border border-brand-green/10 shadow-lift">
+                <img
+                  src="/images/pages/home-trust.png"
+                  alt="Kawad Swad traditional papad heritage in Nimar"
+                  className="
+                    aspect-[4/3]
+                    w-full
+                    object-cover
+                  "
+                  loading="lazy"
+                />
+              </div>
 
             </Reveal>
 
@@ -1308,6 +1356,222 @@ export default function Home() {
 
         </div>
 
+      </section>
+
+
+      {/* ======================================================================
+          PAPAD SQUAD
+          BRAND PERSONALITY & JOY
+          =================================================================== */}
+
+      <section
+        className="
+          bg-brand-cream/50
+          py-12
+          sm:py-16
+          lg:py-20
+          border-b
+          border-brand-green/10
+        "
+      >
+        <div className="container-max container-px">
+          <Reveal>
+            <div className="mx-auto max-w-2xl text-center">
+              <span className="section-eyebrow mb-2.5 block text-brand-saffron">
+                Brand Personality
+              </span>
+              <h2 className="font-serif text-headline-md font-bold text-brand-green">
+                Meet the Papad Squad
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-brand-brown/65 sm:text-base">
+                Every Kawad Swad papad has its own distinct personality, crafted with authentic regional flavours and joyful spirit.
+              </p>
+            </div>
+          </Reveal>
+
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
+            {[
+              {
+                name: 'Munchy Moong',
+                tagline: 'Light, Crispy & Gentle',
+                description: 'Our traditional recipe moong papad. Crisp, airy, and perfect for family thalis.',
+                category: 'moong',
+                color: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+              },
+              {
+                name: 'Crunchy Chana',
+                tagline: 'Hearty & Golden',
+                description: 'Made with wholesome chana dal flour for that robust bite and nutty crunch.',
+                category: 'chana',
+                color: 'bg-amber-50 text-amber-800 border-amber-200',
+              },
+              {
+                name: 'Urad Ustad',
+                tagline: 'Bold & Punchy',
+                description: 'The heavyweight classic seasoned with black pepper and authentic spices.',
+                category: 'urad',
+                color: 'bg-stone-50 text-stone-800 border-stone-200',
+              },
+              {
+                name: 'Masala Mitra',
+                tagline: 'Zesty & Lively',
+                description: 'For those who love extra chatpata flavour with their evening chai and gatherings.',
+                category: 'combo',
+                color: 'bg-orange-50 text-orange-800 border-orange-200',
+              },
+            ].map((squad, idx) => (
+              <Reveal key={squad.name} delay={idx * 60}>
+                <div className={`h-full rounded-3xl border p-5 sm:p-6 shadow-soft transition-all duration-200 hover:-translate-y-1 ${squad.color}`}>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-soft">
+                    <Smile className="h-6 w-6 text-brand-saffron" aria-hidden="true" />
+                  </div>
+                  <h3 className="mt-4 font-serif text-lg font-bold text-brand-brown">
+                    {squad.name}
+                  </h3>
+                  <p className="mt-0.5 text-xs font-semibold text-brand-saffron-dark">
+                    {squad.tagline}
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed text-brand-brown/70">
+                    {squad.description}
+                  </p>
+                  <Link
+                    to={`/shop?category=${squad.category}`}
+                    className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-brand-green hover:underline"
+                  >
+                    <span>Taste this family</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* ======================================================================
+          REVIEWS / CUSTOMER VOICE
+          AUTHENTIC TRANSPARENCY (Rule #13)
+          =================================================================== */}
+
+      <section
+        className="
+          bg-brand-ivory
+          py-12
+          sm:py-16
+          lg:py-20
+          border-b
+          border-brand-green/10
+        "
+      >
+        <div className="container-max container-px">
+          <div className="mx-auto max-w-3xl rounded-3xl border border-brand-green/10 bg-white p-6 sm:p-8 lg:p-10 shadow-card text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-green/5 text-brand-green">
+              <Star className="h-6 w-6 fill-brand-saffron text-brand-saffron" aria-hidden="true" />
+            </div>
+
+            <span className="section-eyebrow mt-4 block">Customer Voice</span>
+
+            <h2 className="mt-1 font-serif text-2xl font-bold text-brand-green sm:text-3xl">
+              Authentic Feedback from Real Homes
+            </h2>
+
+            <p className="mx-auto mt-3 max-w-xl text-xs sm:text-sm leading-relaxed text-brand-brown/65">
+              We never fabricate star counts, testimonials, or false review counts. Every rating on our platform comes from real patrons who enjoy Kawad Swad papads at their dining tables.
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+              <Link
+                to="/reviews"
+                className="btn-primary min-h-[44px] px-6 text-xs sm:text-sm"
+              >
+                Read Customer Reviews
+              </Link>
+              <Link
+                to="/reviews"
+                className="btn-outline min-h-[44px] px-6 text-xs sm:text-sm"
+              >
+                Share Your Experience
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      {/* ======================================================================
+          JOURNAL / RECIPES & KNOWLEDGE
+          =================================================================== */}
+
+      <section
+        className="
+          bg-brand-ivory-light
+          py-12
+          sm:py-16
+          lg:py-20
+        "
+      >
+        <div className="container-max container-px">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 sm:mb-10">
+            <div>
+              <span className="section-eyebrow mb-2 block">Papad Journal</span>
+              <h2 className="font-serif text-headline-md font-bold text-brand-green">
+                From Our Kitchen to Yours
+              </h2>
+              <p className="mt-1 text-sm text-brand-brown/65">
+                Roasting tips, easy recipes, and stories from central India's culinary heart.
+              </p>
+            </div>
+
+            <Link
+              to="/blog"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-brand-green hover:underline"
+            >
+              <span>Explore all articles</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {blogPosts.slice(0, 3).map((post, idx) => (
+              <Reveal key={post.slug} delay={idx * 80}>
+                <article className="flex h-full flex-col justify-between rounded-3xl border border-brand-green/10 bg-white p-5 sm:p-6 shadow-soft transition-all duration-200 hover:-translate-y-1 hover:shadow-card">
+                  <div>
+                    <div className="flex items-center justify-between text-2xs text-brand-brown/50">
+                      <span className="rounded-full bg-brand-green/5 px-2.5 py-0.5 font-bold uppercase tracking-wider text-brand-green">
+                        {post.category}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {post.readTime}
+                      </span>
+                    </div>
+
+                    <h3 className="mt-3 font-serif text-lg font-bold text-brand-brown hover:text-brand-green transition-colors">
+                      <Link to={`/blog/${post.slug}`}>
+                        {post.title}
+                      </Link>
+                    </h3>
+
+                    <p className="mt-2 text-xs leading-relaxed text-brand-brown/65 line-clamp-3">
+                      {post.excerpt}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 border-t border-brand-green/5 pt-3">
+                    <Link
+                      to={`/blog/${post.slug}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-saffron hover:text-brand-saffron-dark"
+                    >
+                      <span>Read guide</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                </article>
+              </Reveal>
+            ))}
+          </div>
+        </div>
       </section>
 
 

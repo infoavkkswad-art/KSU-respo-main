@@ -47,8 +47,8 @@
     min-width: 0;
     overflow-x: hidden;
 
-    background: #F7F2E8;
-    color: #5A4035;
+    background: #FDFBF7;
+    color: #291811;
 
     font-family:
       'Poppins',
@@ -134,7 +134,7 @@
      ------------------------------------------------------------------------ */
 
   ::selection {
-    background: #173C32;
+    background: #133E31;
     color: #FFFFFF;
   }
 }

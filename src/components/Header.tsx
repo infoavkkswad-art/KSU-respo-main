@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -24,8 +25,10 @@ import {
   navLinks,
 } from '@/data/brand';
 
-import { useCart } from '@/context/CartContext';
+import { useCart, formatPrice } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
+import { ProductService } from '@/services/product-service';
+import { ProductImage } from '@/components/ProductImage';
 
 
 /* ==========================================================================
@@ -73,7 +76,13 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { itemCount } = useCart();
+  const { itemCount, openDrawer } = useCart();
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) return [];
+    return ProductService.searchProducts(q).slice(0, 5);
+  }, [searchQuery]);
 
 
   /* ==========================================================================
@@ -552,8 +561,9 @@ export function Header() {
                   CART
                   -------------------------------------------------------------- */}
 
-              <Link
-                to="/cart"
+              <button
+                type="button"
+                onClick={openDrawer}
                 className="
                   group
                   relative
@@ -620,7 +630,7 @@ export function Header() {
                       : itemCount}
                   </span>
                 )}
-              </Link>
+              </button>
 
 
               {/* --------------------------------------------------------------
@@ -720,7 +730,7 @@ export function Header() {
 
 
         {/* ======================================================================
-            SEARCH PANEL
+            SEARCH PANEL (Amazon style with instant predictive suggestions)
             =================================================================== */}
 
         <div
@@ -738,7 +748,7 @@ export function Header() {
             ${
               searchOpen
                 ? `
-                  max-h-40
+                  max-h-[520px]
                   opacity-100
                 `
                 : `
@@ -755,8 +765,8 @@ export function Header() {
             className="
               container-max
               container-px
-              py-2.5
-              sm:py-3
+              py-3
+              sm:py-4
             "
           >
 
@@ -778,45 +788,133 @@ export function Header() {
                 Search products
               </label>
 
-              <input
-                ref={searchInputRef}
-                id="header-search-input"
-                type="search"
-                value={searchQuery}
-                onChange={(event) =>
-                  setSearchQuery(
-                    event.target.value,
-                  )
-                }
-                placeholder="Search papads..."
-                className="
-                  input-field
-                  min-h-[42px]
-                  min-w-0
-                  flex-1
-                  bg-white/80
-                "
-                tabIndex={
-                  searchOpen
-                    ? 0
-                    : -1
-                }
-              />
+              <div className="relative flex-1">
+                <input
+                  ref={searchInputRef}
+                  id="header-search-input"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) =>
+                    setSearchQuery(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Search moong, chana, urad, combo papads..."
+                  className="
+                    input-field
+                    min-h-[44px]
+                    w-full
+                    bg-white
+                    pr-8
+                    shadow-sm
+                  "
+                  tabIndex={
+                    searchOpen
+                      ? 0
+                      : -1
+                  }
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-brown/40 hover:text-brand-brown"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
 
               <button
                 type="submit"
                 className="
                   btn-primary
-                  min-h-[42px]
+                  min-h-[44px]
                   shrink-0
-                  px-4
-                  sm:px-6
+                  px-5
+                  sm:px-7
                 "
               >
                 Search
               </button>
 
             </form>
+
+            {/* LIVE AUTO-SUGGESTION RESULTS */}
+            {searchResults.length > 0 && (
+              <div className="mx-auto mt-3 max-w-3xl rounded-2xl border border-brand-green/10 bg-white p-2.5 shadow-card sm:p-3">
+                <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-brand-brown/50">
+                  Products ({searchResults.length})
+                </div>
+                <div className="grid gap-1 sm:grid-cols-2">
+                  {searchResults.map((p) => {
+                    const availableSkus = ProductService.getAvailableSkus(p);
+                    const lowestPrice = availableSkus[0]?.websitePrice;
+                    return (
+                      <Link
+                        key={p.id}
+                        to={`/product/${p.slug}`}
+                        onClick={() => {
+                          setSearchOpen(false);
+                          setSearchQuery('');
+                        }}
+                        className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-brand-cream"
+                      >
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-brand-green/10 bg-brand-cream p-1">
+                          <ProductImage
+                            productId={p.id}
+                            product={p}
+                            variant="card"
+                            className="h-full w-full object-contain"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-serif text-xs font-semibold text-brand-brown">
+                            {p.name}
+                          </p>
+                          <p className="truncate text-[10px] text-brand-brown/50">
+                            {p.variant}
+                          </p>
+                        </div>
+                        {lowestPrice !== undefined && (
+                          <span className="font-serif text-xs font-bold text-brand-green shrink-0">
+                            from {formatPrice(lowestPrice)}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* QUICK SEARCH PILLS */}
+            {!searchQuery && (
+              <div className="mx-auto mt-2.5 flex max-w-3xl flex-wrap items-center gap-2 text-xs text-brand-brown/60">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-brown/40">
+                  Popular:
+                </span>
+                {[
+                  { label: 'Moong Papad', query: 'moong' },
+                  { label: 'Chana Lahsun', query: 'chana' },
+                  { label: 'Urad Sada', query: 'urad' },
+                  { label: 'Combo Packs', query: 'combo' },
+                ].map((tag) => (
+                  <button
+                    key={tag.label}
+                    type="button"
+                    onClick={() => {
+                      setSearchOpen(false);
+                      navigate(`/shop?category=${tag.query}`);
+                    }}
+                    className="rounded-full border border-brand-green/10 bg-white px-2.5 py-1 text-[11px] font-medium text-brand-brown/75 transition-colors hover:border-brand-green/30 hover:bg-brand-cream hover:text-brand-green"
+                  >
+                    {tag.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

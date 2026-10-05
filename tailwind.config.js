@@ -9,32 +9,32 @@ export default {
     extend: {
       colors: {
         brand: {
-          ivory: '#F7F2E8',
+          ivory: '#FDFBF7',
           'ivory-light': '#FFFFFF',
-          'ivory-dark': '#F7F3EB',
+          'ivory-dark': '#F4EFE6',
 
-          green: '#173C32',
-          'green-light': '#2E6655',
-          'green-dark': '#12372C',
+          green: '#133E31',
+          'green-light': '#1E5242',
+          'green-dark': '#0C2920',
 
-          saffron: '#C88A2A',
-          'saffron-light': '#E69F24',
-          'saffron-dark': '#B85E08',
+          saffron: '#D97706',
+          'saffron-light': '#F59E0B',
+          'saffron-dark': '#B45309',
 
-          red: '#A93624',
-          'red-dark': '#9E4312',
-          'red-light': '#D87843',
+          red: '#C85A17',
+          'red-dark': '#9A3412',
+          'red-light': '#EA580C',
 
-          brown: '#5A4035',
-          'brown-light': '#5C524E',
-          'brown-dark': '#1F1815',
+          brown: '#291811',
+          'brown-light': '#4A3528',
+          'brown-dark': '#190F0B',
 
-          cream: '#F7F2E8',
-          'cream-dark': '#F7F3EB',
+          cream: '#FAF6EE',
+          'cream-dark': '#F0E7D8',
 
-          yellow: '#C88A2A',
-          'yellow-dark': '#B85E08',
-          'yellow-light': '#F1B84B',
+          yellow: '#E69F24',
+          'yellow-dark': '#C88A2A',
+          'yellow-light': '#F6C15D',
 
           white: '#FFFFFF',
           black: '#11110F',
@@ -184,9 +184,11 @@ export default {
 
         glow: '0 0 28px -6px rgba(200, 138, 42, 0.28)',
 
-        'green-glow': '0 12px 35px rgba(27, 77, 62, 0.20)',
+        'green-glow': '0 12px 35px rgba(23, 60, 50, 0.20)',
 
-        'gold-glow': '0 8px 22px rgba(217, 119, 6, 0.24)',
+        'saffron-glow': '0 10px 28px -4px rgba(217, 119, 6, 0.35)',
+
+        pedestal: '0 18px 30px -8px rgba(41, 24, 17, 0.18)',
 
         'inner-soft': 'inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(23,60,50,0.04)',
       },

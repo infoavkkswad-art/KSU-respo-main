@@ -176,103 +176,11 @@ export function ProductImage({
     >
 
       {/* ======================================================================
-          ADAPTIVE PRODUCT SURFACE
-          =================================================================== */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          inset-0
-          z-0
-          overflow-hidden
-          bg-gradient-to-br
-          from-white
-          via-brand-cream
-          to-brand-brown/5
-        "
-        aria-hidden="true"
-      />
-
-
-      {/* ======================================================================
-          SOFT CENTRAL LIGHT
-          =================================================================== */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          left-1/2
-          top-1/2
-          z-0
-          h-[72%]
-          w-[72%]
-          -translate-x-1/2
-          -translate-y-1/2
-          rounded-full
-          bg-white/75
-          blur-3xl
-        "
-        aria-hidden="true"
-      />
-
-
-      {/* ======================================================================
-          WARM PERIPHERAL ATMOSPHERE
-          =================================================================== */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -right-[18%]
-          -top-[18%]
-          z-0
-          h-[55%]
-          w-[55%]
-          rounded-full
-          bg-brand-saffron/5
-          blur-3xl
-        "
-        aria-hidden="true"
-      />
-
-
-      {/* ======================================================================
           AVAILABLE PRODUCT
           =================================================================== */}
 
       {isAvailable ? (
         <>
-
-          {/* ==================================================================
-              GROUNDING SHADOW
-              ================================================================== */}
-
-          <div
-            className="
-              pointer-events-none
-              absolute
-              bottom-[5%]
-              left-1/2
-              z-10
-              h-[5%]
-              w-[44%]
-              -translate-x-1/2
-              rounded-[50%]
-              bg-brand-brown/14
-              blur-md
-              transition-all
-              duration-500
-              ease-out
-              group-hover:w-[50%]
-              group-hover:bg-brand-brown/20
-            "
-            aria-hidden="true"
-          />
-
-
           {/* ==================================================================
               PRODUCT PHYSICAL LAYER
               ================================================================== */}

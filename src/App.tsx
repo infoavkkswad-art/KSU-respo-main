@@ -12,6 +12,7 @@ import {
   WhatsAppButton,
 } from '@/components/Floating';
 import { FloatingCart } from '@/components/FloatingCart';
+import { CartDrawer } from '@/components/CartDrawer';
 
 import { CartProvider } from '@/context/CartContext';
 import { OrderProvider } from '@/context/OrderContext';
@@ -278,6 +279,8 @@ export default function App() {
             <Footer />
 
             <FloatingCart />
+
+            <CartDrawer />
 
             <WhatsAppButton />
           </div>

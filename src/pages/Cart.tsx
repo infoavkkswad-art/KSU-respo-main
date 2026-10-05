@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Leaf,
   PackageCheck,
+  Tag,
 } from 'lucide-react';
 
 import { SEO } from '../components/SEO';
@@ -182,6 +183,11 @@ export default function Cart() {
       ): item is NonNullable<typeof item> =>
         item !== null,
     );
+
+  const totalSavings = resolvedItems.reduce((acc, curr) => {
+    const itemSavings = Math.max(0, curr.skuObj.mrp - curr.skuObj.websitePrice) * curr.quantity;
+    return acc + itemSavings;
+  }, 0);
 
 
   /* ==========================================================================
@@ -734,6 +740,17 @@ export default function Cart() {
               </div>
 
 
+              {/* SAVINGS BANNER (Amazon style) */}
+              {totalSavings > 0 && (
+                <div className="mb-4 flex items-center gap-2 rounded-2xl border border-brand-green/15 bg-brand-green/5 p-3 sm:p-4 text-xs font-medium text-brand-green">
+                  <Tag className="h-4 w-4 shrink-0 text-brand-green" aria-hidden="true" />
+                  <span>
+                    You are saving <strong>{formatPrice(totalSavings)}</strong> on this order with direct factory pricing!
+                  </span>
+                </div>
+              )}
+
+
               <div className="space-y-3">
 
                 {resolvedItems.map(
@@ -1045,6 +1062,7 @@ export default function Cart() {
                                   font-bold
                                   text-brand-green
                                   sm:text-lg
+                                  tabular-nums
                                 "
                               >
                                 {formatPrice(
@@ -1052,6 +1070,17 @@ export default function Cart() {
                                 )}
                               </span>
 
+                              {skuObj.mrp > unitPrice && (
+                                <>
+                                  <span className="text-xs text-brand-brown/40 line-through tabular-nums">
+                                    {formatPrice(skuObj.mrp)}
+                                  </span>
+
+                                  <span className="rounded bg-brand-green/10 px-1.5 py-0.5 text-[9px] font-bold text-brand-green">
+                                    Save {formatPrice(skuObj.mrp - unitPrice)}
+                                  </span>
+                                </>
+                              )}
 
                               {quantity > 1 && (
                                 <span
@@ -1067,7 +1096,7 @@ export default function Cart() {
                             </div>
 
 
-                            {/* SHIPPING */}
+                            {/* FULFILMENT NOTE */}
 
                             <div
                               className="
@@ -1075,10 +1104,9 @@ export default function Cart() {
                                 flex
                                 items-center
                                 gap-1.5
-                                text-[9px]
-                                font-semibold
-                                text-brand-green
-                                sm:text-[10px]
+                                text-[10px]
+                                font-medium
+                                text-brand-brown/60
                               "
                             >
 
@@ -1086,11 +1114,12 @@ export default function Cart() {
                                 className="
                                   h-3
                                   w-3
+                                  text-brand-green
                                 "
                                 aria-hidden="true"
                               />
 
-                              Free shipping included
+                              Delivery calculated at checkout
 
                             </div>
 

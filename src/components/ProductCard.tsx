@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useId,
   useMemo,
   useState,
 } from 'react';
@@ -13,10 +12,10 @@ import {
 import {
   Plus,
   Check,
-  ChevronDown,
   Zap,
   ShoppingBag,
   ArrowRight,
+  Truck,
 } from 'lucide-react';
 
 import type {
@@ -107,8 +106,6 @@ export function ProductCard({
   const { addItem } = useCart();
 
   const navigate = useNavigate();
-
-  const selectId = useId();
 
 
   /* ==========================================================================
@@ -259,6 +256,15 @@ export function ProductCard({
     ] ??
     `${selectedSku.packSize}g`;
 
+  const hasSavings =
+    selectedSku.mrp !== null &&
+    selectedSku.mrp > selectedSku.websitePrice;
+
+  const savingsAmount = hasSavings ? (selectedSku.mrp - selectedSku.websitePrice) : 0;
+  const discountPercent = hasSavings && selectedSku.mrp ? Math.round((savingsAmount / selectedSku.mrp) * 100) : 0;
+
+  const packGrams = typeof selectedSku.packSize === 'number' ? selectedSku.packSize : 200;
+  const ratePer100g = ((selectedSku.websitePrice / packGrams) * 100).toFixed(1);
 
   const hasReviews =
     reviewSummary !== null &&
@@ -298,37 +304,6 @@ export function ProductCard({
     );
 
     navigate('/checkout');
-
-  };
-
-
-  /* ==========================================================================
-     PACK SELECTION
-     ======================================================================== */
-
-  const handlePackChange = (
-    event: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-
-    const nextIndex =
-      Number(
-        event.target.value,
-      );
-
-    if (
-      Number.isInteger(
-        nextIndex,
-      ) &&
-      nextIndex >= 0 &&
-      nextIndex <
-        purchasableSkus.length
-    ) {
-
-      setSelectedSkuIndex(
-        nextIndex,
-      );
-
-    }
 
   };
 
@@ -875,182 +850,122 @@ export function ProductCard({
 
 
           {/* ==================================================================
-              PACK SELECTION
+              PACK SELECTION (Amazon style quick selector)
               ================================================================== */}
 
           <div className="mb-2.5 sm:mb-3">
-
-            {product.category ===
-            'combo' ? (
-
+            {product.category === 'combo' || purchasableSkus.length <= 1 ? (
               <div
                 className="
                   inline-flex
                   max-w-full
                   items-center
                   gap-1.5
-                  rounded-xl
+                  rounded-lg
                   border
                   border-brand-brown/10
-                  bg-brand-cream
+                  bg-brand-cream/80
                   px-2.5
-                  py-1.5
-                  text-[9px]
+                  py-1
+                  text-[10px]
                   font-semibold
                   text-brand-brown
                   shadow-soft
                   sm:text-xs
                 "
               >
-
                 <ShoppingBag
                   className="
                     h-3
                     w-3
                     shrink-0
+                    text-brand-green
                   "
                   aria-hidden="true"
                 />
-
                 <span className="truncate">
                   {packLabel}
                 </span>
-
               </div>
-
             ) : (
-
               <div className="space-y-1">
-
-                <label
-                  htmlFor={`pack-size-${selectId}`}
-                  className="
-                    block
-                    text-[9px]
-                    font-bold
-                    uppercase
-                    tracking-[0.13em]
-                    text-brand-brown/55
-                    sm:text-2xs
-                  "
-                >
-                  Choose your pack
-                </label>
-
-
-                <div className="relative w-full">
-
-                  <select
-                    id={`pack-size-${selectId}`}
-                    value={selectedSkuIndex}
-                    onChange={
-                      handlePackChange
-                    }
-                    className="
-                      min-h-[40px]
-                      w-full
-                      appearance-none
-                      cursor-pointer
-                      rounded-xl
-                      border
-                      border-brand-brown/15
-                      bg-brand-cream
-                      px-3
-                      py-2
-                      pr-9
-                      text-[10px]
-                      font-semibold
-                      text-brand-brown
-                      outline-none
-                      transition-all
-                      duration-200
-                      ease-ks-standard
-                      hover:border-brand-brown/25
-                      focus:border-brand-green
-                      focus:ring-2
-                      focus:ring-brand-green/10
-                      sm:text-xs
-                    "
-                    aria-label={`Select pack size for ${product.name}`}
-                  >
-
-                    {purchasableSkus.map(
-                      (
-                        sku,
-                        index,
-                      ) => (
-
-                        <option
-                          key={sku.sku}
-                          value={index}
-                        >
-                          {PACK_LABELS[
-                            sku.packSize
-                          ] ??
-                            `${sku.packSize}g`}
-                        </option>
-
-                      ),
-                    )}
-
-                  </select>
-
-
-                  <ChevronDown
-                    className="
-                      pointer-events-none
-                      absolute
-                      right-2.5
-                      top-1/2
-                      h-3.5
-                      w-3.5
-                      -translate-y-1/2
-                      text-brand-brown/45
-                    "
-                    aria-hidden="true"
-                  />
-
+                <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-brand-brown/50 sm:text-2xs">
+                  <span>Pack Size</span>
+                  <span className="font-semibold text-brand-green">{packLabel}</span>
                 </div>
 
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Choose pack size for ${product.name}`}>
+                  {purchasableSkus.map((sku, index) => {
+                    const isSelected = index === selectedSkuIndex;
+                    const label = PACK_LABELS[sku.packSize] ?? `${sku.packSize}g`;
+                    return (
+                      <button
+                        key={sku.sku}
+                        type="button"
+                        onClick={() => setSelectedSkuIndex(index)}
+                        className={`
+                          min-h-[28px]
+                          rounded-lg
+                          px-2
+                          py-1
+                          text-[10px]
+                          font-semibold
+                          transition-all
+                          duration-150
+                          sm:text-xs
+                          ${
+                            isSelected
+                              ? 'bg-brand-green text-white shadow-sm ring-1 ring-brand-green'
+                              : 'bg-brand-cream text-brand-brown/75 border border-brand-brown/10 hover:border-brand-green/30 hover:bg-brand-cream-dark'
+                          }
+                        `}
+                        aria-pressed={isSelected}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-
             )}
-
           </div>
 
 
           {/* ==================================================================
-              WEBSITE SELLING PRICE
-
-              ONLY THE CURRENT WEBSITE PRICE IS DISPLAYED.
-              MRP AND DISCOUNT PRESENTATION ARE REMOVED.
+              AMAZON-GRADE PRICE DISPLAY (Selling Price, MRP, Savings)
               ================================================================== */}
 
-          <div
-            className="
-              mb-0.5
-              flex
-              items-baseline
-            "
-          >
+          <div className="mb-2">
+            <div className="flex items-baseline flex-wrap gap-1.5 sm:gap-2">
+              <span className="font-serif text-lg font-bold text-brand-green sm:text-xl tabular-nums">
+                {formatPrice(selectedSku.websitePrice)}
+              </span>
 
-            <span
-              className="
-                price-emphasis
-                text-lg
-                sm:text-xl
-              "
-            >
-              {formatPrice(
-                selectedSku.websitePrice,
+              {hasSavings && (
+                <>
+                  <span className="text-[11px] text-brand-brown/45 line-through sm:text-xs tabular-nums">
+                    M.R.P.: {formatPrice(selectedSku.mrp)}
+                  </span>
+
+                  <span className="rounded bg-brand-green/10 px-1.5 py-0.2 text-[9px] font-bold text-brand-green sm:text-[10px]">
+                    {discountPercent}% OFF
+                  </span>
+                </>
               )}
-            </span>
+            </div>
 
+            <div className="mt-1 flex items-center justify-between text-[10px] text-brand-brown/55 sm:text-2xs">
+              <span>(₹{ratePer100g} / 100g)</span>
+              <span className="flex items-center gap-1 font-semibold text-emerald-700">
+                <Check className="h-3 w-3" aria-hidden="true" />
+                In Stock
+              </span>
+            </div>
           </div>
 
 
           {/* ==================================================================
-              SHIPPING TRUST
+              DELIVERY ASSURANCE
               ================================================================== */}
 
           <p
@@ -1061,13 +976,12 @@ export function ProductCard({
               gap-1.5
               text-[9px]
               leading-relaxed
-              text-brand-brown/55
+              text-brand-brown/60
               sm:mb-3.5
               sm:text-2xs
             "
           >
-
-            <Check
+            <Truck
               className="
                 h-3
                 w-3
@@ -1076,18 +990,8 @@ export function ProductCard({
               "
               aria-hidden="true"
             />
-
-            <strong
-              className="
-                font-semibold
-                text-brand-green
-              "
-            >
-              Free shipping
-            </strong>
-
+            <span>Dispatched from Nimar</span>
           </p>
-
 
         </div>
 
