@@ -115,6 +115,7 @@ async def connect_to_mongo():
         await webhooks_col.create_index(
             "eventId",
             unique=True,
+            sparse=True,
         )
 
         # ====================================================
