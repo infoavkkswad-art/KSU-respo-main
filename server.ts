@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
-import { randomBytes, randomInt } from 'node:crypto';
+import { createHmac, randomBytes, randomInt } from 'node:crypto';
+import fs from 'node:fs';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { products } from './src/data/products';
@@ -8,9 +9,31 @@ import { getSalesSku, getSellingPrice, SALES_SKUS } from './src/data/sales-confi
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-// Enable CORS for frontend clients hosted on different origins/domains (e.g. Render Static Site)
+// Enable CORS with origin validation
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const allowedOrigins = [
+    'https://kawadswad.in',
+    'https://www.kawadswad.in',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+  ];
+  const origin = req.headers.origin;
+  if (origin) {
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.onrender.com') ||
+      origin.endsWith('.web.app') ||
+      origin.endsWith('.firebaseapp.com') ||
+      process.env.NODE_ENV !== 'production'
+    ) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Vary', 'Origin');
+    }
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   if (req.method === 'OPTIONS') {
@@ -19,7 +42,16 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+interface RequestWithRawBody extends Request {
+  rawBody?: Buffer;
+}
+
+// Preserve rawBody buffer for cryptographic webhook signature verification
+app.use(express.json({
+  verify: (req: RequestWithRawBody, _res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
 // In-memory data stores for orders, enquiries, and reviews
 interface StoredOrder {
@@ -97,9 +129,49 @@ interface ItemQuote {
   mrp: number | null;
 }
 
+// Durable File-backed Persistence
+const DATA_DIR = path.join(process.cwd(), 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+function loadStoredJson<T>(fileName: string, fallback: T): T {
+  try {
+    const fullPath = path.join(DATA_DIR, fileName);
+    if (fs.existsSync(fullPath)) {
+      return JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+    }
+  } catch (err) {
+    console.warn(`Could not load ${fileName}, using fallback:`, err);
+  }
+  return fallback;
+}
+
+function saveStoredJson(fileName: string, data: unknown): void {
+  try {
+    const fullPath = path.join(DATA_DIR, fileName);
+    fs.writeFileSync(fullPath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (err) {
+    console.error(`Could not save ${fileName}:`, err);
+  }
+}
+
+const initialOrdersList = loadStoredJson<StoredOrder[]>('orders_store.json', []);
 const ordersStore = new Map<string, StoredOrder>();
+for (const order of initialOrdersList) {
+  ordersStore.set(order.orderId, order);
+  if (order.razorpayOrderId) {
+    ordersStore.set(order.razorpayOrderId, order);
+  }
+}
+
+const initialEnquiriesList = loadStoredJson<StoredEnquiry[]>('enquiries_store.json', []);
 const enquiriesStore = new Map<string, StoredEnquiry>();
-const reviewsStore: StoredReview[] = [
+for (const enquiry of initialEnquiriesList) {
+  enquiriesStore.set(enquiry.enquiryId, enquiry);
+}
+
+const defaultApprovedReviews: StoredReview[] = [
   {
     reviewId: 'rev-1',
     productId: 'moong-master-papad',
@@ -157,6 +229,34 @@ const reviewsStore: StoredReview[] = [
     createdAt: new Date(Date.now() - 86400000).toISOString(),
   }
 ];
+
+const reviewsStore: StoredReview[] = loadStoredJson<StoredReview[]>('reviews_store.json', defaultApprovedReviews);
+
+function persistOrders(): void {
+  const uniqueOrders = Array.from(new Set(ordersStore.values()));
+  saveStoredJson('orders_store.json', uniqueOrders);
+}
+
+function persistEnquiries(): void {
+  saveStoredJson('enquiries_store.json', Array.from(enquiriesStore.values()));
+}
+
+function persistReviews(): void {
+  saveStoredJson('reviews_store.json', reviewsStore);
+}
+
+// Rate limit store for order tracking lookup
+const trackingRateLimits = new Map<string, number[]>();
+function checkTrackingRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const history = (trackingRateLimits.get(ip) || []).filter(ts => now - ts < 60000);
+  if (history.length >= 10) {
+    return false;
+  }
+  history.push(now);
+  trackingRateLimits.set(ip, history);
+  return true;
+}
 
 // Shipping rate by pack size
 const SHIPPING_BY_PACK_SIZE: Record<number, number> = {
@@ -493,6 +593,7 @@ app.post('/api/orders', (req: Request, res: Response) => {
 
     ordersStore.set(orderId, newOrder);
     ordersStore.set(razorpayOrderId, newOrder);
+    persistOrders();
 
     res.status(201).json({
       orderId,
@@ -520,7 +621,7 @@ app.post('/api/orders', (req: Request, res: Response) => {
 // 6. Verify Payment
 app.post('/api/orders/verify-payment', (req: Request, res: Response) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
     if (!razorpay_order_id) {
       return res.status(400).json({ detail: 'razorpay_order_id is required.' });
     }
@@ -530,11 +631,37 @@ app.post('/api/orders/verify-payment', (req: Request, res: Response) => {
       return res.status(404).json({ detail: 'Order reference not found for this payment session.' });
     }
 
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+
+    // Cryptographic signature verification
+    if (secret) {
+      if (!razorpay_signature || !razorpay_payment_id) {
+        return res.status(400).json({ detail: 'Payment verification failed: Missing payment id or signature.' });
+      }
+      const expectedSignature = createHmac('sha256', secret)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest('hex');
+
+      if (expectedSignature !== razorpay_signature) {
+        return res.status(400).json({ detail: 'Cryptographic signature verification failed.' });
+      }
+    } else if (process.env.NODE_ENV === 'production') {
+      // In production mode, lack of secret must strictly reject payment verification
+      return res.status(500).json({ detail: 'Payment verification failed: Razorpay secret is not configured in production.' });
+    } else {
+      // Development sandbox mode: only accept test signature if order was created with test keys
+      const isTestOrder = order.razorpayOrderId?.startsWith('order_') || order.razorpayOrderId?.includes('test');
+      if (!isTestOrder || (razorpay_signature !== 'mock_signature' && !razorpay_payment_id)) {
+        return res.status(400).json({ detail: 'Invalid payment signature for test order.' });
+      }
+    }
+
     order.paymentStatus = 'paid';
     order.status = 'confirmed';
     order.razorpayPaymentId = razorpay_payment_id || `pay_${Date.now()}`;
     order.paymentVerifiedAt = new Date().toISOString();
     order.fulfillmentStatus = order.fulfillmentType === 'MANUAL' ? 'READY_LOCAL' : 'READY_TO_SHIP';
+    persistOrders();
 
     res.json({
       success: true,
@@ -563,20 +690,79 @@ app.post('/api/orders/payment-dismissed', (req: Request, res: Response) => {
   });
 });
 
-// 8. Track Order by ID and Phone
+// Razorpay Webhook with HMAC-SHA256 signature verification
+app.post('/api/webhooks/razorpay', (req: Request, res: Response) => {
+  try {
+    const webhookSignature = (req.headers['x-razorpay-signature'] as string) || '';
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    if (!webhookSecret && process.env.NODE_ENV === 'production') {
+      return res.status(500).json({ detail: 'Webhook secret is not configured in production.' });
+    }
+
+    if (webhookSecret) {
+      if (!webhookSignature) {
+        return res.status(400).json({ detail: 'Missing X-Razorpay-Signature header.' });
+      }
+      const reqWithRaw = req as RequestWithRawBody;
+      const rawBody = reqWithRaw.rawBody ? reqWithRaw.rawBody.toString('utf8') : JSON.stringify(req.body);
+      const expectedSignature = createHmac('sha256', webhookSecret)
+        .update(rawBody)
+        .digest('hex');
+
+      if (expectedSignature !== webhookSignature) {
+        return res.status(400).json({ detail: 'Webhook signature verification failed.' });
+      }
+    }
+
+    const event = req.body;
+    const eventType = event?.event;
+    const paymentEntity = event?.payload?.payment?.entity;
+    const razorpayOrderId = paymentEntity?.order_id || event?.payload?.order?.entity?.id;
+    const razorpayPaymentId = paymentEntity?.id;
+
+    if (eventType === 'payment.captured' && razorpayOrderId) {
+      const order = ordersStore.get(razorpayOrderId);
+      if (order && order.paymentStatus !== 'paid') {
+        order.paymentStatus = 'paid';
+        order.status = 'confirmed';
+        order.razorpayPaymentId = razorpayPaymentId || order.razorpayPaymentId;
+        order.paymentVerifiedAt = new Date().toISOString();
+        order.fulfillmentStatus = order.fulfillmentType === 'MANUAL' ? 'READY_LOCAL' : 'READY_TO_SHIP';
+        persistOrders();
+      }
+    }
+
+    res.json({ status: 'ok', received: true });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Webhook processing error.';
+    res.status(500).json({ detail: message });
+  }
+});
+
+// 8. Track Order by ID and Phone (Secured against BOLA / IDOR with rate limiting)
 app.get('/api/orders/:orderId', (req: Request, res: Response) => {
-  const orderId = String(req.params.orderId);
+  const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+  if (!checkTrackingRateLimit(clientIp)) {
+    return res.status(429).json({ detail: 'Too many tracking lookup requests. Please wait a minute before trying again.' });
+  }
+
+  const orderId = String(req.params.orderId).trim();
   const phone = String(req.query.phone || '').trim();
+
+  // SEC-002: Customer phone number is strictly required to prevent unauthorized order scanning
+  const cleanQueryPhone = phone.replace(/\D/g, '');
+  if (!cleanQueryPhone || cleanQueryPhone.length < 4) {
+    return res.status(400).json({ detail: 'A valid customer phone number is required to view order details.' });
+  }
 
   const order = ordersStore.get(orderId);
   if (!order) {
     return res.status(404).json({ detail: 'No order found matching this Order ID and Phone number.' });
   }
 
-  // Validate phone matches last digits or exact
   const cleanOrderPhone = order.customer.phone.replace(/\D/g, '');
-  const cleanQueryPhone = phone.replace(/\D/g, '');
-  if (cleanQueryPhone && !cleanOrderPhone.endsWith(cleanQueryPhone) && !cleanQueryPhone.endsWith(cleanOrderPhone)) {
+  if (!cleanOrderPhone.endsWith(cleanQueryPhone) && !cleanQueryPhone.endsWith(cleanOrderPhone)) {
     return res.status(404).json({ detail: 'No order found matching this Order ID and Phone number.' });
   }
 
@@ -624,6 +810,7 @@ app.post('/api/enquiries', (req: Request, res: Response) => {
     };
 
     enquiriesStore.set(enquiryId, newEnquiry);
+    persistEnquiries();
 
     res.status(201).json({
       success: true,
@@ -637,14 +824,27 @@ app.post('/api/enquiries', (req: Request, res: Response) => {
   }
 });
 
+// Helper: Verify purchase against completed orders
+function verifyReviewPurchase(orderId?: string, sku?: string): boolean {
+  if (!orderId || !sku) return false;
+  const cleanOrderId = orderId.trim();
+  const cleanSku = sku.trim().toUpperCase();
+  const order = ordersStore.get(cleanOrderId);
+  if (!order || order.paymentStatus !== 'paid') {
+    return false;
+  }
+  return order.items.some(item => item.sku.trim().toUpperCase() === cleanSku);
+}
+
 // 10. Reviews
 app.get('/api/reviews/:productId', (req: Request, res: Response) => {
   const { productId } = req.params;
   const limit = Math.max(1, Number(req.query.limit) || 20);
   const skip = Math.max(0, Number(req.query.skip) || 0);
 
+  // Return approved reviews (aligning with production review moderation policies)
   const matched = reviewsStore.filter(
-    r => r.productId === productId || productId === 'all'
+    r => (r.productId === productId || productId === 'all') && r.status === 'approved'
   );
 
   const paginated = matched.slice(skip, skip + limit).map(r => ({
@@ -661,12 +861,12 @@ app.get('/api/reviews/:productId', (req: Request, res: Response) => {
 app.get('/api/reviews/:productId/summary', (req: Request, res: Response) => {
   const { productId } = req.params;
   const matched = reviewsStore.filter(
-    r => r.productId === productId || productId === 'all'
+    r => (r.productId === productId || productId === 'all') && r.status === 'approved'
   );
 
   const totalReviews = matched.length;
   const sum = matched.reduce((acc, r) => acc + r.rating, 0);
-  const averageRating = totalReviews > 0 ? Number((sum / totalReviews).toFixed(1)) : 5.0;
+  const averageRating = totalReviews > 0 ? Number((sum / totalReviews).toFixed(1)) : 0;
 
   const ratingCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   for (const r of matched) {
@@ -685,29 +885,31 @@ app.get('/api/reviews/:productId/summary', (req: Request, res: Response) => {
 
 app.post('/api/reviews', (req: Request, res: Response) => {
   try {
-    const { productId, rating, userName, customerName, userLocation, comment, title, sku } = req.body;
+    const { productId, rating, userName, customerName, userLocation, comment, title, sku, orderId } = req.body;
     const author = (customerName || userName || '').trim();
     if (!productId || !author || !comment) {
       return res.status(400).json({ detail: 'Please provide all review details (name, rating, and feedback).' });
     }
 
+    const isVerified = verifyReviewPurchase(orderId, sku);
     const reviewId = `rev-${Date.now()}`;
     const newReview: StoredReview = {
       reviewId,
       productId,
       sku: sku || '',
-      rating: Number(rating) || 5,
+      rating: Math.min(5, Math.max(1, Number(rating) || 5)),
       title: title || '',
       userName: author,
       customerName: author,
       userLocation: userLocation || 'India',
       comment,
-      verifiedPurchase: true,
-      status: 'approved',
+      verifiedPurchase: isVerified,
+      status: isVerified ? 'approved' : 'pending',
       createdAt: new Date().toISOString(),
     };
 
     reviewsStore.unshift(newReview);
+    persistReviews();
 
     res.status(201).json(newReview);
   } catch (error: unknown) {

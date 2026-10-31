@@ -1,0 +1,396 @@
+{
+  "comparedAt": "2026-10-31T06:49:31.832Z",
+  "baselineTotalSkus": 43,
+  "currentSalesSkusCount": 43,
+  "match": true,
+  "discrepancies": [],
+  "skuDetails": [
+    {
+      "sku": "KS-CCP-1000",
+      "productName": "Chana Chotu Papad",
+      "packSize": 1000,
+      "mrp": 499,
+      "sellingPrice": 275,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CCP-200",
+      "productName": "Chana Chotu Papad",
+      "packSize": 200,
+      "mrp": 110,
+      "sellingPrice": 55,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CCP-500",
+      "productName": "Chana Chotu Papad",
+      "packSize": 500,
+      "mrp": 249,
+      "sellingPrice": 140,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CGP-1000",
+      "productName": "Chana Garlic Papad",
+      "packSize": 1000,
+      "mrp": 619,
+      "sellingPrice": 300,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CGP-200",
+      "productName": "Chana Garlic Papad",
+      "packSize": 200,
+      "mrp": 125,
+      "sellingPrice": 60,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CGP-500",
+      "productName": "Chana Garlic Papad",
+      "packSize": 500,
+      "mrp": 309,
+      "sellingPrice": 150,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CKM-1000",
+      "productName": "Chana Khata Mitha Papad",
+      "packSize": 1000,
+      "mrp": 499,
+      "sellingPrice": 285,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CKM-200",
+      "productName": "Chana Khata Mitha Papad",
+      "packSize": 200,
+      "mrp": 99,
+      "sellingPrice": 60,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CKM-500",
+      "productName": "Chana Khata Mitha Papad",
+      "packSize": 500,
+      "mrp": 249,
+      "sellingPrice": 145,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-COMB-235",
+      "productName": "Kawad Swad Combo Pack",
+      "packSize": 235,
+      "mrp": 199,
+      "sellingPrice": 150,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CPM-1000",
+      "productName": "Chana Punjabi Masala Papad",
+      "packSize": 1000,
+      "mrp": 599,
+      "sellingPrice": 285,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CPM-200",
+      "productName": "Chana Punjabi Masala Papad",
+      "packSize": 200,
+      "mrp": 119,
+      "sellingPrice": 60,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CPM-500",
+      "productName": "Chana Punjabi Masala Papad",
+      "packSize": 500,
+      "mrp": 299,
+      "sellingPrice": 145,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CTP-1000",
+      "productName": "Chana Tomato Papad",
+      "packSize": 1000,
+      "mrp": 499,
+      "sellingPrice": 300,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CTP-200",
+      "productName": "Chana Tomato Papad",
+      "packSize": 200,
+      "mrp": 99,
+      "sellingPrice": 60,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-CTP-500",
+      "productName": "Chana Tomato Papad",
+      "packSize": 500,
+      "mrp": 249,
+      "sellingPrice": 150,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MGCP-1000",
+      "productName": "Moong Green Chilli Papad",
+      "packSize": 1000,
+      "mrp": 529,
+      "sellingPrice": 285,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MGCP-200",
+      "productName": "Moong Green Chilli Papad",
+      "packSize": 200,
+      "mrp": 105,
+      "sellingPrice": 60,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MGCP-500",
+      "productName": "Moong Green Chilli Papad",
+      "packSize": 500,
+      "mrp": 265,
+      "sellingPrice": 145,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MGP-1000",
+      "productName": "Moong Garlic Papad",
+      "packSize": 1000,
+      "mrp": 619,
+      "sellingPrice": 290,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MGP-200",
+      "productName": "Moong Garlic Papad",
+      "packSize": 200,
+      "mrp": 125,
+      "sellingPrice": 60,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MGP-500",
+      "productName": "Moong Garlic Papad",
+      "packSize": 500,
+      "mrp": 309,
+      "sellingPrice": 145,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MJP-1000",
+      "productName": "Moong Jeera Papad",
+      "packSize": 1000,
+      "mrp": 559,
+      "sellingPrice": 305,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MJP-200",
+      "productName": "Moong Jeera Papad",
+      "packSize": 200,
+      "mrp": 109,
+      "sellingPrice": 65,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MJP-500",
+      "productName": "Moong Jeera Papad",
+      "packSize": 500,
+      "mrp": 279,
+      "sellingPrice": 155,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MKMP-1000",
+      "productName": "Moong Kasuri Methi Papad",
+      "packSize": 1000,
+      "mrp": 559,
+      "sellingPrice": 300,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MKMP-200",
+      "productName": "Moong Kasuri Methi Papad",
+      "packSize": 200,
+      "mrp": 109,
+      "sellingPrice": 60,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MKMP-500",
+      "productName": "Moong Kasuri Methi Papad",
+      "packSize": 500,
+      "mrp": 229,
+      "sellingPrice": 150,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MMP-1000",
+      "productName": "Moong Master Papad",
+      "packSize": 1000,
+      "mrp": 499,
+      "sellingPrice": 275,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MMP-200",
+      "productName": "Moong Master Papad",
+      "packSize": 200,
+      "mrp": 110,
+      "sellingPrice": 55,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MMP-500",
+      "productName": "Moong Master Papad",
+      "packSize": 500,
+      "mrp": 249,
+      "sellingPrice": 140,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MPMP-1000",
+      "productName": "Moong Punjabi Masala Papad",
+      "packSize": 1000,
+      "mrp": 599,
+      "sellingPrice": 285,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MPMP-200",
+      "productName": "Moong Punjabi Masala Papad",
+      "packSize": 200,
+      "mrp": 119,
+      "sellingPrice": 60,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MPMP-500",
+      "productName": "Moong Punjabi Masala Papad",
+      "packSize": 500,
+      "mrp": 299,
+      "sellingPrice": 145,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MPP-1000",
+      "productName": "Moong Pudhina Papad",
+      "packSize": 1000,
+      "mrp": 529,
+      "sellingPrice": 285,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MPP-200",
+      "productName": "Moong Pudhina Papad",
+      "packSize": 200,
+      "mrp": 105,
+      "sellingPrice": 60,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-MPP-500",
+      "productName": "Moong Pudhina Papad",
+      "packSize": 500,
+      "mrp": 265,
+      "sellingPrice": 145,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-UGG-1000",
+      "productName": "Urad Garlic Papad",
+      "packSize": 1000,
+      "mrp": 639,
+      "sellingPrice": 335,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-UGG-200",
+      "productName": "Urad Garlic Papad",
+      "packSize": 200,
+      "mrp": 125,
+      "sellingPrice": 70,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-UGG-500",
+      "productName": "Urad Garlic Papad",
+      "packSize": 500,
+      "mrp": 319,
+      "sellingPrice": 170,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-UGP-1000",
+      "productName": "Urad Guru Papad",
+      "packSize": 1000,
+      "mrp": 599,
+      "sellingPrice": 315,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-UGP-200",
+      "productName": "Urad Guru Papad",
+      "packSize": 200,
+      "mrp": 119,
+      "sellingPrice": 65,
+      "available": true,
+      "verified": true
+    },
+    {
+      "sku": "KS-UGP-500",
+      "productName": "Urad Guru Papad",
+      "packSize": 500,
+      "mrp": 299,
+      "sellingPrice": 160,
+      "available": true,
+      "verified": true
+    }
+  ]
+}

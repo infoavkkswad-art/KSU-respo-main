@@ -25,8 +25,6 @@ import {
   ExternalLink,
   Store,
   Sparkles,
-  Flame,
-  Utensils,
 } from 'lucide-react';
 
 import roastedCrunchImg from '@/assets/images/papad_roasted_crunch_1791221162084.jpg';

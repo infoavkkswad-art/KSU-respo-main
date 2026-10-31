@@ -1,0 +1,848 @@
+# KAWAD SWAD 2.0
+
+## Complete Website Audit, Required Patches, Code Cleanup & Production Readiness
+
+### 1. YOUR ROLE
+
+Act as a senior full-stack engineer, application security auditor, QA automation engineer, database integrity specialist, and production reliability engineer.
+
+You are responsible for auditing and improving the existing Kawad Swad website and its connected backend systems.
+
+You must work from the **latest shared source ZIP, which the owner identifies as the live source of truth**.
+
+Do not assume that an older repository, earlier audit report, previous ZIP, or remembered implementation accurately represents the current application.
+
+Inspect the actual files before making decisions.
+
+Your objective is to move the application from its current state to a thoroughly audited, patched, tested, cleaned, and deployment-ready state.
+
+Do not merely provide recommendations. Implement the required, evidence-based patches wherever the available tools and environment permit.
+
+---
+
+# 2. NON-NEGOTIABLE BUSINESS PROTECTIONS
+
+Before changing any code, establish these safeguards.
+
+### A. Preserve all 43 commercial SKUs
+
+The following commercial data is locked unless the owner explicitly authorizes a change:
+
+* All 43 commercial SKUs.
+* Product identifiers and SKU codes.
+* Product names and variants.
+* Pack sizes.
+* MRP values.
+* Selling prices.
+* Existing valid product-to-variant relationships.
+* Other business-critical commercial fields.
+
+Create a machine-readable baseline from the current source and, where authorized read access is available, the current production database.
+
+Compare all protected fields before and after remediation.
+
+Requirements:
+
+1. Do not recalculate prices.
+2. Do not replace commercial data with test values.
+3. Do not regenerate product identifiers.
+4. Do not remove valid product variants.
+5. Do not seed demo products into production.
+6. Do not overwrite live commercial data to make a test pass.
+7. Do not run destructive database migrations without an explicit, reviewed migration plan.
+8. If source and production data disagree, report the discrepancy instead of guessing which value is correct.
+
+The expected result is an exact match across all protected commercial fields.
+
+### B. Protect customer and business data
+
+Never delete or reset:
+
+* Customer accounts.
+* Production orders.
+* Payment records.
+* Reviews.
+* Inventory or manufacturing records.
+* Sales records.
+* Existing business configuration.
+* Audit logs or other operational records.
+
+Do not run destructive cleanup commands against production.
+
+Do not expose API keys, payment secrets, database credentials, customer personal information, or other sensitive information in reports, terminal output, screenshots, or commits.
+
+### C. Preserve the brand and website identity
+
+Maintain the existing Kawad Swad brand, product identity, and approved commercial content.
+
+The existing visual direction includes:
+
+* Deep Nimar Green: `#1B4D3E`
+* Rich Saffron: `#D97706`
+* Warm Terracotta: `#C85A17`
+* Ivory Cream: `#FDFBF7`
+
+Do not redesign the entire website without a demonstrated need.
+
+Do not introduce fabricated certifications, unsupported nutritional claims, invented product benefits, fake reviews, artificial discounts, or unverified advertising claims.
+
+Do not change the approved product imagery or brand identity merely to satisfy a generic design preference.
+
+---
+
+# 3. PHASE ONE: ESTABLISH THE REAL BASELINE
+
+Inspect the entire ZIP before changing anything.
+
+Identify:
+
+* Frontend framework and entry points.
+* Routing and page structure.
+* Shared components and design system.
+* API client and service modules.
+* Backend frameworks and application entry points.
+* Database models, collections, indexes, and migrations.
+* Authentication and authorization.
+* Payment integration.
+* Product and pricing management.
+* Cart and checkout.
+* Order processing and fulfilment.
+* Reviews and ratings.
+* Enquiry and contact forms.
+* Environment configuration.
+* Deployment configuration.
+* Build and test scripts.
+* Logging and error handling.
+* External service integrations.
+
+Inspect the package manifests, lockfiles, deployment files, and environment-variable references.
+
+Determine which files are actually used in production.
+
+### Special attention: overlapping backends
+
+Earlier audits identified overlapping Express and FastAPI implementations.
+
+Investigate whether the current source still contains multiple implementations of:
+
+* Order creation.
+* Payment verification.
+* Reviews and ratings.
+* Customer enquiries.
+* Product information.
+* Health checks.
+
+Determine which implementation is authoritative in production.
+
+Trace the complete request path:
+
+**Browser → Frontend API client → Hosting/proxy configuration → Backend route → Database → Response**
+
+Do not assume that a route is active merely because it exists in the repository.
+
+If multiple backends remain, determine whether they cause duplicate business logic, inconsistent data, security gaps, or deployment confusion.
+
+Recommend and implement the smallest safe change that establishes a clear source of truth.
+
+Do not remove a service until its production dependencies have been verified.
+
+### Baseline deliverables
+
+Create:
+
+1. `AUDIT_BASELINE.md`
+2. `AUDIT_FINDINGS.md`
+3. `COMMERCIAL_DATA_BASELINE.json`
+4. `REMEDIATION_PLAN.md`
+
+Use the repository's existing documentation conventions where appropriate.
+
+Record the current Git commit and working-tree status if Git is available.
+
+Do not claim to have inspected production configuration or database records unless you actually accessed them.
+
+---
+
+# 4. PHASE TWO: COMPLETE SECURITY AUDIT
+
+Audit the entire application for security defects, not only previously reported issues.
+
+Check:
+
+* Authentication bypasses.
+* Missing authorization checks.
+* Broken object-level authorization.
+* Customer data exposure.
+* Insecure administrative routes.
+* Unsafe request-body handling.
+* SQL/NoSQL injection risks.
+* Cross-site scripting.
+* CSRF risks where applicable.
+* CORS misconfiguration.
+* Rate limiting.
+* Abuse of public endpoints.
+* Sensitive information in logs.
+* Secrets committed to source control.
+* Unsafe file uploads.
+* Dependency vulnerabilities.
+* Insecure redirects.
+* Incorrect security headers.
+* Session and token handling.
+* Payment manipulation.
+* Webhook verification.
+* Production/debug configuration.
+* Error messages that expose internal details.
+
+Prioritize findings by severity, exploitability, and business impact.
+
+Do not classify a theoretical issue as an exploitable production vulnerability without supporting evidence.
+
+## SEC-001: CORS
+
+The previous audit identified wildcard CORS configuration in an Express implementation.
+
+Inspect every active backend and proxy.
+
+Requirements:
+
+* Use explicit production-origin allowlists.
+* Keep development origins limited to development environments.
+* Validate origins consistently.
+* Handle preflight requests correctly.
+* Include `Vary: Origin` where responses depend on the request origin.
+* Avoid wildcard origins when credentials are enabled.
+* Do not treat CORS as authentication or authorization.
+
+Test both allowed and disallowed origins.
+
+## SEC-002: Authorization and data access
+
+Verify that customers cannot access or modify other customers' orders, addresses, payment details, or reviews.
+
+Check all routes that accept order IDs, customer IDs, product IDs, or administrative identifiers.
+
+Enforce authorization on the server.
+
+Never rely on hidden frontend buttons or client-supplied identity fields as the security boundary.
+
+## SEC-003: Configuration and secrets
+
+Inspect configuration defaults and environment-variable loading.
+
+Previously identified defaults included placeholder Razorpay credentials and a localhost MongoDB URI.
+
+Determine whether these defaults remain and whether production startup can proceed with incomplete configuration.
+
+Requirements:
+
+* Production must not silently fall back to placeholder payment secrets.
+* Required production settings must be validated.
+* Missing required settings should produce a clear, non-sensitive startup error.
+* Development configuration must remain convenient without weakening production security.
+* Never print secret values in audit reports.
+
+If actual deployment variables cannot be accessed, report the production configuration as UNVERIFIED rather than assuming it is incorrect.
+
+---
+
+# 5. PHASE THREE: PAYMENT SECURITY AND ORDER INTEGRITY
+
+This is a critical priority.
+
+Inspect the complete Razorpay integration, including frontend checkout, backend order creation, payment verification, and webhooks.
+
+Trace the full payment lifecycle.
+
+## PAY-001: Signature verification
+
+Verify that payment signatures are validated cryptographically on the backend.
+
+Reject invalid or missing signatures.
+
+Verify that:
+
+* The Razorpay order ID belongs to the expected application order.
+* The payment ID corresponds to the expected transaction.
+* The payment amount matches the expected order amount.
+* The currency is correct.
+* The payment has reached the required successful/captured state.
+* The payment belongs to the intended customer/order context.
+* An unverified frontend success callback cannot independently confirm an order.
+
+Use the official SDK or a correctly implemented cryptographic verification method.
+
+## PAY-002: Webhook verification
+
+Verify webhook signatures against the exact raw request body required by Razorpay.
+
+Ensure request-body parsing does not invalidate signature verification.
+
+Validate event types and payment/order relationships.
+
+Do not allow an unverified webhook to change order status.
+
+## PAY-003: Duplicate and out-of-order events
+
+Implement idempotent processing.
+
+Test repeated payment callbacks, repeated webhook deliveries, delayed events, and conflicting status transitions.
+
+A repeated event must not create duplicate orders, duplicate payments, or duplicate fulfilment operations.
+
+Prevent invalid transitions such as an unpaid or failed order becoming paid solely because of a stale or unrelated event.
+
+## PAY-004: Mock payment
+
+Inspect all mock-payment branches, including any `rzp_test_mock` behavior.
+
+Mock payment must never confirm real production orders.
+
+Production safeguards must be enforced by the backend, not just by frontend build variables.
+
+Remove obsolete simulation code from production paths when it is safe to do so.
+
+Retain legitimate test functionality in isolated development or test environments.
+
+## PAY-005: Financial precision
+
+Audit all calculations involving:
+
+* Unit prices.
+* Pack quantities.
+* Discounts.
+* Shipping.
+* Taxes.
+* Total payable.
+* Razorpay order amounts.
+* Refunds, if supported.
+
+Use appropriate integer paise or established decimal-money handling.
+
+Do not trust totals supplied by the browser. Recalculate amounts from authoritative server-side product and pricing data.
+
+Do not change any approved selling prices during this remediation.
+
+### Payment test suite
+
+Create automated tests covering:
+
+1. Valid payment.
+2. Invalid signature.
+3. Missing signature.
+4. Incorrect order ID.
+5. Incorrect payment ID.
+6. Amount mismatch.
+7. Currency mismatch.
+8. Uncaptured payment.
+9. Duplicate callback.
+10. Duplicate webhook.
+11. Invalid webhook signature.
+12. Mock-payment attempt in production.
+13. Browser-manipulated order total.
+14. Unauthorized access to another customer's order.
+
+Use synthetic orders and Razorpay test credentials.
+
+Never inject failures into real customer orders or use live payments for destructive testing.
+
+---
+
+# 6. PHASE FOUR: DATABASE AND PERSISTENCE AUDIT
+
+Inspect database connection handling, models, indexes, migrations, and transaction boundaries.
+
+The previous audit found an in-memory Express order store and review store.
+
+Verify whether these remain in any active production path.
+
+## DB-001: Durable persistence
+
+Production orders, payments, reviews, and other critical business records must be stored durably.
+
+Identify any in-memory stores being used as the authoritative source of business data.
+
+If such stores are active in production:
+
+* Replace them with the established persistent storage layer.
+* Preserve existing data.
+* Avoid introducing a second source of truth.
+* Handle database failures explicitly.
+* Do not return false success responses when writes fail.
+
+Do not migrate data destructively or invent records.
+
+## DB-002: Startup readiness
+
+Check whether the application can start and accept requests when MongoDB is unavailable or required indexes have failed to initialize.
+
+Distinguish liveness from readiness.
+
+A process being alive does not mean the application is ready to process orders.
+
+Validate required production dependencies before accepting business traffic.
+
+## DB-003: Indexes and duplicate data
+
+Inspect all unique and non-unique indexes.
+
+Check whether index initialization is hidden behind broad exception handling.
+
+Detect existing duplicates before proposing unique indexes.
+
+Do not automatically delete duplicate business records.
+
+Produce a safe remediation plan if duplicates prevent an index from being created.
+
+## DB-004: Concurrency
+
+Check concurrent order creation, stock updates, coupon usage, and payment callbacks wherever those operations are supported.
+
+Use transactions, conditional updates, unique constraints, or idempotency controls where appropriate.
+
+Do not introduce an expensive transaction architecture without first checking the existing database capabilities and application design.
+
+## DB-005: Rate limiting
+
+Previously identified FastAPI rate limiting used a process-local dictionary.
+
+Determine whether this is still active and whether it is sufficient for the deployed architecture.
+
+If the service runs across multiple instances, recommend a shared rate-limit store where needed.
+
+Ensure rate-limit storage failure does not silently create an unsafe production state.
+
+---
+
+# 7. PHASE FIVE: REVIEWS, RATINGS, AND CUSTOMER TRUST
+
+Inspect every review-related endpoint and frontend component.
+
+## REV-001: Verified purchases
+
+The server must independently determine purchase eligibility from trusted order records.
+
+Check that:
+
+* The order exists.
+* The payment has been verified and captured.
+* The order contains the reviewed product.
+* The reviewer is associated with the purchase, where customer authentication exists.
+* The same purchase cannot be abused for unlimited duplicate reviews.
+* A client cannot set `verifiedPurchase: true`.
+* Public submissions cannot automatically bypass moderation.
+
+Pending reviews must not appear as published reviews unless the product's intended moderation policy explicitly allows it.
+
+## REV-002: Rating calculation
+
+Calculate rating summaries from the correct eligible, published reviews.
+
+Handle:
+
+* Zero reviews.
+* One review.
+* Multiple ratings.
+* Deleted or hidden reviews.
+* Pending reviews.
+* Invalid ratings.
+
+An empty product review state must not fabricate a 5-star average.
+
+Reject ratings outside the supported range instead of silently converting invalid values to a default rating.
+
+## REV-003: Abuse prevention
+
+Add appropriate input validation, length limits, duplicate prevention, and rate limiting.
+
+Do not add intrusive identity collection without a legitimate requirement.
+
+Create tests for the entire review lifecycle.
+
+---
+
+# 8. PHASE SIX: FRONTEND, CHECKOUT, AND USER EXPERIENCE
+
+Audit the actual React/TypeScript implementation.
+
+Inspect:
+
+* Routes and navigation.
+* Product listing.
+* Product detail.
+* Image galleries.
+* Variant selection.
+* Pack-size selection.
+* Cart.
+* Quantity controls.
+* Checkout.
+* Payment return states.
+* Order confirmation.
+* Customer-facing error messages.
+* Forms.
+* Mobile responsiveness.
+* Accessibility.
+* Loading states.
+* Empty states.
+* Broken image handling.
+* API timeouts and retries.
+
+## Product gallery
+
+Verify the four-image gallery reported in the current checkpoint:
+
+1. Packaging artwork.
+2. Fire-roasted papad with mint chutney and lemon.
+3. Indian thali presentation.
+4. Sun-dried papad with whole spices.
+
+Check correct thumbnail selection, object-fit behavior, aspect ratios, image loading, responsive sizing, and keyboard accessibility.
+
+Do not fabricate product photography or replace approved packaging artwork without authorization.
+
+## Sensory module
+
+Verify that the crunch score, roasting description, and microwave-related wording are substantiated and consistent with the actual product and preparation instructions.
+
+Flag any unsupported claim for review instead of silently inventing evidence.
+
+## Cart and checkout
+
+Test:
+
+* Adding and removing items.
+* Quantity updates.
+* Variant and pack-size selection.
+* Correct pricing.
+* Cart persistence where intended.
+* Invalid quantities.
+* Address validation.
+* Shipping calculations.
+* Payment failure and cancellation.
+* Retry behavior.
+* Duplicate submissions.
+* Order confirmation.
+* Mobile usability.
+
+The UI must never show an order as paid merely because a frontend request returned a generic success response.
+
+## Accessibility and performance
+
+Check:
+
+* Keyboard navigation.
+* Visible focus states.
+* Accessible form labels.
+* Image alt text.
+* Contrast.
+* Semantic HTML.
+* Responsive layout.
+* Excessive JavaScript or duplicate assets.
+* Unnecessary re-renders.
+* Image optimization.
+* Layout shifts.
+* Broken loading states.
+
+Preserve the existing visual identity unless a specific defect warrants a targeted adjustment.
+
+---
+
+# 9. PHASE SEVEN: API CONTRACT AND INTEGRATION AUDIT
+
+Inspect all frontend-to-backend interactions.
+
+Build an endpoint inventory containing:
+
+* HTTP method.
+* Route.
+* Calling frontend component.
+* Authentication requirement.
+* Authorization requirement.
+* Request schema.
+* Response schema.
+* Database operations.
+* Failure behavior.
+* Rate-limit policy.
+* Current test coverage.
+
+Check for:
+
+* Frontend/backend route mismatches.
+* Incorrect request field names.
+* Inconsistent response shapes.
+* Missing validation.
+* Incorrect HTTP status codes.
+* Unhandled exceptions.
+* Excessive retries.
+* Duplicate API requests.
+* Hard-coded production URLs.
+* Missing timeouts.
+* Silent error swallowing.
+* Inconsistent product or order status names.
+
+Establish one authoritative contract for each business operation.
+
+Do not change a public API response format without checking all consumers.
+
+Where a change is required, update the backend, frontend, and tests together.
+
+---
+
+# 10. PHASE EIGHT: CODE CLEANUP
+
+Perform evidence-based cleanup after establishing the baseline and identifying the dependencies.
+
+Look for:
+
+* Dead code.
+* Duplicate functions.
+* Unused imports.
+* Unreachable branches.
+* Duplicate components.
+* Unused assets.
+* Obsolete mock-payment code.
+* Repeated validation logic.
+* Inconsistent error handling.
+* Unused environment variables.
+* Stale scripts.
+* Temporary test routes.
+* Debug output.
+* Unsafe defaults.
+* Confusing duplicate backend responsibilities.
+* Dependency duplication.
+* Unnecessary frontend bundle weight.
+
+### Cleanup rules
+
+1. Do not delete code merely because it appears unused in one file.
+2. Search all imports, routes, scripts, build configurations, and deployment files first.
+3. Do not delete migration history.
+4. Do not remove operational logs or audit trails.
+5. Do not remove test coverage to make the build pass.
+6. Do not weaken linting, type checking, or security checks.
+7. Do not suppress errors with broad catch blocks.
+8. Do not replace meaningful validation with silent fallback values.
+9. Do not introduce new libraries when the existing stack can solve the problem safely.
+10. Make small, reviewable changes grouped by purpose.
+
+After cleanup, report which files were removed or modified and why.
+
+---
+
+# 11. PHASE NINE: AUTOMATED TESTING AND BUILD VERIFICATION
+
+Inspect the existing test framework before adding new tooling.
+
+The earlier audit found limited visible backend test coverage, including a product-master test file.
+
+Expand the test suite around real business-critical paths.
+
+Required coverage:
+
+### Backend
+
+* Unit tests.
+* API tests.
+* Authentication and authorization.
+* Payment verification.
+* Webhook verification.
+* Order lifecycle.
+* Review moderation.
+* Database error handling.
+* Commercial-data integrity.
+* Idempotency.
+* Input validation.
+
+### Frontend
+
+* TypeScript checking.
+* Linting.
+* Production build.
+* Product selection.
+* Cart calculations.
+* Checkout states.
+* Payment failure handling.
+* API error handling.
+* Responsive layout checks where tooling permits.
+
+### Integration
+
+Test the complete synthetic flow:
+
+**Product → Cart → Checkout → Backend order creation → Test payment → Payment verification → Persisted order → Order confirmation**
+
+Then test failure paths.
+
+Use isolated test databases and synthetic records.
+
+Do not connect destructive test suites to production.
+
+### Commands
+
+Discover the project's actual supported commands from its package manifests and build configuration.
+
+Run the applicable:
+
+* Lint checks.
+* Type checks.
+* Unit tests.
+* Integration tests.
+* Production builds.
+* Python syntax checks.
+* Dependency security checks.
+
+Do not invent test results.
+
+If dependencies are unavailable, network access is blocked, or a service cannot be reached, state the exact limitation and mark the corresponding verification UNVERIFIED.
+
+Do not claim that a build, test, or audit passed unless it was actually executed and the result was observed.
+
+---
+
+# 12. PHASE TEN: DEPLOYMENT AND LIVE VERIFICATION
+
+Determine the actual deployment architecture from the available configuration and authorized access.
+
+Inspect the relevant hosting configuration, health checks, environment-variable names, frontend API base URL, and production route mapping.
+
+If live access is available and authorized, verify the deployed application using safe, read-only checks.
+
+If production configuration or service access is unavailable, produce an explicit checklist for the owner to execute.
+
+Do not assume that the source ZIP and deployed application are identical merely because the owner identifies the ZIP as the live source.
+
+Verify that the source changes are committed and that the deployment references the intended commit before treating the changes as deployed.
+
+### Safe production smoke tests
+
+* Homepage loads.
+* Product pages load.
+* Commercial prices match the approved baseline.
+* Product variants and pack sizes are correct.
+* Images load.
+* Cart behaves correctly.
+* Checkout can be initiated without completing a real payment.
+* Public API errors are handled safely.
+* Health and readiness endpoints report accurate status.
+* Published review summaries are correct.
+* No critical console or server errors occur during safe browsing.
+
+Use a test environment for order creation and payment verification whenever possible.
+
+Never place a real order, charge a payment method, send customer messages, or modify production data without explicit authorization.
+
+---
+
+# 13. REQUIRED FINDING FORMAT
+
+Every finding must include:
+
+**Finding ID:**
+**Title:**
+**Severity:** Critical / High / Medium / Low / Informational
+**Status:** Open / Patched / Tested / Unverified
+**Affected files:**
+**Affected routes or components:**
+**Evidence:**
+**Business impact:**
+**Root cause:**
+**Patch implemented:**
+**Tests executed:**
+**Test results:**
+**Remaining risks:**
+
+Separate findings into:
+
+1. Confirmed defects.
+2. Confirmed fixes.
+3. Potential risks requiring more evidence.
+4. Deployment issues.
+5. Items that cannot be verified from the available environment.
+
+Do not mark an issue closed simply because the relevant code has changed.
+
+A finding should be marked Tested only when its relevant test has actually passed.
+
+---
+
+# 14. REQUIRED FINAL DELIVERABLES
+
+Produce the following artifacts in the repository or the available working directory:
+
+1. `AUDIT_BASELINE.md`
+2. `AUDIT_FINDINGS.md`
+3. `REMEDIATION_PLAN.md`
+4. `REMEDIATION_CHANGELOG.md`
+5. `SECURITY_AUDIT.md`
+6. `API_ENDPOINT_INVENTORY.md`
+7. `TEST_RESULTS.md`
+8. `DEPLOYMENT_READINESS.md`
+9. `COMMERCIAL_DATA_BASELINE.json`
+10. `COMMERCIAL_DATA_COMPARISON.json`
+11. Automated tests for critical business workflows.
+
+Include a concise executive summary with:
+
+* Total findings by severity.
+* Findings fixed.
+* Findings tested successfully.
+* Findings still open.
+* Findings unverified.
+* Files changed.
+* Tests executed.
+* Tests passed and failed.
+* Commercial-data comparison result.
+* Remaining production risks.
+* Exact next steps for deployment.
+
+Do not fill reports with generic recommendations when actual source evidence is available.
+
+---
+
+# 15. IMPLEMENTATION RULES
+
+Work in this sequence:
+
+**Inspect → Baseline → Audit → Prioritize → Patch → Test → Compare → Review → Report**
+
+Do not start by rewriting the entire application.
+
+Do not apply a broad refactor before understanding the existing request flows.
+
+Patch confirmed defects first.
+
+For each patch:
+
+1. Explain the defect briefly.
+2. Make the smallest safe correction.
+3. Add a regression test.
+4. Run the relevant test.
+5. Review related call sites.
+6. Record the change.
+7. Check for unintended commercial-data changes.
+
+If a change requires a production secret, external account, destructive database operation, unavailable service, or owner decision, stop at that boundary and document the requirement.
+
+Do not fabricate access, deployment success, test results, or database state.
+
+---
+
+# 16. FINAL OBJECTIVE
+
+Deliver a cleaner, more secure, more reliable Kawad Swad 2.0 website that is ready for a controlled production release.
+
+The priorities, in order, are:
+
+1. Protect customer and business data.
+2. Ensure correct payment and order processing.
+3. Preserve all 43 commercial SKUs and their approved prices.
+4. Ensure database persistence and operational reliability.
+5. Prevent fraudulent or misleading reviews.
+6. Eliminate confirmed security vulnerabilities.
+7. Make product browsing, cart and checkout reliable.
+8. Remove obsolete code and duplicate business logic safely.
+9. Establish repeatable automated tests.
+10. Provide evidence-based deployment readiness.
+
+**Start by inspecting the latest shared ZIP. Establish the baseline and report what you find before modifying files. Then continue through the audit and remediation sequence without waiting for approval on routine, reversible, low-risk code fixes.**
+
+Do not deploy to production, perform destructive operations, change protected commercial data, or incur real financial charges without explicit authorization.

@@ -991,6 +991,9 @@ export default function Checkout() {
          ================================================================ */
 
       if (orderResponse.razorpayKeyId === 'rzp_test_mock') {
+        if (import.meta.env.PROD) {
+          throw new Error('Live payment gateway is required for live orders. Test mock is disabled in production.');
+        }
         const mockPaymentId = `pay_test_${Date.now()}`;
         const verification = await apiClient.verifyPayment({
           razorpay_order_id: orderResponse.razorpayOrderId,
