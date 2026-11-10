@@ -13,6 +13,7 @@ import {
 } from '@/components/Floating';
 import { FloatingCart } from '@/components/FloatingCart';
 import { CartDrawer } from '@/components/CartDrawer';
+import { ConsentBanner } from '@/components/ConsentBanner';
 
 import { CartProvider } from '@/context/CartContext';
 import { OrderProvider } from '@/context/OrderContext';
@@ -283,6 +284,7 @@ export default function App() {
             <CartDrawer />
 
             <WhatsAppButton />
+            <ConsentBanner />
           </div>
         </OrderProvider>
       </CartProvider>

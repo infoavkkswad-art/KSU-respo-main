@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { analytics } from '../utils/analytics';
 
 import {
   Minus,
@@ -188,6 +190,22 @@ export default function Cart() {
     const itemSavings = Math.max(0, curr.skuObj.mrp - curr.skuObj.websitePrice) * curr.quantity;
     return acc + itemSavings;
   }, 0);
+
+  useEffect(() => {
+    if (resolvedItems.length > 0) {
+      analytics.trackViewCart(
+        resolvedItems.map((item) => ({
+          item_id: item.skuObj.sku,
+          item_name: item.product.name,
+          item_category: item.product.category,
+          price: item.skuObj.websitePrice,
+          quantity: item.quantity,
+          item_variant: `${item.skuObj.packSize}g`,
+        })),
+        subtotal
+      );
+    }
+  }, []);
 
 
   /* ==========================================================================

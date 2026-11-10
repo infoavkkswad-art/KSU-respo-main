@@ -14,6 +14,8 @@ import {
   ProductService,
 } from '../services/product-service';
 
+import { analytics } from '../utils/analytics';
+
 /* ============================================================================
  * CART TYPES
  * ========================================================================== */
@@ -361,6 +363,18 @@ export function CartProvider({
       )
     ) {
       return;
+    }
+
+    const purchasable = ProductService.getPurchasableProductBySku(normalizedSku);
+    if (purchasable) {
+      analytics.trackAddToCart({
+        item_id: purchasable.skuObj.sku,
+        item_name: purchasable.family.name,
+        item_category: purchasable.family.category,
+        price: purchasable.skuObj.websitePrice,
+        quantity: qty,
+        item_variant: `${purchasable.skuObj.packSize}g`,
+      });
     }
 
     setItems(

@@ -3,6 +3,7 @@ import { runPaymentSecurityTests } from './payment-security.test';
 import { runOrderAuthorizationTests } from './order-authorization.test';
 import { runReviewModerationTests } from './review-moderation.test';
 import { runCartFulfillmentTests } from './cart-fulfillment.test';
+import { runAnalyticsIntegrationTests } from './analytics-integration.test';
 
 async function main() {
   console.log('====================================================');
@@ -15,6 +16,7 @@ async function main() {
     { suite: 'Order Authorization & IDOR', tests: runOrderAuthorizationTests() },
     { suite: 'Review Moderation & Trust', tests: runReviewModerationTests() },
     { suite: 'Cart Calculations & Fulfilment', tests: runCartFulfillmentTests() },
+    { suite: 'GA4 Analytics & Privacy Consent', tests: runAnalyticsIntegrationTests() },
   ];
 
   let totalTests = 0;

@@ -50,6 +50,8 @@ import { PACK_LABELS } from '@/data/products';
 
 import { apiClient } from '@/services/api-client';
 
+import { analytics } from '@/utils/analytics';
+
 
 /* ==========================================================================
    KAWAD SWAD 2.0
@@ -698,6 +700,22 @@ export default function Checkout() {
 
     });
 
+  useEffect(() => {
+    if (resolvedItems.length > 0) {
+      analytics.trackBeginCheckout(
+        resolvedItems.map((item) => ({
+          item_id: item.sku,
+          item_name: item.family?.name || 'Kawad Swad Product',
+          item_category: item.family?.category || 'papad',
+          price: item.skuData?.websitePrice || 0,
+          quantity: item.quantity,
+          item_variant: item.skuData ? `${item.skuData.packSize}g` : undefined,
+        })),
+        subtotal
+      );
+    }
+  }, []);
+
 
   /* ==========================================================================
      SERVER-SIDE PRICE QUOTE
@@ -1012,6 +1030,20 @@ export default function Checkout() {
           status: 'confirmed',
         });
 
+        analytics.trackPurchase({
+          id: verification.orderId || orderResponse.orderId,
+          items: orderResponse.items.map((item) => ({
+            item_id: item.sku,
+            item_name: item.productNameSnapshot || 'Kawad Swad Product',
+            price: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
+            quantity: item.quantity,
+            item_variant: item.packSizeSnapshot ? `${item.packSizeSnapshot}g` : undefined,
+          })),
+          subtotal: orderResponse.subtotal,
+          shipping: orderResponse.shipping,
+          total: orderResponse.total,
+        });
+
         clearCart();
         form.setStatus('success');
         setPaymentOpening(false);
@@ -1146,6 +1178,20 @@ export default function Checkout() {
 
               });
 
+              // Dispatch authoritative verified purchase event to GA4
+              analytics.trackPurchase({
+                id: verification.orderId || orderResponse.orderId,
+                items: orderResponse.items.map((item) => ({
+                  item_id: item.sku,
+                  item_name: item.productNameSnapshot || 'Kawad Swad Product',
+                  price: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
+                  quantity: item.quantity,
+                  item_variant: item.packSizeSnapshot ? `${item.packSizeSnapshot}g` : undefined,
+                })),
+                subtotal: orderResponse.subtotal,
+                shipping: orderResponse.shipping,
+                total: orderResponse.total,
+              });
 
               /* ========================================================
                  CLEAR CART ONLY AFTER VERIFICATION
@@ -1175,6 +1221,12 @@ export default function Checkout() {
                 verificationError,
               );
 
+              // Track payment failure with controlled category and zero PII
+              analytics.trackPaymentFailure(
+                orderResponse.orderId,
+                'verification_failed',
+                orderResponse.total
+              );
 
               const message =
                 verificationError instanceof
@@ -1202,6 +1254,13 @@ export default function Checkout() {
         modal: {
 
           ondismiss: () => {
+
+            // Track dismissal / user cancellation with zero PII
+            analytics.trackPaymentFailure(
+              orderResponse.orderId,
+              'user_cancelled',
+              orderResponse.total
+            );
 
             form.setStatus('idle');
 

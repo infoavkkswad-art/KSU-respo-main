@@ -1,8 +1,15 @@
 import {
   useState,
+  useEffect,
   type FormEvent,
   type ReactNode,
 } from 'react';
+
+import {
+  getAnalyticsConsent,
+  setAnalyticsConsent,
+  type ConsentStatus,
+} from '@/utils/analytics';
 
 import { Link } from 'react-router-dom';
 
@@ -52,6 +59,24 @@ export function Footer() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] =
     useState(false);
+  const [consentStatus, setConsentStatus] =
+    useState<ConsentStatus>(null);
+
+  useEffect(() => {
+    setConsentStatus(getAnalyticsConsent());
+    const handleConsentChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ status: ConsentStatus }>;
+      if (customEvent.detail && customEvent.detail.status) {
+        setConsentStatus(customEvent.detail.status);
+      } else {
+        setConsentStatus(getAnalyticsConsent());
+      }
+    };
+    window.addEventListener('kawad_consent_changed', handleConsentChange);
+    return () => {
+      window.removeEventListener('kawad_consent_changed', handleConsentChange);
+    };
+  }, []);
 
 
   /* ==========================================================================
@@ -717,12 +742,26 @@ export function Footer() {
             {brand.manufacturer}. All rights reserved.
           </p>
 
-
-          <p>
-            FSSAI: {brand.fssai}
-            {' · '}
-            {brand.dietType}
-          </p>
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1">
+            <p>
+              FSSAI: {brand.fssai}
+              {' · '}
+              {brand.dietType}
+            </p>
+            <span aria-hidden="true" className="text-brand-cream/30 hidden sm:inline">·</span>
+            <button
+              type="button"
+              onClick={() => {
+                const nextState = consentStatus !== 'granted';
+                setAnalyticsConsent(nextState);
+                setConsentStatus(nextState ? 'granted' : 'denied');
+              }}
+              className="text-brand-cream/60 hover:text-brand-saffron-light underline underline-offset-2 transition-colors cursor-pointer"
+              title="Toggle analytics cookie consent"
+            >
+              Analytics: {consentStatus === 'granted' ? 'Enabled (Revoke)' : 'Disabled (Enable)'}
+            </button>
+          </div>
 
         </div>
 

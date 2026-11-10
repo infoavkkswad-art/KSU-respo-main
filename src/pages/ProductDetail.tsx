@@ -57,6 +57,8 @@ import {
   formatPrice,
 } from '@/context/CartContext';
 
+import { analytics } from '@/utils/analytics';
+
 import {
   ReviewSection,
 } from '@/components/ReviewSection';
@@ -375,6 +377,20 @@ export default function ProductDetail() {
     selectedSkuIndex,
   ]);
 
+  const activeSku = purchasableSkus[selectedSkuIndex] ?? purchasableSkus[0];
+
+  useEffect(() => {
+    if (product && activeSku) {
+      analytics.trackViewItem({
+        item_id: activeSku.sku,
+        item_name: product.name,
+        item_category: product.category,
+        price: activeSku.websitePrice,
+        quantity: 1,
+        item_variant: `${activeSku.packSize}g`,
+      });
+    }
+  }, [product, activeSku]);
 
   /* ==========================================================================
      PRODUCT NOT FOUND

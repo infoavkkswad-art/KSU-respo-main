@@ -35,8 +35,9 @@ const sections = [
     content: [
       'We collect personal information (name, phone, email, address) only when you place an order or submit a form.',
       'We use this information to fulfil your order and respond to your enquiries. We do not sell or share your data with third parties.',
-      'You may request access to or deletion of your personal data by contacting us.',
-      'This website does not currently use third-party analytics or advertising trackers.',
+      'We use privacy-first Google Analytics 4 strictly to understand website performance and improve customer experience. Analytics tracking is disabled by default and runs only if you explicitly choose to accept it.',
+      'Analytics tracking never collects customer names, phone numbers, email addresses, delivery addresses, PIN codes, or payment credentials.',
+      'You can grant, decline, or withdraw your analytics preference at any time using the preferences control located in the website footer.',
     ],
   },
   {
