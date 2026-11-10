@@ -100,7 +100,16 @@ class LightweightAnalytics {
   ): void {
     // Forward to Google Tag Manager / GA4 if present
     if (typeof window.gtag === 'function') {
-      window.gtag('event', eventName, payload);
+      if (eventName === 'page_view') {
+        window.gtag('event', 'page_view', {
+          page_path: payload.path,
+          page_title: payload.title,
+          page_location: typeof window !== 'undefined' ? window.location.href : '',
+          ...payload,
+        });
+      } else {
+        window.gtag('event', eventName, payload);
+      }
     } else if (Array.isArray(window.dataLayer)) {
       window.dataLayer.push({ event: eventName, ...payload });
     }
