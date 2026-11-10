@@ -1,6 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import { analytics, getAnalyticsConsent, setAnalyticsConsent, type GA4Item, type PurchaseOrderData, type PaymentFailureCategory } from '../src/utils/analytics';
+import {
+  analytics,
+  getAnalyticsConsent,
+  setAnalyticsConsent,
+  type GA4Item,
+  type PurchaseOrderData,
+  type PaymentFailureCategory,
+} from '../src/utils/analytics';
 
 const baselinePath = path.resolve(process.cwd(), 'COMMERCIAL_DATA_BASELINE.json');
 const COMMERCIAL_DATA_BASELINE = JSON.parse(fs.readFileSync(baselinePath, 'utf-8')) as {
@@ -29,8 +36,9 @@ export function runAnalyticsIntegrationTests(): TestResult[] {
     });
   }
 
-  // Set up mock window / localStorage / gtag environment if running in node/tsx
+  // Set up mock window / localStorage / DOM environment
   const mockLocalStorage: Record<string, string> = {};
+  const appendedScripts: Array<{ src: string; async: boolean }> = [];
   const dispatchedEvents: Array<{ command: string; action: string; params: Record<string, unknown> }> = [];
 
   if (typeof globalThis.window === 'undefined') {
@@ -51,7 +59,35 @@ export function runAnalyticsIntegrationTests(): TestResult[] {
     };
   }
 
-  // Mock gtag
+  if (typeof globalThis.document === 'undefined') {
+    (globalThis as unknown as { document: Record<string, unknown> }).document = {
+      title: 'Kawad Swad',
+      referrer: '',
+      head: {
+        appendChild: (el: { src?: string; async?: boolean }) => {
+          if (el && el.src) {
+            appendedScripts.push({ src: el.src, async: Boolean(el.async) });
+          }
+          return el;
+        },
+      },
+      createElement: (tag: string) => {
+        if (tag === 'script') {
+          return { src: '', async: false };
+        }
+        return {};
+      },
+      querySelector: (selector: string) => {
+        if (selector.includes('googletagmanager')) {
+          const found = appendedScripts.find(s => s.src.includes('googletagmanager.com/gtag/js'));
+          return found ? found : null;
+        }
+        return null;
+      },
+    };
+  }
+
+  // Mock global gtag
   (globalThis.window as unknown as { gtag: (...args: unknown[]) => void }).gtag = (command: unknown, action: unknown, params: unknown) => {
     dispatchedEvents.push({
       command: String(command),
@@ -60,32 +96,152 @@ export function runAnalyticsIntegrationTests(): TestResult[] {
     });
   };
 
-  // 1. Consent State Default and Transitions
+  // 1. Strict Mode: Zero script loads or event dispatches before explicit consent
   try {
     delete mockLocalStorage['kawad_analytics_consent'];
+    appendedScripts.length = 0;
+    dispatchedEvents.length = 0;
+
     assert(
-      'Default consent state is null/unselected prior to customer decision',
+      'Default consent state is null/unselected on fresh visit',
       getAnalyticsConsent() === null
     );
 
-    setAnalyticsConsent(true);
+    // Attempt to track events while consent is unselected
+    analytics.trackPageView('/shop');
+    analytics.trackViewItem({ item_id: 'KS-MMP-200', item_name: 'Moong Master Papad', price: 55, quantity: 1 });
+    analytics.trackAddToCart({ item_id: 'KS-MMP-200', item_name: 'Moong Master Papad', price: 55, quantity: 1 });
+
     assert(
-      'Consent transitions to granted upon customer acceptance',
+      'Zero Google gtag script requests before explicit consent',
+      appendedScripts.length === 0,
+      `Expected 0 script injections, found ${appendedScripts.length}`
+    );
+
+    assert(
+      'Zero analytics event dispatches before explicit consent',
+      dispatchedEvents.length === 0,
+      `Expected 0 dispatched events, found ${dispatchedEvents.length}`
+    );
+  } catch (err: unknown) {
+    assert('Pre-consent strict gate test failed with error', false, err instanceof Error ? err.message : String(err));
+  }
+
+  // 2. Strict Mode: Zero script loads or event dispatches when customer declines consent
+  try {
+    setAnalyticsConsent(false);
+    assert(
+      'Consent state transitions to denied upon customer decline',
+      getAnalyticsConsent() === 'denied' && mockLocalStorage['kawad_analytics_consent'] === 'denied'
+    );
+
+    appendedScripts.length = 0;
+    dispatchedEvents.length = 0;
+
+    analytics.trackPageView('/products');
+    analytics.trackViewCart([], 0);
+    analytics.trackBeginCheckout([], 0);
+
+    assert(
+      'Zero Google script requests when consent is declined',
+      appendedScripts.length === 0
+    );
+
+    assert(
+      'Zero analytics event dispatches when consent is declined',
+      dispatchedEvents.length === 0
+    );
+  } catch (err: unknown) {
+    assert('Decline strict gate test failed with error', false, err instanceof Error ? err.message : String(err));
+  }
+
+  // 3. Strict Mode: Accept loads GA4 and enables subsequent event tracking
+  try {
+    appendedScripts.length = 0;
+    dispatchedEvents.length = 0;
+
+    setAnalyticsConsent(true);
+
+    assert(
+      'Consent state transitions to granted upon customer acceptance',
       getAnalyticsConsent() === 'granted' && mockLocalStorage['kawad_analytics_consent'] === 'granted'
     );
 
-    setAnalyticsConsent(false);
     assert(
-      'Consent transitions to denied upon customer withdrawal/rejection',
-      getAnalyticsConsent() === 'denied' && mockLocalStorage['kawad_analytics_consent'] === 'denied'
+      'GA4 script is dynamically injected with Measurement ID G-R5YNWTG2MC upon acceptance',
+      appendedScripts.some(s => s.src.includes('googletagmanager.com/gtag/js?id=G-R5YNWTG2MC'))
     );
+
+    // After consent is granted, tracking events must dispatch successfully
+    analytics.trackPageView('/shop');
+    const pageView = dispatchedEvents.find(e => e.action === 'page_view');
+    assert('Subsequent page views are tracked after consent is granted', !!pageView);
   } catch (err: unknown) {
-    assert('Consent state transitions without error', false, err instanceof Error ? err.message : String(err));
+    assert('Consent acceptance and dynamic script load failed with error', false, err instanceof Error ? err.message : String(err));
   }
 
-  // 2. Commercial Financial Reconciliation with Audited Baseline
+  // 4. Strict Mode: Consent withdrawal immediately stops all future event dispatch
   try {
-    // Pick real audited SKUs: Moong Master 200g (KS-MMP-200 @ ₹55) and Chana Chotu 500g (KS-CCP-500 @ ₹140)
+    setAnalyticsConsent(false);
+
+    assert('Consent state updated to denied on withdrawal', getAnalyticsConsent() === 'denied');
+
+    // Reset dispatched array to verify subsequent measurement attempts are blocked
+    dispatchedEvents.length = 0;
+
+    // Attempt tracking after withdrawal
+    analytics.trackPageView('/manufacturing');
+    analytics.trackViewItem({ item_id: 'KS-CCP-500', item_name: 'Chana Chotu Papad', price: 140, quantity: 1 });
+
+    assert(
+      'Consent withdrawal immediately blocks all subsequent event dispatches',
+      dispatchedEvents.length === 0,
+      `Expected 0 events after withdrawal, found ${dispatchedEvents.length}`
+    );
+  } catch (err: unknown) {
+    assert('Consent withdrawal gate test failed with error', false, err instanceof Error ? err.message : String(err));
+  }
+
+  // 5. Returning Visitors: Correct restoration of stored consent state
+  try {
+    // Re-grant consent for subsequent testing
+    mockLocalStorage['kawad_analytics_consent'] = 'granted';
+    assert(
+      'Previously granted consent is restored correctly from storage',
+      getAnalyticsConsent() === 'granted'
+    );
+
+    mockLocalStorage['kawad_analytics_consent'] = 'denied';
+    assert(
+      'Previously declined consent remains strictly denied from storage',
+      getAnalyticsConsent() === 'denied'
+    );
+  } catch (err: unknown) {
+    assert('Stored consent restoration test failed with error', false, err instanceof Error ? err.message : String(err));
+  }
+
+  // 6. Resilience: Storage exceptions do not crash the application
+  try {
+    const originalGetItem = window.localStorage.getItem;
+    window.localStorage.getItem = () => {
+      throw new Error('SecurityError: The operation is insecure.');
+    };
+
+    assert(
+      'Storage access failure returns null safely without throwing',
+      getAnalyticsConsent() === null
+    );
+
+    window.localStorage.getItem = originalGetItem;
+  } catch (err: unknown) {
+    assert('Storage exception handling failed with error', false, err instanceof Error ? err.message : String(err));
+  }
+
+  // Re-enable granted consent for commercial reconciliation and deduplication tests
+  setAnalyticsConsent(true);
+
+  // 7. Commercial Financial Reconciliation with Audited Baseline
+  try {
     const sku1 = COMMERCIAL_DATA_BASELINE.skus.find(s => s.sku === 'KS-MMP-200');
     const sku2 = COMMERCIAL_DATA_BASELINE.skus.find(s => s.sku === 'KS-CCP-500');
 
@@ -105,7 +261,7 @@ export function runAnalyticsIntegrationTests(): TestResult[] {
       const orderTotal = calculatedSubtotal + shippingRate + taxRate; // 321
 
       const testOrder: PurchaseOrderData = {
-        id: 'KS-TEST-ORD-001',
+        id: 'KS-20261110-8472',
         items,
         subtotal: calculatedSubtotal,
         shipping: shippingRate,
@@ -152,10 +308,10 @@ export function runAnalyticsIntegrationTests(): TestResult[] {
     assert('Financial reconciliation test executed without error', false, err instanceof Error ? err.message : String(err));
   }
 
-  // 3. Purchase Deduplication Protection
+  // 8. Purchase Deduplication Protection
   try {
     const duplicateOrder: PurchaseOrderData = {
-      id: 'KS-TEST-ORD-001', // Re-using same order ID as above
+      id: 'KS-20261110-8472', // Re-using same order ID as above
       items: [],
       subtotal: 250,
       shipping: 71,
@@ -171,7 +327,26 @@ export function runAnalyticsIntegrationTests(): TestResult[] {
     assert('Duplicate purchase protection executed without error', false, err instanceof Error ? err.message : String(err));
   }
 
-  // 4. Zero-PII Guarantee Across All Analytics Payloads
+  // 9. Mock / Test Payment Safety Guard
+  try {
+    const mockOrder: PurchaseOrderData = {
+      id: 'pay_test_1731234567890',
+      items: [{ item_id: 'KS-MMP-200', item_name: 'Test', price: 55, quantity: 1 }],
+      subtotal: 55,
+      shipping: 0,
+      total: 55,
+    };
+
+    const mockDispatched = analytics.trackPurchase(mockOrder);
+    assert(
+      'Mock test payment orders (pay_test_*) are strictly blocked from contaminating real GA4',
+      mockDispatched === false
+    );
+  } catch (err: unknown) {
+    assert('Mock payment protection test failed with error', false, err instanceof Error ? err.message : String(err));
+  }
+
+  // 10. Zero-PII Guarantee Across All Analytics Payloads
   try {
     const PII_KEYS = ['fullname', 'customer', 'phone', 'email', 'address', 'city', 'pincode', 'razorpay_payment_id', 'razorpay_signature'];
 
@@ -198,7 +373,7 @@ export function runAnalyticsIntegrationTests(): TestResult[] {
     assert('Zero-PII test executed without error', false, err instanceof Error ? err.message : String(err));
   }
 
-  // 5. Payment Failure Controlled Categorization
+  // 11. Payment Failure Controlled Categorization
   try {
     dispatchedEvents.length = 0;
     const allowedCategories: PaymentFailureCategory[] = [
@@ -227,7 +402,7 @@ export function runAnalyticsIntegrationTests(): TestResult[] {
     assert('Payment failure categorization test executed without error', false, err instanceof Error ? err.message : String(err));
   }
 
-  // 6. Route-Change Deduplication for SPA Page Views
+  // 12. Route-Change Deduplication for SPA Page Views
   try {
     dispatchedEvents.length = 0;
     analytics.trackPageView('/shop');

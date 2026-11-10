@@ -1030,20 +1030,6 @@ export default function Checkout() {
           status: 'confirmed',
         });
 
-        analytics.trackPurchase({
-          id: verification.orderId || orderResponse.orderId,
-          items: orderResponse.items.map((item) => ({
-            item_id: item.sku,
-            item_name: item.productNameSnapshot || 'Kawad Swad Product',
-            price: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
-            quantity: item.quantity,
-            item_variant: item.packSizeSnapshot ? `${item.packSizeSnapshot}g` : undefined,
-          })),
-          subtotal: orderResponse.subtotal,
-          shipping: orderResponse.shipping,
-          total: orderResponse.total,
-        });
-
         clearCart();
         form.setStatus('success');
         setPaymentOpening(false);

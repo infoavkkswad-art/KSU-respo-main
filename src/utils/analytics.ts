@@ -1,7 +1,12 @@
 /**
- * Kawad Swad E-commerce Analytics & Consent Engine
+ * Kawad Swad E-commerce Analytics & Strict Consent Engine
  * GA4 Measurement ID: G-R5YNWTG2MC
- * Strictly Zero-PII, Deduplicated, Financially Reconciled Telemetry
+ *
+ * POLICY: STRICT CONSENT
+ * - ZERO Google network requests before explicit customer consent.
+ * - Dynamic loading of gtag.js only after consent is granted.
+ * - Immediate suppression of all measurement upon consent decline or withdrawal.
+ * - Strictly Zero-PII, Deduplicated, Financially Reconciled Telemetry.
  */
 
 export type ConsentStatus = 'granted' | 'denied' | null;
@@ -46,16 +51,19 @@ declare global {
       trackPaymentFailure: (orderId: string, category: PaymentFailureCategory, amount: number) => void;
       getConsent: () => ConsentStatus;
       setConsent: (granted: boolean) => void;
+      isLoaded: () => boolean;
     };
   }
 }
 
+const MEASUREMENT_ID = 'G-R5YNWTG2MC';
 const CONSENT_STORAGE_KEY = 'kawad_analytics_consent';
 const ORDER_TRACK_PREFIX = 'kawad_order_analytics_';
 
 class KawadAnalyticsEngine {
   private lastPath: string = '';
   private isInitialized: boolean = false;
+  private isScriptLoaded: boolean = false;
   private dispatchedOrderIds: Set<string> = new Set();
 
   public getConsent(): ConsentStatus {
@@ -66,7 +74,7 @@ class KawadAnalyticsEngine {
         return stored;
       }
     } catch {
-      // Fallback if localStorage restricted
+      // Storage access restricted or disabled (e.g. private browsing)
     }
     return null;
   }
@@ -81,14 +89,31 @@ class KawadAnalyticsEngine {
       // Storage restricted
     }
 
-    // Update GA4 consent state
-    if (typeof window.gtag === 'function') {
-      window.gtag('consent', 'update', {
-        analytics_storage: status,
-      });
+    if (granted) {
+      // 1. Customer accepted: dynamically load Google Analytics script and initialize
+      this.ensureGA4Loaded();
+
+      // 2. Grant consent in GA4 runtime
+      if (typeof window.gtag === 'function') {
+        window.gtag('consent', 'update', {
+          analytics_storage: 'granted',
+        });
+      }
+
+      // 3. Dispatch the current route's page_view (initial page_view was held back before consent)
+      const currentPath = window.location.pathname;
+      this.lastPath = ''; // reset so trackPageView treats currentPath as fresh
+      this.trackPageView(currentPath);
+    } else {
+      // Customer declined or withdrew consent: revoke storage in runtime
+      if (typeof window.gtag === 'function') {
+        window.gtag('consent', 'update', {
+          analytics_storage: 'denied',
+        });
+      }
     }
 
-    // Dispatch event to update reactive UI components
+    // Dispatch custom event to notify reactive UI components (e.g. ConsentBanner, Footer)
     try {
       window.dispatchEvent(
         new CustomEvent('kawad_consent_changed', {
@@ -100,23 +125,66 @@ class KawadAnalyticsEngine {
     }
   }
 
+  public isLoaded(): boolean {
+    return this.isScriptLoaded;
+  }
+
+  /**
+   * Dynamically injects and initializes the GA4 script.
+   * Strictly called ONLY when consent is 'granted'.
+   */
+  public ensureGA4Loaded(): void {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    if (this.isScriptLoaded) return;
+
+    // Check if script already exists in document
+    const existing = document.querySelector(`script[src*="googletagmanager.com/gtag/js"]`);
+    if (!existing) {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
+      document.head.appendChild(script);
+    }
+
+    // Setup dataLayer and gtag dispatcher
+    window.dataLayer = window.dataLayer || [];
+    if (!window.gtag) {
+      window.gtag = function () {
+        // eslint-disable-next-line prefer-rest-params
+        window.dataLayer?.push(arguments);
+      };
+    }
+
+    window.gtag('js', new Date());
+    window.gtag('consent', 'default', {
+      analytics_storage: 'granted',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+    });
+
+    // Disable automatic initial page view to prevent double-counting with React Router SPA tracker
+    window.gtag('config', MEASUREMENT_ID, { send_page_view: false });
+
+    this.isScriptLoaded = true;
+  }
+
   public init(): void {
     if (this.isInitialized || typeof window === 'undefined') return;
     this.isInitialized = true;
 
-    // Apply stored consent if already selected
-    const existingConsent = this.getConsent();
-    if (existingConsent === 'granted' && typeof window.gtag === 'function') {
-      window.gtag('consent', 'update', {
-        analytics_storage: 'granted',
-      });
+    const consent = this.getConsent();
+
+    // STRICT CONSENT: Only load GA4 if consent was already explicitly granted
+    if (consent === 'granted') {
+      this.ensureGA4Loaded();
+      this.trackPageView(window.location.pathname);
+    } else {
+      // Prime navigation tracker without dispatching any network requests
+      this.lastPath = window.location.pathname;
     }
 
-    // Track the initial page load route exactly once
-    const initialPath = window.location.pathname;
-    this.trackPageView(initialPath);
-
-    // Listen to SPA browser navigation
+    // Listen to client-side SPA navigation
     this.hookNavigation();
 
     // Bind global helpers
@@ -133,10 +201,14 @@ class KawadAnalyticsEngine {
         this.trackPaymentFailure(orderId, category, amount),
       getConsent: () => this.getConsent(),
       setConsent: (granted: boolean) => this.setConsent(granted),
+      isLoaded: () => this.isLoaded(),
     };
   }
 
   public trackPageView(path: string): void {
+    // STRICT GATE: Never track if consent is not granted
+    if (this.getConsent() !== 'granted') return;
+
     // Deduplication: Only track if path has changed
     if (this.lastPath === path) return;
     this.lastPath = path;
@@ -149,6 +221,8 @@ class KawadAnalyticsEngine {
   }
 
   public trackViewItem(item: GA4Item): void {
+    if (this.getConsent() !== 'granted') return;
+
     this.dispatchGtag('event', 'view_item', {
       currency: 'INR',
       value: Math.round(item.price * item.quantity),
@@ -166,6 +240,8 @@ class KawadAnalyticsEngine {
   }
 
   public trackAddToCart(item: GA4Item): void {
+    if (this.getConsent() !== 'granted') return;
+
     this.dispatchGtag('event', 'add_to_cart', {
       currency: 'INR',
       value: Math.round(item.price * item.quantity),
@@ -183,6 +259,8 @@ class KawadAnalyticsEngine {
   }
 
   public trackViewCart(items: GA4Item[], value: number): void {
+    if (this.getConsent() !== 'granted') return;
+
     this.dispatchGtag('event', 'view_cart', {
       currency: 'INR',
       value,
@@ -198,6 +276,8 @@ class KawadAnalyticsEngine {
   }
 
   public trackBeginCheckout(items: GA4Item[], value: number): void {
+    if (this.getConsent() !== 'granted') return;
+
     this.dispatchGtag('event', 'begin_checkout', {
       currency: 'INR',
       value,
@@ -215,14 +295,22 @@ class KawadAnalyticsEngine {
   /**
    * Tracks an authoritative purchase event.
    * STRICT CRITERIA:
-   * 1. Must follow verified payment from backend.
-   * 2. Reconciles value = sum(item.price * item.quantity) = subtotal.
-   * 3. Separates shipping and tax.
-   * 4. Multi-tier deduplication prevents duplicate dispatches on refresh or re-render.
-   * 5. Absolutely zero customer PII.
+   * 1. Requires explicit consent ('granted').
+   * 2. Must follow genuine backend payment verification.
+   * 3. Reconciles value = sum(item.price * item.quantity) = subtotal.
+   * 4. Multi-tier deduplication prevents duplicate dispatches.
+   * 5. Strictly zero customer PII.
    */
   public trackPurchase(order: PurchaseOrderData): boolean {
     if (!order || !order.id) return false;
+
+    // STRICT GATE: Never track if consent is not granted
+    if (this.getConsent() !== 'granted') return false;
+
+    // Safety guard: Reject test / mock identifiers from real analytics
+    if (order.id.startsWith('pay_test_') || order.id.startsWith('mock_')) {
+      return false;
+    }
 
     // 1. In-memory session deduplication
     if (this.dispatchedOrderIds.has(order.id)) {
@@ -278,7 +366,6 @@ class KawadAnalyticsEngine {
 
       return true;
     } catch {
-      // If dispatch failed completely with error, remove memory lock to permit retry
       this.dispatchedOrderIds.delete(order.id);
       return false;
     }
@@ -289,7 +376,8 @@ class KawadAnalyticsEngine {
     errorCategory: PaymentFailureCategory,
     amount: number
   ): void {
-    // Strictly zero PII and controlled error category only
+    if (this.getConsent() !== 'granted') return;
+
     this.dispatchGtag('event', 'payment_failure', {
       order_id: orderId,
       error_category: errorCategory,
@@ -302,6 +390,8 @@ class KawadAnalyticsEngine {
     name: string,
     properties: Record<string, string | number | boolean | null | undefined> = {}
   ): void {
+    if (this.getConsent() !== 'granted') return;
+
     this.dispatchGtag('event', name, {
       ...properties,
       current_path: this.lastPath,
@@ -309,6 +399,11 @@ class KawadAnalyticsEngine {
   }
 
   private dispatchGtag(command: string, action: string, params: Record<string, unknown>): void {
+    // STRICT CONSENT GATE: Absolute block if consent is not granted
+    if (this.getConsent() !== 'granted') {
+      return;
+    }
+
     if (typeof window.gtag === 'function') {
       window.gtag(command, action, params);
     } else if (Array.isArray(window.dataLayer)) {

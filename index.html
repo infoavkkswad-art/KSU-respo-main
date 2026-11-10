@@ -1,34 +1,6 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-R5YNWTG2MC"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      // Default consent state: all denied until explicit user choice
-      gtag('consent', 'default', {
-        analytics_storage: 'denied',
-        ad_storage: 'denied',
-        ad_user_data: 'denied',
-        ad_personalization: 'denied'
-      });
-
-      // Synchronously restore previous user consent decision if present
-      try {
-        var storedConsent = localStorage.getItem('kawad_analytics_consent');
-        if (storedConsent === 'granted') {
-          gtag('consent', 'update', { analytics_storage: 'granted' });
-        }
-      } catch (e) {
-        // Storage access might be restricted in private browsing
-      }
-
-      // Disable automatic initial page view to avoid duplicate SPA hits
-      gtag('config', 'G-R5YNWTG2MC', { send_page_view: false });
-    </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
