@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import './styles/kawad-visual.css';
+import { initAnalytics } from './utils/analytics';
+
+// Initialize lightweight page view & engagement analytics
+initAnalytics();
 
 const redirectPath = sessionStorage.getItem(
   'github-pages-redirect'
